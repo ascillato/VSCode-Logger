@@ -55,8 +55,15 @@ export class LogPanel {
         });
 
         this.panel.webview.onDidReceiveMessage(async (message) => {
+            if (!message || typeof message.type !== 'string') {
+                return;
+            }
             switch (message.type) {
                 case 'requestSavePreset': {
+                    if (!this.isValidPresetPayload(message)) {
+                        vscode.window.showErrorMessage('Invalid preset payload received from webview.');
+                        return;
+                    }
                     const name = await vscode.window.showInputBox({
                         prompt: 'Preset name',
                         ignoreFocusOut: true,
@@ -72,11 +79,19 @@ export class LogPanel {
                     break;
                 }
                 case 'deletePreset': {
+                    if (typeof message.name !== 'string' || !message.name) {
+                        vscode.window.showErrorMessage('Invalid preset name received from webview.');
+                        return;
+                    }
                     await this.deletePreset(message.name);
                     break;
                 }
                 case 'exportLogs': {
-                    await this.exportLogs(message.lines as string[]);
+                    if (!this.isStringArray(message.lines)) {
+                        vscode.window.showErrorMessage('Export failed because the log payload was malformed.');
+                        return;
+                    }
+                    await this.exportLogs(message.lines);
                     break;
                 }
             }
@@ -117,7 +132,7 @@ export class LogPanel {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}'; style-src ${webview.cspSource} 'unsafe-inline';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}'; style-src ${webview.cspSource};">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="${styleUri}" rel="stylesheet" />
     <title>${this.device.name} Logs</title>
@@ -200,6 +215,14 @@ export class LogPanel {
         } catch (err: any) {
             vscode.window.showErrorMessage(`Failed to export logs: ${err?.message ?? err}`);
         }
+    }
+
+    private isValidPresetPayload(message: any): message is { minLevel: string; textFilter: string } {
+        return typeof message?.minLevel === 'string' && typeof message?.textFilter === 'string';
+    }
+
+    private isStringArray(value: unknown): value is string[] {
+        return Array.isArray(value) && value.every((entry) => typeof entry === 'string');
     }
 }
 

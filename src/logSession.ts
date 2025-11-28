@@ -26,16 +26,49 @@ export class LogSession {
 
     async start(): Promise<void> {
         try {
+            if (!vscode.workspace.isTrusted) {
+                throw new Error('Workspace trust is required before connecting to devices.');
+            }
+
+            const validationError = this.validateDeviceConfiguration();
+            if (validationError) {
+                throw new Error(validationError);
+            }
+
+            const logCommand = this.getLogCommand();
             const password = await this.getPassword();
             if (!password) {
                 throw new Error('Password is required to connect to the device.');
             }
 
-            await this.connect(password);
+            await this.connect(password, logCommand);
         } catch (err: any) {
             this.callbacks.onError(err?.message ?? String(err));
             this.dispose();
         }
+    }
+
+    private validateDeviceConfiguration(): string | undefined {
+        const host = this.device.host?.trim();
+        const username = this.device.username?.trim();
+        if (!host) {
+            return `Device "${this.device.name}" is missing a host.`;
+        }
+        if (!username) {
+            return `Device "${this.device.name}" is missing a username.`;
+        }
+        if (this.device.port !== undefined && (!Number.isInteger(this.device.port) || this.device.port <= 0)) {
+            return `Device "${this.device.name}" has an invalid port.`;
+        }
+        return undefined;
+    }
+
+    private getLogCommand(): string {
+        const command = (this.device.logCommand ?? 'tail -F /var/log/syslog').trim();
+        if (/\r|\n/.test(command)) {
+            throw new Error('Log command must not contain control characters or new lines.');
+        }
+        return command;
     }
 
     private async getPassword(): Promise<string | undefined> {
@@ -58,13 +91,14 @@ export class LogSession {
         return input;
     }
 
-    private async connect(password: string): Promise<void> {
+    private async connect(password: string, logCommand: string): Promise<void> {
         return new Promise((resolve, reject) => {
             this.client = new Client();
             const port = this.device.port ?? 22;
-            const logCommand = this.device.logCommand || 'tail -F /var/log/syslog';
+            const host = this.device.host.trim();
+            const username = this.device.username.trim();
 
-            this.callbacks.onStatus(`Connecting to ${this.device.host}:${port} ...`);
+            this.callbacks.onStatus(`Connecting to ${host}:${port} ...`);
 
             this.client
                 .on('ready', () => {
@@ -93,9 +127,9 @@ export class LogSession {
                     this.handleClose();
                 })
                 .connect({
-                    host: this.device.host,
+                    host,
                     port,
-                    username: this.device.username,
+                    username,
                     password,
                 });
         });
