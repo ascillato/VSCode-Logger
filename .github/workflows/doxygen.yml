@@ -1,0 +1,45 @@
+name: Publish Doxygen Documentation
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build-docs:
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify tag targets main
+        id: verify
+        run: |
+          git fetch origin main
+          if git branch --remotes --contains "${GITHUB_SHA}" | grep -q "origin/main"; then
+            echo "on_main=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Tag ${GITHUB_REF} is not based on main; skipping documentation publish." \
+              && echo "on_main=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install Doxygen
+        if: steps.verify.outputs.on_main == 'true'
+        run: sudo apt-get update && sudo apt-get install -y doxygen graphviz
+
+      - name: Generate documentation
+        if: steps.verify.outputs.on_main == 'true'
+        run: doxygen Doxyfile
+
+      - name: Deploy to GitHub Pages
+        if: steps.verify.outputs.on_main == 'true'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs/html
+          publish_branch: gh-pages
+          force_orphan: true

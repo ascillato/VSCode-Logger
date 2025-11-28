@@ -1,3 +1,9 @@
+/**
+ * @file ssh2.d.ts
+ * @brief Minimal type declarations for the ssh2 package used by the extension.
+ * @copyright Copyright (c) 2024 Scallant
+ */
+
 declare module 'ssh2' {
     import { EventEmitter } from 'events';
 

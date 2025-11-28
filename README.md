@@ -34,6 +34,11 @@ The `password` field is only read to migrate the value into secret storage. If n
 2. Run `npm run compile` to build the TypeScript.
 3. Press `F5` in VS Code to launch the extension development host and open the **Embedded Logger** view.
 
+## Generating documentation
+1. Ensure Doxygen is available locally (`sudo apt-get install doxygen`).
+2. From the repository root, run `doxygen Doxyfile` to build the documentation into `docs/html`.
+3. Open `docs/html/index.html` in a browser to review the generated API reference.
+
 ## Notes
 - Presets are stored per-device in the workspace state using the key `embeddedLogger.presets.<deviceId>`.
 - Exports only include log lines currently visible after applying filters.

@@ -1,3 +1,9 @@
+/**
+ * @file extension.ts
+ * @brief Activates the VSCode-Logger extension and manages device log panels.
+ * @copyright Copyright (c) 2024 Scallant
+ */
+
 import * as vscode from 'vscode';
 import { DeviceTreeDataProvider, EmbeddedDevice } from './deviceTree';
 import { LogPanel } from './logPanel';
@@ -6,10 +12,14 @@ import { LogPanel } from './logPanel';
 const panelMap: Map<string, LogPanel> = new Map();
 
 /**
- * Migrates plain-text passwords in settings into VS Code SecretStorage.
- * The user can keep passwords in settings for convenience, but the canonical copy
- * should live in SecretStorage. We do not modify the user's settings.json; we only
- * store the password securely and ignore the plain-text property afterwards.
+ * @brief Migrates legacy passwords into VS Code SecretStorage.
+ *
+ * Users might still have passwords stored in their settings for convenience. This
+ * function copies those values into SecretStorage so future connections can
+ * retrieve them securely without modifying the user's settings.json.
+ *
+ * @param context The extension context used to access SecretStorage.
+ * @param devices The list of configured devices whose passwords need migration.
  */
 async function migrateLegacyPasswords(context: vscode.ExtensionContext, devices: EmbeddedDevice[]) {
     const secrets = context.secrets;
@@ -23,6 +33,14 @@ async function migrateLegacyPasswords(context: vscode.ExtensionContext, devices:
     }
 }
 
+/**
+ * @brief Activates the extension and registers UI components.
+ *
+ * The activation routine migrates legacy passwords, registers the device tree
+ * view, and handles configuration changes that affect the device list.
+ *
+ * @param context VS Code extension context provided on activation.
+ */
 export async function activate(context: vscode.ExtensionContext) {
     const config = vscode.workspace.getConfiguration('embeddedLogger');
     const devices = config.get<EmbeddedDevice[]>('devices', []);
@@ -68,6 +86,9 @@ export async function activate(context: vscode.ExtensionContext) {
     );
 }
 
+/**
+ * @brief Disposes all active log panels when the extension deactivates.
+ */
 export function deactivate() {
     for (const panel of panelMap.values()) {
         panel.dispose();
