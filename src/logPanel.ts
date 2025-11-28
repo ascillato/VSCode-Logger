@@ -1,8 +1,17 @@
+/**
+ * @file logPanel.ts
+ * @brief Creates and manages the Webview panel used to stream device logs.
+ * @copyright Copyright (c) 2025 Scallant
+ */
+
 import * as vscode from 'vscode';
 import { EmbeddedDevice } from './deviceTree';
 import { LogSession } from './logSession';
 import * as path from 'path';
 
+/**
+ * @brief Saved filtering preferences for a device.
+ */
 interface FilterPreset {
     name: string;
     minLevel: string;
@@ -10,7 +19,7 @@ interface FilterPreset {
 }
 
 /**
- * Hosts the WebviewPanel for a device and wires it to the SSH log session.
+ * @brief Hosts the WebviewPanel for a device and wires it to the SSH log session.
  */
 export class LogPanel {
     private readonly panel: vscode.WebviewPanel;
@@ -18,6 +27,13 @@ export class LogPanel {
     private readonly presetsKey: string;
     private disposed = false;
 
+    /**
+     * @brief Builds a log panel for the given device and prepares event wiring.
+     *
+     * @param context VS Code extension context used for resources and state.
+     * @param device Device configuration associated with this panel.
+     * @param onDispose Callback invoked when the panel is disposed.
+     */
     constructor(
         private readonly context: vscode.ExtensionContext,
         private readonly device: EmbeddedDevice,
@@ -101,14 +117,23 @@ export class LogPanel {
         this.initializePresets();
     }
 
+    /**
+     * @brief Starts the underlying log session.
+     */
     async start() {
         await this.session.start();
     }
 
+    /**
+     * @brief Reveals the panel if it is hidden or behind other tabs.
+     */
     reveal() {
         this.panel.reveal();
     }
 
+    /**
+     * @brief Cleans up the panel and SSH session resources.
+     */
     dispose() {
         if (this.disposed) {
             return;
@@ -118,6 +143,10 @@ export class LogPanel {
         this.panel.dispose();
     }
 
+    /**
+     * @brief Builds the HTML string loaded into the Webview.
+     * @returns HTML markup with scripts, styles, and initial data payload.
+     */
     private getHtml(): string {
         const webview = this.panel.webview;
         const scriptUri = webview.asWebviewUri(vscode.Uri.file(path.join(this.context.extensionPath, 'media', 'loggerPanel.js')));
@@ -174,15 +203,26 @@ export class LogPanel {
 </html>`;
     }
 
+    /**
+     * @brief Retrieves saved presets from workspace state.
+     * @returns The array of stored presets, or an empty array when none exist.
+     */
     private getStoredPresets(): FilterPreset[] {
         return this.context.workspaceState.get<FilterPreset[]>(this.presetsKey, []);
     }
 
+    /**
+     * @brief Sends stored presets to the Webview for initial rendering.
+     */
     private async initializePresets() {
         const presets = this.getStoredPresets();
         await this.panel.webview.postMessage({ type: 'initPresets', presets });
     }
 
+    /**
+     * @brief Saves or replaces a filter preset for the current device.
+     * @param preset Preset data to persist.
+     */
     private async savePreset(preset: FilterPreset) {
         const presets = this.getStoredPresets();
         const filtered = presets.filter((p) => p.name !== preset.name);
@@ -192,6 +232,10 @@ export class LogPanel {
         vscode.window.showInformationMessage(`Preset "${preset.name}" saved for ${this.device.name}.`);
     }
 
+    /**
+     * @brief Deletes a saved preset by name and notifies the Webview.
+     * @param name Name of the preset to remove.
+     */
     private async deletePreset(name: string) {
         const presets = this.getStoredPresets();
         const filtered = presets.filter((p) => p.name !== name);
@@ -200,6 +244,10 @@ export class LogPanel {
         vscode.window.showInformationMessage(`Preset "${name}" removed for ${this.device.name}.`);
     }
 
+    /**
+     * @brief Exports the provided log lines to a user-specified file.
+     * @param lines Collection of log lines to write.
+     */
     private async exportLogs(lines: string[]) {
         const uri = await vscode.window.showSaveDialog({
             filters: { Logs: ['log', 'txt'] },
@@ -217,15 +265,29 @@ export class LogPanel {
         }
     }
 
+    /**
+     * @brief Type guard verifying preset payloads from the Webview.
+     * @param message Arbitrary message payload.
+     * @returns True when the payload has the expected shape.
+     */
     private isValidPresetPayload(message: any): message is { minLevel: string; textFilter: string } {
         return typeof message?.minLevel === 'string' && typeof message?.textFilter === 'string';
     }
 
+    /**
+     * @brief Determines whether a value is an array of strings.
+     * @param value Unknown value to check.
+     * @returns True when every element is a string.
+     */
     private isStringArray(value: unknown): value is string[] {
         return Array.isArray(value) && value.every((entry) => typeof entry === 'string');
     }
 }
 
+/**
+ * @brief Generates a random nonce for script tags in the Webview.
+ * @returns A 32-character nonce comprised of letters and numbers.
+ */
 function getNonce() {
     let text = '';
     const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';

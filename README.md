@@ -2,6 +2,8 @@
 
 A Visual Studio Code extension that connects to embedded Linux devices over SSH, tails their logs, and displays them with filtering, colorization, presets, and export.
 
+See [Documentation](https://ascillato.github.io/VSCode-Logger/)
+
 ## Features
 - Activity Bar view listing configured devices.
 - Real-time log streaming over SSH using a configurable command (default: `tail -F /var/log/syslog`).
@@ -33,6 +35,11 @@ The `password` field is only read to migrate the value into secret storage. If n
 1. Run `npm install` to install dependencies.
 2. Run `npm run compile` to build the TypeScript.
 3. Press `F5` in VS Code to launch the extension development host and open the **Embedded Logger** view.
+
+## Generating documentation
+1. Ensure Doxygen is available locally (`sudo apt-get install doxygen`).
+2. From the repository root, run `doxygen Doxyfile` to build the documentation into `docs/html`.
+3. Open `docs/html/index.html` in a browser to review the generated API reference.
 
 ## Notes
 - Presets are stored per-device in the workspace state using the key `embeddedLogger.presets.<deviceId>`.

@@ -1,3 +1,12 @@
+/**
+ * @file loggerPanel.js
+ * @brief Manages the Webview UI for displaying and filtering streamed logs.
+ * @copyright Copyright (c) 2025 Scallant
+ */
+
+/**
+ * @brief Initializes the logger panel UI and event wiring inside the Webview.
+ */
 (function () {
     const vscode = acquireVsCodeApi();
 
@@ -46,6 +55,11 @@
     const logContainer = document.getElementById('logContainer');
     const statusEl = document.getElementById('status');
 
+    /**
+     * @brief Extracts the log level from a raw log line.
+     * @param line Log line emitted by the extension backend.
+     * @returns Normalized log level string.
+     */
     function parseLevel(line) {
         const match = line.match(/\[(DEBUG|INFO|NOTICE|WARN|WARNING|ERR|ERROR|CRIT|CRITICAL|ALERT|EMERG|FATAL)\]/i);
         if (match && match[1]) {
@@ -55,11 +69,19 @@
         return 'INFO';
     }
 
+    /**
+     * @brief Determines whether a log level passes the current filter threshold.
+     * @param level Normalized log level to evaluate.
+     * @returns True when the level is at or above the selected minimum.
+     */
     function levelPasses(level) {
         const selected = state.minLevel || 'ALL';
         return levelOrder[level] >= levelOrder[selected];
     }
 
+    /**
+     * @brief Applies the active filters to all entries and re-renders the list.
+     */
     function applyFilters() {
         const filterText = state.textFilter.toLowerCase();
         state.filtered = state.entries.filter((entry) => {
@@ -69,6 +91,9 @@
         render();
     }
 
+    /**
+     * @brief Renders the filtered entries into the log container.
+     */
     function render() {
         const visible = state.filtered;
         logContainer.innerHTML = '';
@@ -83,6 +108,9 @@
         logContainer.scrollTop = logContainer.scrollHeight;
     }
 
+    /**
+     * @brief Populates the preset dropdown with available presets.
+     */
     function updatePresetDropdown() {
         presetSelect.innerHTML = '';
         const base = document.createElement('option');
@@ -97,6 +125,10 @@
         });
     }
 
+    /**
+     * @brief Applies a preset by name, synchronizing UI inputs.
+     * @param name Preset identifier selected by the user.
+     */
     function applyPreset(name) {
         const preset = state.presets.find((p) => p.name === name);
         if (!preset) {
@@ -109,6 +141,10 @@
         applyFilters();
     }
 
+    /**
+     * @brief Handles incoming log lines from the extension host.
+     * @param line Raw log text to parse and display.
+     */
     function handleLogLine(line) {
         const level = parseLevel(line);
         const entry = {
@@ -133,10 +169,20 @@
         }
     }
 
+    /**
+     * @brief Updates the status text shown in the UI.
+     * @param text Status message to display.
+     */
     function updateStatus(text) {
         statusEl.textContent = text || '';
     }
 
+    /**
+     * @brief Debounces rapid calls to a function to limit execution.
+     * @param fn Function to debounce.
+     * @param delay Delay in milliseconds.
+     * @returns Wrapped function enforcing the debounce period.
+     */
     function debounce(fn, delay) {
         let handle;
         return function (...args) {

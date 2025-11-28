@@ -1,7 +1,16 @@
+/**
+ * @file logSession.ts
+ * @brief Manages SSH connectivity and streaming of remote log output.
+ * @copyright Copyright (c) 2025 Scallant
+ */
+
 import * as vscode from 'vscode';
 import { Client } from 'ssh2';
 import { EmbeddedDevice } from './deviceTree';
 
+/**
+ * @brief Callback contract used to surface session events to the UI.
+ */
 export interface LogSessionCallbacks {
     onLine: (line: string) => void;
     onError: (message: string) => void;
@@ -10,7 +19,7 @@ export interface LogSessionCallbacks {
 }
 
 /**
- * Handles the SSH connection and streaming of logs from a device.
+ * @brief Handles the SSH connection and streaming of logs from a device.
  */
 export class LogSession {
     private client: Client | undefined;
@@ -18,12 +27,21 @@ export class LogSession {
     private buffer = '';
     private disposed = false;
 
+    /**
+     * @brief Creates a new log session.
+     * @param device Device configuration providing connection details.
+     * @param context Extension context used to access secret storage.
+     * @param callbacks Hooks used to emit updates back to the UI.
+     */
     constructor(
         private readonly device: EmbeddedDevice,
         private readonly context: vscode.ExtensionContext,
         private readonly callbacks: LogSessionCallbacks
     ) {}
 
+    /**
+     * @brief Starts the SSH session and begins streaming logs.
+     */
     async start(): Promise<void> {
         try {
             if (!vscode.workspace.isTrusted) {
@@ -48,6 +66,10 @@ export class LogSession {
         }
     }
 
+    /**
+     * @brief Validates the device configuration for required fields.
+     * @returns A user-facing error message when invalid, otherwise undefined.
+     */
     private validateDeviceConfiguration(): string | undefined {
         const host = this.device.host?.trim();
         const username = this.device.username?.trim();
@@ -63,6 +85,11 @@ export class LogSession {
         return undefined;
     }
 
+    /**
+     * @brief Determines the log command to execute on the remote device.
+     * @returns Sanitized log command string.
+     * @throws Error when the command contains invalid characters.
+     */
     private getLogCommand(): string {
         const command = (this.device.logCommand ?? 'tail -F /var/log/syslog').trim();
         if (/\r|\n/.test(command)) {
@@ -71,6 +98,10 @@ export class LogSession {
         return command;
     }
 
+    /**
+     * @brief Retrieves the password for the device, prompting the user if necessary.
+     * @returns The stored or newly entered password, or undefined when missing.
+     */
     private async getPassword(): Promise<string | undefined> {
         const key = `embeddedLogger.password.${this.device.id}`;
         const stored = await this.context.secrets.get(key);
@@ -91,6 +122,12 @@ export class LogSession {
         return input;
     }
 
+    /**
+     * @brief Opens the SSH connection and starts the remote log command.
+     * @param password Password used for authentication.
+     * @param logCommand Remote command to execute.
+     * @returns Promise that resolves once streaming begins.
+     */
     private async connect(password: string, logCommand: string): Promise<void> {
         return new Promise((resolve, reject) => {
             this.client = new Client();
@@ -135,6 +172,10 @@ export class LogSession {
         });
     }
 
+    /**
+     * @brief Processes data buffers from the SSH stream and emits complete lines.
+     * @param data Chunk of data received from the remote stream.
+     */
     private handleData(data: Buffer) {
         this.buffer += data.toString();
         let idx: number;
@@ -145,6 +186,9 @@ export class LogSession {
         }
     }
 
+    /**
+     * @brief Handles stream closures and notifies callbacks if not disposed.
+     */
     private handleClose() {
         if (this.disposed) {
             return;
@@ -152,6 +196,9 @@ export class LogSession {
         this.callbacks.onClose();
     }
 
+    /**
+     * @brief Disposes SSH resources and prevents further callbacks.
+     */
     dispose() {
         this.disposed = true;
         try {
