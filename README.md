@@ -2,7 +2,8 @@
 
 A Visual Studio Code extension that connects to embedded Linux devices over SSH, tails their logs, and displays them with filtering, colorization, presets, and export.
 
-See [Documentation](https://ascillato.github.io/VSCode-Logger/index.html)
+- See [Documentation](https://ascillato.github.io/VSCode-Logger/index.html)
+- See [Source Code](https://github.com/ascillato/VSCode-Logger)
 
 ## Features
 - Activity Bar view listing configured devices.
