@@ -1,0 +1,10 @@
+# Exclude development sources and tests from the extension package
+src/**
+test/**
+tests/**
+.vscode/**
+**/*.map
+**/*.ts
+coverage/**
+.vscode-test/**
+**/tsconfig*.json
