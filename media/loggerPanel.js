@@ -1,7 +1,7 @@
 /**
  * @file loggerPanel.js
  * @brief Manages the Webview UI for displaying and filtering streamed logs.
- * @copyright Copyright (c) 2024 Scallant
+ * @copyright Copyright (c) 2025 Scallant
  */
 
 /**
