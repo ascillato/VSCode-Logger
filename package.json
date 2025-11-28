@@ -1,0 +1,103 @@
+{
+  "name": "embedded-device-logger",
+  "displayName": "Embedded Device Logger",
+  "description": "Stream and filter embedded Linux device logs over SSH inside VS Code.",
+  "version": "0.0.1",
+  "publisher": "your-publisher-name",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onView:embeddedLogger.devicesView"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "Embedded Device Logger",
+      "properties": {
+        "embeddedLogger.devices": {
+          "type": "array",
+          "description": "List of embedded devices to stream logs from.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Unique identifier for the device."
+              },
+              "name": {
+                "type": "string",
+                "description": "Friendly name shown in the sidebar."
+              },
+              "host": {
+                "type": "string",
+                "description": "Hostname or IP address."
+              },
+              "port": {
+                "type": "number",
+                "default": 22,
+                "description": "SSH port."
+              },
+              "username": {
+                "type": "string",
+                "description": "SSH username."
+              },
+              "password": {
+                "type": "string",
+                "description": "Legacy password field; stored to secret storage on first use.",
+                "default": ""
+              },
+              "logCommand": {
+                "type": "string",
+                "description": "Command to stream logs (defaults to tail -F /var/log/syslog).",
+                "default": "tail -F /var/log/syslog"
+              }
+            },
+            "required": ["id", "name", "host", "username"]
+          },
+          "default": []
+        }
+      }
+    },
+    "viewContainers": {
+      "activitybar": [
+        {
+          "id": "embeddedLogger",
+          "title": "Embedded Logger",
+          "icon": "resources/terminal.svg"
+        }
+      ]
+    },
+    "views": {
+      "embeddedLogger": [
+        {
+          "id": "embeddedLogger.devicesView",
+          "name": "Devices"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "embeddedLogger.openDevice",
+        "title": "Open Embedded Device Logs"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "echo 'No lint configured'"
+  },
+  "devDependencies": {
+    "@types/node": "^18.19.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "4.9.5"
+  },
+  "dependencies": {
+    "ssh2": "^1.14.0"
+  }
+}
