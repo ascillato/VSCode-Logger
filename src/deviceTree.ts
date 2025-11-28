@@ -40,7 +40,7 @@ export class DeviceTreeDataProvider implements vscode.TreeDataProvider<DeviceIte
                 title: 'Open Settings',
                 arguments: ['embeddedLogger.devices'],
             };
-            return Promise.resolve([item]);
+            return Promise.resolve([item as unknown as DeviceItem]);
         }
 
         const items = devices.map((device) => new DeviceItem(device));
