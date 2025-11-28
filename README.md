@@ -24,7 +24,7 @@ Add devices in your VS Code settings under `embeddedLogger.devices`:
     "password": "myPassword", // optional legacy field; will be saved to secret storage
     "logCommand": "tail -F /var/log/syslog"
   }
- ]
+]
 ```
 
 The `password` field is only read to migrate the value into secret storage. If no secret is stored yet, the extension prompts for a password when connecting and saves it securely.
@@ -37,4 +37,3 @@ The `password` field is only read to migrate the value into secret storage. If n
 ## Notes
 - Presets are stored per-device in the workspace state using the key `embeddedLogger.presets.<deviceId>`.
 - Exports only include log lines currently visible after applying filters.
-- TypeScript is pinned to 4.9.x so `npm run compile` works even on environments where newer TypeScript builds requiring optional chaining support in Node.js are unavailable.

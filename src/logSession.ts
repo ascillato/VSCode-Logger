@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { Client, ClientChannel, ConnectConfig } from 'ssh2';
+import { Client } from 'ssh2';
 import { EmbeddedDevice } from './deviceTree';
 
 export interface LogSessionCallbacks {
@@ -14,7 +14,7 @@ export interface LogSessionCallbacks {
  */
 export class LogSession {
     private client: Client | undefined;
-    private stream: ClientChannel | undefined;
+    private stream: any;
     private buffer = '';
     private disposed = false;
 
@@ -59,23 +59,17 @@ export class LogSession {
     }
 
     private async connect(password: string): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
+        return new Promise((resolve, reject) => {
             this.client = new Client();
             const port = this.device.port ?? 22;
             const logCommand = this.device.logCommand || 'tail -F /var/log/syslog';
-            const connectConfig: ConnectConfig = {
-                host: this.device.host,
-                port,
-                username: this.device.username,
-                password,
-            };
 
             this.callbacks.onStatus(`Connecting to ${this.device.host}:${port} ...`);
 
             this.client
                 .on('ready', () => {
                     this.callbacks.onStatus('Connected. Streaming logs...');
-                    this.client?.exec(logCommand, (err: Error | undefined, stream: ClientChannel) => {
+                    this.client?.exec(logCommand, (err, stream) => {
                         if (err) {
                             reject(err);
                             return;
@@ -90,7 +84,7 @@ export class LogSession {
                         resolve();
                     });
                 })
-                .on('error', (err: Error) => {
+                .on('error', (err) => {
                     this.callbacks.onError(`SSH error: ${err.message}`);
                     reject(err);
                 })
@@ -98,7 +92,12 @@ export class LogSession {
                     this.callbacks.onStatus('Connection closed.');
                     this.handleClose();
                 })
-                .connect(connectConfig);
+                .connect({
+                    host: this.device.host,
+                    port,
+                    username: this.device.username,
+                    password,
+                });
         });
     }
 
