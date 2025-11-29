@@ -57,7 +57,7 @@ See [Documentation](https://ascillato.github.io/VSCode-Logger/index.html)
 ### Package Generation
 Requires: `npm install -g @vscode/vsce`
 Run: `vsce package` to generate vsix file to be installed into VSCode
-Install locally on VSCode: `code --install-extension embedded-device-logger-0.1.0.vsix`
+Install locally on VSCode: `code --install-extension embedded-device-logger-0.1.1.vsix`
 
 ### Generating Source Code Documentation
 1. Ensure Doxygen is available locally (`sudo apt-get install doxygen`).
