@@ -1,7 +1,7 @@
 /**
  * @file deviceTree.ts
  * @brief Provides the device tree view for selecting embedded targets.
- * @copyright Copyright (c) 2025 Scallant
+ * @copyright Copyright (c) 2025 Adrian Scillato
  */
 
 import * as vscode from 'vscode';

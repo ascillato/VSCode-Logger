@@ -1,7 +1,7 @@
 /**
  * @file logPanel.ts
  * @brief Creates and manages the Webview panel used to stream device logs.
- * @copyright Copyright (c) 2025 Scallant
+ * @copyright Copyright (c) 2025 Adrian Scillato
  */
 
 import * as vscode from 'vscode';

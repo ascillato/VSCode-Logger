@@ -8,3 +8,6 @@ tests/**
 coverage/**
 .vscode-test/**
 **/tsconfig*.json
+.gitignore
+AGENTS.md
+.github/
