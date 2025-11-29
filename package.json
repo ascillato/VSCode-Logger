@@ -3,7 +3,7 @@
   "displayName": "Embedded Device Logger",
   "description": "Stream and filter embedded Linux device logs over SSH inside VS Code.",
   "icon": "media/icon.png",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "Scallant",
   "author": "A. Scillato",
   "engines": {
@@ -83,7 +83,16 @@
             },
             "required": ["id", "name", "host", "username"]
           },
-          "default": []
+          "default": [
+            {
+              "id": "deviceA",
+              "name": "Device A",
+              "host": "192.168.1.10",
+              "port": 22,
+              "username": "root",
+              "logCommand": "tail -F /var/log/syslog"
+            }
+          ]
         }
       }
     },
@@ -105,14 +114,40 @@
       ]
     },
     "activationEvents": [
-      "onView:embeddedLogger.devicesView"
+      "onView:embeddedLogger.devicesView",
+      "onCommand:embeddedLogger.editDevicesConfig",
+      "onCommand:embeddedLogger.clearStoredPasswords"
     ],
     "commands": [
       {
         "command": "embeddedLogger.openDevice",
         "title": "Open Embedded Device Logs"
+      },
+      {
+        "command": "embeddedLogger.editDevicesConfig",
+        "title": "Edit Device Configuration",
+        "icon": "$(pencil)"
+      },
+      {
+        "command": "embeddedLogger.clearStoredPasswords",
+        "title": "Remove Stored Passwords",
+        "icon": "$(trash)"
       }
-    ]
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "embeddedLogger.clearStoredPasswords",
+          "when": "view == embeddedLogger.devicesView",
+          "group": "navigation@1"
+        },
+        {
+          "command": "embeddedLogger.editDevicesConfig",
+          "when": "view == embeddedLogger.devicesView",
+          "group": "navigation@2"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

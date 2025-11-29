@@ -54,6 +54,31 @@ export async function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(treeView);
 
+    context.subscriptions.push(
+        vscode.commands.registerCommand('embeddedLogger.editDevicesConfig', async () => {
+            await vscode.commands.executeCommand('workbench.action.openSettings', 'embeddedLogger.devices');
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('embeddedLogger.clearStoredPasswords', async () => {
+            const config = vscode.workspace.getConfiguration('embeddedLogger');
+            const devices = config.get<EmbeddedDevice[]>('devices', []);
+
+            if (!devices || devices.length === 0) {
+                vscode.window.showInformationMessage('No devices configured to clear passwords for.');
+                return;
+            }
+
+            for (const device of devices) {
+                const key = `embeddedLogger.password.${device.id}`;
+                await context.secrets.delete(key);
+            }
+
+            vscode.window.showInformationMessage('Stored passwords have been removed for configured devices.');
+        })
+    );
+
     // Command used by tree items to open a device panel.
     context.subscriptions.push(
         vscode.commands.registerCommand('embeddedLogger.openDevice', async (device: EmbeddedDevice) => {
