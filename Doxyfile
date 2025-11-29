@@ -16,10 +16,10 @@ MULTILINE_CPP_IS_BRIEF = YES
 CASE_SENSE_NAMES       = YES
 EXTENSION_MAPPING      = ts=JavaScript
 FILE_PATTERNS          = *.ts *.js *.d.ts *.md
-INPUT                  = README.md CHANGELOG.md src media
+INPUT                  = README.md CHANGELOG.md AGENTS.md src media
 RECURSIVE              = YES
 FULL_PATH_NAMES        = NO
-STRIP_FROM_PATH        = src media README.md CHANGELOG.md
+STRIP_FROM_PATH        = src media README.md CHANGELOG.md AGENTS.md
 WARN_IF_UNDOCUMENTED   = YES
 WARN_IF_DOC_ERROR      = YES
 GENERATE_HTML          = YES

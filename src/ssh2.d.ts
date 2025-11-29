@@ -1,7 +1,7 @@
 /**
  * @file ssh2.d.ts
  * @brief Minimal type declarations for the ssh2 package used by the extension.
- * @copyright Copyright (c) 2025 Adrian Scillato
+ * @copyright Copyright (c) 2025 A. Scillato
  */
 
 declare module 'ssh2' {

@@ -1,7 +1,7 @@
 /**
  * @file extension.ts
  * @brief Activates the VSCode-Logger extension and manages device log panels.
- * @copyright Copyright (c) 2025 Adrian Scillato
+ * @copyright Copyright (c) 2025 A. Scillato
  */
 
 import * as vscode from 'vscode';

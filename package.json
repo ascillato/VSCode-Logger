@@ -2,14 +2,41 @@
   "name": "embedded-device-logger",
   "displayName": "Embedded Device Logger",
   "description": "Stream and filter embedded Linux device logs over SSH inside VS Code.",
+  "icon": "media/icon.png",
   "version": "0.1.0",
-  "publisher": "AScillato",
-  "repository": "https://github.com/ascillato/VSCode-Logger",
+  "publisher": "Scallant",
+  "author": "A. Scillato",
   "engines": {
     "vscode": "^1.85.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ascillato/VSCode-Logger"
+  },
+  "extensionKind": [
+    "ui",
+    "workspace"
+  ],
+  "bugs": {
+    "url": "https://github.com/ascillato/VSCode-Logger/issues",
+    "email": "logger_issues@scallant.com"
+  },
+  "homepage": "ttps://ascillato.github.io/VSCode-Logger/index.html",
+  "license": "MIT",
+  "pricing": "Free",
+  "galleryBanner": {
+    "color": "#1E1E1E",
+    "theme": "dark"
+  },
   "categories": [
-    "Other"
+    "Debuggers",
+    "Education"
+  ],
+  "keywords": [
+    "ssh",
+    "logger",
+    "embedded-linux",
+    "debugging"
   ],
   "main": "./out/extension.js",
   "contributes": {

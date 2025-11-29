@@ -1,7 +1,7 @@
 /**
  * @file logSession.ts
  * @brief Manages SSH connectivity and streaming of remote log output.
- * @copyright Copyright (c) 2025 Adrian Scillato
+ * @copyright Copyright (c) 2025 A. Scillato
  */
 
 import * as vscode from 'vscode';

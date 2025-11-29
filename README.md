@@ -32,8 +32,8 @@ If no password is stored yet, the extension prompts for it when connecting and s
 - Presets are stored per-device in the workspace state using the key `embeddedLogger.presets.<deviceId>`.
 - Exports only include log lines currently visible after applying filters.
 
-## Installation From VSCode Marketplace**
-Search for Embedded Device Logger (AScillato).
+## Installation From VSCode Marketplace
+Search for Embedded Device Logger (Publisher: Scallant, Author: A. Scillato).
 
 ----
 

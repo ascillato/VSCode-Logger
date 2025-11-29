@@ -51,7 +51,7 @@ This document provides guidelines for AI agents to make informed, safe and high�
 * **Custom log parsing**: the Webview parses log levels using a regex and maps aliases to canonical names.  If you introduce new levels or formats, update `levelAliases` and `levelOrder` in `loggerPanel.js` and adjust the parsing logic accordingly.  Ensure CSS classes exist for new levels.
 * **Presets and filters**: presets are stored per device in workspace state using a key derived from the device ID.  When altering how presets are saved or loaded, keep the key scheme and update both backend (`logPanel.ts`) and frontend (`loggerPanel.js`) to stay in sync.  Always send UI updates via `postMessage` events.
 * **Exporting logs**: exports write only the visible (filtered) lines.  If you add new data (e.g., timestamps) to entries, update the export to include or exclude them intentionally.
-* **Internationalisation and accessibility**: avoid hard‑coding text in the UI.  Wrap user‑visible strings in VS Code’s localisation functions if you add non‑trivial UI elements.  Ensure controls are keyboard accessible and have descriptive labels.
+* **Internationalization and accessibility**: avoid hard‑coding text in the UI.  Wrap user‑visible strings in VS Code’s localisation functions if you add non‑trivial UI elements.  Ensure controls are keyboard accessible and have descriptive labels.
 
 ### Working with SSH connections
 
@@ -63,15 +63,15 @@ This document provides guidelines for AI agents to make informed, safe and high�
 
 * **Security**: the Webview uses a Content‑Security‑Policy that disables remote code execution and restricts resources.  When adding scripts or styles, update the CSP string and set appropriate `nonce` values to allow them to load.  Do not fetch remote resources directly.
 * **State management**: keep state in the `state` object in `loggerPanel.js`.  When adding new state variables, initialize them from `initialData` if they originate from the extension host.
-* **Event handling**: register event listeners once at initialisation.  Use `postMessage` to request actions from the extension host (save presets, delete presets, export logs) and handle incoming messages in the `message` event listener.  Avoid long‑running work in the Webview; offload heavy processing to the extension host if needed.
+* **Event handling**: register event listeners once at initialization.  Use `postMessage` to request actions from the extension host (save presets, delete presets, export logs) and handle incoming messages in the `message` event listener.  Avoid long‑running work in the Webview; offload heavy processing to the extension host if needed.
 * **Performance**: the Webview retains up to 10 000 log lines in memory.  If you change this limit, ensure memory usage remains acceptable.  Append elements efficiently using DocumentFragments and avoid unnecessary DOM reflows.
 
 ### Versioning and publishing
 
 * Increment the version in `package.json` following semantic versioning: bump the patch version for bug fixes, minor for backward‑compatible feature additions, and major for breaking changes.
-* Update the changelog or release notes (if present) whenever you release a new version.  Summarise notable changes and migration steps.
+* Update the changelog or release notes (if present) whenever you release a new version.  Summarize notable changes and migration steps.
 * Before publishing to the VS Code Marketplace, run `npm run compile` and ensure the extension passes `vsce package` or similar packaging commands.
 
 ## Conclusion
 
-This document should equip AI agents with the knowledge needed to navigate, maintain and extend the **VSCode‑Logger** extension.  Always align changes with the existing design, respect user configurations and security practices, and accompany code changes with clear documentation.  By adhering to these guidelines, agents will produce high‑quality contributions that improve the extension without disrupting the experience for existing users.
+This document should equip AI agents with the knowledge needed to navigate, maintain and extend the **VSCode‑Logger** extension.  Always align changes with the existing design, respect user configurations and security practices, and accompany code changes with clear documentation. By adhering to these guidelines, agents will produce high‑quality contributions that improve the extension without disrupting the experience for existing users.
