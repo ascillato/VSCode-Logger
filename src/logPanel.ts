@@ -254,6 +254,7 @@ export class LogPanel {
             <span>Word Wrap</span>
             <input type="checkbox" id="wordWrapToggle" />
         </label>
+        <div class="top-bar-spacer"></div>
         <span id="status"></span>
     </div>
     <div id="logContainer"></div>
