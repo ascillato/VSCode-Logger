@@ -44,6 +44,7 @@
         filtered: [],
         minLevel: 'INFO',
         textFilter: '',
+        wordWrapEnabled: false,
     };
 
     const minLevelSelect = document.getElementById('minLevel');
@@ -52,6 +53,7 @@
     const savePresetBtn = document.getElementById('savePreset');
     const deletePresetBtn = document.getElementById('deletePreset');
     const exportBtn = document.getElementById('exportLogs');
+    const wordWrapToggle = document.getElementById('wordWrapToggle');
     const logContainer = document.getElementById('logContainer');
     const statusEl = document.getElementById('status');
 
@@ -178,6 +180,13 @@
     }
 
     /**
+     * @brief Syncs the log container with the current word wrap setting.
+     */
+    function updateWordWrapClass() {
+        logContainer.classList.toggle('wrap-enabled', state.wordWrapEnabled);
+    }
+
+    /**
      * @brief Debounces rapid calls to a function to limit execution.
      * @param fn Function to debounce.
      * @param delay Delay in milliseconds.
@@ -238,6 +247,11 @@
         vscode.postMessage({ type: 'exportLogs', deviceId: state.deviceId, lines });
     });
 
+    wordWrapToggle.addEventListener('change', () => {
+        state.wordWrapEnabled = wordWrapToggle.checked;
+        updateWordWrapClass();
+    });
+
     window.addEventListener('message', (event) => {
         const message = event.data;
         switch (message.type) {
@@ -261,5 +275,6 @@
     // Initialize UI with presets from initialData
     state.presets = initialData.presets || [];
     updatePresetDropdown();
+    updateWordWrapClass();
     applyFilters();
 })();

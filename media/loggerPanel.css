@@ -28,9 +28,14 @@ body {
 }
 
 .log-line {
-    white-space: pre-wrap;
+    white-space: pre;
     font-family: var(--vscode-editor-font-family);
     margin: 2px 0;
+}
+
+#logContainer.wrap-enabled .log-line {
+    white-space: pre-wrap;
+    word-break: break-word;
 }
 
 .level-debug { color: gray; }
@@ -45,4 +50,15 @@ body {
 #status {
     margin-left: auto;
     font-style: italic;
+}
+
+.word-wrap-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+}
+
+.word-wrap-toggle input {
+    margin: 0;
 }

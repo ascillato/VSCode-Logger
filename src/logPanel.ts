@@ -192,6 +192,10 @@ export class LogPanel {
         <button id="savePreset">Save Preset</button>
         <button id="deletePreset">Delete Preset</button>
         <button id="exportLogs">Export Logs</button>
+        <label class="word-wrap-toggle">
+            <span>Word Wrap</span>
+            <input type="checkbox" id="wordWrapToggle" />
+        </label>
         <span id="status"></span>
     </div>
     <div id="logContainer"></div>
