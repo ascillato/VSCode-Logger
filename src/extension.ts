@@ -5,6 +5,7 @@
  */
 
 import * as vscode from 'vscode';
+import * as path from 'path';
 import { DeviceTreeDataProvider, EmbeddedDevice } from './deviceTree';
 import { LogPanel } from './logPanel';
 
@@ -79,6 +80,55 @@ export async function activate(context: vscode.ExtensionContext) {
         })
     );
 
+    context.subscriptions.push(
+        vscode.commands.registerCommand('embeddedLogger.openLocalLogFile', async () => {
+            const selection = await vscode.window.showOpenDialog({
+                canSelectFiles: true,
+                canSelectFolders: false,
+                canSelectMany: false,
+                filters: { Logs: ['log', 'txt'], All: ['*'] },
+                openLabel: 'Open log file',
+            });
+
+            if (!selection || selection.length === 0) {
+                return;
+            }
+
+            const uri = selection[0];
+            let content: Uint8Array;
+            try {
+                content = await vscode.workspace.fs.readFile(uri);
+            } catch (err: any) {
+                vscode.window.showErrorMessage(`Failed to read log file: ${err?.message ?? err}`);
+                return;
+            }
+
+            const decoded = Buffer.from(content).toString('utf8');
+            const lines = decoded.split(/\r?\n/);
+            if (lines.length > 0 && lines[lines.length - 1] === '') {
+                lines.pop();
+            }
+
+            const panelId = `local:${uri.fsPath}`;
+            const existing = panelMap.get(panelId);
+            if (existing) {
+                existing.reveal();
+                return;
+            }
+
+            const panelName = `${path.basename(uri.fsPath)} (Local)`;
+            const panel = new LogPanel(
+                context,
+                { type: 'local', id: panelId, name: panelName, lines, filePath: uri.fsPath },
+                () => {
+                    panelMap.delete(panelId);
+                }
+            );
+            panelMap.set(panelId, panel);
+            panel.start();
+        })
+    );
+
     // Command used by tree items to open a device panel.
     context.subscriptions.push(
         vscode.commands.registerCommand('embeddedLogger.openDevice', async (device: EmbeddedDevice) => {
@@ -93,9 +143,13 @@ export async function activate(context: vscode.ExtensionContext) {
                 return;
             }
 
-            const panel = new LogPanel(context, device, () => {
-                panelMap.delete(device.id);
-            });
+            const panel = new LogPanel(
+                context,
+                { type: 'remote', device },
+                () => {
+                    panelMap.delete(device.id);
+                }
+            );
             panelMap.set(device.id, panel);
             panel.start();
         })

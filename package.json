@@ -120,6 +120,11 @@
     ],
     "commands": [
       {
+        "command": "embeddedLogger.openLocalLogFile",
+        "title": "Open Local Log File",
+        "icon": "$(file-text)"
+      },
+      {
         "command": "embeddedLogger.openDevice",
         "title": "Open Embedded Device Logs"
       },
@@ -136,6 +141,11 @@
     ],
     "menus": {
       "view/title": [
+        {
+          "command": "embeddedLogger.openLocalLogFile",
+          "when": "view == embeddedLogger.devicesView",
+          "group": "navigation@0"
+        },
         {
           "command": "embeddedLogger.clearStoredPasswords",
           "when": "view == embeddedLogger.devicesView",
