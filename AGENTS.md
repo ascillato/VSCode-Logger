@@ -2,76 +2,76 @@
 
 ## Overview
 
-This repository contains a Visual Studio Code extension for streaming logs from embedded Linux devices over SSH.  Users configure a list of devices in their settings and the extension lists them in a custom activity‑bar view and opens a Webview panel to display live logs.  Key features include:
+This repository contains a Visual Studio Code extension for streaming logs from embedded Linux devices over SSH. Users configure a list of devices in their settings and the extension lists them in a custom activity‑bar view and opens a Webview panel to display live logs. Key features include:
 
-* **Device tree view** – the activity bar lists devices defined under the `embeddedLogger.devices` setting.  Selecting a device opens a log panel for that device.
-* **Real‑time log streaming** – logs are streamed over SSH using a configurable command (defaults to `tail -F /var/log/syslog`).  The extension parses log levels, filters messages, colourizes them and supports exporting the visible lines to a file.
-* **Configuration file** – devices are configured in `settings.json` via `embeddedLogger.devices`.  Each entry specifies an `id`, `name`, `host`, optional `port`, `username`, optional `password` (used only to migrate into secret storage), and an optional `logCommand`.
-* **Secure password storage** – legacy plain‑text passwords are migrated into VS Code’s Secret Storage during activation.  If no password is stored, the user is prompted when connecting to the device.
+* **Device tree view** – the activity bar lists devices defined under the `embeddedLogger.devices` setting. Selecting a device opens a log panel for that device.
+* **Real‑time log streaming** – logs are streamed over SSH using a configurable command (defaults to `tail -F /var/log/syslog`). The extension parses log levels, filters messages, colourizes them and supports exporting the visible lines to a file.
+* **Configuration file** – devices are configured in `settings.json` via `embeddedLogger.devices`. Each entry specifies an `id`, `name`, `host`, optional `port`, `username`, optional `password` (used only to migrate into secret storage), and an optional `logCommand`.
+* **Secure password storage** – legacy plain‑text passwords are migrated into VS Code’s Secret Storage during activation. If no password is stored, the user is prompted when connecting to the device.
 * **Running the extension** – to test locally, install dependencies (`npm install`), compile TypeScript (`npm run compile`), then press `F5` in VS Code to launch a development host with the **Embedded Logger** view.
 
-This document provides guidelines for AI agents to make informed, safe and high‑quality contributions to the repository.  Follow these instructions to maintain coherence with the existing architecture and to avoid breaking functionality.
+This document provides guidelines for AI agents to make informed, safe and high‑quality contributions to the repository. Follow these instructions to maintain coherence with the existing architecture and to avoid breaking functionality.
 
 ## Repository structure
 
 | Path/Component        | Purpose                                                                                                                                             |
 |----------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
-| `src/extension.ts`   | Entry point of the extension.  Activates the extension, migrates legacy passwords, registers the device tree view and the `embeddedLogger.openDevice` command.  Handles refreshing when configuration changes.  Do **not** add UI code here. |
-| `src/deviceTree.ts`  | Defines the `EmbeddedDevice` interface and implements the `DeviceTreeDataProvider` that populates the activity‑bar device list.  Each device item triggers `embeddedLogger.openDevice` when clicked. |
-| `src/logPanel.ts`    | Hosts the Webview panel for a device and wires it to an SSH log session.  Manages presets (save/delete), exports visible logs, and builds the HTML that loads `media/loggerPanel.js` and `media/loggerPanel.css`. |
-| `src/logSession.ts`  | Handles the SSH connection and streaming of logs from a device.  Retrieves passwords from secret storage or prompts the user, connects via `ssh2`, buffers incoming data and forwards complete lines to the Webview. |
-| `media/loggerPanel.js` | Client‑side JavaScript loaded in the Webview.  Maintains state (entries, filters, presets) and updates the DOM as new log lines arrive.  Provides handlers for saving/deleting presets and exporting logs. |
-| `media/loggerPanel.css` | Styles the Webview content.  Uses VS Code theme variables to match the host editor.  Adjust styles here rather than inline in HTML. |
-| `package.json`       | Defines extension metadata, contributes settings, commands and views, and specifies build scripts.  If you add new configuration options, update the `contributes.configuration` section accordingly.  The compiled output is emitted to `out/` via `npm run compile`. |
+| `src/extension.ts`   | Entry point of the extension. Activates the extension, migrates legacy passwords, registers the device tree view and the `embeddedLogger.openDevice` command. Handles refreshing when configuration changes. Do **not** add UI code here. |
+| `src/deviceTree.ts`  | Defines the `EmbeddedDevice` interface and implements the `DeviceTreeDataProvider` that populates the activity‑bar device list. Each device item triggers `embeddedLogger.openDevice` when clicked. |
+| `src/logPanel.ts`    | Hosts the Webview panel for a device and wires it to an SSH log session. Manages presets (save/delete), exports visible logs, and builds the HTML that loads `media/loggerPanel.js` and `media/loggerPanel.css`. |
+| `src/logSession.ts`  | Handles the SSH connection and streaming of logs from a device. Retrieves passwords from secret storage or prompts the user, connects via `ssh2`, buffers incoming data and forwards complete lines to the Webview. |
+| `media/loggerPanel.js` | Client‑side JavaScript loaded in the Webview. Maintains state (entries, filters, presets) and updates the DOM as new log lines arrive. Provides handlers for saving/deleting presets and exporting logs. |
+| `media/loggerPanel.css` | Styles the Webview content. Uses VS Code theme variables to match the host editor. Adjust styles here rather than inline in HTML. |
+| `package.json`       | Defines extension metadata, contributes settings, commands and views, and specifies build scripts. If you add new configuration options, update the `contributes.configuration` section accordingly. The compiled output is emitted to `out/` via `npm run compile`. |
 
 ## Setup and development
 
-1. **Install dependencies**: run `npm install` from the repository root.  This installs `typescript`, `ssh2` and VS Code type declarations.
-2. **Compile**: run `npm run compile` to transpile the TypeScript in `src/` to JavaScript in `out/`.  Do not commit compiled files; they are generated by the build.
-3. **Launch the extension**: open the repository in VS Code and press `F5` to start a development host.  The **Embedded Logger** view should appear in the activity bar.
-4. **Configure devices**: in VS Code settings (or via `settings.json`), add entries under `embeddedLogger.devices` as shown in the README.  Do not hard‑code devices in the source.
-5. **Testing**: manually verify that log panels open, logs stream correctly, filtering and presets behave as expected, and exports work.  When adding new features, test with multiple devices and both default and custom `logCommand` values.
+1. **Install dependencies**: run `npm install` from the repository root. This installs `typescript`, `ssh2` and VS Code type declarations.
+2. **Compile**: run `npm run compile` to transpile the TypeScript in `src/` to JavaScript in `out/`. Do not commit compiled files; they are generated by the build.
+3. **Launch the extension**: open the repository in VS Code and press `F5` to start a development host. The **Embedded Logger** view should appear in the activity bar.
+4. **Configure devices**: in VS Code settings (or via `settings.json`), add entries under `embeddedLogger.devices` as shown in the README. Do not hard‑code devices in the source.
+5. **Testing**: manually verify that log panels open, logs stream correctly, filtering and presets behave as expected, and exports work. When adding new features, test with multiple devices and both default and custom `logCommand` values.
 6. **Documentation**: install Doxygen (`sudo apt-get install doxygen`) and run `doxygen Doxyfile` from the repository root. The generated HTML lives at `docs/html/index.html`.
 
 ## Contribution guidelines for AI agents
 
 ### General principles
 
-* **Follow the existing architecture**: separate concerns between the extension host (backend) and the Webview (frontend).  Extension code interacts with VS Code APIs and the SSH connection; UI state and DOM manipulation belong in `media/loggerPanel.js`.
-* **Use TypeScript**: maintain strict typing and respect the compiler options defined in `tsconfig.json`.  Avoid using the `any` type unless absolutely necessary.
-* **Do not store secrets in code**: always retrieve passwords from VS Code Secret Storage.  When adding new sensitive data, use the `context.secrets` API as shown in `logSession.ts`.
-* **Be mindful of asynchronous operations**: many VS Code APIs return promises.  Ensure proper error handling with `try / catch` and propagate errors to the UI via callbacks (see `LogSessionCallbacks`).
-* **Preserve backward compatibility**: when introducing new settings or behaviours, default to existing behaviour to avoid breaking users’ configurations.  Update the `contributes.configuration` schema so new options appear in settings.
-* **Document your changes**: update `README.md` and this `AGENTS.md` file when adding features or altering workflows.  Explain new configuration fields, UI elements and behaviours clearly.
-* **Avoid side effects at activation**: activation should be fast.  Defer heavy operations until a device is selected.  Do not perform network operations in the global scope of `extension.ts`.
+* **Follow the existing architecture**: separate concerns between the extension host (backend) and the Webview (frontend). Extension code interacts with VS Code APIs and the SSH connection; UI state and DOM manipulation belong in `media/loggerPanel.js`.
+* **Use TypeScript**: maintain strict typing and respect the compiler options defined in `tsconfig.json`. Avoid using the `any` type unless absolutely necessary.
+* **Do not store secrets in code**: always retrieve passwords from VS Code Secret Storage. When adding new sensitive data, use the `context.secrets` API as shown in `logSession.ts`.
+* **Be mindful of asynchronous operations**: many VS Code APIs return promises. Ensure proper error handling with `try / catch` and propagate errors to the UI via callbacks (see `LogSessionCallbacks`).
+* **Preserve backward compatibility**: when introducing new settings or behaviours, default to existing behaviour to avoid breaking users’ configurations. Update the `contributes.configuration` schema so new options appear in settings.
+* **Document your changes**: update `README.md` and this `AGENTS.md` file when adding features or altering workflows. Explain new configuration fields, UI elements and behaviours clearly.
+* **Avoid side effects at activation**: activation should be fast. Defer heavy operations until a device is selected. Do not perform network operations in the global scope of `extension.ts`.
 
 ### Adding new features
 
-* **Extending the device model**: if you need extra fields (e.g., SSH key path or log format), extend the `EmbeddedDevice` interface in `src/deviceTree.ts` and update the configuration schema in `package.json`.  Provide reasonable defaults and migrate any legacy fields similarly to how passwords are migrated.
-* **Custom log parsing**: the Webview parses log levels using a regex and maps aliases to canonical names.  If you introduce new levels or formats, update `levelAliases` and `levelOrder` in `loggerPanel.js` and adjust the parsing logic accordingly.  Ensure CSS classes exist for new levels.
-* **Presets and filters**: presets are stored per device in workspace state using a key derived from the device ID.  When altering how presets are saved or loaded, keep the key scheme and update both backend (`logPanel.ts`) and frontend (`loggerPanel.js`) to stay in sync.  Always send UI updates via `postMessage` events.
-* **Exporting logs**: exports write only the visible (filtered) lines.  If you add new data (e.g., timestamps) to entries, update the export to include or exclude them intentionally.
-* **Internationalization and accessibility**: avoid hard‑coding text in the UI.  Wrap user‑visible strings in VS Code’s localisation functions if you add non‑trivial UI elements.  Ensure controls are keyboard accessible and have descriptive labels.
+* **Extending the device model**: if you need extra fields (e.g., SSH key path or log format), extend the `EmbeddedDevice` interface in `src/deviceTree.ts` and update the configuration schema in `package.json`. Provide reasonable defaults and migrate any legacy fields similarly to how passwords are migrated.
+* **Custom log parsing**: the Webview parses log levels using a regex and maps aliases to canonical names. If you introduce new levels or formats, update `levelAliases` and `levelOrder` in `loggerPanel.js` and adjust the parsing logic accordingly. Ensure CSS classes exist for new levels.
+* **Presets and filters**: presets are stored per device in workspace state using a key derived from the device ID. When altering how presets are saved or loaded, keep the key scheme and update both backend (`logPanel.ts`) and frontend (`loggerPanel.js`) to stay in sync. Always send UI updates via `postMessage` events.
+* **Exporting logs**: exports write only the visible (filtered) lines. If you add new data (e.g., timestamps) to entries, update the export to include or exclude them intentionally.
+* **Internationalization and accessibility**: avoid hard‑coding text in the UI. Wrap user‑visible strings in VS Code’s localisation functions if you add non‑trivial UI elements. Ensure controls are keyboard accessible and have descriptive labels.
 
 ### Working with SSH connections
 
-* The `ssh2` client is instantiated per session in `LogSession` and the log command is executed upon connection.  When adding features such as using key‑based authentication or custom terminal settings, configure the `Client` accordingly without blocking the UI thread.  Always call `client.end()` and close the stream in `dispose()` to release resources.
-* Do not hard‑code commands or credentials.  Respect the `logCommand` specified by the user and fall back to the default when missing.
-* Provide informative status messages by calling `callbacks.onStatus` at significant points (connecting, streaming, disconnecting).  Display errors via `onError` to the Webview.
+* The `ssh2` client is instantiated per session in `LogSession` and the log command is executed upon connection. When adding features such as using key‑based authentication or custom terminal settings, configure the `Client` accordingly without blocking the UI thread. Always call `client.end()` and close the stream in `dispose()` to release resources.
+* Do not hard‑code commands or credentials. Respect the `logCommand` specified by the user and fall back to the default when missing.
+* Provide informative status messages by calling `callbacks.onStatus` at significant points (connecting, streaming, disconnecting). Display errors via `onError` to the Webview.
 
 ### Webview guidelines
 
-* **Security**: the Webview uses a Content‑Security‑Policy that disables remote code execution and restricts resources.  When adding scripts or styles, update the CSP string and set appropriate `nonce` values to allow them to load.  Do not fetch remote resources directly.
-* **State management**: keep state in the `state` object in `loggerPanel.js`.  When adding new state variables, initialize them from `initialData` if they originate from the extension host.
-* **Event handling**: register event listeners once at initialization.  Use `postMessage` to request actions from the extension host (save presets, delete presets, export logs) and handle incoming messages in the `message` event listener.  Avoid long‑running work in the Webview; offload heavy processing to the extension host if needed.
-* **Performance**: the Webview retains up to 10 000 log lines in memory.  If you change this limit, ensure memory usage remains acceptable.  Append elements efficiently using DocumentFragments and avoid unnecessary DOM reflows.
+* **Security**: the Webview uses a Content‑Security‑Policy that disables remote code execution and restricts resources. When adding scripts or styles, update the CSP string and set appropriate `nonce` values to allow them to load. Do not fetch remote resources directly.
+* **State management**: keep state in the `state` object in `loggerPanel.js`. When adding new state variables, initialize them from `initialData` if they originate from the extension host.
+* **Event handling**: register event listeners once at initialization. Use `postMessage` to request actions from the extension host (save presets, delete presets, export logs) and handle incoming messages in the `message` event listener. Avoid long‑running work in the Webview; offload heavy processing to the extension host if needed.
+* **Performance**: the Webview retains up to 10 000 log lines in memory. If you change this limit, ensure memory usage remains acceptable. Append elements efficiently using DocumentFragments and avoid unnecessary DOM reflows.
 
 ### Versioning and publishing
 
 * Increment the version in `package.json` following semantic versioning: bump the patch version for bug fixes, minor for backward‑compatible feature additions, and major for breaking changes.
-* Update the changelog or release notes (if present) whenever you release a new version.  Summarize notable changes and migration steps.
+* Update the changelog or release notes (if present) whenever you release a new version. Summarize notable changes and migration steps.
 * Before publishing to the VS Code Marketplace, run `npm run compile` and ensure the extension passes `vsce package` or similar packaging commands.
 
 ## Conclusion
 
-This document should equip AI agents with the knowledge needed to navigate, maintain and extend the **VSCode‑Logger** extension.  Always align changes with the existing design, respect user configurations and security practices, and accompany code changes with clear documentation. By adhering to these guidelines, agents will produce high‑quality contributions that improve the extension without disrupting the experience for existing users.
+This document should equip AI agents with the knowledge needed to navigate, maintain and extend the **VSCode‑Logger** extension. Always align changes with the existing design, respect user configurations and security practices, and accompany code changes with clear documentation. By adhering to these guidelines, agents will produce high‑quality contributions that improve the extension without disrupting the experience for existing users.

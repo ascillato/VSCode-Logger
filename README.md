@@ -61,12 +61,11 @@ In the example, the other extensions (from other publishers) are:
 ## For Developers
 
 ### Source Code
-See [Source Code](https://github.com/ascillato/VSCode-Logger)
-
-**License:** MIT
+- See [Source Code](https://github.com/ascillato/VSCode-Logger)
+- **License:** MIT
 
 ### Source Code Documentation
-See [Documentation](https://ascillato.github.io/VSCode-Logger/index.html)
+- See [Documentation](https://ascillato.github.io/VSCode-Logger/index.html)
 
 ### Running The Extension Locally
 1. Clone the repository
@@ -75,12 +74,12 @@ See [Documentation](https://ascillato.github.io/VSCode-Logger/index.html)
 4. Press `F5` in VS Code to launch the extension development host and open the **Embedded Logger** view.
 
 ### Clean and re-compile
- `rm -rf node_modules; rm -rf out; npm install; npm run compile`
+- `rm -rf node_modules; rm -rf out; npm install; npm run compile`
 
 ### Package Generation
-Requires: `npm install -g @vscode/vsce`
-Run: `vsce package` to generate vsix file to be installed into VSCode
-Install locally on VSCode: `code --install-extension embedded-device-logger-0.2.0.vsix`
+- Requires: `npm install -g @vscode/vsce`
+- Run: `vsce package` to generate vsix file to be installed into VSCode
+- Install locally on VSCode: `code --install-extension embedded-device-logger-0.2.0.vsix`
 
 ### Generating Source Code Documentation
 1. Ensure Doxygen is available locally (`sudo apt-get install doxygen`).
