@@ -139,7 +139,7 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 #docs
-/docs
+docs/html
 
 #compiled
 *.vsix
