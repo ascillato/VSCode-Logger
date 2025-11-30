@@ -63,7 +63,7 @@
      * @returns Normalized log level string.
      */
     function parseLevel(line) {
-        const match = line.match(/\[(DEBUG|INFO|NOTICE|WARN|WARNING|ERR|ERROR|CRIT|CRITICAL|ALERT|EMERG|FATAL)\]/i);
+        const match = line.match(/\b(DEBUG|INFO|NOTICE|WARN|WARNING|ERR|ERROR|CRIT|CRITICAL|ALERT|EMERG|FATAL)\b/i);
         if (match && match[1]) {
             const key = match[1].toUpperCase();
             return levelAliases[key] || 'INFO';
