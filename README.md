@@ -41,7 +41,8 @@ If no password is stored yet, the extension prompts for it when connecting and s
 - Exports only include log lines currently visible after applying filters.
 
 ## Installation From VSCode Marketplace
-Search for Embedded Device Logger (Publisher: Scallant, Author: A. Scillato).
+* **From VSCode:** Search for Embedded Device Logger (Publisher: Scallant, Author: A. Scillato).
+* **From VSCode Marketplace:** https://marketplace.visualstudio.com/items?itemName=Scallant.embedded-device-logger
 
 ----
 
