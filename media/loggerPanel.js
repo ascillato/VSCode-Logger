@@ -42,7 +42,7 @@
         presets: initialData.presets || [],
         entries: [],
         filtered: [],
-        minLevel: 'INFO',
+        minLevel: 'ALL',
         textFilter: '',
         wordWrapEnabled: false,
     };
@@ -201,6 +201,8 @@
     }
 
     // Event wiring
+    minLevelSelect.value = state.minLevel;
+
     minLevelSelect.addEventListener('change', () => {
         state.minLevel = minLevelSelect.value;
         applyFilters();

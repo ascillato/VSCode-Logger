@@ -18,13 +18,33 @@ interface FilterPreset {
     textFilter: string;
 }
 
+type RemoteLogTarget = {
+    type: 'remote';
+    device: EmbeddedDevice;
+};
+
+type LocalLogTarget = {
+    type: 'local';
+    id: string;
+    name: string;
+    lines: string[];
+    filePath: string;
+};
+
+type LogPanelTarget = RemoteLogTarget | LocalLogTarget;
+
 /**
  * @brief Hosts the WebviewPanel for a device and wires it to the SSH log session.
  */
 export class LogPanel {
     private readonly panel: vscode.WebviewPanel;
-    private readonly session: LogSession;
+    private readonly session?: LogSession;
     private readonly presetsKey: string;
+    private readonly targetName: string;
+    private readonly targetId: string;
+    private readonly initialLines: string[] = [];
+    private readonly sourcePath?: string;
+    private readonly device?: EmbeddedDevice;
     private disposed = false;
 
     /**
@@ -36,14 +56,25 @@ export class LogPanel {
      */
     constructor(
         private readonly context: vscode.ExtensionContext,
-        private readonly device: EmbeddedDevice,
+        target: LogPanelTarget,
         private readonly onDispose: () => void
     ) {
-        this.presetsKey = `embeddedLogger.presets.${device.id}`;
+        if (target.type === 'remote') {
+            this.device = target.device;
+            this.targetName = target.device.name;
+            this.targetId = target.device.id;
+        } else {
+            this.targetName = target.name;
+            this.targetId = target.id;
+            this.initialLines = target.lines;
+            this.sourcePath = target.filePath;
+        }
+
+        this.presetsKey = `embeddedLogger.presets.${this.targetId}`;
 
         this.panel = vscode.window.createWebviewPanel(
             'embeddedLogger.logPanel',
-            `${device.name} Logs`,
+            `${this.targetName} Logs`,
             vscode.ViewColumn.Active,
             {
                 enableScripts: true,
@@ -57,18 +88,20 @@ export class LogPanel {
 
         this.panel.onDidDispose(() => {
             if (!this.disposed) {
-                this.session.dispose();
+                this.session?.dispose();
                 this.onDispose();
                 this.disposed = true;
             }
         });
 
-        this.session = new LogSession(device, context, {
-            onLine: (line) => this.panel.webview.postMessage({ type: 'logLine', line }),
-            onError: (message) => this.panel.webview.postMessage({ type: 'error', message }),
-            onStatus: (message) => this.panel.webview.postMessage({ type: 'status', message }),
-            onClose: () => this.panel.webview.postMessage({ type: 'status', message: 'Session closed.' }),
-        });
+        if (this.device) {
+            this.session = new LogSession(this.device, context, {
+                onLine: (line) => this.panel.webview.postMessage({ type: 'logLine', line }),
+                onError: (message) => this.panel.webview.postMessage({ type: 'error', message }),
+                onStatus: (message) => this.panel.webview.postMessage({ type: 'status', message }),
+                onClose: () => this.panel.webview.postMessage({ type: 'status', message: 'Session closed.' }),
+            });
+        }
 
         this.panel.webview.onDidReceiveMessage(async (message) => {
             if (!message || typeof message.type !== 'string') {
@@ -121,7 +154,26 @@ export class LogPanel {
      * @brief Starts the underlying log session.
      */
     async start() {
-        await this.session.start();
+        if (this.session) {
+            await this.session.start();
+            return;
+        }
+        this.sendInitialLines();
+    }
+
+    /**
+     * @brief Emits preloaded log lines for local files into the Webview.
+     */
+    private sendInitialLines() {
+        for (const line of this.initialLines) {
+            this.panel.webview.postMessage({ type: 'logLine', line });
+        }
+
+        const label = this.sourcePath ? path.basename(this.sourcePath) : 'local log file';
+        this.panel.webview.postMessage({
+            type: 'status',
+            message: `Loaded ${this.initialLines.length} lines from ${label}.`,
+        });
     }
 
     /**
@@ -139,7 +191,7 @@ export class LogPanel {
             return;
         }
         this.disposed = true;
-        this.session.dispose();
+        this.session?.dispose();
         this.panel.dispose();
     }
 
@@ -153,7 +205,7 @@ export class LogPanel {
         const styleUri = webview.asWebviewUri(vscode.Uri.file(path.join(this.context.extensionPath, 'media', 'loggerPanel.css')));
         const nonce = getNonce();
         const initialData = {
-            deviceId: this.device.id,
+            deviceId: this.targetId,
             presets: this.getStoredPresets(),
         };
 
@@ -164,15 +216,15 @@ export class LogPanel {
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}'; style-src ${webview.cspSource};">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="${styleUri}" rel="stylesheet" />
-    <title>${this.device.name} Logs</title>
+    <title>${this.targetName} Logs</title>
 </head>
 <body>
     <div class="top-bar">
         <label>Min Level
             <select id="minLevel">
-                <option>ALL</option>
+                <option selected>ALL</option>
                 <option>DEBUG</option>
-                <option selected>INFO</option>
+                <option>INFO</option>
                 <option>NOTICE</option>
                 <option>WARNING</option>
                 <option>ERR</option>
@@ -233,7 +285,7 @@ export class LogPanel {
         filtered.push(preset);
         await this.context.workspaceState.update(this.presetsKey, filtered);
         this.panel.webview.postMessage({ type: 'presetsUpdated', presets: filtered });
-        vscode.window.showInformationMessage(`Preset "${preset.name}" saved for ${this.device.name}.`);
+        vscode.window.showInformationMessage(`Preset "${preset.name}" saved for ${this.targetName}.`);
     }
 
     /**
@@ -245,7 +297,7 @@ export class LogPanel {
         const filtered = presets.filter((p) => p.name !== name);
         await this.context.workspaceState.update(this.presetsKey, filtered);
         this.panel.webview.postMessage({ type: 'presetsUpdated', presets: filtered });
-        vscode.window.showInformationMessage(`Preset "${name}" removed for ${this.device.name}.`);
+        vscode.window.showInformationMessage(`Preset "${name}" removed for ${this.targetName}.`);
     }
 
     /**
@@ -263,7 +315,7 @@ export class LogPanel {
         const content = Buffer.from(lines.join('\n'), 'utf8');
         try {
             await vscode.workspace.fs.writeFile(uri, content);
-            vscode.window.showInformationMessage(`Exported ${lines.length} lines from ${this.device.name}.`);
+            vscode.window.showInformationMessage(`Exported ${lines.length} lines from ${this.targetName}.`);
         } catch (err: any) {
             vscode.window.showErrorMessage(`Failed to export logs: ${err?.message ?? err}`);
         }
