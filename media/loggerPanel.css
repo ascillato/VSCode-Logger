@@ -28,9 +28,14 @@ body {
 }
 
 .log-line {
-    white-space: pre-wrap;
+    white-space: pre;
     font-family: var(--vscode-editor-font-family);
     margin: 2px 0;
+}
+
+#logContainer.wrap-enabled .log-line {
+    white-space: pre-wrap;
+    word-break: break-word;
 }
 
 .level-debug { color: gray; }
@@ -42,7 +47,22 @@ body {
 .level-alert { color: #c0392b; font-weight: bold; }
 .level-emerg { color: #922b21; font-weight: bold; }
 
+.top-bar-spacer {
+    flex: 1 1 auto;
+}
+
 #status {
-    margin-left: auto;
+    flex: 0 1 auto;
     font-style: italic;
+}
+
+.word-wrap-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+}
+
+.word-wrap-toggle input {
+    margin: 0;
 }

@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Open local log files directly from the Embedded Logger view title button or command palette and reuse the existing log viewer workflow.
+- Add word wrap toggle to log panel
 
 ### Changed
 - Default log filtering now starts at **ALL** to show every level on initial load.

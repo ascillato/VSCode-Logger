@@ -241,9 +241,20 @@ export class LogPanel {
                 <option value="">(no preset)</option>
             </select>
         </label>
-        <button id="savePreset">Save Preset</button>
-        <button id="deletePreset">Delete Preset</button>
-        <button id="exportLogs">Export Logs</button>
+        <label>&nbsp;
+            <button id="savePreset">Save Preset</button>
+        </label>
+        <label>&nbsp;
+            <button id="deletePreset">Delete Preset</button>
+        </label>
+        <label>&nbsp;
+            <button id="exportLogs">Export Logs</button>
+        </label>
+        <label class="word-wrap-toggle">
+            <span>Word Wrap</span>
+            <input type="checkbox" id="wordWrapToggle" />
+        </label>
+        <div class="top-bar-spacer"></div>
         <span id="status"></span>
     </div>
     <div id="logContainer"></div>
