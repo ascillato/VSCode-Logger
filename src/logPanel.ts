@@ -108,6 +108,10 @@ export class LogPanel {
                 return;
             }
             switch (message.type) {
+                case 'ready': {
+                    await this.sendInitialData();
+                    break;
+                }
                 case 'requestSavePreset': {
                     if (!this.isValidPresetPayload(message)) {
                         vscode.window.showErrorMessage('Invalid preset payload received from webview.');
@@ -147,7 +151,6 @@ export class LogPanel {
         });
 
         this.panel.webview.html = this.getHtml();
-        this.initializePresets();
     }
 
     /**
@@ -204,10 +207,6 @@ export class LogPanel {
         const scriptUri = webview.asWebviewUri(vscode.Uri.file(path.join(this.context.extensionPath, 'media', 'loggerPanel.js')));
         const styleUri = webview.asWebviewUri(vscode.Uri.file(path.join(this.context.extensionPath, 'media', 'loggerPanel.css')));
         const nonce = getNonce();
-        const initialData = {
-            deviceId: this.targetId,
-            presets: this.getStoredPresets(),
-        };
 
         return `<!DOCTYPE html>
 <html lang="en">
@@ -258,9 +257,6 @@ export class LogPanel {
         <span id="status"></span>
     </div>
     <div id="logContainer"></div>
-    <script nonce="${nonce}">
-        const initialData = ${JSON.stringify(initialData)};
-    </script>
     <script nonce="${nonce}" src="${scriptUri}"></script>
 </body>
 </html>`;
@@ -275,11 +271,15 @@ export class LogPanel {
     }
 
     /**
-     * @brief Sends stored presets to the Webview for initial rendering.
+     * @brief Sends device metadata and stored presets to the Webview.
      */
-    private async initializePresets() {
+    private async sendInitialData() {
         const presets = this.getStoredPresets();
-        await this.panel.webview.postMessage({ type: 'initPresets', presets });
+        await this.panel.webview.postMessage({
+            type: 'initData',
+            deviceId: this.targetId,
+            presets,
+        });
     }
 
     /**

@@ -38,8 +38,8 @@
     };
 
     const state = {
-        deviceId: initialData.deviceId,
-        presets: initialData.presets || [],
+        deviceId: '',
+        presets: [],
         entries: [],
         filtered: [],
         minLevel: 'ALL',
@@ -257,6 +257,12 @@
     window.addEventListener('message', (event) => {
         const message = event.data;
         switch (message.type) {
+            case 'initData':
+                state.deviceId = message.deviceId;
+                state.presets = message.presets || [];
+                updatePresetDropdown();
+                applyFilters();
+                break;
             case 'logLine':
                 handleLogLine(message.line);
                 break;
@@ -274,8 +280,8 @@
         }
     });
 
-    // Initialize UI with presets from initialData
-    state.presets = initialData.presets || [];
+    vscode.postMessage({ type: 'ready' });
+
     updatePresetDropdown();
     updateWordWrapClass();
     applyFilters();
