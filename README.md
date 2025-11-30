@@ -39,8 +39,7 @@ If no password is stored yet, the extension prompts for it when connecting and s
 ## Notes
 - Presets are stored per-device in the workspace state using the key `embeddedLogger.presets.<deviceId>`.
 - Exports only include log lines currently visible after applying filters.
-- Use the **Open Local Log File** title button in the Embedded Logger devices view (or run the command with the same name) to select a `.log` or `.txt` file from your machine.
-- The chosen file is loaded into the log viewer so you can reuse filtering, presets, and export just like a live connection.
+- Use the **Open Local Log File** title button in the Embedded Logger devices view (or run the command with the same name) to select a `.log` or `.txt` file from your machine. The chosen file is loaded into the log viewer so you can reuse filtering, presets, and export just like a live connection.
 
 ## Share Activity Bar with other extensions
 
