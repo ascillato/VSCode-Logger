@@ -7,7 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
-## [0.1.1] - 2025-11-29 [INI]
+## [0.2.0] - 2025-12-01 [LOG_FILES]
+
+### Added
+- Open local log files directly from the Embedded Logger view title button or command palette and reuse the existing log viewer workflow.
+
+### Changed
+- Default log filtering now starts at **ALL** to show every level on initial load.
+
+### Deprecated
+- None
+
+### Removed
+- None
+
+### Fixed
+- None
+
+### Security
+- None
+
+----------------------------------------
+
+## [0.1.1] - 2025-11-29 [INITIAL]
 
 ### Added
 - Initial publish of the extension
