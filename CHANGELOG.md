@@ -7,14 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
-## [0.2.0] - 2025-12-01 [LOG_FILES]
+## [0.2.0] - 2025-11-30 [LOG_FILES]
 
 ### Added
 - Open local log files directly from the Embedded Logger view title button or command palette and reuse the existing log viewer workflow.
-- Add word wrap toggle to log panel
+- Add word wrap toggle to log panel.
+- Add device view title action to edit configuration.
+- Add device view title action to clear stored passwords.
+- Provide a default device configuration template matching the README example.
 
 ### Changed
 - Default log filtering now starts at **ALL** to show every level on initial load.
+- Colorize based on loglevel now accepts a wider range of log formats.
+- Align Presets buttons with combo boxes.
+- Improve Issues Templates for GH repository.
+- Improved Readme file.
 
 ### Deprecated
 - None
@@ -23,17 +30,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - None
 
 ### Fixed
-- None
+- Fix top bar when status plus buttons are wider than screen's width.
 
 ### Security
-- None
+- Send webview initialization data securely.
+- Fixed Workflow not containing GH permissions.
 
 ----------------------------------------
 
 ## [0.1.1] - 2025-11-29 [INITIAL]
 
 ### Added
-- Initial publish of the extension
+- Initial publication of the extension
 
 ### Changed
 - None
