@@ -10,6 +10,8 @@ A Visual Studio Code extension that connects to embedded Linux devices over SSH,
 - Open exported local log files and filter them with the same interface.
 - Export currently visible (filtered) logs to a file.
 - SSH passwords are stored securely with VS Code Secret Storage.
+- Privacy focused. No telemetry. Everything runs locally.
+- Built with security in mind.
 
 ### Opening local log files
 - Use the **Open Local Log File** title button in the Embedded Logger devices view (or run the command with the same name) to

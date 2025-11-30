@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
-## [0.2.0] - 2025-12-01 [LOG FILES]
+## [0.2.0] - 2025-12-01 [LOG_FILES]
 
 ### Added
 - Open local log files directly from the Embedded Logger view title button or command palette and reuse the existing log viewer workflow.
