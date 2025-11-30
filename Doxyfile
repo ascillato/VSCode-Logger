@@ -17,6 +17,7 @@ CASE_SENSE_NAMES       = YES
 EXTENSION_MAPPING      = ts=JavaScript
 FILE_PATTERNS          = *.ts *.js *.d.ts *.md
 INPUT                  = README.md CHANGELOG.md CONTRIBUTING.md CODE_OF_CONDUCT.md SECURITY.md src media
+IMAGE_PATH             = docs/images
 RECURSIVE              = YES
 FULL_PATH_NAMES        = NO
 STRIP_FROM_PATH        = src media README.md CHANGELOG.md CONTRIBUTING.md CODE_OF_CONDUCT.md SECURITY.md
