@@ -178,7 +178,7 @@ export class LogPanel {
 
         this.panel.webview.postMessage({
             type: 'status',
-            message: `Loaded ${this.initialLines.length} lines from the imported log.`,
+            message: `Loaded ${this.initialLines.length} lines.`,
         });
     }
 
@@ -239,9 +239,6 @@ export class LogPanel {
     <title>${this.targetName} Logs</title>
 </head>
 <body>
-    <div class="view-header">
-        <span id="status"></span>
-    </div>
     <div class="top-bar">
         <label>Min Level
             <select id="minLevel">
@@ -277,6 +274,8 @@ export class LogPanel {
             <span>Word Wrap</span>
             <input type="checkbox" id="wordWrapToggle" />
         </label>
+        <div class="top-bar-spacer"></div>
+        <span id="status"></span>
     </div>
     <div id="logContainer"></div>
     <script nonce="${nonce}" src="${scriptUri}"></script>

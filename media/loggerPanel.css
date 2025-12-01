@@ -74,6 +74,10 @@ body {
 .level-alert { color: #c0392b; font-weight: bold; }
 .level-emerg { color: #922b21; font-weight: bold; }
 
+.top-bar-spacer {
+    flex: 1 1 auto;
+}
+
 #status {
     flex: 0 1 auto;
     font-style: italic;
