@@ -38,11 +38,19 @@ jobs:
         if: steps.verify.outputs.on_main == 'true'
         run: doxygen Doxyfile
 
+      - name: Prepare GitHub Pages content
+        if: steps.verify.outputs.on_main == 'true'
+        run: |
+          # The GitHub Pages workflow expects the site at ./docs/index.html
+          # Move the generated HTML output up one level so docs/ is the site root.
+          cp -a docs/html/. docs/
+          rm -rf docs/html
+
       - name: Deploy to GitHub Pages
         if: steps.verify.outputs.on_main == 'true'
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs/html
+          publish_dir: ./docs
           publish_branch: gh-pages
           # force_orphan: true
