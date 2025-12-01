@@ -9,6 +9,7 @@ A Visual Studio Code extension that connects to embedded Linux devices over SSH,
 - **Real-time log streaming over SSH** using a configurable command (default: `tail -F /var/log/syslog`).
 - **Log level parsing, filtering, and colorization** inside a Webview panel per device.
 - **Highlight up to 10 custom keywords** with color-coded, bold, underlined text in both live and imported logs.
+- **Find text inside live or imported logs** with Ctrl/Cmd+F, including next/previous navigation.
 - Saved filter presets stored per device.
 - **Export** currently visible (filtered) logs to a file.
 - **Open any log files and filter them** with the same interface.

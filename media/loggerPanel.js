@@ -46,6 +46,10 @@
         textFilter: '',
         wordWrapEnabled: false,
         highlights: [],
+        searchTerm: '',
+        searchMatches: [],
+        searchIndex: -1,
+        activeSearchEntry: -1,
     };
 
     const minLevelSelect = document.getElementById('minLevel');
@@ -57,6 +61,10 @@
     const wordWrapToggle = document.getElementById('wordWrapToggle');
     const logContainer = document.getElementById('logContainer');
     const statusEl = document.getElementById('status');
+    const searchInput = document.getElementById('searchInput');
+    const searchPrevBtn = document.getElementById('searchPrev');
+    const searchNextBtn = document.getElementById('searchNext');
+    const searchCount = document.getElementById('searchCount');
 
     /**
      * @brief Extracts the log level from a raw log line.
@@ -92,6 +100,7 @@
             return textMatches && levelPasses(entry.level);
         });
         render();
+        updateSearchMatches();
     }
 
     /**
@@ -105,13 +114,30 @@
     }
 
     /**
+     * @brief Combines configured highlights with the current search term highlight.
+     * @returns List of highlight descriptors to render.
+     */
+    function getHighlightDescriptors() {
+        const highlights = getActiveHighlights();
+        const searchTerm = state.searchTerm.trim().toLowerCase();
+
+        if (searchTerm) {
+            highlights.push({
+                normalizedKey: searchTerm,
+                className: 'search-highlight',
+            });
+        }
+
+        return highlights;
+    }
+
+    /**
      * @brief Builds a DOM fragment with highlighted matches for a log line.
      * @param line The raw log line.
      * @returns Document fragment containing text nodes and highlighted spans.
      */
-    function buildHighlightedContent(line) {
+    function buildHighlightedContent(line, highlights) {
         const fragment = document.createDocumentFragment();
-        const highlights = getActiveHighlights();
 
         if (!highlights.length) {
             fragment.appendChild(document.createTextNode(line));
@@ -147,9 +173,16 @@
             const span = document.createElement('span');
             span.textContent = line.slice(nextMatch.position, nextMatch.end);
             span.className = 'highlighted-text';
-            span.style.color = nextMatch.highlight.color;
-            span.style.backgroundColor = nextMatch.highlight.backgroundColor;
-            span.style.borderColor = nextMatch.highlight.color;
+            if (nextMatch.highlight.className) {
+                span.classList.add(nextMatch.highlight.className);
+            }
+            if (nextMatch.highlight.color) {
+                span.style.color = nextMatch.highlight.color;
+                span.style.borderColor = nextMatch.highlight.color;
+            }
+            if (nextMatch.highlight.backgroundColor) {
+                span.style.backgroundColor = nextMatch.highlight.backgroundColor;
+            }
             fragment.appendChild(span);
 
             index = nextMatch.end;
@@ -175,16 +208,20 @@
      */
     function render() {
         const visible = state.filtered;
+        const highlights = getHighlightDescriptors();
+        state.activeSearchEntry = -1;
         logContainer.innerHTML = '';
         const frag = document.createDocumentFragment();
         for (const entry of visible) {
             const div = document.createElement('div');
             div.className = `log-line level-${entry.level.toLowerCase()}`;
-            div.appendChild(buildHighlightedContent(entry.rawLine));
+            div.appendChild(buildHighlightedContent(entry.rawLine, highlights));
             frag.appendChild(div);
         }
         logContainer.appendChild(frag);
-        logContainer.scrollTop = logContainer.scrollHeight;
+        if (state.searchIndex === -1) {
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
     }
 
     /**
@@ -226,6 +263,7 @@
      */
     function handleLogLine(line) {
         const level = parseLevel(line);
+        const lowerLine = line.toLowerCase();
         const entry = {
             timestamp: Date.now(),
             level,
@@ -235,16 +273,40 @@
         if (state.entries.length > 10000) {
             state.entries.shift();
         }
-        if (levelPasses(level) && (!state.textFilter || line.toLowerCase().includes(state.textFilter.toLowerCase()))) {
+        const searchTerm = state.searchTerm.trim().toLowerCase();
+        if (levelPasses(level) && (!state.textFilter || lowerLine.includes(state.textFilter.toLowerCase()))) {
             state.filtered.push(entry);
             if (state.filtered.length > 10000) {
                 state.filtered.shift();
+                if (logContainer.firstChild) {
+                    logContainer.removeChild(logContainer.firstChild);
+                }
+                state.searchMatches = state.searchMatches
+                    .map((idx) => idx - 1)
+                    .filter((idx) => idx >= 0);
+                if (state.searchMatches.length === 0) {
+                    state.searchIndex = -1;
+                } else if (state.searchIndex >= state.searchMatches.length) {
+                    state.searchIndex = state.searchMatches.length - 1;
+                }
             }
+            const highlights = getHighlightDescriptors();
             const div = document.createElement('div');
             div.className = `log-line level-${entry.level.toLowerCase()}`;
-            div.appendChild(buildHighlightedContent(entry.rawLine));
+            div.appendChild(buildHighlightedContent(entry.rawLine, highlights));
             logContainer.appendChild(div);
-            logContainer.scrollTop = logContainer.scrollHeight;
+            if (searchTerm && lowerLine.includes(searchTerm)) {
+                state.searchMatches.push(state.filtered.length - 1);
+                if (state.searchIndex === -1) {
+                    state.searchIndex = 0;
+                }
+            }
+            if (state.searchIndex === -1) {
+                logContainer.scrollTop = logContainer.scrollHeight;
+            } else {
+                scrollToActiveMatch();
+            }
+            updateSearchStatus();
         }
     }
 
@@ -261,6 +323,111 @@
      */
     function updateWordWrapClass() {
         logContainer.classList.toggle('wrap-enabled', state.wordWrapEnabled);
+    }
+
+    /**
+     * @brief Updates the search status label and button states.
+     */
+    function updateSearchStatus() {
+        if (!state.searchMatches.length) {
+            searchCount.textContent = '0 / 0';
+            searchPrevBtn.disabled = true;
+            searchNextBtn.disabled = true;
+            return;
+        }
+
+        searchPrevBtn.disabled = false;
+        searchNextBtn.disabled = false;
+        searchCount.textContent = `${state.searchIndex + 1} / ${state.searchMatches.length}`;
+    }
+
+    /**
+     * @brief Removes the active search line styling, if present.
+     */
+    function clearActiveSearchLine() {
+        if (state.activeSearchEntry !== -1) {
+            const prev = logContainer.children[state.activeSearchEntry];
+            if (prev) {
+                prev.classList.remove('active-search-line');
+            }
+        }
+        state.activeSearchEntry = -1;
+    }
+
+    /**
+     * @brief Scrolls to and highlights the currently selected search match.
+     */
+    function scrollToActiveMatch() {
+        if (state.searchIndex === -1 || !state.searchMatches.length) {
+            clearActiveSearchLine();
+            updateSearchStatus();
+            return;
+        }
+
+        const entryIndex = state.searchMatches[state.searchIndex];
+        const node = logContainer.children[entryIndex];
+        if (!node) {
+            clearActiveSearchLine();
+            updateSearchStatus();
+            return;
+        }
+
+        clearActiveSearchLine();
+        state.activeSearchEntry = entryIndex;
+        node.classList.add('active-search-line');
+        node.scrollIntoView({ block: 'center' });
+        updateSearchStatus();
+    }
+
+    /**
+     * @brief Recomputes search matches based on the current filtered list.
+     */
+    function updateSearchMatches() {
+        const term = state.searchTerm.trim().toLowerCase();
+        state.searchMatches = [];
+
+        if (!term) {
+            state.searchIndex = -1;
+            clearActiveSearchLine();
+            updateSearchStatus();
+            return;
+        }
+
+        state.filtered.forEach((entry, idx) => {
+            if (entry.rawLine.toLowerCase().includes(term)) {
+                state.searchMatches.push(idx);
+            }
+        });
+
+        if (!state.searchMatches.length) {
+            state.searchIndex = -1;
+            clearActiveSearchLine();
+            updateSearchStatus();
+            return;
+        }
+
+        if (state.searchIndex === -1 || state.searchIndex >= state.searchMatches.length) {
+            state.searchIndex = 0;
+        }
+
+        scrollToActiveMatch();
+    }
+
+    /**
+     * @brief Navigates between search results by the provided offset.
+     * @param delta Direction and magnitude to move within search matches.
+     */
+    function stepSearch(delta) {
+        if (!state.searchMatches.length) {
+            return;
+        }
+
+        if (state.searchIndex === -1) {
+            state.searchIndex = 0;
+        }
+
+        state.searchIndex = (state.searchIndex + delta + state.searchMatches.length) % state.searchMatches.length;
+        scrollToActiveMatch();
     }
 
     /**
@@ -329,6 +496,33 @@
     wordWrapToggle.addEventListener('change', () => {
         state.wordWrapEnabled = wordWrapToggle.checked;
         updateWordWrapClass();
+    });
+
+    searchInput.addEventListener(
+        'input',
+        debounce(() => {
+            state.searchTerm = searchInput.value;
+            render();
+            updateSearchMatches();
+        }, 150)
+    );
+
+    searchInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            stepSearch(event.shiftKey ? -1 : 1);
+        }
+    });
+
+    searchPrevBtn.addEventListener('click', () => stepSearch(-1));
+    searchNextBtn.addEventListener('click', () => stepSearch(1));
+
+    window.addEventListener('keydown', (event) => {
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f') {
+            event.preventDefault();
+            searchInput.focus();
+            searchInput.select();
+        }
     });
 
     window.addEventListener('message', (event) => {
