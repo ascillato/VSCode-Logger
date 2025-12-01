@@ -33,7 +33,11 @@ interface RequestFocus {
     type: 'requestFocus';
 }
 
-type IncomingMessage = SidebarMessage | HighlightUpdateMessage | AddRowRequest | RequestFocus;
+interface RequestInitPayload {
+    type: 'requestInit';
+}
+
+type IncomingMessage = SidebarMessage | HighlightUpdateMessage | AddRowRequest | RequestFocus | RequestInitPayload;
 
 export class SidebarViewProvider implements vscode.WebviewViewProvider {
     private view?: vscode.WebviewView;
@@ -69,6 +73,9 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
                     break;
                 case 'requestFocus':
                     vscode.commands.executeCommand('embeddedLogger.devicesView.focus');
+                    break;
+                case 'requestInit':
+                    this.postInitialPayload();
                     break;
                 case 'addRow':
                     this.addHighlightRow();
