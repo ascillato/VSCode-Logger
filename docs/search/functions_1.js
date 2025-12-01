@@ -1,4 +1,0 @@
-var searchData=
-[
-  ['constructor_103',['constructor',['../classDeviceTreeDataProvider.html#a6f116f5ee766acbc3d0d348c8d17d656',1,'DeviceTreeDataProvider::constructor()'],['../classDeviceItem.html#af6e5dc5302e9a62804e860ae463f0d96',1,'DeviceItem::constructor()'],['../classLogPanel.html#aa1db5b9f66c2765588aa1f9d050134c8',1,'LogPanel::constructor()'],['../classLogSession.html#a61ef78d4d91ff8936a528899795808bd',1,'LogSession::constructor()'],['../classSidebarViewProvider.html#a093499da7eddfe81b07d81750ac60ea3',1,'SidebarViewProvider::constructor()']]]
-];
