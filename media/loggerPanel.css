@@ -3,6 +3,43 @@ body {
     color: var(--vscode-editor-foreground);
     background: var(--vscode-editor-background);
     padding: 8px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+
+.view-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+}
+
+.title-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.view-title {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.icon-button {
+    border: 1px solid var(--vscode-button-border, transparent);
+    background: var(--vscode-button-secondaryBackground, var(--vscode-button-background));
+    color: var(--vscode-button-foreground);
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.icon-button:hover {
+    background: var(--vscode-button-secondaryHoverBackground, var(--vscode-button-hoverBackground));
 }
 
 .top-bar {
@@ -21,10 +58,11 @@ body {
 
 #logContainer {
     border: 1px solid var(--vscode-editorWidget-border);
-    height: calc(100vh - 100px);
     overflow-y: auto;
     padding: 8px;
     background: var(--vscode-editor-background);
+    flex: 1 1 auto;
+    min-height: 200px;
 }
 
 .log-line {
@@ -47,10 +85,6 @@ body {
 .level-alert { color: #c0392b; font-weight: bold; }
 .level-emerg { color: #922b21; font-weight: bold; }
 
-.top-bar-spacer {
-    flex: 1 1 auto;
-}
-
 #status {
     flex: 0 1 auto;
     font-style: italic;
@@ -65,4 +99,51 @@ body {
 
 .word-wrap-toggle input {
     margin: 0;
+}
+
+.highlight-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.highlight-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.color-swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    border: 1px solid var(--vscode-editorWidget-border);
+}
+
+.highlight-input {
+    flex: 1 1 auto;
+    padding: 6px 8px;
+    border: 1px solid var(--vscode-input-border);
+    background: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    border-radius: 4px;
+}
+
+.highlight-remove {
+    border: 1px solid var(--vscode-button-border, transparent);
+    background: var(--vscode-button-secondaryBackground, var(--vscode-button-background));
+    color: var(--vscode-button-foreground);
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.highlight-remove:hover {
+    background: var(--vscode-button-secondaryHoverBackground, var(--vscode-button-hoverBackground));
+}
+
+.highlighted-text {
+    font-weight: 700;
+    text-decoration: underline;
 }

@@ -45,6 +45,8 @@
         minLevel: 'ALL',
         textFilter: '',
         wordWrapEnabled: false,
+        highlights: [],
+        nextHighlightId: 1,
     };
 
     const minLevelSelect = document.getElementById('minLevel');
@@ -54,8 +56,26 @@
     const deletePresetBtn = document.getElementById('deletePreset');
     const exportBtn = document.getElementById('exportLogs');
     const wordWrapToggle = document.getElementById('wordWrapToggle');
+    const addHighlightBtn = document.getElementById('addHighlight');
+    const highlightRows = document.getElementById('highlightRows');
     const logContainer = document.getElementById('logContainer');
     const statusEl = document.getElementById('status');
+
+    const highlightPalette = [
+        '#1abc9c',
+        '#3498db',
+        '#9b59b6',
+        '#e74c3c',
+        '#f1c40f',
+        '#e67e22',
+        '#2ecc71',
+        '#16a085',
+        '#d35400',
+        '#8e44ad',
+        '#5dade2',
+        '#c0392b',
+    ];
+    let colorCursor = Math.floor(Math.random() * highlightPalette.length);
 
     /**
      * @brief Extracts the log level from a raw log line.
@@ -94,6 +114,140 @@
     }
 
     /**
+     * @brief Returns active highlight entries with non-empty search keys.
+     * @returns List of highlights to render.
+     */
+    function getActiveHighlights() {
+        return state.highlights
+            .filter((highlight) => highlight.normalizedKey)
+            .map((highlight) => ({ ...highlight, normalizedKey: highlight.normalizedKey }));
+    }
+
+    /**
+     * @brief Builds a DOM fragment with highlighted matches for a log line.
+     * @param line The raw log line.
+     * @returns Document fragment containing text nodes and highlighted spans.
+     */
+    function buildHighlightedContent(line) {
+        const fragment = document.createDocumentFragment();
+        const highlights = getActiveHighlights();
+
+        if (!highlights.length) {
+            fragment.appendChild(document.createTextNode(line));
+            return fragment;
+        }
+
+        const lowerLine = line.toLowerCase();
+        let index = 0;
+
+        while (index < line.length) {
+            let nextMatch = null;
+
+            for (const highlight of highlights) {
+                const matchIndex = lowerLine.indexOf(highlight.normalizedKey, index);
+                if (matchIndex !== -1 && (nextMatch === null || matchIndex < nextMatch.position)) {
+                    nextMatch = {
+                        position: matchIndex,
+                        end: matchIndex + highlight.normalizedKey.length,
+                        highlight,
+                    };
+                }
+            }
+
+            if (!nextMatch) {
+                fragment.appendChild(document.createTextNode(line.slice(index)));
+                break;
+            }
+
+            if (nextMatch.position > index) {
+                fragment.appendChild(document.createTextNode(line.slice(index, nextMatch.position)));
+            }
+
+            const span = document.createElement('span');
+            span.textContent = line.slice(nextMatch.position, nextMatch.end);
+            span.className = 'highlighted-text';
+            span.style.color = nextMatch.highlight.color;
+            fragment.appendChild(span);
+
+            index = nextMatch.end;
+        }
+
+        return fragment;
+    }
+
+    /**
+     * @brief Generates the next highlight color.
+     * @returns A color string from the palette.
+     */
+    function nextHighlightColor() {
+        const color = highlightPalette[colorCursor % highlightPalette.length];
+        colorCursor = (colorCursor + 1) % highlightPalette.length;
+        if (colorCursor === 0) {
+            highlightPalette.sort(() => Math.random() - 0.5);
+        }
+        return color;
+    }
+
+    /**
+     * @brief Re-renders the highlight rows below the title.
+     */
+    function renderHighlightRows() {
+        highlightRows.innerHTML = '';
+        const fragment = document.createDocumentFragment();
+        state.highlights.forEach((highlight) => {
+            const row = document.createElement('div');
+            row.className = 'highlight-row';
+
+            const swatch = document.createElement('span');
+            swatch.className = 'color-swatch';
+            swatch.style.backgroundColor = highlight.color;
+            row.appendChild(swatch);
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = highlight.key;
+            input.placeholder = 'Key to highlight';
+            input.className = 'highlight-input';
+            input.addEventListener('input', () => {
+                const value = input.value;
+                highlight.key = value;
+                highlight.normalizedKey = value.trim().toLowerCase();
+                applyFilters();
+            });
+            row.appendChild(input);
+
+            const removeBtn = document.createElement('button');
+            removeBtn.textContent = '✕';
+            removeBtn.className = 'highlight-remove';
+            removeBtn.title = 'Remove highlight';
+            removeBtn.addEventListener('click', () => {
+                state.highlights = state.highlights.filter((item) => item.id !== highlight.id);
+                renderHighlightRows();
+                applyFilters();
+            });
+            row.appendChild(removeBtn);
+
+            fragment.appendChild(row);
+        });
+
+        highlightRows.appendChild(fragment);
+    }
+
+    /**
+     * @brief Adds a new highlight row up to the limit of 10.
+     */
+    function addHighlight() {
+        if (state.highlights.length >= 10) {
+            updateStatus('You can highlight up to 10 keys.');
+            return;
+        }
+
+        const color = nextHighlightColor();
+        state.highlights.push({ id: state.nextHighlightId++, key: '', normalizedKey: '', color });
+        renderHighlightRows();
+    }
+
+    /**
      * @brief Renders the filtered entries into the log container.
      */
     function render() {
@@ -102,8 +256,8 @@
         const frag = document.createDocumentFragment();
         for (const entry of visible) {
             const div = document.createElement('div');
-            div.textContent = entry.rawLine;
             div.className = `log-line level-${entry.level.toLowerCase()}`;
+            div.appendChild(buildHighlightedContent(entry.rawLine));
             frag.appendChild(div);
         }
         logContainer.appendChild(frag);
@@ -164,8 +318,8 @@
                 state.filtered.shift();
             }
             const div = document.createElement('div');
-            div.textContent = entry.rawLine;
             div.className = `log-line level-${entry.level.toLowerCase()}`;
+            div.appendChild(buildHighlightedContent(entry.rawLine));
             logContainer.appendChild(div);
             logContainer.scrollTop = logContainer.scrollHeight;
         }
@@ -254,6 +408,10 @@
         updateWordWrapClass();
     });
 
+    addHighlightBtn.addEventListener('click', () => {
+        addHighlight();
+    });
+
     window.addEventListener('message', (event) => {
         const message = event.data;
         switch (message.type) {
@@ -283,6 +441,7 @@
     vscode.postMessage({ type: 'ready' });
 
     updatePresetDropdown();
+    renderHighlightRows();
     updateWordWrapClass();
     applyFilters();
 })();

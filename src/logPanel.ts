@@ -218,6 +218,14 @@ export class LogPanel {
     <title>${this.targetName} Logs</title>
 </head>
 <body>
+    <div class="view-header">
+        <div class="title-row">
+            <span class="view-title">${this.targetName} Logs</span>
+            <button id="addHighlight" class="icon-button" title="Highlight a key (up to 10 search terms)">🔍</button>
+        </div>
+        <span id="status"></span>
+    </div>
+    <div id="highlightRows" class="highlight-rows"></div>
     <div class="top-bar">
         <label>Min Level
             <select id="minLevel">
@@ -253,8 +261,6 @@ export class LogPanel {
             <span>Word Wrap</span>
             <input type="checkbox" id="wordWrapToggle" />
         </label>
-        <div class="top-bar-spacer"></div>
-        <span id="status"></span>
     </div>
     <div id="logContainer"></div>
     <script nonce="${nonce}" src="${scriptUri}"></script>
