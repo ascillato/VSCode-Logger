@@ -61,6 +61,7 @@
     const wordWrapToggle = document.getElementById('wordWrapToggle');
     const logContainer = document.getElementById('logContainer');
     const statusEl = document.getElementById('status');
+    const reconnectButton = document.getElementById('reconnectButton');
     const searchInput = document.getElementById('searchInput');
     const searchPrevBtn = document.getElementById('searchPrev');
     const searchNextBtn = document.getElementById('searchNext');
@@ -314,8 +315,30 @@
      * @brief Updates the status text shown in the UI.
      * @param text Status message to display.
      */
-    function updateStatus(text) {
+    function updateStatus(text, options = {}) {
         statusEl.textContent = text || '';
+
+        if (options.showReconnect) {
+            reconnectButton.hidden = false;
+            if (!options.preserveDisabled) {
+                reconnectButton.disabled = false;
+            }
+            return;
+        }
+
+        reconnectButton.hidden = true;
+        reconnectButton.disabled = false;
+    }
+
+    /**
+     * @brief Handles session closed notifications by updating status and appending a marker line.
+     * @param message Status message provided by the extension host.
+     * @param closedAt Timestamp string to display in the marker line.
+     */
+    function handleSessionClosed(message, closedAt) {
+        const timestamp = closedAt || new Date().toLocaleString();
+        updateStatus(message || 'Session closed.', { showReconnect: true });
+        handleLogLine(`--- SSH session closed by device at ${timestamp}`);
     }
 
     /**
@@ -498,6 +521,12 @@
         updateWordWrapClass();
     });
 
+    reconnectButton.addEventListener('click', () => {
+        reconnectButton.disabled = true;
+        updateStatus('Reconnecting...', { showReconnect: true, preserveDisabled: true });
+        vscode.postMessage({ type: 'requestReconnect' });
+    });
+
     searchInput.addEventListener(
         'input',
         debounce(() => {
@@ -548,6 +577,9 @@
                 break;
             case 'error':
                 updateStatus(message.message);
+                break;
+            case 'sessionClosed':
+                handleSessionClosed(message.message, message.closedAt);
                 break;
             case 'highlightsUpdated':
                 setHighlights(message.highlights || []);

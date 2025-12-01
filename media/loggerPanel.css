@@ -100,9 +100,20 @@ body {
     flex: 1 1 auto;
 }
 
+.status-area {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 #status {
     flex: 0 1 auto;
     font-style: italic;
+}
+
+.status-action {
+    padding: 4px 10px;
+    cursor: pointer;
 }
 
 .word-wrap-toggle {

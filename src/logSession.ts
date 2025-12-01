@@ -26,6 +26,7 @@ export class LogSession {
     private stream: any;
     private buffer = '';
     private disposed = false;
+    private closedNotified = false;
 
     /**
      * @brief Creates a new log session.
@@ -190,9 +191,10 @@ export class LogSession {
      * @brief Handles stream closures and notifies callbacks if not disposed.
      */
     private handleClose() {
-        if (this.disposed) {
+        if (this.disposed || this.closedNotified) {
             return;
         }
+        this.closedNotified = true;
         this.callbacks.onClose();
     }
 

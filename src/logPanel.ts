@@ -39,7 +39,7 @@ type LogPanelTarget = RemoteLogTarget | LocalLogTarget;
  */
 export class LogPanel {
     private readonly panel: vscode.WebviewPanel;
-    private readonly session?: LogSession;
+    private session?: LogSession;
     private readonly presetsKey: string;
     private readonly targetName: string;
     private readonly targetId: string;
@@ -99,12 +99,7 @@ export class LogPanel {
         });
 
         if (this.device) {
-            this.session = new LogSession(this.device, context, {
-                onLine: (line) => this.panel.webview.postMessage({ type: 'logLine', line }),
-                onError: (message) => this.panel.webview.postMessage({ type: 'error', message }),
-                onStatus: (message) => this.panel.webview.postMessage({ type: 'status', message }),
-                onClose: () => this.panel.webview.postMessage({ type: 'status', message: 'Session closed.' }),
-            });
+            this.session = this.createSession();
         }
 
         this.panel.webview.onDidReceiveMessage(async (message) => {
@@ -151,6 +146,10 @@ export class LogPanel {
                     await this.exportLogs(message.lines);
                     break;
                 }
+                case 'requestReconnect': {
+                    await this.reconnect();
+                    break;
+                }
             }
         });
 
@@ -166,6 +165,22 @@ export class LogPanel {
             return;
         }
         this.sendInitialLines();
+    }
+
+    /**
+     * @brief Creates a new log session wired to the current panel callbacks.
+     */
+    private createSession(): LogSession {
+        if (!this.device) {
+            throw new Error('Cannot create a log session without a device.');
+        }
+
+        return new LogSession(this.device, this.context, {
+            onLine: (line) => this.panel.webview.postMessage({ type: 'logLine', line }),
+            onError: (message) => this.panel.webview.postMessage({ type: 'error', message }),
+            onStatus: (message) => this.panel.webview.postMessage({ type: 'status', message }),
+            onClose: () => this.handleSessionClose(),
+        });
     }
 
     /**
@@ -202,6 +217,18 @@ export class LogPanel {
     }
 
     /**
+     * @brief Posts the session closed status and marker line to the Webview.
+     */
+    private handleSessionClose() {
+        const closedAt = new Date().toLocaleString();
+        this.panel.webview.postMessage({
+            type: 'sessionClosed',
+            message: 'Session closed.',
+            closedAt,
+        });
+    }
+
+    /**
      * @brief Pushes highlight definitions to the webview for rendering.
      * @param values Highlight entries sourced from the sidebar view.
      */
@@ -217,6 +244,28 @@ export class LogPanel {
      */
     onDidChangeViewState(listener: (e: vscode.WebviewPanelOnDidChangeViewStateEvent) => void): vscode.Disposable {
         return this.panel.onDidChangeViewState(listener);
+    }
+
+    /**
+     * @brief Attempts to reconnect the SSH session when requested by the Webview.
+     */
+    private async reconnect() {
+        if (!this.device || this.disposed) {
+            return;
+        }
+
+        this.session?.dispose();
+        this.session = this.createSession();
+        await this.panel.webview.postMessage({ type: 'status', message: 'Reconnecting...' });
+
+        try {
+            await this.session.start();
+        } catch (err: any) {
+            await this.panel.webview.postMessage({
+                type: 'error',
+                message: err?.message ?? 'Failed to reconnect.',
+            });
+        }
     }
 
     /**
@@ -285,7 +334,10 @@ export class LogPanel {
             </div>
         </div>
         <div class="top-bar-spacer"></div>
-        <span id="status"></span>
+        <div class="status-area">
+            <span id="status"></span>
+            <button id="reconnectButton" class="status-action" hidden>Reconnect</button>
+        </div>
     </div>
     <div id="logContainer"></div>
     <script nonce="${nonce}" src="${scriptUri}"></script>
