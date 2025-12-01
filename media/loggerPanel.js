@@ -59,11 +59,6 @@
     const statusEl = document.getElementById('status');
 
     /**
-     * @brief Converts a hex colour string into an RGB tuple.
-     * @param color Hex colour like #rrggbb.
-     * @returns Object with r, g, b values or null when invalid.
-     */
-    /**
      * @brief Extracts the log level from a raw log line.
      * @param line Log line emitted by the extension backend.
      * @returns Normalized log level string.
