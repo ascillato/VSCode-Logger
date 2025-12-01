@@ -38,6 +38,7 @@ Add devices in your VS Code settings under `embeddedLogger.devices`:
 If no password is stored yet, the extension prompts for it when connecting and saves it locally and securely.
 
 ## Notes
+- Colorization of lines are done based on the loglevel (DEBUG, INFO, ERROR, etc). If these keys are not present in the log, no colorization will be applied.
 - Presets are stored per-device in the workspace state using the key `embeddedLogger.presets.<deviceId>`.
 - Exports only include log lines currently visible after applying filters.
 - Use the **Open Local Log File** title button in the Embedded Logger devices view (or run the command with the same name) to select a `.log` or `.txt` file from your machine. The chosen file is loaded into the log viewer so you can reuse filtering, presets, and export just like a live connection.
