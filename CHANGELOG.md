@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [0.4.0] - 2025-12-01 [SEARCH]
+
+### Added
+- Add Ctrl/Cmd+F find support in the log panel, including navigation across matches in both live and imported logs.
+
+### Changed
+- None
+
+### Deprecated
+- None
+
+### Removed
+- None
+
+### Fixed
+- None
+
+### Security
+- None
+
+----------------------------------------
+
 ## [0.3.0] - 2025-11-30 [HIGHLIGHTS]
 
 ### Added

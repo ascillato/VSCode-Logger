@@ -9,6 +9,7 @@ A Visual Studio Code extension that connects to embedded Linux devices over SSH,
 - **Real-time log streaming over SSH** using a configurable command (default: `tail -F /var/log/syslog`).
 - **Log level parsing, filtering, and colorization** inside a Webview panel per device.
 - **Highlight up to 10 custom keywords** with color-coded, bold, underlined text in both live and imported logs.
+- **Find text inside live or imported logs** with Ctrl/Cmd+F, including next/previous navigation.
 - Saved filter presets stored per device.
 - **Export** currently visible (filtered) logs to a file.
 - **Open any log files and filter them** with the same interface.
@@ -80,7 +81,7 @@ In the example, the other extensions (from other publishers) are:
 ### Package Generation
 - Requires: `npm install -g @vscode/vsce`
 - Run: `vsce package` to generate vsix file to be installed into VSCode
-- Install locally on VSCode: `code --install-extension embedded-device-logger-0.3.0.vsix`
+- Install locally on VSCode: `code --install-extension embedded-device-logger-0.4.0.vsix`
 
 ### Generating Source Code Documentation
 1. Ensure Doxygen is available locally (`sudo apt-get install doxygen`).

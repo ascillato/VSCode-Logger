@@ -274,6 +274,16 @@ export class LogPanel {
             <span>Word Wrap</span>
             <input type="checkbox" id="wordWrapToggle" />
         </label>
+        <div class="search-bar">
+            <label>Find
+                <input type="text" id="searchInput" placeholder="Find in logs (Ctrl/Cmd+F)" />
+            </label>
+            <div class="search-controls">
+                <button id="searchPrev" title="Previous match">Prev</button>
+                <button id="searchNext" title="Next match">Next</button>
+                <span id="searchCount">0 / 0</span>
+            </div>
+        </div>
         <div class="top-bar-spacer"></div>
         <span id="status"></span>
     </div>
