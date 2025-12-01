@@ -114,7 +114,8 @@
       "embeddedLogger": [
         {
           "id": "embeddedLogger.devicesView",
-          "name": "Devices"
+          "name": "Devices",
+          "type": "webview"
         }
       ]
     },

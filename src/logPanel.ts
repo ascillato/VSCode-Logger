@@ -8,6 +8,7 @@ import * as vscode from 'vscode';
 import { EmbeddedDevice } from './deviceTree';
 import { LogSession } from './logSession';
 import * as path from 'path';
+import { HighlightDefinition } from './sidebarView';
 
 /**
  * @brief Saved filtering preferences for a device.
@@ -45,6 +46,7 @@ export class LogPanel {
     private readonly initialLines: string[] = [];
     private readonly sourcePath?: string;
     private readonly device?: EmbeddedDevice;
+    private highlights: HighlightDefinition[];
     private disposed = false;
 
     /**
@@ -57,7 +59,8 @@ export class LogPanel {
     constructor(
         private readonly context: vscode.ExtensionContext,
         target: LogPanelTarget,
-        private readonly onDispose: () => void
+        private readonly onDispose: () => void,
+        initialHighlights: HighlightDefinition[] = []
     ) {
         if (target.type === 'remote') {
             this.device = target.device;
@@ -71,6 +74,7 @@ export class LogPanel {
         }
 
         this.presetsKey = `embeddedLogger.presets.${this.targetId}`;
+        this.highlights = initialHighlights;
 
         this.panel = vscode.window.createWebviewPanel(
             'embeddedLogger.logPanel',
@@ -199,10 +203,12 @@ export class LogPanel {
     }
 
     /**
-     * @brief Adds a highlight row in the webview if one is available.
+     * @brief Pushes highlight definitions to the webview for rendering.
+     * @param values Highlight entries sourced from the sidebar view.
      */
-    addHighlightRow() {
-        this.panel.webview.postMessage({ type: 'addHighlightRow' });
+    updateHighlights(values: HighlightDefinition[]) {
+        this.highlights = values;
+        this.panel.webview.postMessage({ type: 'highlightsUpdated', highlights: this.highlights });
     }
 
     /**
@@ -241,7 +247,6 @@ export class LogPanel {
         </div>
         <span id="status"></span>
     </div>
-    <div id="highlightRows" class="highlight-rows"></div>
     <div class="top-bar">
         <label>Min Level
             <select id="minLevel">
@@ -301,6 +306,7 @@ export class LogPanel {
             type: 'initData',
             deviceId: this.targetId,
             presets,
+            highlights: this.highlights,
         });
     }
 

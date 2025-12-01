@@ -46,7 +46,6 @@
         textFilter: '',
         wordWrapEnabled: false,
         highlights: [],
-        nextHighlightId: 1,
     };
 
     const minLevelSelect = document.getElementById('minLevel');
@@ -56,71 +55,14 @@
     const deletePresetBtn = document.getElementById('deletePreset');
     const exportBtn = document.getElementById('exportLogs');
     const wordWrapToggle = document.getElementById('wordWrapToggle');
-    const highlightRows = document.getElementById('highlightRows');
     const logContainer = document.getElementById('logContainer');
     const statusEl = document.getElementById('status');
-
-    const highlightPalette = [
-        '#1abc9c',
-        '#3498db',
-        '#9b59b6',
-        '#e74c3c',
-        '#f1c40f',
-        '#e67e22',
-        '#2ecc71',
-        '#16a085',
-        '#d35400',
-        '#8e44ad',
-        '#5dade2',
-        '#c0392b',
-    ];
-    let colorCursor = Math.floor(Math.random() * highlightPalette.length);
 
     /**
      * @brief Converts a hex colour string into an RGB tuple.
      * @param color Hex colour like #rrggbb.
      * @returns Object with r, g, b values or null when invalid.
      */
-    function hexToRgb(color) {
-        const match = color.match(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
-        if (!match) {
-            return null;
-        }
-        return {
-            r: parseInt(match[1], 16),
-            g: parseInt(match[2], 16),
-            b: parseInt(match[3], 16),
-        };
-    }
-
-    /**
-     * @brief Produces legible foreground and background colours derived from a base colour.
-     * @param baseColor Hex colour seed.
-     * @returns Foreground and background colour strings.
-     */
-    function buildHighlightColors(baseColor) {
-        const rgb = hexToRgb(baseColor);
-        if (!rgb) {
-            return { foreground: baseColor, background: 'rgba(0,0,0,0.28)' };
-        }
-
-        const relativeLuminance = (channel) => {
-            const normalized = channel / 255;
-            return normalized <= 0.03928 ? normalized / 12.92 : Math.pow((normalized + 0.055) / 1.055, 2.4);
-        };
-
-        const luminance =
-            0.2126 * relativeLuminance(rgb.r) + 0.7152 * relativeLuminance(rgb.g) + 0.0722 * relativeLuminance(rgb.b);
-        const lighten = luminance <= 0.55;
-        const mixChannel = (channel) => {
-            const mixed = lighten ? channel + (255 - channel) * 0.8 : channel * 0.35;
-            return Math.round(Math.min(255, Math.max(0, mixed)));
-        };
-        const background = `rgba(${mixChannel(rgb.r)}, ${mixChannel(rgb.g)}, ${mixChannel(rgb.b)}, 0.65)`;
-
-        return { foreground: baseColor, background };
-    }
-
     /**
      * @brief Extracts the log level from a raw log line.
      * @param line Log line emitted by the extension backend.
@@ -222,84 +164,15 @@
     }
 
     /**
-     * @brief Generates the next highlight color.
-     * @returns A color string from the palette.
+     * @brief Replaces the highlight collection with updated entries.
+     * @param highlights Highlight definitions received from the sidebar view.
      */
-    function nextHighlightColor() {
-        const color = highlightPalette[colorCursor % highlightPalette.length];
-        colorCursor = (colorCursor + 1) % highlightPalette.length;
-        if (colorCursor === 0) {
-            highlightPalette.sort(() => Math.random() - 0.5);
-        }
-        return color;
-    }
-
-    /**
-     * @brief Re-renders the highlight rows below the title.
-     */
-    function renderHighlightRows() {
-        highlightRows.innerHTML = '';
-        const fragment = document.createDocumentFragment();
-        state.highlights.forEach((highlight) => {
-            const row = document.createElement('div');
-            row.className = 'highlight-row';
-
-            const swatch = document.createElement('span');
-            swatch.className = 'color-swatch';
-            swatch.style.backgroundColor = highlight.baseColor;
-            swatch.style.borderColor = highlight.baseColor;
-            row.appendChild(swatch);
-
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.value = highlight.key;
-            input.placeholder = 'Key to highlight';
-            input.className = 'highlight-input';
-            input.addEventListener('input', () => {
-                const value = input.value;
-                highlight.key = value;
-                highlight.normalizedKey = value.trim().toLowerCase();
-                applyFilters();
-            });
-            row.appendChild(input);
-
-            const removeBtn = document.createElement('button');
-            removeBtn.textContent = '✕';
-            removeBtn.className = 'highlight-remove';
-            removeBtn.title = 'Remove highlight';
-            removeBtn.addEventListener('click', () => {
-                state.highlights = state.highlights.filter((item) => item.id !== highlight.id);
-                renderHighlightRows();
-                applyFilters();
-            });
-            row.appendChild(removeBtn);
-
-            fragment.appendChild(row);
-        });
-
-        highlightRows.appendChild(fragment);
-    }
-
-    /**
-     * @brief Adds a new highlight row up to the limit of 10.
-     */
-    function addHighlight() {
-        if (state.highlights.length >= 10) {
-            updateStatus('You can highlight up to 10 keys.');
-            return;
-        }
-
-        const color = nextHighlightColor();
-        const { foreground, background } = buildHighlightColors(color);
-        state.highlights.push({
-            id: state.nextHighlightId++,
-            key: '',
-            normalizedKey: '',
-            color: foreground,
-            baseColor: color,
-            backgroundColor: background,
-        });
-        renderHighlightRows();
+    function setHighlights(highlights) {
+        state.highlights = (highlights || []).map((highlight) => ({
+            ...highlight,
+            normalizedKey: (highlight.key || '').trim().toLowerCase(),
+        }));
+        applyFilters();
     }
 
     /**
@@ -469,6 +342,7 @@
             case 'initData':
                 state.deviceId = message.deviceId;
                 state.presets = message.presets || [];
+                setHighlights(message.highlights || []);
                 updatePresetDropdown();
                 applyFilters();
                 break;
@@ -486,8 +360,8 @@
             case 'error':
                 updateStatus(message.message);
                 break;
-            case 'addHighlightRow':
-                addHighlight();
+            case 'highlightsUpdated':
+                setHighlights(message.highlights || []);
                 break;
         }
     });
@@ -495,7 +369,6 @@
     vscode.postMessage({ type: 'ready' });
 
     updatePresetDropdown();
-    renderHighlightRows();
     updateWordWrapClass();
     applyFilters();
 })();

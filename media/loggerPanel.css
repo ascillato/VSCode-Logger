@@ -107,48 +107,6 @@ body {
     margin: 0;
 }
 
-.highlight-rows {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin: 6px 0 10px 0;
-}
-
-.highlight-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.color-swatch {
-    width: 16px;
-    height: 16px;
-    border-radius: 3px;
-    border: 1px solid var(--vscode-editorWidget-border);
-}
-
-.highlight-input {
-    flex: 1 1 auto;
-    padding: 6px 8px;
-    border: 1px solid var(--vscode-input-border);
-    background: var(--vscode-input-background);
-    color: var(--vscode-input-foreground);
-    border-radius: 4px;
-}
-
-.highlight-remove {
-    border: 1px solid var(--vscode-button-border, transparent);
-    background: var(--vscode-button-secondaryBackground, var(--vscode-button-background));
-    color: var(--vscode-button-foreground);
-    padding: 4px 8px;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.highlight-remove:hover {
-    background: var(--vscode-button-secondaryHoverBackground, var(--vscode-button-hoverBackground));
-}
-
 .highlighted-text {
     font-weight: 700;
     text-decoration: underline;

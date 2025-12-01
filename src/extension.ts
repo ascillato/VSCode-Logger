@@ -6,12 +6,15 @@
 
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { DeviceTreeDataProvider, EmbeddedDevice } from './deviceTree';
+import { EmbeddedDevice } from './deviceTree';
+import { HighlightDefinition, SidebarViewProvider } from './sidebarView';
 import { LogPanel } from './logPanel';
 
 // Map of deviceId to existing log panels so multiple clicks reuse tabs.
 const panelMap: Map<string, LogPanel> = new Map();
 let activePanel: LogPanel | undefined;
+let sidebarProvider: SidebarViewProvider | undefined;
+let highlights: HighlightDefinition[] = [];
 
 /**
  * @brief Migrates legacy passwords into VS Code SecretStorage.
@@ -49,21 +52,36 @@ export async function activate(context: vscode.ExtensionContext) {
 
     await migrateLegacyPasswords(context, devices);
 
-    const treeDataProvider = new DeviceTreeDataProvider(context);
-    const treeView = vscode.window.createTreeView('embeddedLogger.devicesView', {
-        treeDataProvider,
-    });
+    const getDevices = () => vscode.workspace.getConfiguration('embeddedLogger').get<EmbeddedDevice[]>('devices', []);
 
-    context.subscriptions.push(treeView);
+    sidebarProvider = new SidebarViewProvider(
+        context,
+        getDevices,
+        (deviceId) => {
+            const device = getDevices().find((item) => item.id === deviceId);
+            if (device) {
+                vscode.commands.executeCommand('embeddedLogger.openDevice', device);
+            } else {
+                vscode.window.showErrorMessage('Device not found. Check embeddedLogger.devices.');
+            }
+        },
+        (updatedHighlights) => {
+            highlights = updatedHighlights.map((highlight, index) => ({
+                ...highlight,
+                id: highlight.id || index + 1,
+            }));
+            for (const panel of panelMap.values()) {
+                panel.updateHighlights(highlights);
+            }
+        },
+        () => highlights
+    );
+
+    context.subscriptions.push(vscode.window.registerWebviewViewProvider('embeddedLogger.devicesView', sidebarProvider));
 
     context.subscriptions.push(
         vscode.commands.registerCommand('embeddedLogger.addHighlightRow', () => {
-            if (activePanel) {
-                activePanel.addHighlightRow();
-                return;
-            }
-
-            vscode.window.showInformationMessage('Open a log panel to add highlight keys.');
+            sidebarProvider?.addHighlightRow();
         })
     );
 
@@ -138,7 +156,8 @@ export async function activate(context: vscode.ExtensionContext) {
                     if (activePanel === panel) {
                         activePanel = undefined;
                     }
-                }
+                },
+                highlights
             );
             panel.onDidChangeViewState((event) => {
                 if (event.webviewPanel.active) {
@@ -176,7 +195,8 @@ export async function activate(context: vscode.ExtensionContext) {
                     if (activePanel === panel) {
                         activePanel = undefined;
                     }
-                }
+                },
+                highlights
             );
             panel.onDidChangeViewState((event) => {
                 if (event.webviewPanel.active) {
@@ -195,7 +215,7 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration((e) => {
             if (e.affectsConfiguration('embeddedLogger.devices')) {
-                treeDataProvider.refresh();
+                sidebarProvider?.refreshDevices();
             }
         })
     );
