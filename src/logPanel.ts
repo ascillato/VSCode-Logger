@@ -242,7 +242,6 @@ export class LogPanel {
 <body>
     <div class="view-header">
         <div class="title-row">
-            <span class="view-title">EMBEDDED LOGGER: DEVICES</span>
             <span class="view-subtitle">${this.targetName} Logs</span>
         </div>
         <span id="status"></span>
