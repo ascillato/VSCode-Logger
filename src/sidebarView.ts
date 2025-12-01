@@ -134,7 +134,6 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
     <title>Embedded Logger Devices</title>
 </head>
 <body>
-    <div class="sidebar-header">EMBEDDED LOGGER: DEVICES</div>
     <div id="highlightRows" class="highlight-rows"></div>
     <div class="device-list" id="deviceList"></div>
     <div id="sidebarStatus" class="sidebar-status"></div>

@@ -85,15 +85,20 @@
             const card = document.createElement('div');
             card.className = 'device-card';
 
-            const title = document.createElement('div');
+            const info = document.createElement('div');
+            info.className = 'device-info';
+
+            const title = document.createElement('span');
             title.className = 'title';
             title.textContent = device.name;
-            card.appendChild(title);
+            info.appendChild(title);
 
-            const subtitle = document.createElement('div');
+            const subtitle = document.createElement('span');
             subtitle.className = 'subtitle';
             subtitle.textContent = `${device.host}${device.port ? `:${device.port}` : ''}`;
-            card.appendChild(subtitle);
+            info.appendChild(subtitle);
+
+            card.appendChild(info);
 
             const btn = document.createElement('button');
             btn.textContent = 'Open Logs';
