@@ -82,8 +82,11 @@
 
         const fragment = document.createDocumentFragment();
         state.devices.forEach((device) => {
-            const card = document.createElement('div');
+            const card = document.createElement('button');
             card.className = 'device-card';
+            card.addEventListener('click', () => {
+                vscode.postMessage({ type: 'openDevice', deviceId: device.id });
+            });
 
             const info = document.createElement('div');
             info.className = 'device-info';
@@ -99,13 +102,6 @@
             info.appendChild(subtitle);
 
             card.appendChild(info);
-
-            const btn = document.createElement('button');
-            btn.textContent = 'Open Logs';
-            btn.addEventListener('click', () => {
-                vscode.postMessage({ type: 'openDevice', deviceId: device.id });
-            });
-            card.appendChild(btn);
 
             fragment.appendChild(card);
         });

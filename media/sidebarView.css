@@ -56,11 +56,24 @@
 .device-card {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     padding: 8px;
     border-radius: 4px;
     border: 1px solid var(--vscode-panel-border);
     background: var(--vscode-sideBar-background);
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    color: inherit;
+    font: inherit;
+    outline: none;
+    appearance: none;
+}
+
+.device-card:hover,
+.device-card:focus-visible {
+    border-color: var(--vscode-focusBorder);
+    box-shadow: 0 0 0 1px var(--vscode-focusBorder);
 }
 
 .device-info {
@@ -85,19 +98,6 @@
 .device-card .subtitle {
     color: var(--vscode-descriptionForeground);
     font-size: 12px;
-}
-
-.device-card button {
-    padding: 4px 8px;
-    border-radius: 3px;
-    border: 1px solid var(--vscode-button-border, transparent);
-    background: var(--vscode-button-background);
-    color: var(--vscode-button-foreground);
-    cursor: pointer;
-}
-
-.device-card button:hover {
-    background: var(--vscode-button-hoverBackground);
 }
 
 .sidebar-status {
