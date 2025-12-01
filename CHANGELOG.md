@@ -7,31 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
-## [0.4.0] - 2025-12-01 [SEARCH]
+## [0.3.0] - 2025-11-30 [SEARCH & HIGHLIGHTS]
 
 ### Added
 - Add Ctrl/Cmd+F find support in the log panel, including navigation across matches in both live and imported logs.
-
-### Changed
-- None
-
-### Deprecated
-- None
-
-### Removed
-- None
-
-### Fixed
-- None
-
-### Security
-- None
-
-----------------------------------------
-
-## [0.3.0] - 2025-11-30 [HIGHLIGHTS]
-
-### Added
 - Add a title bar highlight button that spawns up to ten colour-coded rows for emphasizing custom keywords across live and imported logs.
 - Render highlighted matches in bold, underlined text with the same colour as their corresponding search row.
 
