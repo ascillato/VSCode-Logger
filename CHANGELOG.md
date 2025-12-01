@@ -7,7 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
-## [0.2.0] - 2025-11-30 [LOG_FILES]
+## [0.3.0] - 2025-11-30 [HIGHLIGHTS]
+
+### Added
+- Add a title bar highlight button that spawns up to ten colour-coded rows for emphasizing custom keywords across live and imported logs.
+- Render highlighted matches in bold, underlined text with the same colour as their corresponding search row.
+
+### Changed
+- Restructure the log panel header to accommodate the new highlight controls and preserve readability on smaller widths.
+
+### Deprecated
+- None
+
+### Removed
+- None
+
+### Fixed
+- None
+
+### Security
+- None
+
+----------------------------------------
+
+## [0.2.0] - 2025-11-30 [LOG-FILES]
 
 ### Added
 - Open local log files directly from the Embedded Logger view title button or command palette and reuse the existing log viewer workflow.

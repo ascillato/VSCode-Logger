@@ -45,6 +45,7 @@
         minLevel: 'ALL',
         textFilter: '',
         wordWrapEnabled: false,
+        highlights: [],
     };
 
     const minLevelSelect = document.getElementById('minLevel');
@@ -94,6 +95,82 @@
     }
 
     /**
+     * @brief Returns active highlight entries with non-empty search keys.
+     * @returns List of highlights to render.
+     */
+    function getActiveHighlights() {
+        return state.highlights
+            .filter((highlight) => highlight.normalizedKey)
+            .map((highlight) => ({ ...highlight, normalizedKey: highlight.normalizedKey }));
+    }
+
+    /**
+     * @brief Builds a DOM fragment with highlighted matches for a log line.
+     * @param line The raw log line.
+     * @returns Document fragment containing text nodes and highlighted spans.
+     */
+    function buildHighlightedContent(line) {
+        const fragment = document.createDocumentFragment();
+        const highlights = getActiveHighlights();
+
+        if (!highlights.length) {
+            fragment.appendChild(document.createTextNode(line));
+            return fragment;
+        }
+
+        const lowerLine = line.toLowerCase();
+        let index = 0;
+
+        while (index < line.length) {
+            let nextMatch = null;
+
+            for (const highlight of highlights) {
+                const matchIndex = lowerLine.indexOf(highlight.normalizedKey, index);
+                if (matchIndex !== -1 && (nextMatch === null || matchIndex < nextMatch.position)) {
+                    nextMatch = {
+                        position: matchIndex,
+                        end: matchIndex + highlight.normalizedKey.length,
+                        highlight,
+                    };
+                }
+            }
+
+            if (!nextMatch) {
+                fragment.appendChild(document.createTextNode(line.slice(index)));
+                break;
+            }
+
+            if (nextMatch.position > index) {
+                fragment.appendChild(document.createTextNode(line.slice(index, nextMatch.position)));
+            }
+
+            const span = document.createElement('span');
+            span.textContent = line.slice(nextMatch.position, nextMatch.end);
+            span.className = 'highlighted-text';
+            span.style.color = nextMatch.highlight.color;
+            span.style.backgroundColor = nextMatch.highlight.backgroundColor;
+            span.style.borderColor = nextMatch.highlight.color;
+            fragment.appendChild(span);
+
+            index = nextMatch.end;
+        }
+
+        return fragment;
+    }
+
+    /**
+     * @brief Replaces the highlight collection with updated entries.
+     * @param highlights Highlight definitions received from the sidebar view.
+     */
+    function setHighlights(highlights) {
+        state.highlights = (highlights || []).map((highlight) => ({
+            ...highlight,
+            normalizedKey: (highlight.key || '').trim().toLowerCase(),
+        }));
+        applyFilters();
+    }
+
+    /**
      * @brief Renders the filtered entries into the log container.
      */
     function render() {
@@ -102,8 +179,8 @@
         const frag = document.createDocumentFragment();
         for (const entry of visible) {
             const div = document.createElement('div');
-            div.textContent = entry.rawLine;
             div.className = `log-line level-${entry.level.toLowerCase()}`;
+            div.appendChild(buildHighlightedContent(entry.rawLine));
             frag.appendChild(div);
         }
         logContainer.appendChild(frag);
@@ -164,8 +241,8 @@
                 state.filtered.shift();
             }
             const div = document.createElement('div');
-            div.textContent = entry.rawLine;
             div.className = `log-line level-${entry.level.toLowerCase()}`;
+            div.appendChild(buildHighlightedContent(entry.rawLine));
             logContainer.appendChild(div);
             logContainer.scrollTop = logContainer.scrollHeight;
         }
@@ -260,6 +337,7 @@
             case 'initData':
                 state.deviceId = message.deviceId;
                 state.presets = message.presets || [];
+                setHighlights(message.highlights || []);
                 updatePresetDropdown();
                 applyFilters();
                 break;
@@ -276,6 +354,9 @@
                 break;
             case 'error':
                 updateStatus(message.message);
+                break;
+            case 'highlightsUpdated':
+                setHighlights(message.highlights || []);
                 break;
         }
     });

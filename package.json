@@ -3,7 +3,7 @@
   "displayName": "Embedded Device Logger",
   "description": "Stream and filter embedded Linux device logs over SSH inside VS Code.",
   "icon": "media/icon.png",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "Scallant",
   "author": "A. Scillato",
   "engines": {
@@ -81,7 +81,12 @@
                 "default": "tail -F /var/log/syslog"
               }
             },
-            "required": ["id", "name", "host", "username"]
+            "required": [
+              "id",
+              "name",
+              "host",
+              "username"
+            ]
           },
           "default": [
             {
@@ -109,7 +114,8 @@
       "embeddedLogger": [
         {
           "id": "embeddedLogger.devicesView",
-          "name": "Devices"
+          "name": "Devices",
+          "type": "webview"
         }
       ]
     },
@@ -120,6 +126,11 @@
       "onCommand:embeddedLogger.clearStoredPasswords"
     ],
     "commands": [
+      {
+        "command": "embeddedLogger.addHighlightRow",
+        "title": "Highlight a Key",
+        "icon": "$(search)"
+      },
       {
         "command": "embeddedLogger.openLocalLogFile",
         "title": "Open Local Log File",
@@ -143,9 +154,14 @@
     "menus": {
       "view/title": [
         {
-          "command": "embeddedLogger.openLocalLogFile",
+          "command": "embeddedLogger.addHighlightRow",
           "when": "view == embeddedLogger.devicesView",
           "group": "navigation@0"
+        },
+        {
+          "command": "embeddedLogger.openLocalLogFile",
+          "when": "view == embeddedLogger.devicesView",
+          "group": "navigation@1"
         },
         {
           "command": "embeddedLogger.clearStoredPasswords",

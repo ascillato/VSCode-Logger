@@ -1,0 +1,107 @@
+.highlight-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.highlight-row {
+    display: grid;
+    grid-template-columns: 16px 1fr 28px;
+    gap: 6px;
+    align-items: center;
+}
+
+.color-swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    border: 1px solid transparent;
+}
+
+.highlight-input {
+    width: 100%;
+    padding: 4px 6px;
+    border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
+    border-radius: 3px;
+    background: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+}
+
+.highlight-input:focus {
+    outline: 1px solid var(--vscode-focusBorder);
+    border-color: var(--vscode-focusBorder);
+}
+
+.highlight-remove {
+    height: 24px;
+    width: 24px;
+    border-radius: 4px;
+    border: 1px solid var(--vscode-button-border, transparent);
+    background: var(--vscode-button-secondaryBackground);
+    color: var(--vscode-button-secondaryForeground);
+    cursor: pointer;
+}
+
+.highlight-remove:hover {
+    background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.device-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.device-card {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid var(--vscode-panel-border);
+    background: var(--vscode-sideBar-background);
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    color: inherit;
+    font: inherit;
+    outline: none;
+    appearance: none;
+}
+
+.device-card:hover,
+.device-card:focus-visible {
+    border-color: var(--vscode-focusBorder);
+    box-shadow: 0 0 0 1px var(--vscode-focusBorder);
+}
+
+.device-info {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+
+.device-card .title,
+.device-card .subtitle {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.device-card .title {
+    font-weight: 600;
+}
+
+.device-card .subtitle {
+    color: var(--vscode-descriptionForeground);
+    font-size: 12px;
+}
+
+.sidebar-status {
+    margin-top: 10px;
+    color: var(--vscode-descriptionForeground);
+    font-size: 12px;
+}

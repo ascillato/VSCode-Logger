@@ -8,6 +8,7 @@ import * as vscode from 'vscode';
 import { EmbeddedDevice } from './deviceTree';
 import { LogSession } from './logSession';
 import * as path from 'path';
+import { HighlightDefinition } from './sidebarView';
 
 /**
  * @brief Saved filtering preferences for a device.
@@ -45,6 +46,7 @@ export class LogPanel {
     private readonly initialLines: string[] = [];
     private readonly sourcePath?: string;
     private readonly device?: EmbeddedDevice;
+    private highlights: HighlightDefinition[];
     private disposed = false;
 
     /**
@@ -57,7 +59,8 @@ export class LogPanel {
     constructor(
         private readonly context: vscode.ExtensionContext,
         target: LogPanelTarget,
-        private readonly onDispose: () => void
+        private readonly onDispose: () => void,
+        initialHighlights: HighlightDefinition[] = []
     ) {
         if (target.type === 'remote') {
             this.device = target.device;
@@ -71,6 +74,7 @@ export class LogPanel {
         }
 
         this.presetsKey = `embeddedLogger.presets.${this.targetId}`;
+        this.highlights = initialHighlights;
 
         this.panel = vscode.window.createWebviewPanel(
             'embeddedLogger.logPanel',
@@ -172,10 +176,9 @@ export class LogPanel {
             this.panel.webview.postMessage({ type: 'logLine', line });
         }
 
-        const label = this.sourcePath ? path.basename(this.sourcePath) : 'local log file';
         this.panel.webview.postMessage({
             type: 'status',
-            message: `Loaded ${this.initialLines.length} lines from ${label}.`,
+            message: `Loaded ${this.initialLines.length} lines.`,
         });
     }
 
@@ -196,6 +199,24 @@ export class LogPanel {
         this.disposed = true;
         this.session?.dispose();
         this.panel.dispose();
+    }
+
+    /**
+     * @brief Pushes highlight definitions to the webview for rendering.
+     * @param values Highlight entries sourced from the sidebar view.
+     */
+    updateHighlights(values: HighlightDefinition[]) {
+        this.highlights = values;
+        this.panel.webview.postMessage({ type: 'highlightsUpdated', highlights: this.highlights });
+    }
+
+    /**
+     * @brief Registers a listener for panel view state changes.
+     * @param listener Callback invoked when the panel visibility changes.
+     * @returns Disposable subscription handle.
+     */
+    onDidChangeViewState(listener: (e: vscode.WebviewPanelOnDidChangeViewStateEvent) => void): vscode.Disposable {
+        return this.panel.onDidChangeViewState(listener);
     }
 
     /**
@@ -279,6 +300,7 @@ export class LogPanel {
             type: 'initData',
             deviceId: this.targetId,
             presets,
+            highlights: this.highlights,
         });
     }
 
