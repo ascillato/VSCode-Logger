@@ -176,10 +176,9 @@ export class LogPanel {
             this.panel.webview.postMessage({ type: 'logLine', line });
         }
 
-        const label = this.sourcePath ? path.basename(this.sourcePath) : 'local log file';
         this.panel.webview.postMessage({
             type: 'status',
-            message: `Loaded ${this.initialLines.length} lines from ${label}.`,
+            message: `Loaded ${this.initialLines.length} lines from the imported log.`,
         });
     }
 
@@ -241,9 +240,6 @@ export class LogPanel {
 </head>
 <body>
     <div class="view-header">
-        <div class="title-row">
-            <span class="view-subtitle">${this.targetName} Logs</span>
-        </div>
         <span id="status"></span>
     </div>
     <div class="top-bar">
