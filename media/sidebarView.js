@@ -2,18 +2,16 @@
     const vscode = acquireVsCodeApi();
 
     const highlightPalette = [
-        '#1abc9c',
-        '#3498db',
-        '#9b59b6',
-        '#e74c3c',
-        '#f1c40f',
-        '#e67e22',
-        '#2ecc71',
-        '#16a085',
-        '#d35400',
-        '#8e44ad',
-        '#5dade2',
-        '#c0392b',
+        { foreground: '#1b7f5f', background: '#d2f4e8' },
+        { foreground: '#1f6fbf', background: '#d9e9ff' },
+        { foreground: '#8e44ad', background: '#efdef7' },
+        { foreground: '#c0392b', background: '#f8e0dd' },
+        { foreground: '#c27c0e', background: '#fff3ce' },
+        { foreground: '#117864', background: '#d5f5e3' },
+        { foreground: '#1e8449', background: '#d8f6e2' },
+        { foreground: '#884ea0', background: '#e9dff4' },
+        { foreground: '#b34700', background: '#fde0cc' },
+        { foreground: '#2c3e50', background: '#e2e6eb' },
     ];
 
     const state = {
@@ -25,50 +23,12 @@
     const deviceList = document.getElementById('deviceList');
     const highlightRows = document.getElementById('highlightRows');
     const status = document.getElementById('sidebarStatus');
-    let colorCursor = Math.floor(Math.random() * highlightPalette.length);
-
-    function hexToRgb(color) {
-        const match = color.match(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
-        if (!match) {
-            return null;
-        }
-        return {
-            r: parseInt(match[1], 16),
-            g: parseInt(match[2], 16),
-            b: parseInt(match[3], 16),
-        };
-    }
-
-    function buildHighlightColors(baseColor) {
-        const rgb = hexToRgb(baseColor);
-        if (!rgb) {
-            return { foreground: baseColor, background: 'rgba(0,0,0,0.28)' };
-        }
-
-        const relativeLuminance = (channel) => {
-            const normalized = channel / 255;
-            return normalized <= 0.03928 ? normalized / 12.92 : Math.pow((normalized + 0.055) / 1.055, 2.4);
-        };
-
-        const luminance =
-            0.2126 * relativeLuminance(rgb.r) + 0.7152 * relativeLuminance(rgb.g) + 0.0722 * relativeLuminance(rgb.b);
-        const lighten = luminance <= 0.55;
-        const mixChannel = (channel) => {
-            const mixed = lighten ? channel + (255 - channel) * 0.8 : channel * 0.35;
-            return Math.round(Math.min(255, Math.max(0, mixed)));
-        };
-        const background = `rgba(${mixChannel(rgb.r)}, ${mixChannel(rgb.g)}, ${mixChannel(rgb.b)}, 0.65)`;
-
-        return { foreground: baseColor, background };
-    }
+    let colorCursor = 0;
 
     function nextHighlightColor() {
-        const color = highlightPalette[colorCursor % highlightPalette.length];
+        const pair = highlightPalette[colorCursor % highlightPalette.length];
         colorCursor = (colorCursor + 1) % highlightPalette.length;
-        if (colorCursor === 0) {
-            highlightPalette.sort(() => Math.random() - 0.5);
-        }
-        return color;
+        return pair;
     }
 
     function renderDevices() {
@@ -158,12 +118,11 @@
             status.textContent = 'You can highlight up to 10 keys.';
             return;
         }
-        const color = nextHighlightColor();
-        const { foreground, background } = buildHighlightColors(color);
+        const { foreground, background } = nextHighlightColor();
         state.highlights.push({
             id: state.nextHighlightId++,
             key: '',
-            baseColor: color,
+            baseColor: foreground,
             color: foreground,
             backgroundColor: background,
         });
