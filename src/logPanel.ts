@@ -274,6 +274,10 @@ export class LogPanel {
             <span>Word Wrap</span>
             <input type="checkbox" id="wordWrapToggle" />
         </label>
+        <label class="word-wrap-toggle" id="autoScrollContainer">
+            <span>Auto Scroll</span>
+            <input type="checkbox" id="autoScrollToggle" checked />
+        </label>
         <div class="search-bar">
             <label>Find
                 <input type="text" id="searchInput" placeholder="Find in logs (Ctrl/Cmd+F)" />
@@ -311,6 +315,7 @@ export class LogPanel {
             deviceId: this.targetId,
             presets,
             highlights: this.highlights,
+            isLive: !!this.session,
         });
     }
 

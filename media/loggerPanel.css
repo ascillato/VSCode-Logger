@@ -136,3 +136,7 @@ body {
     outline-offset: 2px;
     background: var(--vscode-editor-findMatchHighlightBackground, rgba(255, 241, 0, 0.18));
 }
+
+.hidden {
+    display: none !important;
+}
