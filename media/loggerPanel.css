@@ -27,6 +27,7 @@ body {
 .view-title {
     font-size: 16px;
     font-weight: 600;
+    letter-spacing: 0.2px;
 }
 
 .icon-button {
@@ -105,7 +106,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    margin-bottom: 8px;
+    margin: 6px 0 10px 0;
 }
 
 .highlight-row {
@@ -146,4 +147,8 @@ body {
 .highlighted-text {
     font-weight: 700;
     text-decoration: underline;
+    padding: 1px 4px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    box-shadow: 0 0 0 1px var(--vscode-editorWidget-border, transparent);
 }

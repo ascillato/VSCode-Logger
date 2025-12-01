@@ -78,6 +78,51 @@
     let colorCursor = Math.floor(Math.random() * highlightPalette.length);
 
     /**
+     * @brief Converts a hex colour string into an RGB tuple.
+     * @param color Hex colour like #rrggbb.
+     * @returns Object with r, g, b values or null when invalid.
+     */
+    function hexToRgb(color) {
+        const match = color.match(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
+        if (!match) {
+            return null;
+        }
+        return {
+            r: parseInt(match[1], 16),
+            g: parseInt(match[2], 16),
+            b: parseInt(match[3], 16),
+        };
+    }
+
+    /**
+     * @brief Produces legible foreground and background colours derived from a base colour.
+     * @param baseColor Hex colour seed.
+     * @returns Foreground and background colour strings.
+     */
+    function buildHighlightColors(baseColor) {
+        const rgb = hexToRgb(baseColor);
+        if (!rgb) {
+            return { foreground: baseColor, background: 'rgba(0,0,0,0.18)' };
+        }
+
+        const relativeLuminance = (channel) => {
+            const normalized = channel / 255;
+            return normalized <= 0.03928 ? normalized / 12.92 : Math.pow((normalized + 0.055) / 1.055, 2.4);
+        };
+
+        const luminance =
+            0.2126 * relativeLuminance(rgb.r) + 0.7152 * relativeLuminance(rgb.g) + 0.0722 * relativeLuminance(rgb.b);
+        const lighten = luminance <= 0.5;
+        const mixChannel = (channel) => {
+            const mixed = lighten ? channel + (255 - channel) * 0.45 : channel * 0.55;
+            return Math.round(Math.min(255, Math.max(0, mixed)));
+        };
+        const background = `rgba(${mixChannel(rgb.r)}, ${mixChannel(rgb.g)}, ${mixChannel(rgb.b)}, 0.38)`;
+
+        return { foreground: baseColor, background };
+    }
+
+    /**
      * @brief Extracts the log level from a raw log line.
      * @param line Log line emitted by the extension backend.
      * @returns Normalized log level string.
@@ -167,6 +212,8 @@
             span.textContent = line.slice(nextMatch.position, nextMatch.end);
             span.className = 'highlighted-text';
             span.style.color = nextMatch.highlight.color;
+            span.style.backgroundColor = nextMatch.highlight.backgroundColor;
+            span.style.borderColor = nextMatch.highlight.color;
             fragment.appendChild(span);
 
             index = nextMatch.end;
@@ -200,7 +247,8 @@
 
             const swatch = document.createElement('span');
             swatch.className = 'color-swatch';
-            swatch.style.backgroundColor = highlight.color;
+            swatch.style.backgroundColor = highlight.baseColor;
+            swatch.style.borderColor = highlight.baseColor;
             row.appendChild(swatch);
 
             const input = document.createElement('input');
@@ -243,7 +291,15 @@
         }
 
         const color = nextHighlightColor();
-        state.highlights.push({ id: state.nextHighlightId++, key: '', normalizedKey: '', color });
+        const { foreground, background } = buildHighlightColors(color);
+        state.highlights.push({
+            id: state.nextHighlightId++,
+            key: '',
+            normalizedKey: '',
+            color: foreground,
+            baseColor: color,
+            backgroundColor: background,
+        });
         renderHighlightRows();
     }
 

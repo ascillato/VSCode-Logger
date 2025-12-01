@@ -221,7 +221,7 @@ export class LogPanel {
     <div class="view-header">
         <div class="title-row">
             <span class="view-title">${this.targetName} Logs</span>
-            <button id="addHighlight" class="icon-button" title="Highlight a key (up to 10 search terms)">🔍</button>
+            <button id="addHighlight" class="icon-button" title="Add a highlight key (up to 10 searches)">🔍</button>
         </div>
         <span id="status"></span>
     </div>
