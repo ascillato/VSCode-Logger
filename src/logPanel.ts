@@ -199,6 +199,22 @@ export class LogPanel {
     }
 
     /**
+     * @brief Adds a highlight row in the webview if one is available.
+     */
+    addHighlightRow() {
+        this.panel.webview.postMessage({ type: 'addHighlightRow' });
+    }
+
+    /**
+     * @brief Registers a listener for panel view state changes.
+     * @param listener Callback invoked when the panel visibility changes.
+     * @returns Disposable subscription handle.
+     */
+    onDidChangeViewState(listener: (e: vscode.WebviewPanelOnDidChangeViewStateEvent) => void): vscode.Disposable {
+        return this.panel.onDidChangeViewState(listener);
+    }
+
+    /**
      * @brief Builds the HTML string loaded into the Webview.
      * @returns HTML markup with scripts, styles, and initial data payload.
      */
@@ -220,8 +236,8 @@ export class LogPanel {
 <body>
     <div class="view-header">
         <div class="title-row">
-            <span class="view-title">${this.targetName} Logs</span>
-            <button id="addHighlight" class="icon-button" title="Add a highlight key (up to 10 searches)">🔍</button>
+            <span class="view-title">EMBEDDED LOGGER: DEVICES</span>
+            <span class="view-subtitle">${this.targetName} Logs</span>
         </div>
         <span id="status"></span>
     </div>

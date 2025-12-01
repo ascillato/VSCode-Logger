@@ -11,6 +11,7 @@ import { LogPanel } from './logPanel';
 
 // Map of deviceId to existing log panels so multiple clicks reuse tabs.
 const panelMap: Map<string, LogPanel> = new Map();
+let activePanel: LogPanel | undefined;
 
 /**
  * @brief Migrates legacy passwords into VS Code SecretStorage.
@@ -54,6 +55,17 @@ export async function activate(context: vscode.ExtensionContext) {
     });
 
     context.subscriptions.push(treeView);
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('embeddedLogger.addHighlightRow', () => {
+            if (activePanel) {
+                activePanel.addHighlightRow();
+                return;
+            }
+
+            vscode.window.showInformationMessage('Open a log panel to add highlight keys.');
+        })
+    );
 
     context.subscriptions.push(
         vscode.commands.registerCommand('embeddedLogger.editDevicesConfig', async () => {
@@ -113,6 +125,7 @@ export async function activate(context: vscode.ExtensionContext) {
             const existing = panelMap.get(panelId);
             if (existing) {
                 existing.reveal();
+                activePanel = existing;
                 return;
             }
 
@@ -122,8 +135,19 @@ export async function activate(context: vscode.ExtensionContext) {
                 { type: 'local', id: panelId, name: panelName, lines, filePath: uri.fsPath },
                 () => {
                     panelMap.delete(panelId);
+                    if (activePanel === panel) {
+                        activePanel = undefined;
+                    }
                 }
             );
+            panel.onDidChangeViewState((event) => {
+                if (event.webviewPanel.active) {
+                    activePanel = panel;
+                } else if (activePanel === panel) {
+                    activePanel = undefined;
+                }
+            });
+            activePanel = panel;
             panelMap.set(panelId, panel);
             panel.start();
         })
@@ -140,6 +164,7 @@ export async function activate(context: vscode.ExtensionContext) {
             const existing = panelMap.get(device.id);
             if (existing) {
                 existing.reveal();
+                activePanel = existing;
                 return;
             }
 
@@ -148,8 +173,19 @@ export async function activate(context: vscode.ExtensionContext) {
                 { type: 'remote', device },
                 () => {
                     panelMap.delete(device.id);
+                    if (activePanel === panel) {
+                        activePanel = undefined;
+                    }
                 }
             );
+            panel.onDidChangeViewState((event) => {
+                if (event.webviewPanel.active) {
+                    activePanel = panel;
+                } else if (activePanel === panel) {
+                    activePanel = undefined;
+                }
+            });
+            activePanel = panel;
             panelMap.set(device.id, panel);
             panel.start();
         })

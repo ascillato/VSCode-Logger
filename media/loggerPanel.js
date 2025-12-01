@@ -56,7 +56,6 @@
     const deletePresetBtn = document.getElementById('deletePreset');
     const exportBtn = document.getElementById('exportLogs');
     const wordWrapToggle = document.getElementById('wordWrapToggle');
-    const addHighlightBtn = document.getElementById('addHighlight');
     const highlightRows = document.getElementById('highlightRows');
     const logContainer = document.getElementById('logContainer');
     const statusEl = document.getElementById('status');
@@ -102,7 +101,7 @@
     function buildHighlightColors(baseColor) {
         const rgb = hexToRgb(baseColor);
         if (!rgb) {
-            return { foreground: baseColor, background: 'rgba(0,0,0,0.18)' };
+            return { foreground: baseColor, background: 'rgba(0,0,0,0.28)' };
         }
 
         const relativeLuminance = (channel) => {
@@ -112,12 +111,12 @@
 
         const luminance =
             0.2126 * relativeLuminance(rgb.r) + 0.7152 * relativeLuminance(rgb.g) + 0.0722 * relativeLuminance(rgb.b);
-        const lighten = luminance <= 0.5;
+        const lighten = luminance <= 0.55;
         const mixChannel = (channel) => {
-            const mixed = lighten ? channel + (255 - channel) * 0.45 : channel * 0.55;
+            const mixed = lighten ? channel + (255 - channel) * 0.8 : channel * 0.35;
             return Math.round(Math.min(255, Math.max(0, mixed)));
         };
-        const background = `rgba(${mixChannel(rgb.r)}, ${mixChannel(rgb.g)}, ${mixChannel(rgb.b)}, 0.38)`;
+        const background = `rgba(${mixChannel(rgb.r)}, ${mixChannel(rgb.g)}, ${mixChannel(rgb.b)}, 0.65)`;
 
         return { foreground: baseColor, background };
     }
@@ -464,10 +463,6 @@
         updateWordWrapClass();
     });
 
-    addHighlightBtn.addEventListener('click', () => {
-        addHighlight();
-    });
-
     window.addEventListener('message', (event) => {
         const message = event.data;
         switch (message.type) {
@@ -490,6 +485,9 @@
                 break;
             case 'error':
                 updateStatus(message.message);
+                break;
+            case 'addHighlightRow':
+                addHighlight();
                 break;
         }
     });

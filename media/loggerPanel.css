@@ -30,6 +30,11 @@ body {
     letter-spacing: 0.2px;
 }
 
+.view-subtitle {
+    font-size: 12px;
+    color: var(--vscode-descriptionForeground);
+}
+
 .icon-button {
     border: 1px solid var(--vscode-button-border, transparent);
     background: var(--vscode-button-secondaryBackground, var(--vscode-button-background));

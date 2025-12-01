@@ -126,6 +126,11 @@
     ],
     "commands": [
       {
+        "command": "embeddedLogger.addHighlightRow",
+        "title": "Highlight a Key",
+        "icon": "$(search)"
+      },
+      {
         "command": "embeddedLogger.openLocalLogFile",
         "title": "Open Local Log File",
         "icon": "$(file-text)"
@@ -148,9 +153,14 @@
     "menus": {
       "view/title": [
         {
-          "command": "embeddedLogger.openLocalLogFile",
+          "command": "embeddedLogger.addHighlightRow",
           "when": "view == embeddedLogger.devicesView",
           "group": "navigation@0"
+        },
+        {
+          "command": "embeddedLogger.openLocalLogFile",
+          "when": "view == embeddedLogger.devicesView",
+          "group": "navigation@1"
         },
         {
           "command": "embeddedLogger.clearStoredPasswords",
