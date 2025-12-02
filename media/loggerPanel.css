@@ -86,6 +86,11 @@ body {
     box-shadow: 0 0 0 1px var(--vscode-testing-iconPassed, #89d185);
 }
 
+#logContainer.reconnecting {
+    border-color: var(--vscode-inputValidation-warningBorder, #cca700);
+    box-shadow: 0 0 0 1px var(--vscode-inputValidation-warningBorder, #cca700);
+}
+
 .log-line {
     white-space: pre;
     font-family: var(--vscode-editor-font-family);
