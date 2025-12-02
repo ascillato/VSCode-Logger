@@ -62,6 +62,7 @@
     const savePresetBtn = document.getElementById('savePreset');
     const deletePresetBtn = document.getElementById('deletePreset');
     const exportBtn = document.getElementById('exportLogs');
+    const clearLogsBtn = document.getElementById('clearLogs');
     const wordWrapToggle = document.getElementById('wordWrapToggle');
     const autoScrollToggle = document.getElementById('autoScrollToggle');
     const autoScrollContainer = document.getElementById('autoScrollContainer');
@@ -325,6 +326,19 @@
             }
             updateSearchStatus();
         }
+    }
+
+    /**
+     * @brief Clears all rendered and stored log entries while preserving filters.
+     */
+    function clearLogs() {
+        state.entries = [];
+        state.filtered = [];
+        state.searchMatches = [];
+        state.searchIndex = -1;
+        state.activeSearchEntry = -1;
+        render();
+        updateSearchStatus();
     }
 
     /**
@@ -664,6 +678,10 @@
         vscode.postMessage({ type: 'exportLogs', deviceId: state.deviceId, lines });
     });
 
+    if (clearLogsBtn) {
+        clearLogsBtn.addEventListener('click', clearLogs);
+    }
+
     wordWrapToggle.addEventListener('change', () => {
         state.wordWrapEnabled = wordWrapToggle.checked;
         updateWordWrapClass();
@@ -744,6 +762,9 @@
                 }
                 if (!state.isLiveLog && autoReconnectContainer) {
                     autoReconnectContainer.classList.add('hidden');
+                }
+                if (clearLogsBtn) {
+                    clearLogsBtn.classList.toggle('hidden', !state.isLiveLog);
                 }
                 autoScrollToggle.checked = state.autoScrollEnabled;
                 autoReconnectToggle.checked = state.autoReconnectEnabled;
