@@ -12,7 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Add auto scroll toggle to log panel.
 - Append a marker line to the log output when an SSH session closes, including a timestamp.
-- Add auto reconnect controls to live logs
+- Add auto reconnect controls to live logs.
+- Add Clear Logs button.
 
 ### Changed
 - None
