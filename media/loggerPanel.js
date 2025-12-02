@@ -442,7 +442,7 @@
     function handleSessionClosed(message, closedAt) {
         const formattedTimestamp = formatLocalTimestamp(closedAt);
         handleConnectionLoss(message || 'Session closed.');
-        handleLogLine(`--- SSH session closed by device on ${formattedTimestamp}`, { className: 'session-closed' });
+        handleLogLine(`--- SSH session closed on ${formattedTimestamp}`, { className: 'session-closed' });
     }
 
     /**
