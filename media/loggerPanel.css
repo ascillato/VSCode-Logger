@@ -81,6 +81,11 @@ body {
     box-shadow: 0 0 0 1px var(--vscode-errorForeground, #e51400);
 }
 
+#logContainer.connected {
+    border-color: var(--vscode-testing-iconPassed, #89d185);
+    box-shadow: 0 0 0 1px var(--vscode-testing-iconPassed, #89d185);
+}
+
 .log-line {
     white-space: pre;
     font-family: var(--vscode-editor-font-family);

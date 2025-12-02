@@ -78,13 +78,14 @@ In the example, the other extensions (from other publishers) are:
 3. Run `npm run compile` to build the TypeScript.
 4. Press `F5` in VS Code to launch the extension development host and open the **Embedded Logger** view.
 
-### Clean and re-compile
-- `rm -rf node_modules; rm -rf out; npm install; npm run compile`
-
 ### Package Generation
 - Requires: `npm install -g @vscode/vsce`
 - Run: `vsce package` to generate vsix file to be installed into VSCode
 - Install locally on VSCode: `code --install-extension embedded-device-logger-0.4.0.vsix`
+
+### Clean and re-compile
+- `clear; rm -rf node_modules; rm -rf out; rm *.vsix; npm install; npm run compile; vsce package`
+- `code --install-extension embedded-device-logger-0.4.0.vsix`
 
 ### Generating Source Code Documentation
 1. Ensure Doxygen is available locally (`sudo apt-get install doxygen`).
