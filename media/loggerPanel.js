@@ -274,7 +274,7 @@
      * @brief Handles incoming log lines from the extension host.
      * @param line Raw log text to parse and display.
      */
-    function handleLogLine(line) {
+    function handleLogLine(line, options = {}) {
         const level = parseLevel(line);
         const lowerLine = line.toLowerCase();
         const entry = {
@@ -305,7 +305,11 @@
             }
             const highlights = getHighlightDescriptors();
             const div = document.createElement('div');
-            div.className = `log-line level-${entry.level.toLowerCase()}`;
+            const classes = [`log-line`, `level-${entry.level.toLowerCase()}`];
+            if (options.className) {
+                classes.push(options.className);
+            }
+            div.className = classes.join(' ');
             div.appendChild(buildHighlightedContent(entry.rawLine, highlights));
             logContainer.appendChild(div);
             if (searchTerm && lowerLine.includes(searchTerm)) {
@@ -367,6 +371,7 @@
             clearReconnectTimers();
         }
         updateActionButton();
+        updateConnectionDecorations();
     }
 
     /**
@@ -376,6 +381,14 @@
     function updateStatus(text, options = {}) {
         statusEl.textContent = text || '';
         updateActionButton(options);
+    }
+
+    /**
+     * @brief Adds or removes connection-state driven styling.
+     */
+    function updateConnectionDecorations() {
+        const isDisconnected = state.connectionState === 'disconnected';
+        logContainer.classList.toggle('disconnected', isDisconnected);
     }
 
     /**
@@ -427,9 +440,14 @@
      * @param closedAt Timestamp string to display in the marker line.
      */
     function handleSessionClosed(message, closedAt) {
-        const timestamp = closedAt || new Date().toLocaleString();
+        const closedTimestamp = closedAt ? new Date(closedAt) : new Date();
+        const timestamp = Number.isNaN(closedTimestamp.valueOf()) ? new Date() : closedTimestamp;
+        const isoParts = timestamp.toISOString().split('T');
+        const [datePart, timeWithZone] = isoParts;
+        const timePart = timeWithZone.replace('Z', '').split('.')[0];
+        const formattedTimestamp = `${datePart} at ${timePart}`;
         handleConnectionLoss(message || 'Session closed.');
-        handleLogLine(`--- SSH session closed by device at ${timestamp}`);
+        handleLogLine(`--- SSH session closed by device on ${formattedTimestamp}`, { className: 'session-closed' });
     }
 
     /**
@@ -710,7 +728,7 @@
                 state.deviceId = message.deviceId;
                 state.presets = message.presets || [];
                 state.isLiveLog = message.isLive !== false;
-                state.connectionState = state.isLiveLog ? 'connecting' : 'disconnected';
+                setConnectionState(state.isLiveLog ? 'connecting' : 'disconnected');
                 setHighlights(message.highlights || []);
                 if (!state.isLiveLog && autoScrollContainer) {
                     autoScrollContainer.classList.add('hidden');
@@ -722,7 +740,6 @@
                 autoReconnectToggle.checked = state.autoReconnectEnabled;
                 updatePresetDropdown();
                 applyFilters();
-                updateActionButton();
                 break;
             case 'logLine':
                 handleLogLine(message.line);

@@ -224,7 +224,7 @@ export class LogPanel {
      * @brief Posts the session closed status and marker line to the Webview.
      */
     private handleSessionClose() {
-        const closedAt = new Date().toLocaleString();
+        const closedAt = new Date().toISOString();
         this.session = undefined;
         this.panel.webview.postMessage({
             type: 'sessionClosed',
@@ -243,7 +243,7 @@ export class LogPanel {
 
         this.session.dispose();
         this.session = undefined;
-        const closedAt = new Date().toLocaleString();
+        const closedAt = new Date().toISOString();
         this.panel.webview.postMessage({
             type: 'sessionClosed',
             message: 'Disconnected.',
