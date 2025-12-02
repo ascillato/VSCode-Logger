@@ -342,6 +342,9 @@ export class LogPanel {
         <label>&nbsp;
             <button id="exportLogs">Export Logs</button>
         </label>
+        <label>&nbsp;
+            <button id="clearLogs">Clear Logs</button>
+        </label>
         <label class="word-wrap-toggle">
             <span>Word Wrap</span>
             <input type="checkbox" id="wordWrapToggle" />

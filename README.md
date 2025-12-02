@@ -44,8 +44,8 @@ If no password is stored yet, the extension prompts for it when connecting and s
 - Presets are stored per-device in the workspace state using the key `embeddedLogger.presets.<deviceId>`.
 - Exports only include log lines currently visible after applying filters.
 - When an SSH session closes, the log view appends `--- SSH session closed on <timestamp>` and offers a **Reconnect** button next to the status text to restart streaming.
-- Use the **Open Local Log File** title button in the Embedded Logger devices view (or run the command with the same name) to select a `.log` or `.txt` file from your machine. The chosen file is loaded into the log viewer so you can reuse filtering, presets, and export just like a live connection.
 - Click the search icon in the Embedded Logger devices view to add up to ten highlight rows, each with its own colour and editable keyword that updates live and imported logs instantly.
+- Use the **Open Local Log File** title button in the Embedded Logger devices view (or run the command with the same name) to select a `.log` or `.txt` file from your machine. The chosen file is loaded into the log viewer so you can reuse filtering, presets, export filtered logs and highlights just like a live connection.
 
 ## Share Activity Bar with other extensions
 
