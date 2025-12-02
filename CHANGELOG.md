@@ -10,9 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.0] - 2025-12-01 [RECONNECT]
 
 ### Added
-- Append a marker line to the log output when an SSH session closes, including the device-provided timestamp.
-- Surface a **Reconnect** button next to the session status to restart the SSH session without reopening the panel.
 - Add auto scroll toggle to log panel.
+- Append a marker line to the log output when an SSH session closes, including the device-provided timestamp.
+- Add auto reconnect controls to live logs
 
 ### Changed
 - None
