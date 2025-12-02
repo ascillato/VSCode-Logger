@@ -437,17 +437,26 @@
     /**
      * @brief Handles session closed notifications by updating status and appending a marker line.
      * @param message Status message provided by the extension host.
-     * @param closedAt Timestamp string to display in the marker line.
+     * @param closedAt Timestamp value (string or number) to display in the marker line.
      */
     function handleSessionClosed(message, closedAt) {
-        const closedTimestamp = closedAt ? new Date(closedAt) : new Date();
-        const timestamp = Number.isNaN(closedTimestamp.valueOf()) ? new Date() : closedTimestamp;
-        const isoParts = timestamp.toISOString().split('T');
-        const [datePart, timeWithZone] = isoParts;
-        const timePart = timeWithZone.replace('Z', '').split('.')[0];
-        const formattedTimestamp = `${datePart} at ${timePart}`;
+        const formattedTimestamp = formatLocalTimestamp(closedAt);
         handleConnectionLoss(message || 'Session closed.');
         handleLogLine(`--- SSH session closed by device on ${formattedTimestamp}`, { className: 'session-closed' });
+    }
+
+    /**
+     * @brief Formats a timestamp into a local ISO-like string without timezone conversion.
+     * @param value A timestamp value compatible with the Date constructor.
+     * @returns {string} Formatted timestamp like `2025-12-01 at 22:42:29`.
+     */
+    function formatLocalTimestamp(value) {
+        const timestamp = value ? new Date(value) : new Date();
+        const safeTimestamp = Number.isNaN(timestamp.valueOf()) ? new Date() : timestamp;
+        const pad = (num) => String(num).padStart(2, '0');
+        const datePart = `${safeTimestamp.getFullYear()}-${pad(safeTimestamp.getMonth() + 1)}-${pad(safeTimestamp.getDate())}`;
+        const timePart = `${pad(safeTimestamp.getHours())}:${pad(safeTimestamp.getMinutes())}:${pad(safeTimestamp.getSeconds())}`;
+        return `${datePart} at ${timePart}`;
     }
 
     /**
