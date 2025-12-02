@@ -52,6 +52,8 @@
         searchIndex: -1,
         activeSearchEntry: -1,
         isLiveLog: true,
+        autoReconnectEnabled: true,
+        connectionState: 'unknown',
     };
 
     const minLevelSelect = document.getElementById('minLevel');
@@ -63,6 +65,8 @@
     const wordWrapToggle = document.getElementById('wordWrapToggle');
     const autoScrollToggle = document.getElementById('autoScrollToggle');
     const autoScrollContainer = document.getElementById('autoScrollContainer');
+    const autoReconnectToggle = document.getElementById('autoReconnectToggle');
+    const autoReconnectContainer = document.getElementById('autoReconnectContainer');
     const logContainer = document.getElementById('logContainer');
     const statusEl = document.getElementById('status');
     const reconnectButton = document.getElementById('reconnectButton');
@@ -70,6 +74,10 @@
     const searchPrevBtn = document.getElementById('searchPrev');
     const searchNextBtn = document.getElementById('searchNext');
     const searchCount = document.getElementById('searchCount');
+
+    let reconnectTimeoutId = null;
+    let reconnectIntervalId = null;
+    let reconnectCountdown = 0;
 
     /**
      * @brief Extracts the log level from a raw log line.
@@ -316,22 +324,101 @@
     }
 
     /**
+     * @brief Clears any active reconnect countdown timers.
+     */
+    function clearReconnectTimers() {
+        if (reconnectTimeoutId) {
+            clearTimeout(reconnectTimeoutId);
+            reconnectTimeoutId = null;
+        }
+        if (reconnectIntervalId) {
+            clearInterval(reconnectIntervalId);
+            reconnectIntervalId = null;
+        }
+        reconnectCountdown = 0;
+    }
+
+    /**
+     * @brief Updates the connection action button visibility and state.
+     * @param options Additional options to control disabled behaviour.
+     */
+    function updateActionButton(options = {}) {
+        if (!state.isLiveLog) {
+            reconnectButton.hidden = true;
+            return;
+        }
+
+        reconnectButton.hidden = false;
+        reconnectButton.textContent = state.connectionState === 'connected' ? 'Disconnect' : 'Reconnect';
+
+        const shouldDisable = options.preserveDisabled
+            ? reconnectButton.disabled
+            : options.disableButton ?? state.connectionState === 'connecting';
+        reconnectButton.disabled = shouldDisable;
+    }
+
+    /**
+     * @brief Updates the tracked connection state.
+     * @param connectionState New connection state string.
+     */
+    function setConnectionState(connectionState) {
+        state.connectionState = connectionState;
+        if (connectionState === 'connected') {
+            clearReconnectTimers();
+        }
+        updateActionButton();
+    }
+
+    /**
      * @brief Updates the status text shown in the UI.
      * @param text Status message to display.
      */
     function updateStatus(text, options = {}) {
         statusEl.textContent = text || '';
+        updateActionButton(options);
+    }
 
-        if (options.showReconnect) {
-            reconnectButton.hidden = false;
-            if (!options.preserveDisabled) {
-                reconnectButton.disabled = false;
-            }
+    /**
+     * @brief Starts a countdown and triggers a reconnect request after it elapses.
+     * @param baseMessage Message to prefix the countdown with.
+     */
+    function startReconnectCountdown(baseMessage = 'Connection closed.') {
+        if (!state.isLiveLog || !state.autoReconnectEnabled || reconnectTimeoutId) {
+            updateStatus(baseMessage, { disableButton: false });
             return;
         }
 
-        reconnectButton.hidden = true;
-        reconnectButton.disabled = false;
+        reconnectCountdown = 5;
+        const renderCountdown = () => `${baseMessage} Retrying in ${reconnectCountdown} seconds...`;
+        updateStatus(renderCountdown(), { disableButton: false });
+        reconnectIntervalId = window.setInterval(() => {
+            reconnectCountdown -= 1;
+            if (reconnectCountdown > 0) {
+                updateStatus(renderCountdown(), { disableButton: false });
+            }
+        }, 1000);
+
+        reconnectTimeoutId = window.setTimeout(() => {
+            clearReconnectTimers();
+            setConnectionState('connecting');
+            updateStatus('Reconnecting...', { disableButton: true });
+            vscode.postMessage({ type: 'requestReconnect' });
+        }, 5000);
+    }
+
+    /**
+     * @brief Handles connection losses by updating status and scheduling reconnects.
+     * @param message Status message provided by the extension host.
+     */
+    function handleConnectionLoss(message) {
+        setConnectionState('disconnected');
+        clearReconnectTimers();
+        if (state.autoReconnectEnabled && state.isLiveLog) {
+            startReconnectCountdown(message || 'Connection closed.');
+            return;
+        }
+
+        updateStatus(message || 'Connection closed.', { disableButton: false });
     }
 
     /**
@@ -341,8 +428,38 @@
      */
     function handleSessionClosed(message, closedAt) {
         const timestamp = closedAt || new Date().toLocaleString();
-        updateStatus(message || 'Session closed.', { showReconnect: true });
+        handleConnectionLoss(message || 'Session closed.');
         handleLogLine(`--- SSH session closed by device at ${timestamp}`);
+    }
+
+    /**
+     * @brief Interprets status messages from the extension host.
+     * @param text Status message to display.
+     */
+    function handleStatusMessage(text) {
+        if (!text) {
+            updateStatus('');
+            return;
+        }
+
+        if (text.startsWith('Connected')) {
+            setConnectionState('connected');
+            updateStatus(text, { disableButton: false });
+            return;
+        }
+
+        if (text.startsWith('Connecting') || text.startsWith('Reconnecting')) {
+            setConnectionState('connecting');
+            updateStatus(text, { disableButton: true });
+            return;
+        }
+
+        if (text.startsWith('Connection closed')) {
+            handleConnectionLoss('Connection closed.');
+            return;
+        }
+
+        updateStatus(text);
     }
 
     /**
@@ -532,9 +649,30 @@
         }
     });
 
+    autoReconnectToggle.addEventListener('change', () => {
+        state.autoReconnectEnabled = autoReconnectToggle.checked;
+        if (!state.autoReconnectEnabled) {
+            clearReconnectTimers();
+        } else if (state.connectionState === 'disconnected') {
+            startReconnectCountdown('Connection closed.');
+        }
+    });
+
     reconnectButton.addEventListener('click', () => {
-        reconnectButton.disabled = true;
-        updateStatus('Reconnecting...', { showReconnect: true, preserveDisabled: true });
+        clearReconnectTimers();
+        if (state.connectionState === 'connected') {
+            state.autoReconnectEnabled = false;
+            if (autoReconnectToggle) {
+                autoReconnectToggle.checked = false;
+            }
+            setConnectionState('connecting');
+            updateStatus('Disconnecting...', { disableButton: true });
+            vscode.postMessage({ type: 'requestDisconnect' });
+            return;
+        }
+
+        setConnectionState('connecting');
+        updateStatus('Reconnecting...', { disableButton: true, preserveDisabled: true });
         vscode.postMessage({ type: 'requestReconnect' });
     });
 
@@ -572,13 +710,19 @@
                 state.deviceId = message.deviceId;
                 state.presets = message.presets || [];
                 state.isLiveLog = message.isLive !== false;
+                state.connectionState = state.isLiveLog ? 'connecting' : 'disconnected';
                 setHighlights(message.highlights || []);
                 if (!state.isLiveLog && autoScrollContainer) {
                     autoScrollContainer.classList.add('hidden');
                 }
+                if (!state.isLiveLog && autoReconnectContainer) {
+                    autoReconnectContainer.classList.add('hidden');
+                }
                 autoScrollToggle.checked = state.autoScrollEnabled;
+                autoReconnectToggle.checked = state.autoReconnectEnabled;
                 updatePresetDropdown();
                 applyFilters();
+                updateActionButton();
                 break;
             case 'logLine':
                 handleLogLine(message.line);
@@ -589,7 +733,7 @@
                 updatePresetDropdown();
                 break;
             case 'status':
-                updateStatus(message.message);
+                handleStatusMessage(message.message);
                 break;
             case 'error':
                 updateStatus(message.message);
