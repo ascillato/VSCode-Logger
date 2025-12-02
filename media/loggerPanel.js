@@ -274,7 +274,7 @@
      * @brief Handles incoming log lines from the extension host.
      * @param line Raw log text to parse and display.
      */
-    function handleLogLine(line) {
+    function handleLogLine(line, options = {}) {
         const level = parseLevel(line);
         const lowerLine = line.toLowerCase();
         const entry = {
@@ -305,7 +305,11 @@
             }
             const highlights = getHighlightDescriptors();
             const div = document.createElement('div');
-            div.className = `log-line level-${entry.level.toLowerCase()}`;
+            const classes = [`log-line`, `level-${entry.level.toLowerCase()}`];
+            if (options.className) {
+                classes.push(options.className);
+            }
+            div.className = classes.join(' ');
             div.appendChild(buildHighlightedContent(entry.rawLine, highlights));
             logContainer.appendChild(div);
             if (searchTerm && lowerLine.includes(searchTerm)) {
@@ -367,6 +371,7 @@
             clearReconnectTimers();
         }
         updateActionButton();
+        updateConnectionDecorations();
     }
 
     /**
@@ -376,6 +381,14 @@
     function updateStatus(text, options = {}) {
         statusEl.textContent = text || '';
         updateActionButton(options);
+    }
+
+    /**
+     * @brief Adds or removes connection-state driven styling.
+     */
+    function updateConnectionDecorations() {
+        const isDisconnected = state.connectionState === 'disconnected';
+        logContainer.classList.toggle('disconnected', isDisconnected);
     }
 
     /**
@@ -424,12 +437,26 @@
     /**
      * @brief Handles session closed notifications by updating status and appending a marker line.
      * @param message Status message provided by the extension host.
-     * @param closedAt Timestamp string to display in the marker line.
+     * @param closedAt Timestamp value (string or number) to display in the marker line.
      */
     function handleSessionClosed(message, closedAt) {
-        const timestamp = closedAt || new Date().toLocaleString();
+        const formattedTimestamp = formatLocalTimestamp(closedAt);
         handleConnectionLoss(message || 'Session closed.');
-        handleLogLine(`--- SSH session closed by device at ${timestamp}`);
+        handleLogLine(`--- SSH session closed on ${formattedTimestamp}`, { className: 'session-closed' });
+    }
+
+    /**
+     * @brief Formats a timestamp into a local ISO-like string without timezone conversion.
+     * @param value A timestamp value compatible with the Date constructor.
+     * @returns {string} Formatted timestamp like `2025-12-01 at 22:42:29`.
+     */
+    function formatLocalTimestamp(value) {
+        const timestamp = value ? new Date(value) : new Date();
+        const safeTimestamp = Number.isNaN(timestamp.valueOf()) ? new Date() : timestamp;
+        const pad = (num) => String(num).padStart(2, '0');
+        const datePart = `${safeTimestamp.getFullYear()}-${pad(safeTimestamp.getMonth() + 1)}-${pad(safeTimestamp.getDate())}`;
+        const timePart = `${pad(safeTimestamp.getHours())}:${pad(safeTimestamp.getMinutes())}:${pad(safeTimestamp.getSeconds())}`;
+        return `${datePart} at ${timePart}`;
     }
 
     /**
@@ -710,7 +737,7 @@
                 state.deviceId = message.deviceId;
                 state.presets = message.presets || [];
                 state.isLiveLog = message.isLive !== false;
-                state.connectionState = state.isLiveLog ? 'connecting' : 'disconnected';
+                setConnectionState(state.isLiveLog ? 'connecting' : 'disconnected');
                 setHighlights(message.highlights || []);
                 if (!state.isLiveLog && autoScrollContainer) {
                     autoScrollContainer.classList.add('hidden');
@@ -722,7 +749,6 @@
                 autoReconnectToggle.checked = state.autoReconnectEnabled;
                 updatePresetDropdown();
                 applyFilters();
-                updateActionButton();
                 break;
             case 'logLine':
                 handleLogLine(message.line);
