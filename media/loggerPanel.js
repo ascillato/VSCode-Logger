@@ -79,6 +79,7 @@
     let reconnectTimeoutId = null;
     let reconnectIntervalId = null;
     let reconnectCountdown = 0;
+    const AUTO_SCROLL_BOTTOM_THRESHOLD = 4;
 
     /**
      * @brief Extracts the log level from a raw log line.
@@ -516,6 +517,28 @@
     }
 
     /**
+     * @brief Updates auto scroll state and keeps the toggle in sync.
+     * @param enabled Whether auto scroll should be enabled.
+     */
+    function setAutoScrollEnabled(enabled) {
+        if (state.autoScrollEnabled === enabled) {
+            return;
+        }
+
+        state.autoScrollEnabled = enabled;
+        autoScrollToggle.checked = enabled;
+    }
+
+    /**
+     * @brief Determines whether the log container is scrolled to the bottom.
+     * @returns True when the scroll position is within a threshold of the bottom.
+     */
+    function isAtLogBottom() {
+        const distanceFromBottom = logContainer.scrollHeight - logContainer.scrollTop - logContainer.clientHeight;
+        return distanceFromBottom <= AUTO_SCROLL_BOTTOM_THRESHOLD;
+    }
+
+    /**
      * @brief Updates the search status label and button states.
      */
     function updateSearchStatus() {
@@ -693,7 +716,7 @@
     });
 
     autoScrollToggle.addEventListener('change', () => {
-        state.autoScrollEnabled = autoScrollToggle.checked;
+        setAutoScrollEnabled(autoScrollToggle.checked);
         if (state.autoScrollEnabled && state.searchIndex === -1) {
             logContainer.scrollTop = logContainer.scrollHeight;
         }
@@ -705,6 +728,26 @@
             clearReconnectTimers();
         } else if (state.connectionState === 'disconnected') {
             startReconnectCountdown('Connection closed.');
+        }
+    });
+
+    logContainer.addEventListener('scroll', () => {
+        if (!state.isLiveLog) {
+            return;
+        }
+
+        const atBottom = isAtLogBottom();
+
+        if (state.autoScrollEnabled && !atBottom) {
+            setAutoScrollEnabled(false);
+            return;
+        }
+
+        if (!state.autoScrollEnabled && atBottom) {
+            setAutoScrollEnabled(true);
+            if (state.searchIndex === -1) {
+                logContainer.scrollTop = logContainer.scrollHeight;
+            }
         }
     });
 
