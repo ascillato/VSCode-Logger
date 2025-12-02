@@ -403,9 +403,11 @@
     function updateConnectionDecorations() {
         const isConnected = state.isLiveLog && state.connectionState === 'connected';
         const isDisconnected = state.isLiveLog && state.connectionState === 'disconnected';
+        const isReconnecting = state.isLiveLog && state.connectionState === 'connecting';
 
         logContainer.classList.toggle('connected', isConnected);
         logContainer.classList.toggle('disconnected', isDisconnected);
+        logContainer.classList.toggle('reconnecting', isReconnecting);
     }
 
     /**
