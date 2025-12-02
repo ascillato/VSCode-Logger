@@ -25,6 +25,7 @@ A Visual Studio Code extension that connects to embedded Linux devices over SSH,
 Add devices in your VS Code settings under `embeddedLogger.devices`:
 
 ```json
+"embeddedLogger.maxLinesPerTab": 100000,
 "embeddedLogger.devices": [
   {
     "id": "deviceA",
@@ -38,6 +39,8 @@ Add devices in your VS Code settings under `embeddedLogger.devices`:
 ```
 
 If no password is stored yet, the extension prompts for it when connecting and saves it locally and securely.
+
+- Control memory usage by capping retained lines per log tab with `embeddedLogger.maxLinesPerTab` (default: 100000).
 
 ## Notes
 - Colorization of lines are done based on the loglevel (DEBUG, INFO, ERROR, etc). If these keys are not present in the log, no colorization will be applied.
@@ -81,11 +84,11 @@ In the example, the other extensions (from other publishers) are:
 ### Package Generation
 - Requires: `npm install -g @vscode/vsce`
 - Run: `vsce package` to generate vsix file to be installed into VSCode
-- Install locally on VSCode: `code --install-extension embedded-device-logger-0.4.0.vsix`
+- Install locally on VSCode: `code --install-extension embedded-device-logger-0.5.0.vsix`
 
 ### Clean and re-compile
 - `clear; rm -rf node_modules; rm -rf out; rm *.vsix; npm install; npm run compile; vsce package`
-- `code --install-extension embedded-device-logger-0.4.0.vsix`
+- `code --install-extension embedded-device-logger-0.5.0.vsix`
 
 ### Generating Source Code Documentation
 1. Ensure Doxygen is available locally (`sudo apt-get install doxygen`).

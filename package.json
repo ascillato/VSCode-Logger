@@ -3,7 +3,7 @@
   "displayName": "Embedded Device Logger",
   "description": "Stream and filter embedded Linux device logs over SSH inside VS Code.",
   "icon": "media/icon.png",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "publisher": "Scallant",
   "author": "A. Scillato",
   "engines": {
@@ -98,6 +98,12 @@
               "logCommand": "tail -F /var/log/syslog"
             }
           ]
+        },
+        "embeddedLogger.maxLinesPerTab": {
+          "type": "number",
+          "default": 100000,
+          "description": "Maximum number of log lines retained per log tab before older lines are discarded.",
+          "minimum": 1
         }
       }
     },

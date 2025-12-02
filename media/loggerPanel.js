@@ -54,6 +54,7 @@
         isLiveLog: true,
         autoReconnectEnabled: true,
         connectionState: 'unknown',
+        maxEntries: 100000,
     };
 
     const minLevelSelect = document.getElementById('minLevel');
@@ -284,13 +285,13 @@
             rawLine: line,
         };
         state.entries.push(entry);
-        if (state.entries.length > 10000) {
+        if (state.entries.length > state.maxEntries) {
             state.entries.shift();
         }
         const searchTerm = state.searchTerm.trim().toLowerCase();
         if (levelPasses(level) && (!state.textFilter || lowerLine.includes(state.textFilter.toLowerCase()))) {
             state.filtered.push(entry);
-            if (state.filtered.length > 10000) {
+            if (state.filtered.length > state.maxEntries) {
                 state.filtered.shift();
                 if (logContainer.firstChild) {
                     logContainer.removeChild(logContainer.firstChild);
@@ -760,6 +761,7 @@
                 state.deviceId = message.deviceId;
                 state.presets = message.presets || [];
                 state.isLiveLog = message.isLive !== false;
+                state.maxEntries = Math.max(1, Number(message.maxEntries) || state.maxEntries);
                 setConnectionState(state.isLiveLog ? 'connecting' : 'disconnected');
                 setHighlights(message.highlights || []);
                 if (!state.isLiveLog && autoScrollContainer) {
