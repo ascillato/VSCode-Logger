@@ -73,7 +73,7 @@ $(function() {
   <div class="headertitle"><div class="title">Embedded Device Logger </div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p><a class="anchor" id="md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2README"></a> A Visual Studio Code extension that connects to embedded Linux devices over SSH, tails their logs, and displays them with filtering, colorization, presets, and export.</p>
+<div class="textblock"><p><a class="anchor" id="md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2README"></a> A Visual Studio Code extension that connects to embedded Linux devices over SSH, tails their logs, and displays them with loglevel colorization, filtering presets, custom keywords highlighting and filtered export.</p>
 <div class="image">
 <img src="screenshot_example1.png" alt=""/>
 <div class="caption">
@@ -86,6 +86,7 @@ Features</h1>
 <li><b>Log level parsing, filtering, and colorization</b> inside a Webview panel per device.</li>
 <li><b>Highlight up to 10 custom keywords</b> with color-coded, bold, underlined text in both live and imported logs.</li>
 <li><b>Find text inside live or imported logs</b> with Ctrl/Cmd+F, including next/previous navigation.</li>
+<li><b>Reconnect closed SSH sessions</b> directly from the log panel and automatically mark the log when a device closes a session.</li>
 <li>Saved filter presets stored per device.</li>
 <li><b>Export</b> currently visible (filtered) logs to a file.</li>
 <li><b>Open any log files and filter them</b> with the same interface.</li>
@@ -117,8 +118,9 @@ Notes</h1>
 <li>Colorization of lines are done based on the loglevel (DEBUG, INFO, ERROR, etc). If these keys are not present in the log, no colorization will be applied.</li>
 <li>Presets are stored per-device in the workspace state using the key <code>embeddedLogger.presets.&lt;deviceId&gt;</code>.</li>
 <li>Exports only include log lines currently visible after applying filters.</li>
-<li>Use the <b>Open Local Log File</b> title button in the Embedded Logger devices view (or run the command with the same name) to select a <code>.log</code> or <code>.txt</code> file from your machine. The chosen file is loaded into the log viewer so you can reuse filtering, presets, and export just like a live connection.</li>
+<li>When an SSH session closes, the log view appends <code>--- SSH session closed on &lt;timestamp&gt;</code> and offers a <b>Reconnect</b> button next to the status text to restart streaming.</li>
 <li>Click the search icon in the Embedded Logger devices view to add up to ten highlight rows, each with its own colour and editable keyword that updates live and imported logs instantly.</li>
+<li>Use the <b>Open Local Log File</b> title button in the Embedded Logger devices view (or run the command with the same name) to select a <code>.log</code> or <code>.txt</code> file from your machine. The chosen file is loaded into the log viewer so you can reuse filtering, presets, export filtered logs and highlights just like a live connection.</li>
 </ul>
 <h1><a class="anchor" id="autotoc_md4"></a>
 Share Activity Bar with other extensions</h1>
@@ -160,16 +162,17 @@ Running The Extension Locally</h2>
 <li>Press <code>F5</code> in VS Code to launch the extension development host and open the <b>Embedded Logger</b> view.</li>
 </ol>
 <h2><a class="anchor" id="autotoc_md11"></a>
-Clean and re-compile</h2>
-<ul>
-<li><code>rm -rf node_modules; rm -rf out; npm install; npm run compile</code></li>
-</ul>
-<h2><a class="anchor" id="autotoc_md12"></a>
 Package Generation</h2>
 <ul>
 <li>Requires: <code>npm install -g @vscode/vsce</code></li>
 <li>Run: <code>vsce package</code> to generate vsix file to be installed into VSCode</li>
-<li>Install locally on VSCode: <code>code --install-extension embedded-device-logger-0.3.0.vsix</code></li>
+<li>Install locally on VSCode: <code>code --install-extension embedded-device-logger-0.4.0.vsix</code></li>
+</ul>
+<h2><a class="anchor" id="autotoc_md12"></a>
+Clean and re-compile</h2>
+<ul>
+<li><code>clear; rm -rf node_modules; rm -rf out; rm *.vsix; npm install; npm run compile; vsce package</code></li>
+<li><code>code --install-extension embedded-device-logger-0.4.0.vsix</code></li>
 </ul>
 <h2><a class="anchor" id="autotoc_md13"></a>
 Generating Source Code Documentation</h2>

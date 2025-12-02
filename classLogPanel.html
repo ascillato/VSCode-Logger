@@ -105,9 +105,18 @@ Public Member Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-methods" name="pri-methods"></a>
 Private Member Functions</h2></td></tr>
-<tr class="memitem:a5f3f5c76c56ed83690a7ea99960ecb29" id="r_a5f3f5c76c56ed83690a7ea99960ecb29"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLogPanel.html#a5f3f5c76c56ed83690a7ea99960ecb29">sendInitialLines</a> ()</td></tr>
-<tr class="memdesc:a5f3f5c76c56ed83690a7ea99960ecb29"><td class="mdescLeft">&#160;</td><td class="mdescRight">Emits preloaded log lines for local files into the Webview.  <br /></td></tr>
-<tr class="separator:a5f3f5c76c56ed83690a7ea99960ecb29"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0530e568c5d2ed38c4c9a4f842000347" id="r_a0530e568c5d2ed38c4c9a4f842000347"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLogPanel.html#a0530e568c5d2ed38c4c9a4f842000347">createSession</a> ()</td></tr>
+<tr class="memdesc:a0530e568c5d2ed38c4c9a4f842000347"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a new log session wired to the current panel callbacks.  <br /></td></tr>
+<tr class="separator:a0530e568c5d2ed38c4c9a4f842000347"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4d56e6f8ea34c50891a8145ffa302fd6" id="r_a4d56e6f8ea34c50891a8145ffa302fd6"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLogPanel.html#a4d56e6f8ea34c50891a8145ffa302fd6">handleSessionClose</a> ()</td></tr>
+<tr class="memdesc:a4d56e6f8ea34c50891a8145ffa302fd6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Posts the session closed status and marker line to the Webview.  <br /></td></tr>
+<tr class="separator:a4d56e6f8ea34c50891a8145ffa302fd6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6711453942883bad1421077ebf9a7de0" id="r_a6711453942883bad1421077ebf9a7de0"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLogPanel.html#a6711453942883bad1421077ebf9a7de0">disconnect</a> ()</td></tr>
+<tr class="memdesc:a6711453942883bad1421077ebf9a7de0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Disposes the active session and notifies the Webview of the closure.  <br /></td></tr>
+<tr class="separator:a6711453942883bad1421077ebf9a7de0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9fa9817b3321b1f5ab4e3110733d0ea6" id="r_a9fa9817b3321b1f5ab4e3110733d0ea6"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLogPanel.html#a9fa9817b3321b1f5ab4e3110733d0ea6">getHtml</a> ()</td></tr>
+<tr class="memdesc:a9fa9817b3321b1f5ab4e3110733d0ea6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds the HTML string loaded into the Webview.  <br /></td></tr>
+<tr class="separator:a9fa9817b3321b1f5ab4e3110733d0ea6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6dbfe3f3ae498e0abec2f19533e35efc" id="r_a6dbfe3f3ae498e0abec2f19533e35efc"><td class="memItemLeft" align="right" valign="top">async&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLogPanel.html#a6dbfe3f3ae498e0abec2f19533e35efc">sendInitialData</a> ()</td></tr>
 <tr class="memdesc:a6dbfe3f3ae498e0abec2f19533e35efc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sends device metadata and stored presets to the Webview.  <br /></td></tr>
 <tr class="separator:a6dbfe3f3ae498e0abec2f19533e35efc"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -131,8 +140,8 @@ Private Member Functions</h2></td></tr>
 Private Attributes</h2></td></tr>
 <tr class="memitem:ae7831a09011fd1b6b4e43f39c88b9428" id="r_ae7831a09011fd1b6b4e43f39c88b9428"><td class="memItemLeft" align="right" valign="top">readonly&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLogPanel.html#ae7831a09011fd1b6b4e43f39c88b9428">panel</a>: vscode.WebviewPanel</td></tr>
 <tr class="separator:ae7831a09011fd1b6b4e43f39c88b9428"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4a6fedb40aba1304533b8dc9164344ca" id="r_a4a6fedb40aba1304533b8dc9164344ca"><td class="memItemLeft" align="right" valign="top">readonly&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLogPanel.html#a4a6fedb40aba1304533b8dc9164344ca">session</a>: <a class="el" href="classLogSession.html">LogSession</a></td></tr>
-<tr class="separator:a4a6fedb40aba1304533b8dc9164344ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aeef411407858e87393cabcce7b966291" id="r_aeef411407858e87393cabcce7b966291"><td class="memItemLeft" align="right" valign="top">session&#160;</td><td class="memItemRight" valign="bottom">: <a class="el" href="classLogSession.html">LogSession</a></td></tr>
+<tr class="separator:aeef411407858e87393cabcce7b966291"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab660abe2c91b6710ff1d70a17e71c119" id="r_ab660abe2c91b6710ff1d70a17e71c119"><td class="memItemLeft" align="right" valign="top">readonly&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLogPanel.html#ab660abe2c91b6710ff1d70a17e71c119">presetsKey</a>: string</td></tr>
 <tr class="separator:ab660abe2c91b6710ff1d70a17e71c119"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac566fd425caae6ae61f4ff35afdf175d" id="r_ac566fd425caae6ae61f4ff35afdf175d"><td class="memItemLeft" align="right" valign="top">readonly&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLogPanel.html#ac566fd425caae6ae61f4ff35afdf175d">targetName</a>: string</td></tr>
@@ -145,8 +154,8 @@ Private Attributes</h2></td></tr>
 <tr class="separator:a40187fc43fa779d27b24b642578edbb6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a98925453191807557ada30e7ad91e12b" id="r_a98925453191807557ada30e7ad91e12b"><td class="memItemLeft" align="right" valign="top">readonly&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLogPanel.html#a98925453191807557ada30e7ad91e12b">device</a>: <a class="el" href="deviceTree_8ts.html#a79002184a69cc451004e7311917c4644">EmbeddedDevice</a></td></tr>
 <tr class="separator:a98925453191807557ada30e7ad91e12b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a533363b8d024d7aca7fbed828bd8e2bd" id="r_a533363b8d024d7aca7fbed828bd8e2bd"><td class="memItemLeft" align="right" valign="top"><a class="el" href="extension_8ts.html#a4cf0cbf413ae16906f3b896f2fbb29fa">highlights</a>&#160;</td><td class="memItemRight" valign="bottom">: <a class="el" href="sidebarView_8ts.html#a70c58d2bba69e40d44ba5316f17dd427">HighlightDefinition</a>[]</td></tr>
-<tr class="separator:a533363b8d024d7aca7fbed828bd8e2bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a37d883babd0e2a14510caca09c1838cf" id="r_a37d883babd0e2a14510caca09c1838cf"><td class="memItemLeft" align="right" valign="top"><a class="el" href="extension_8ts.html#a4cf0cbf413ae16906f3b896f2fbb29fa">highlights</a>&#160;</td><td class="memItemRight" valign="bottom">: <a class="el" href="sidebarView_8ts.html#a70c58d2bba69e40d44ba5316f17dd427">HighlightDefinition</a>[]</td></tr>
+<tr class="separator:a37d883babd0e2a14510caca09c1838cf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab8305554400c48dd806a5491681e9954" id="r_ab8305554400c48dd806a5491681e9954"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLogPanel.html#ab8305554400c48dd806a5491681e9954">disposed</a> = false</td></tr>
 <tr class="separator:ab8305554400c48dd806a5491681e9954"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
@@ -217,6 +226,34 @@ Private Attributes</h2></td></tr>
 
 </div>
 </div>
+<a id="a0530e568c5d2ed38c4c9a4f842000347" name="a0530e568c5d2ed38c4c9a4f842000347"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0530e568c5d2ed38c4c9a4f842000347">&#9670;&#160;</a></span>createSession()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">LogPanel::createSession </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Creates a new log session wired to the current panel callbacks. </p>
+<p>Emits preloaded log lines for local files into the Webview. </p>
+
+</div>
+</div>
 <a id="a10d4bd31601caf5a4dc8f3aeadfe3627" name="a10d4bd31601caf5a4dc8f3aeadfe3627"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a10d4bd31601caf5a4dc8f3aeadfe3627">&#9670;&#160;</a></span>deletePreset()</h2>
 
@@ -248,6 +285,33 @@ Private Attributes</h2></td></tr>
   </table>
   </dd>
 </dl>
+
+</div>
+</div>
+<a id="a6711453942883bad1421077ebf9a7de0" name="a6711453942883bad1421077ebf9a7de0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6711453942883bad1421077ebf9a7de0">&#9670;&#160;</a></span>disconnect()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">LogPanel::disconnect </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Disposes the active session and notifies the Webview of the closure. </p>
 
 </div>
 </div>
@@ -309,6 +373,62 @@ Private Attributes</h2></td></tr>
   </table>
   </dd>
 </dl>
+
+</div>
+</div>
+<a id="a9fa9817b3321b1f5ab4e3110733d0ea6" name="a9fa9817b3321b1f5ab4e3110733d0ea6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9fa9817b3321b1f5ab4e3110733d0ea6">&#9670;&#160;</a></span>getHtml()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">LogPanel::getHtml </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Builds the HTML string loaded into the Webview. </p>
+<dl class="section return"><dt>Returns</dt><dd>HTML markup with scripts, styles, and initial data payload.</dd></dl>
+<p>Retrieves saved presets from workspace state. </p><dl class="section return"><dt>Returns</dt><dd>The array of stored presets, or an empty array when none exist. </dd></dl>
+
+</div>
+</div>
+<a id="a4d56e6f8ea34c50891a8145ffa302fd6" name="a4d56e6f8ea34c50891a8145ffa302fd6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4d56e6f8ea34c50891a8145ffa302fd6">&#9670;&#160;</a></span>handleSessionClose()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">LogPanel::handleSessionClose </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Posts the session closed status and marker line to the Webview. </p>
 
 </div>
 </div>
@@ -424,8 +544,7 @@ Private Attributes</h2></td></tr>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>Disposable subscription handle.</dd></dl>
-<p>Builds the HTML string loaded into the Webview. </p><dl class="section return"><dt>Returns</dt><dd>HTML markup with scripts, styles, and initial data payload.</dd></dl>
-<p>Retrieves saved presets from workspace state. </p><dl class="section return"><dt>Returns</dt><dd>The array of stored presets, or an empty array when none exist. </dd></dl>
+<p>Attempts to reconnect the SSH session when requested by the Webview. </p>
 
 </div>
 </div>
@@ -517,33 +636,6 @@ Private Attributes</h2></td></tr>
 
 </div>
 </div>
-<a id="a5f3f5c76c56ed83690a7ea99960ecb29" name="a5f3f5c76c56ed83690a7ea99960ecb29"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5f3f5c76c56ed83690a7ea99960ecb29">&#9670;&#160;</a></span>sendInitialLines()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">LogPanel::sendInitialLines </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">private</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Emits preloaded log lines for local files into the Webview. </p>
-
-</div>
-</div>
 <a id="ab2b5be288577352bc3af3eadc5b253d4" name="ab2b5be288577352bc3af3eadc5b253d4"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ab2b5be288577352bc3af3eadc5b253d4">&#9670;&#160;</a></span>start()</h2>
 
@@ -606,8 +698,8 @@ Private Attributes</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
-<a id="a533363b8d024d7aca7fbed828bd8e2bd" name="a533363b8d024d7aca7fbed828bd8e2bd"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a533363b8d024d7aca7fbed828bd8e2bd">&#9670;&#160;</a></span>__pad0__</h2>
+<a id="aeef411407858e87393cabcce7b966291" name="aeef411407858e87393cabcce7b966291"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aeef411407858e87393cabcce7b966291">&#9670;&#160;</a></span>__pad0__</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -616,7 +708,29 @@ Private Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="extension_8ts.html#a4cf0cbf413ae16906f3b896f2fbb29fa">highlights</a> LogPanel::__pad0__</td>
+          <td class="memname">session LogPanel::__pad0__</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a37d883babd0e2a14510caca09c1838cf" name="a37d883babd0e2a14510caca09c1838cf"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a37d883babd0e2a14510caca09c1838cf">&#9670;&#160;</a></span>__pad1__</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="extension_8ts.html#a4cf0cbf413ae16906f3b896f2fbb29fa">highlights</a> LogPanel::__pad1__</td>
         </tr>
       </table>
   </td>
@@ -727,28 +841,6 @@ Private Attributes</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname">readonly LogPanel::presetsKey</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">private</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a4a6fedb40aba1304533b8dc9164344ca" name="a4a6fedb40aba1304533b8dc9164344ca"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4a6fedb40aba1304533b8dc9164344ca">&#9670;&#160;</a></span>session</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">readonly LogPanel::session</td>
         </tr>
       </table>
   </td>

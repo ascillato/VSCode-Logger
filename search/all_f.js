@@ -3,7 +3,7 @@ var searchData=
   ['listener_0',['listener',['../ssh2_8d_8ts.html#a62cca0a874fa335032a0812121d33aa2',1,'ssh2.d.ts']]],
   ['locallogtarget_1',['LocalLogTarget',['../logPanel_8ts.html#a4b873a1073d60768ad5ba4bff7731a50',1,'logPanel.ts']]],
   ['locally_2',['Running The Extension Locally',['../index.html#autotoc_md10',1,'']]],
-  ['log_20files_3',['[0.2.0] - 2025-11-30 [LOG-FILES]',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md24',1,'']]],
+  ['log_20files_3',['[0.2.0] - 2025-11-30 [LOG-FILES]',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md32',1,'']]],
   ['logger_4',['Embedded Device Logger',['../index.html',1,'']]],
   ['loggerpanel_2ejs_5',['loggerPanel.js',['../loggerPanel_8js.html',1,'']]],
   ['logpanel_6',['logpanel',['../classLogPanel.html',1,'LogPanel'],['../extension_8ts.html#a9ae2ee473822fd73f304dfdd84c42d20',1,'LogPanel:&#160;extension.ts']]],
