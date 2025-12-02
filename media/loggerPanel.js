@@ -45,11 +45,13 @@
         minLevel: 'ALL',
         textFilter: '',
         wordWrapEnabled: false,
+        autoScrollEnabled: true,
         highlights: [],
         searchTerm: '',
         searchMatches: [],
         searchIndex: -1,
         activeSearchEntry: -1,
+        isLiveLog: true,
     };
 
     const minLevelSelect = document.getElementById('minLevel');
@@ -59,6 +61,8 @@
     const deletePresetBtn = document.getElementById('deletePreset');
     const exportBtn = document.getElementById('exportLogs');
     const wordWrapToggle = document.getElementById('wordWrapToggle');
+    const autoScrollToggle = document.getElementById('autoScrollToggle');
+    const autoScrollContainer = document.getElementById('autoScrollContainer');
     const logContainer = document.getElementById('logContainer');
     const statusEl = document.getElementById('status');
     const searchInput = document.getElementById('searchInput');
@@ -219,7 +223,7 @@
             frag.appendChild(div);
         }
         logContainer.appendChild(frag);
-        if (state.searchIndex === -1) {
+        if (state.searchIndex === -1 && state.autoScrollEnabled) {
             logContainer.scrollTop = logContainer.scrollHeight;
         }
     }
@@ -301,9 +305,9 @@
                     state.searchIndex = 0;
                 }
             }
-            if (state.searchIndex === -1) {
+            if (state.searchIndex === -1 && state.autoScrollEnabled) {
                 logContainer.scrollTop = logContainer.scrollHeight;
-            } else {
+            } else if (state.searchIndex !== -1) {
                 scrollToActiveMatch();
             }
             updateSearchStatus();
@@ -498,6 +502,13 @@
         updateWordWrapClass();
     });
 
+    autoScrollToggle.addEventListener('change', () => {
+        state.autoScrollEnabled = autoScrollToggle.checked;
+        if (state.autoScrollEnabled && state.searchIndex === -1) {
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+    });
+
     searchInput.addEventListener(
         'input',
         debounce(() => {
@@ -531,7 +542,12 @@
             case 'initData':
                 state.deviceId = message.deviceId;
                 state.presets = message.presets || [];
+                state.isLiveLog = message.isLive !== false;
                 setHighlights(message.highlights || []);
+                if (!state.isLiveLog && autoScrollContainer) {
+                    autoScrollContainer.classList.add('hidden');
+                }
+                autoScrollToggle.checked = state.autoScrollEnabled;
                 updatePresetDropdown();
                 applyFilters();
                 break;
