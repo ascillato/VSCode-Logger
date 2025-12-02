@@ -150,6 +150,10 @@ export class LogPanel {
                     await this.reconnect();
                     break;
                 }
+                case 'requestDisconnect': {
+                    this.disconnect();
+                    break;
+                }
             }
         });
 
@@ -221,9 +225,28 @@ export class LogPanel {
      */
     private handleSessionClose() {
         const closedAt = new Date().toLocaleString();
+        this.session = undefined;
         this.panel.webview.postMessage({
             type: 'sessionClosed',
             message: 'Session closed.',
+            closedAt,
+        });
+    }
+
+    /**
+     * @brief Disposes the active session and notifies the Webview of the closure.
+     */
+    private disconnect() {
+        if (!this.session) {
+            return;
+        }
+
+        this.session.dispose();
+        this.session = undefined;
+        const closedAt = new Date().toLocaleString();
+        this.panel.webview.postMessage({
+            type: 'sessionClosed',
+            message: 'Disconnected.',
             closedAt,
         });
     }
@@ -326,6 +349,10 @@ export class LogPanel {
         <label class="word-wrap-toggle" id="autoScrollContainer">
             <span>Auto Scroll</span>
             <input type="checkbox" id="autoScrollToggle" checked />
+        </label>
+        <label class="word-wrap-toggle" id="autoReconnectContainer">
+            <span>Auto Reconnect</span>
+            <input type="checkbox" id="autoReconnectToggle" checked />
         </label>
         <div class="search-bar">
             <label>Find
