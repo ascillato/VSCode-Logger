@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Append a marker line to the log output when an SSH session closes, including the device-provided timestamp.
 - Surface a **Reconnect** button next to the session status to restart the SSH session without reopening the panel.
+- Add auto scroll toggle to log panel.
 
 ### Changed
 - None
@@ -23,14 +24,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - None
 
 ### Fixed
-- None
+- Fix sidebar device list not loading after switching views.
 
 ### Security
 - None
 
 ----------------------------------------
 
-## [0.3.0] - 2025-11-30 [SEARCH & HIGHLIGHTS]
+## [0.3.0] - 2025-11-30 [SEARCH-AND-HIGHLIGHTS]
 
 ### Added
 - Add Ctrl/Cmd+F find support in the log panel, including navigation across matches in both live and imported logs.
