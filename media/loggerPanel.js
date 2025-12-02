@@ -401,7 +401,10 @@
      * @brief Adds or removes connection-state driven styling.
      */
     function updateConnectionDecorations() {
-        const isDisconnected = state.connectionState === 'disconnected';
+        const isConnected = state.isLiveLog && state.connectionState === 'connected';
+        const isDisconnected = state.isLiveLog && state.connectionState === 'disconnected';
+
+        logContainer.classList.toggle('connected', isConnected);
         logContainer.classList.toggle('disconnected', isDisconnected);
     }
 
