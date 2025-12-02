@@ -153,4 +153,5 @@
     });
 
     vscode.postMessage({ type: 'requestFocus' });
+    vscode.postMessage({ type: 'requestInit' });
 })();
