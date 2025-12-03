@@ -55,6 +55,9 @@
         autoReconnectEnabled: true,
         connectionState: 'unknown',
         maxEntries: 100000,
+        statusText: '',
+        autoSaveStatus: '',
+        autoSaveActive: false,
     };
 
     const minLevelSelect = document.getElementById('minLevel');
@@ -77,6 +80,7 @@
     const searchPrevBtn = document.getElementById('searchPrev');
     const searchNextBtn = document.getElementById('searchNext');
     const searchCount = document.getElementById('searchCount');
+    const autoSaveToggle = document.getElementById('autoSaveToggle');
 
     let reconnectTimeoutId = null;
     let reconnectIntervalId = null;
@@ -427,8 +431,44 @@
      * @param text Status message to display.
      */
     function updateStatus(text, options = {}) {
-        statusEl.textContent = text || '';
+        state.statusText = text || '';
+        renderStatusText();
         updateActionButton(options);
+    }
+
+    /**
+     * @brief Updates the status element by combining connection and auto-save messages.
+     */
+    function renderStatusText() {
+        const parts = [];
+        if (state.statusText) {
+            parts.push(state.statusText);
+        }
+        if (state.autoSaveStatus) {
+            parts.push(state.autoSaveStatus);
+        }
+        statusEl.textContent = parts.join(' | ');
+    }
+
+    /**
+     * @brief Updates the auto-save status message and re-renders the status text.
+     * @param text Additional auto-save status message to display.
+     */
+    function setAutoSaveStatus(text) {
+        state.autoSaveStatus = text || '';
+        renderStatusText();
+    }
+
+    /**
+     * @brief Updates the UI to reflect whether auto-save is active.
+     * @param active True when auto-save is currently writing to disk.
+     */
+    function setAutoSaveActive(active) {
+        state.autoSaveActive = active;
+        if (autoSaveToggle) {
+            autoSaveToggle.textContent = active ? 'Stop Auto-Save' : 'Auto-Save';
+            autoSaveToggle.disabled = false;
+        }
     }
 
     /**
@@ -854,6 +894,17 @@
         });
     }
 
+    if (autoSaveToggle) {
+        autoSaveToggle.addEventListener('click', () => {
+            autoSaveToggle.disabled = true;
+            if (state.autoSaveActive) {
+                vscode.postMessage({ type: 'stopAutoSave' });
+            } else {
+                vscode.postMessage({ type: 'startAutoSave' });
+            }
+        });
+    }
+
     window.addEventListener('keydown', (event) => {
         if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f') {
             event.preventDefault();
@@ -883,6 +934,10 @@
                 if (clearLogsBtn) {
                     clearLogsBtn.classList.toggle('hidden', !state.isLiveLog);
                 }
+                if (autoSaveToggle) {
+                    autoSaveToggle.classList.toggle('hidden', !state.isLiveLog);
+                    autoSaveToggle.disabled = !state.isLiveLog;
+                }
                 autoScrollToggle.checked = state.autoScrollEnabled;
                 autoReconnectToggle.checked = state.autoReconnectEnabled;
                 updatePresetDropdown();
@@ -910,6 +965,18 @@
                 break;
             case 'highlightsUpdated':
                 setHighlights(message.highlights || []);
+                break;
+            case 'autoSaveStarted':
+                setAutoSaveActive(true);
+                setAutoSaveStatus(message.filePath ? `Auto-saving to ${message.filePath}` : 'Auto-save enabled.');
+                break;
+            case 'autoSaveStopped':
+                setAutoSaveActive(false);
+                setAutoSaveStatus(message.message || '');
+                break;
+            case 'autoSaveError':
+                setAutoSaveActive(false);
+                setAutoSaveStatus(message.message || 'Auto-save failed.');
                 break;
         }
     });
