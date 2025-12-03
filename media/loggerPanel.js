@@ -55,7 +55,7 @@
         autoReconnectEnabled: true,
         connectionState: 'unknown',
         maxEntries: 100000,
-        statusText: '',
+        statusMessages: [],
         autoSaveStatus: null,
         autoSaveActive: false,
     };
@@ -432,7 +432,14 @@
      * @param text Status message to display.
      */
     function updateStatus(text, options = {}) {
-        state.statusText = text || '';
+        if (!text) {
+            state.statusMessages = [];
+            renderStatusText();
+            updateActionButton(options);
+            return;
+        }
+
+        state.statusMessages = [...state.statusMessages, text].slice(-3);
         renderStatusText();
         updateActionButton(options);
     }
@@ -445,10 +452,7 @@
             return;
         }
 
-        const lines = [];
-        if (state.statusText) {
-            lines.push({ text: state.statusText });
-        }
+        const lines = state.statusMessages.map((message) => ({ text: message }));
         if (state.autoSaveStatus && (state.autoSaveStatus.text || state.autoSaveStatus.fileName)) {
             lines.push({
                 text: state.autoSaveStatus.text || '',
