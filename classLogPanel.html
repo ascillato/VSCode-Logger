@@ -108,12 +108,31 @@ Private Member Functions</h2></td></tr>
 <tr class="memitem:a0530e568c5d2ed38c4c9a4f842000347" id="r_a0530e568c5d2ed38c4c9a4f842000347"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLogPanel.html#a0530e568c5d2ed38c4c9a4f842000347">createSession</a> ()</td></tr>
 <tr class="memdesc:a0530e568c5d2ed38c4c9a4f842000347"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a new log session wired to the current panel callbacks.  <br /></td></tr>
 <tr class="separator:a0530e568c5d2ed38c4c9a4f842000347"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9340da6e285509b537dc9423072ddbea" id="r_a9340da6e285509b537dc9423072ddbea"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLogPanel.html#a9340da6e285509b537dc9423072ddbea">writeAutoSaveLine</a> (line:string)</td></tr>
+<tr class="memdesc:a9340da6e285509b537dc9423072ddbea"><td class="mdescLeft">&#160;</td><td class="mdescRight">Attempts to write a log line to the active auto-save stream.  <br /></td></tr>
+<tr class="separator:a9340da6e285509b537dc9423072ddbea"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5f3f5c76c56ed83690a7ea99960ecb29" id="r_a5f3f5c76c56ed83690a7ea99960ecb29"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLogPanel.html#a5f3f5c76c56ed83690a7ea99960ecb29">sendInitialLines</a> ()</td></tr>
+<tr class="memdesc:a5f3f5c76c56ed83690a7ea99960ecb29"><td class="mdescLeft">&#160;</td><td class="mdescRight">Emits preloaded log lines for local files into the Webview.  <br /></td></tr>
+<tr class="separator:a5f3f5c76c56ed83690a7ea99960ecb29"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4d56e6f8ea34c50891a8145ffa302fd6" id="r_a4d56e6f8ea34c50891a8145ffa302fd6"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLogPanel.html#a4d56e6f8ea34c50891a8145ffa302fd6">handleSessionClose</a> ()</td></tr>
 <tr class="memdesc:a4d56e6f8ea34c50891a8145ffa302fd6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Posts the session closed status and marker line to the Webview.  <br /></td></tr>
 <tr class="separator:a4d56e6f8ea34c50891a8145ffa302fd6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6711453942883bad1421077ebf9a7de0" id="r_a6711453942883bad1421077ebf9a7de0"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLogPanel.html#a6711453942883bad1421077ebf9a7de0">disconnect</a> ()</td></tr>
 <tr class="memdesc:a6711453942883bad1421077ebf9a7de0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Disposes the active session and notifies the Webview of the closure.  <br /></td></tr>
 <tr class="separator:a6711453942883bad1421077ebf9a7de0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4c2945109ede88e223e149ff52d38ad3" id="r_a4c2945109ede88e223e149ff52d38ad3"><td class="memItemLeft" align="right" valign="top">async&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLogPanel.html#a4c2945109ede88e223e149ff52d38ad3">startAutoSave</a> ()</td></tr>
+<tr class="memdesc:a4c2945109ede88e223e149ff52d38ad3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Prompts the user for an auto-save destination and starts persisting incoming lines.  <br /></td></tr>
+<tr class="separator:a4c2945109ede88e223e149ff52d38ad3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2cbded5ef8113f7a8dd48898282ddf2a" id="r_a2cbded5ef8113f7a8dd48898282ddf2a"><td class="memItemLeft" align="right" valign="top">async&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLogPanel.html#a2cbded5ef8113f7a8dd48898282ddf2a">stopAutoSave</a> (options:{ silent?:boolean;message?:string }={})</td></tr>
+<tr class="memdesc:a2cbded5ef8113f7a8dd48898282ddf2a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Stops any active auto-save stream and notifies the Webview unless silenced.  <br /></td></tr>
+<tr class="separator:a2cbded5ef8113f7a8dd48898282ddf2a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ada2a584716d0713dea7c983b05b6e00e" id="r_ada2a584716d0713dea7c983b05b6e00e"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLogPanel.html#ada2a584716d0713dea7c983b05b6e00e">appendSessionClosedMarker</a> (closedAt:number)</td></tr>
+<tr class="separator:ada2a584716d0713dea7c983b05b6e00e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad6317d37e4b8cbc286c48e0674efa3e4" id="r_ad6317d37e4b8cbc286c48e0674efa3e4"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLogPanel.html#ad6317d37e4b8cbc286c48e0674efa3e4">formatTimestamp</a> (value:number)</td></tr>
+<tr class="separator:ad6317d37e4b8cbc286c48e0674efa3e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae374c7c75d937ec73b29ed6a1e05afe6" id="r_ae374c7c75d937ec73b29ed6a1e05afe6"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLogPanel.html#ae374c7c75d937ec73b29ed6a1e05afe6">getDefaultAutoSaveUri</a> ()</td></tr>
+<tr class="memdesc:ae374c7c75d937ec73b29ed6a1e05afe6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds a default URI for the auto-save dialog using the workspace folder when available.  <br /></td></tr>
+<tr class="separator:ae374c7c75d937ec73b29ed6a1e05afe6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9fa9817b3321b1f5ab4e3110733d0ea6" id="r_a9fa9817b3321b1f5ab4e3110733d0ea6"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLogPanel.html#a9fa9817b3321b1f5ab4e3110733d0ea6">getHtml</a> ()</td></tr>
 <tr class="memdesc:a9fa9817b3321b1f5ab4e3110733d0ea6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds the HTML string loaded into the Webview.  <br /></td></tr>
 <tr class="separator:a9fa9817b3321b1f5ab4e3110733d0ea6"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -156,12 +175,44 @@ Private Attributes</h2></td></tr>
 <tr class="separator:a98925453191807557ada30e7ad91e12b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a37d883babd0e2a14510caca09c1838cf" id="r_a37d883babd0e2a14510caca09c1838cf"><td class="memItemLeft" align="right" valign="top"><a class="el" href="extension_8ts.html#a4cf0cbf413ae16906f3b896f2fbb29fa">highlights</a>&#160;</td><td class="memItemRight" valign="bottom">: <a class="el" href="sidebarView_8ts.html#a70c58d2bba69e40d44ba5316f17dd427">HighlightDefinition</a>[]</td></tr>
 <tr class="separator:a37d883babd0e2a14510caca09c1838cf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad706dc7870d3c9ef2278ce8d3bf3b41b" id="r_ad706dc7870d3c9ef2278ce8d3bf3b41b"><td class="memItemLeft" align="right" valign="top">readonly&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLogPanel.html#ad706dc7870d3c9ef2278ce8d3bf3b41b">maxLogEntries</a>: number</td></tr>
+<tr class="separator:ad706dc7870d3c9ef2278ce8d3bf3b41b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a314bb46def375aa23bd9215ca6e2fdbd" id="r_a314bb46def375aa23bd9215ca6e2fdbd"><td class="memItemLeft" align="right" valign="top">autoSaveStream&#160;</td><td class="memItemRight" valign="bottom">: fs.WriteStream</td></tr>
+<tr class="separator:a314bb46def375aa23bd9215ca6e2fdbd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a922c16d8b97f6738088231580c625a26" id="r_a922c16d8b97f6738088231580c625a26"><td class="memItemLeft" align="right" valign="top">autoSavePath&#160;</td><td class="memItemRight" valign="bottom">: string</td></tr>
+<tr class="separator:a922c16d8b97f6738088231580c625a26"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab8305554400c48dd806a5491681e9954" id="r_ab8305554400c48dd806a5491681e9954"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLogPanel.html#ab8305554400c48dd806a5491681e9954">disposed</a> = false</td></tr>
 <tr class="separator:ab8305554400c48dd806a5491681e9954"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Hosts the WebviewPanel for a device and wires it to the SSH log session. </p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
+<a id="ada2a584716d0713dea7c983b05b6e00e" name="ada2a584716d0713dea7c983b05b6e00e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ada2a584716d0713dea7c983b05b6e00e">&#9670;&#160;</a></span>appendSessionClosedMarker()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">LogPanel::appendSessionClosedMarker </td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>closedAt:number</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="aa1db5b9f66c2765588aa1f9d050134c8" name="aa1db5b9f66c2765588aa1f9d050134c8"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aa1db5b9f66c2765588aa1f9d050134c8">&#9670;&#160;</a></span>constructor()</h2>
 
@@ -250,7 +301,12 @@ Private Attributes</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Creates a new log session wired to the current panel callbacks. </p>
-<p>Emits preloaded log lines for local files into the Webview. </p>
+<p>Forwards an incoming log line to the Webview and any active auto-save stream. </p><dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">line</td><td>Raw log line emitted by the SSH session. </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
@@ -373,6 +429,60 @@ Private Attributes</h2></td></tr>
   </table>
   </dd>
 </dl>
+
+</div>
+</div>
+<a id="ad6317d37e4b8cbc286c48e0674efa3e4" name="ad6317d37e4b8cbc286c48e0674efa3e4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad6317d37e4b8cbc286c48e0674efa3e4">&#9670;&#160;</a></span>formatTimestamp()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">LogPanel::formatTimestamp </td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>value:number</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ae374c7c75d937ec73b29ed6a1e05afe6" name="ae374c7c75d937ec73b29ed6a1e05afe6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae374c7c75d937ec73b29ed6a1e05afe6">&#9670;&#160;</a></span>getDefaultAutoSaveUri()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">LogPanel::getDefaultAutoSaveUri </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Builds a default URI for the auto-save dialog using the workspace folder when available. </p>
+<dl class="section return"><dt>Returns</dt><dd>VS Code URI pointing to a suggested log file path. </dd></dl>
 
 </div>
 </div>
@@ -636,6 +746,33 @@ Private Attributes</h2></td></tr>
 
 </div>
 </div>
+<a id="a5f3f5c76c56ed83690a7ea99960ecb29" name="a5f3f5c76c56ed83690a7ea99960ecb29"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5f3f5c76c56ed83690a7ea99960ecb29">&#9670;&#160;</a></span>sendInitialLines()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">LogPanel::sendInitialLines </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Emits preloaded log lines for local files into the Webview. </p>
+
+</div>
+</div>
 <a id="ab2b5be288577352bc3af3eadc5b253d4" name="ab2b5be288577352bc3af3eadc5b253d4"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ab2b5be288577352bc3af3eadc5b253d4">&#9670;&#160;</a></span>start()</h2>
 
@@ -660,6 +797,67 @@ Private Attributes</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Starts the underlying log session. </p>
+
+</div>
+</div>
+<a id="a4c2945109ede88e223e149ff52d38ad3" name="a4c2945109ede88e223e149ff52d38ad3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4c2945109ede88e223e149ff52d38ad3">&#9670;&#160;</a></span>startAutoSave()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">async LogPanel::startAutoSave </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Prompts the user for an auto-save destination and starts persisting incoming lines. </p>
+
+</div>
+</div>
+<a id="a2cbded5ef8113f7a8dd48898282ddf2a" name="a2cbded5ef8113f7a8dd48898282ddf2a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2cbded5ef8113f7a8dd48898282ddf2a">&#9670;&#160;</a></span>stopAutoSave()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">async LogPanel::stopAutoSave </td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>options:{ silent?:boolean;message?:string }</em> = <code>{}</code></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Stops any active auto-save stream and notifies the Webview unless silenced. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">options</td><td>Optional flags to silence notifications or override the status message. </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
@@ -691,6 +889,40 @@ Private Attributes</h2></td></tr>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">values</td><td>Highlight entries sourced from the sidebar view. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a9340da6e285509b537dc9423072ddbea" name="a9340da6e285509b537dc9423072ddbea"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9340da6e285509b537dc9423072ddbea">&#9670;&#160;</a></span>writeAutoSaveLine()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">LogPanel::writeAutoSaveLine </td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>line:string</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Attempts to write a log line to the active auto-save stream. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">line</td><td>Log line to persist. </td></tr>
   </table>
   </dd>
 </dl>
@@ -731,6 +963,50 @@ Private Attributes</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname"><a class="el" href="extension_8ts.html#a4cf0cbf413ae16906f3b896f2fbb29fa">highlights</a> LogPanel::__pad1__</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a314bb46def375aa23bd9215ca6e2fdbd" name="a314bb46def375aa23bd9215ca6e2fdbd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a314bb46def375aa23bd9215ca6e2fdbd">&#9670;&#160;</a></span>__pad2__</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">autoSaveStream LogPanel::__pad2__</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a922c16d8b97f6738088231580c625a26" name="a922c16d8b97f6738088231580c625a26"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a922c16d8b97f6738088231580c625a26">&#9670;&#160;</a></span>__pad3__</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">autoSavePath LogPanel::__pad3__</td>
         </tr>
       </table>
   </td>
@@ -797,6 +1073,28 @@ Private Attributes</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname">readonly LogPanel::initialLines</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ad706dc7870d3c9ef2278ce8d3bf3b41b" name="ad706dc7870d3c9ef2278ce8d3bf3b41b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad706dc7870d3c9ef2278ce8d3bf3b41b">&#9670;&#160;</a></span>maxLogEntries</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">readonly LogPanel::maxLogEntries</td>
         </tr>
       </table>
   </td>

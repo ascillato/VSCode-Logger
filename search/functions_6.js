@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['isstringarray_0',['isStringArray',['../classLogPanel.html#aafce5d9161feca51f197c28734c20f06',1,'LogPanel']]],
-  ['isvalidpresetpayload_1',['isValidPresetPayload',['../classLogPanel.html#aea61e4c7d77824a1c3c78d4cae98bb76',1,'LogPanel']]]
+  ['handleclose_0',['handleClose',['../classLogSession.html#a7c07c8dfc6aec5a5d72a8b968df7628f',1,'LogSession']]],
+  ['handlesessionclose_1',['handleSessionClose',['../classLogPanel.html#a4d56e6f8ea34c50891a8145ffa302fd6',1,'LogPanel']]]
 ];

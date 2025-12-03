@@ -77,8 +77,48 @@ $(function() {
 <p>The format is based on <a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a>, and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
 <hr  />
 <h1><a class="anchor" id="autotoc_md16"></a>
-[0.4.0] - 2025-12-01 [RECONNECT]</h1>
+[0.5.0] - 2025-12-03 [AUTO-AUTO-SCROLL]</h1>
 <h2><a class="anchor" id="autotoc_md17"></a>
+Added</h2>
+<ul>
+<li>Introduce <code>embeddedLogger.maxLinesPerTab</code> to configure how many log lines each tab retains (default: 100000).</li>
+<li>Add full-width background color to SSH session closed message for better spotting.</li>
+<li>Adjust auto-scroll behavior based on log panel scrolling.</li>
+<li>Add clear button for find textbox.</li>
+<li>Add auto-save option for live SSH logs.</li>
+<li>Update find functionality for log navigation.</li>
+<li>Add visual indicators for wrapped log lines.</li>
+</ul>
+<h2><a class="anchor" id="autotoc_md18"></a>
+Changed</h2>
+<ul>
+<li>None.</li>
+</ul>
+<h2><a class="anchor" id="autotoc_md19"></a>
+Deprecated</h2>
+<ul>
+<li>None.</li>
+</ul>
+<h2><a class="anchor" id="autotoc_md20"></a>
+Removed</h2>
+<ul>
+<li>Removed Port from device list view.</li>
+</ul>
+<h2><a class="anchor" id="autotoc_md21"></a>
+Fixed</h2>
+<ul>
+<li>Preserve log panel scroll during highlight updates.</li>
+<li>Load offline log files in a single batch to reduce tab initialization time.</li>
+</ul>
+<h2><a class="anchor" id="autotoc_md22"></a>
+Security</h2>
+<ul>
+<li>None.</li>
+</ul>
+<hr  />
+<h1><a class="anchor" id="autotoc_md24"></a>
+[0.4.0] - 2025-12-01 [RECONNECT]</h1>
+<h2><a class="anchor" id="autotoc_md25"></a>
 Added</h2>
 <ul>
 <li>Add auto scroll toggle to log panel.</li>
@@ -87,70 +127,70 @@ Added</h2>
 <li>Update log panel frame colors depending if the SSH session is connected (green), re-connecting (yellow) or disconnected (red).</li>
 <li>Add Clear Logs button.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md18"></a>
+<h2><a class="anchor" id="autotoc_md26"></a>
 Changed</h2>
 <ul>
-<li>None</li>
+<li>None.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md19"></a>
+<h2><a class="anchor" id="autotoc_md27"></a>
 Deprecated</h2>
 <ul>
-<li>None</li>
+<li>None.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md20"></a>
+<h2><a class="anchor" id="autotoc_md28"></a>
 Removed</h2>
 <ul>
-<li>None</li>
+<li>None.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md21"></a>
+<h2><a class="anchor" id="autotoc_md29"></a>
 Fixed</h2>
 <ul>
 <li>Fix sidebar device list not loading after switching views.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md22"></a>
+<h2><a class="anchor" id="autotoc_md30"></a>
 Security</h2>
 <ul>
-<li>None</li>
+<li>None.</li>
 </ul>
 <hr  />
-<h1><a class="anchor" id="autotoc_md24"></a>
+<h1><a class="anchor" id="autotoc_md32"></a>
 [0.3.0] - 2025-11-30 [SEARCH-AND-HIGHLIGHTS]</h1>
-<h2><a class="anchor" id="autotoc_md25"></a>
+<h2><a class="anchor" id="autotoc_md33"></a>
 Added</h2>
 <ul>
 <li>Add Ctrl/Cmd+F find support in the log panel, including navigation across matches in both live and imported logs.</li>
 <li>Add a title bar highlight button that spawns up to ten colour-coded rows for emphasizing custom keywords across live and imported logs.</li>
 <li>Render highlighted matches in bold, underlined text with the same colour as their corresponding search row.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md26"></a>
+<h2><a class="anchor" id="autotoc_md34"></a>
 Changed</h2>
 <ul>
 <li>Restructure the log panel header to accommodate the new highlight controls and preserve readability on smaller widths.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md27"></a>
+<h2><a class="anchor" id="autotoc_md35"></a>
 Deprecated</h2>
 <ul>
-<li>None</li>
+<li>None.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md28"></a>
+<h2><a class="anchor" id="autotoc_md36"></a>
 Removed</h2>
 <ul>
-<li>None</li>
+<li>None.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md29"></a>
+<h2><a class="anchor" id="autotoc_md37"></a>
 Fixed</h2>
 <ul>
-<li>None</li>
+<li>None.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md30"></a>
+<h2><a class="anchor" id="autotoc_md38"></a>
 Security</h2>
 <ul>
-<li>None</li>
+<li>None.</li>
 </ul>
 <hr  />
-<h1><a class="anchor" id="autotoc_md32"></a>
+<h1><a class="anchor" id="autotoc_md40"></a>
 [0.2.0] - 2025-11-30 [LOG-FILES]</h1>
-<h2><a class="anchor" id="autotoc_md33"></a>
+<h2><a class="anchor" id="autotoc_md41"></a>
 Added</h2>
 <ul>
 <li>Open local log files directly from the Embedded Logger view title button or command palette and reuse the existing log viewer workflow.</li>
@@ -159,7 +199,7 @@ Added</h2>
 <li>Add device view title action to clear stored passwords.</li>
 <li>Provide a default device configuration template matching the README example.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md34"></a>
+<h2><a class="anchor" id="autotoc_md42"></a>
 Changed</h2>
 <ul>
 <li>Default log filtering now starts at <b>ALL</b> to show every level on initial load.</li>
@@ -168,59 +208,34 @@ Changed</h2>
 <li>Improve Issues Templates for GH repository.</li>
 <li>Improved Readme file.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md35"></a>
+<h2><a class="anchor" id="autotoc_md43"></a>
 Deprecated</h2>
 <ul>
-<li>None</li>
+<li>None.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md36"></a>
+<h2><a class="anchor" id="autotoc_md44"></a>
 Removed</h2>
 <ul>
-<li>None</li>
+<li>None.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md37"></a>
+<h2><a class="anchor" id="autotoc_md45"></a>
 Fixed</h2>
 <ul>
 <li>Fix top bar when status plus buttons are wider than screen's width.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md38"></a>
+<h2><a class="anchor" id="autotoc_md46"></a>
 Security</h2>
 <ul>
 <li>Send webview initialization data securely.</li>
 <li>Fixed Workflow not containing GH permissions.</li>
 </ul>
 <hr  />
-<h1><a class="anchor" id="autotoc_md40"></a>
+<h1><a class="anchor" id="autotoc_md48"></a>
 [0.1.1] - 2025-11-29 [INITIAL]</h1>
-<h2><a class="anchor" id="autotoc_md41"></a>
+<h2><a class="anchor" id="autotoc_md49"></a>
 Added</h2>
 <ul>
-<li>Initial publication of the extension</li>
-</ul>
-<h2><a class="anchor" id="autotoc_md42"></a>
-Changed</h2>
-<ul>
-<li>None</li>
-</ul>
-<h2><a class="anchor" id="autotoc_md43"></a>
-Deprecated</h2>
-<ul>
-<li>None</li>
-</ul>
-<h2><a class="anchor" id="autotoc_md44"></a>
-Removed</h2>
-<ul>
-<li>None</li>
-</ul>
-<h2><a class="anchor" id="autotoc_md45"></a>
-Fixed</h2>
-<ul>
-<li>None</li>
-</ul>
-<h2><a class="anchor" id="autotoc_md46"></a>
-Security</h2>
-<ul>
-<li>None </li>
+<li>Initial publication of the extension. </li>
 </ul>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->

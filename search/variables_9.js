@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['ondidchangetreedata_0',['onDidChangeTreeData',['../classDeviceTreeDataProvider.html#aec917958936afd2172ece30452a688ac',1,'DeviceTreeDataProvider']]]
+  ['maxlogentries_0',['maxLogEntries',['../classLogPanel.html#ad706dc7870d3c9ef2278ce8d3bf3b41b',1,'LogPanel']]]
 ];

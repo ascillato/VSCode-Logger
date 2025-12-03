@@ -1,15 +1,14 @@
 var searchData=
 [
-  ['re_20compile_0',['Clean and re-compile',['../index.html#autotoc_md12',1,'']]],
-  ['readme_2emd_1',['README.md',['../README_8md.html',1,'']]],
-  ['reconnect_2',['[0.4.0] - 2025-12-01 [RECONNECT]',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md16',1,'']]],
-  ['refreshdevices_3',['refreshDevices',['../classSidebarViewProvider.html#a1274daa12d2f034b62ccde5979fb134c',1,'SidebarViewProvider']]],
-  ['remotelogtarget_4',['RemoteLogTarget',['../logPanel_8ts.html#a562b0d99c0f6636df76373c694e43c05',1,'logPanel.ts']]],
-  ['removed_5',['removed',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md20',1,'Removed'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md28',1,'Removed'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md36',1,'Removed'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md44',1,'Removed']]],
-  ['reporting_20a_20vulnerability_6',['Reporting a Vulnerability',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2SECURITY.html#autotoc_md71',1,'']]],
-  ['repository_20structure_7',['Repository structure',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html#autotoc_md49',1,'']]],
-  ['resolvewebviewview_8',['resolveWebviewView',['../classSidebarViewProvider.html#aebc60db57a06b49926a74f5ffbdfb4c1',1,'SidebarViewProvider']]],
-  ['responsibilities_9',['Enforcement Responsibilities',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CODE__OF__CONDUCT.html#autotoc_md61',1,'']]],
-  ['reveal_10',['reveal',['../classLogPanel.html#a62081b368f83130387cc317d0cb1e760',1,'LogPanel']]],
-  ['running_20the_20extension_20locally_11',['Running The Extension Locally',['../index.html#autotoc_md10',1,'']]]
+  ['package_20generation_0',['Package Generation',['../index.html#autotoc_md11',1,'']]],
+  ['panel_1',['panel',['../classLogPanel.html#ae7831a09011fd1b6b4e43f39c88b9428',1,'LogPanel']]],
+  ['panelmap_2',['panelMap',['../extension_8ts.html#a4161d9e40c3681f21244ba3962ff41d1',1,'extension.ts']]],
+  ['pendingadd_3',['pendingAdd',['../classSidebarViewProvider.html#a13ac27b7ba423140e00395f5f217fd11',1,'SidebarViewProvider']]],
+  ['permanent_20ban_4',['4. Permanent Ban',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CODE__OF__CONDUCT.html#autotoc_md71',1,'']]],
+  ['pledge_5',['Our Pledge',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CODE__OF__CONDUCT.html#autotoc_md62',1,'']]],
+  ['policy_6',['Security Policy',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2SECURITY.html',1,'']]],
+  ['postinitialpayload_7',['postInitialPayload',['../classSidebarViewProvider.html#a94e82e101cfc5d0937c890c38776746f',1,'SidebarViewProvider']]],
+  ['presetskey_8',['presetsKey',['../classLogPanel.html#ab660abe2c91b6710ff1d70a17e71c119',1,'LogPanel']]],
+  ['principles_9',['General principles',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html#autotoc_md55',1,'']]],
+  ['publishing_10',['Versioning and publishing',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html#autotoc_md59',1,'']]]
 ];

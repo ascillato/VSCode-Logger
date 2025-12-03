@@ -1,8 +1,6 @@
 var searchData=
 [
-  ['warning_0',['2. Warning',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CODE__OF__CONDUCT.html#autotoc_md66',1,'']]],
-  ['webview_20guidelines_1',['Webview guidelines',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html#autotoc_md55',1,'']]],
-  ['with_20other_20extensions_2',['Share Activity Bar with other extensions',['../index.html#autotoc_md4',1,'']]],
-  ['with_20ssh_20connections_3',['Working with SSH connections',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html#autotoc_md54',1,'']]],
-  ['working_20with_20ssh_20connections_4',['Working with SSH connections',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html#autotoc_md54',1,'']]]
+  ['versioning_20and_20publishing_0',['Versioning and publishing',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html#autotoc_md59',1,'']]],
+  ['vscode‑logger_1',['Contributing Guidelines for VSCode‑Logger',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html',1,'']]],
+  ['vulnerability_2',['Reporting a Vulnerability',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2SECURITY.html#autotoc_md74',1,'']]]
 ];

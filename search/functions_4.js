@@ -1,5 +1,4 @@
 var searchData=
 [
-  ['gethtml_0',['getHtml',['../classLogPanel.html#a9fa9817b3321b1f5ab4e3110733d0ea6',1,'LogPanel']]],
-  ['getnonce_1',['getnonce',['../logPanel_8ts.html#aa73ef9c2e62f634cda1a8b511c0a2d81',1,'getNonce():&#160;logPanel.ts'],['../sidebarView_8ts.html#aa73ef9c2e62f634cda1a8b511c0a2d81',1,'getNonce():&#160;sidebarView.ts']]]
+  ['formattimestamp_0',['formatTimestamp',['../classLogPanel.html#ad6317d37e4b8cbc286c48e0674efa3e4',1,'LogPanel']]]
 ];

@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['ondidchangeviewstate_0',['onDidChangeViewState',['../classLogPanel.html#afd3853553956a916454a2e6a23747c3f',1,'LogPanel']]]
+  ['migratelegacypasswords_0',['migrateLegacyPasswords',['../extension_8ts.html#a675dbabf688395d51b8fda3b658dca42',1,'extension.ts']]]
 ];

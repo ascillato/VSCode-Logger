@@ -101,7 +101,8 @@ Configuration</h1>
 <div class="caption">
 Screenshot2</div></div>
     <p>Add devices in your VS Code settings under <code>embeddedLogger.devices</code>:</p>
-<div class="fragment"><div class="line">&quot;embeddedLogger.devices&quot;: [</div>
+<div class="fragment"><div class="line">&quot;embeddedLogger.maxLinesPerTab&quot;: 100000,</div>
+<div class="line">&quot;embeddedLogger.devices&quot;: [</div>
 <div class="line">  {</div>
 <div class="line">    &quot;id&quot;: &quot;deviceA&quot;,</div>
 <div class="line">    &quot;name&quot;: &quot;Device A&quot;,</div>
@@ -112,6 +113,9 @@ Screenshot2</div></div>
 <div class="line">  }</div>
 <div class="line">]</div>
 </div><!-- fragment --><p>If no password is stored yet, the extension prompts for it when connecting and saves it locally and securely.</p>
+<ul>
+<li>Control memory usage by capping retained lines per log tab with <code>embeddedLogger.maxLinesPerTab</code> (default: 100000).</li>
+</ul>
 <h1><a class="anchor" id="autotoc_md3"></a>
 Notes</h1>
 <ul>
@@ -166,13 +170,13 @@ Package Generation</h2>
 <ul>
 <li>Requires: <code>npm install -g @vscode/vsce</code></li>
 <li>Run: <code>vsce package</code> to generate vsix file to be installed into VSCode</li>
-<li>Install locally on VSCode: <code>code --install-extension embedded-device-logger-0.4.0.vsix</code></li>
+<li>Install locally on VSCode: <code>code --install-extension embedded-device-logger-0.5.0.vsix</code></li>
 </ul>
 <h2><a class="anchor" id="autotoc_md12"></a>
 Clean and re-compile</h2>
 <ul>
 <li><code>clear; rm -rf node_modules; rm -rf out; rm *.vsix; npm install; npm run compile; vsce package</code></li>
-<li><code>code --install-extension embedded-device-logger-0.4.0.vsix</code></li>
+<li><code>code --install-extension embedded-device-logger-0.5.0.vsix</code></li>
 </ul>
 <h2><a class="anchor" id="autotoc_md13"></a>
 Generating Source Code Documentation</h2>
