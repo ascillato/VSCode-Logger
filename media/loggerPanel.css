@@ -119,6 +119,10 @@ body {
     border-radius: 3px;
 }
 
+.log-line.session-closed-buffer {
+    min-height: 1em;
+}
+
 .top-bar-spacer {
     flex: 1 1 auto;
 }
