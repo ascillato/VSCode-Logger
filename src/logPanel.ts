@@ -7,6 +7,7 @@
 import * as vscode from 'vscode';
 import { EmbeddedDevice } from './deviceTree';
 import { LogSession } from './logSession';
+import * as fs from 'fs';
 import * as path from 'path';
 import { HighlightDefinition } from './sidebarView';
 
@@ -48,6 +49,8 @@ export class LogPanel {
     private readonly device?: EmbeddedDevice;
     private highlights: HighlightDefinition[];
     private readonly maxLogEntries: number;
+    private autoSaveStream?: fs.WriteStream;
+    private autoSavePath?: string;
     private disposed = false;
 
     /**
@@ -158,6 +161,14 @@ export class LogPanel {
                     this.disconnect();
                     break;
                 }
+                case 'startAutoSave': {
+                    await this.startAutoSave();
+                    break;
+                }
+                case 'stopAutoSave': {
+                    await this.stopAutoSave({ message: '' });
+                    break;
+                }
             }
         });
 
@@ -184,11 +195,40 @@ export class LogPanel {
         }
 
         return new LogSession(this.device, this.context, {
-            onLine: (line) => this.panel.webview.postMessage({ type: 'logLine', line }),
+            onLine: (line) => this.handleIncomingLine(line),
             onError: (message) => this.panel.webview.postMessage({ type: 'error', message }),
             onStatus: (message) => this.panel.webview.postMessage({ type: 'status', message }),
             onClose: () => this.handleSessionClose(),
         });
+    }
+
+    /**
+     * @brief Forwards an incoming log line to the Webview and any active auto-save stream.
+     * @param line Raw log line emitted by the SSH session.
+     */
+    private handleIncomingLine(line: string) {
+        this.writeAutoSaveLine(line);
+        this.panel.webview.postMessage({ type: 'logLine', line });
+    }
+
+    /**
+     * @brief Attempts to write a log line to the active auto-save stream.
+     * @param line Log line to persist.
+     */
+    private writeAutoSaveLine(line: string) {
+        if (!this.autoSaveStream) {
+            return;
+        }
+
+        try {
+            this.autoSaveStream.write(`${line}\n`);
+        } catch (err: any) {
+            this.panel.webview.postMessage({
+                type: 'autoSaveError',
+                message: err?.message ? `Auto-save failed: ${err.message}` : 'Auto-save failed.',
+            });
+            void this.stopAutoSave({ silent: true });
+        }
     }
 
     /**
@@ -217,6 +257,7 @@ export class LogPanel {
             return;
         }
         this.disposed = true;
+        void this.stopAutoSave({ silent: true });
         this.session?.dispose();
         this.panel.dispose();
     }
@@ -227,6 +268,7 @@ export class LogPanel {
     private handleSessionClose() {
         const closedAt = Date.now();
         this.session = undefined;
+        this.appendSessionClosedMarker(closedAt);
         this.panel.webview.postMessage({
             type: 'sessionClosed',
             message: 'Session closed.',
@@ -245,6 +287,8 @@ export class LogPanel {
         this.session.dispose();
         this.session = undefined;
         const closedAt = Date.now();
+        this.appendSessionClosedMarker(closedAt);
+        void this.stopAutoSave({ message: '' });
         this.panel.webview.postMessage({
             type: 'sessionClosed',
             message: 'Disconnected.',
@@ -290,6 +334,127 @@ export class LogPanel {
                 message: err?.message ?? 'Failed to reconnect.',
             });
         }
+    }
+
+    /**
+     * @brief Prompts the user for an auto-save destination and starts persisting incoming lines.
+     */
+    private async startAutoSave() {
+        if (!this.session) {
+            await this.panel.webview.postMessage({
+                type: 'autoSaveStopped',
+                message: '',
+            });
+            return;
+        }
+
+        const defaultUri = this.getDefaultAutoSaveUri();
+        const selectedUri = await vscode.window.showSaveDialog({
+            title: 'Select log file to auto-save SSH output',
+            defaultUri,
+            filters: {
+                Logs: ['log', 'txt'],
+                'All Files': ['*'],
+            },
+        });
+
+        if (!selectedUri) {
+            await this.panel.webview.postMessage({
+                type: 'autoSaveStopped',
+                message: 'Auto-save cancelled.',
+            });
+            return;
+        }
+
+        try {
+            await this.stopAutoSave({ silent: true });
+            this.autoSavePath = selectedUri.fsPath;
+            this.autoSaveStream = fs.createWriteStream(this.autoSavePath, { flags: 'a' });
+            this.autoSaveStream.on('error', async (err) => {
+                await this.panel.webview.postMessage({
+                    type: 'autoSaveError',
+                    message: err?.message ? `Auto-save failed: ${err.message}` : 'Auto-save failed.',
+                });
+                void this.stopAutoSave({ silent: true });
+            });
+
+            await this.panel.webview.postMessage({
+                type: 'autoSaveStarted',
+                filePath: this.autoSavePath,
+                fileName: path.basename(this.autoSavePath),
+            });
+        } catch (err: any) {
+            await this.panel.webview.postMessage({
+                type: 'autoSaveError',
+                message: err?.message ? `Auto-save failed: ${err.message}` : 'Auto-save failed.',
+            });
+            void this.stopAutoSave({ silent: true });
+        }
+    }
+
+    /**
+     * @brief Stops any active auto-save stream and notifies the Webview unless silenced.
+     * @param options Optional flags to silence notifications or override the status message.
+     */
+    private async stopAutoSave(options: { silent?: boolean; message?: string } = {}) {
+        const { silent = false, message } = options;
+        const hadAutoSave = !!(this.autoSaveStream || this.autoSavePath);
+
+        if (this.autoSaveStream) {
+            await new Promise((resolve) => {
+                const stream = this.autoSaveStream;
+                if (!stream) {
+                    resolve(undefined);
+                    return;
+                }
+
+                if ((stream as any).closed) {
+                    resolve(undefined);
+                    return;
+                }
+
+                stream.once('close', resolve);
+                stream.end();
+            });
+            this.autoSaveStream = undefined;
+        }
+
+        const stoppedPath = this.autoSavePath;
+        this.autoSavePath = undefined;
+
+        if (!silent && hadAutoSave) {
+            await this.panel.webview.postMessage({
+                type: 'autoSaveStopped',
+                message: typeof message === 'string' ? message : '',
+            });
+        }
+    }
+
+    private appendSessionClosedMarker(closedAt: number) {
+        const timestamp = this.formatTimestamp(closedAt);
+        this.writeAutoSaveLine(`--- SSH Session Closed on ${timestamp}`);
+    }
+
+    private formatTimestamp(value: number) {
+        const timestamp = new Date(value);
+        if (Number.isNaN(timestamp.valueOf())) {
+            return new Date().toLocaleString();
+        }
+        return timestamp.toLocaleString();
+    }
+
+    /**
+     * @brief Builds a default URI for the auto-save dialog using the workspace folder when available.
+     * @returns VS Code URI pointing to a suggested log file path.
+     */
+    private getDefaultAutoSaveUri() {
+        const defaultFileName = `${this.targetName.replace(/\s+/g, '_').toLowerCase()}-logs.txt`;
+        const workspaceUri = vscode.workspace.workspaceFolders?.[0]?.uri;
+        if (!workspaceUri) {
+            return vscode.Uri.file(path.join(process.cwd(), defaultFileName));
+        }
+
+        return vscode.Uri.file(path.join(workspaceUri.fsPath, defaultFileName));
     }
 
     /**
@@ -342,6 +507,9 @@ export class LogPanel {
         </label>
         <label>&nbsp;
             <button id="exportLogs">Export Logs</button>
+        </label>
+        <label>&nbsp;
+            <button id="autoSaveToggle">Auto-Save</button>
         </label>
         <label>&nbsp;
             <button id="clearLogs">Clear Logs</button>
