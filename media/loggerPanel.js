@@ -108,13 +108,14 @@
     /**
      * @brief Applies the active filters to all entries and re-renders the list.
      */
-    function applyFilters() {
+    function applyFilters(options = {}) {
+        const preserveScrollPosition = options.preserveScrollPosition === true;
         const filterText = state.textFilter.toLowerCase();
         state.filtered = state.entries.filter((entry) => {
             const textMatches = filterText ? entry.rawLine.toLowerCase().includes(filterText) : true;
             return textMatches && levelPasses(entry.level);
         });
-        render();
+        render({ preserveScrollPosition });
         updateSearchMatches();
     }
 
@@ -215,13 +216,16 @@
             ...highlight,
             normalizedKey: (highlight.key || '').trim().toLowerCase(),
         }));
-        applyFilters();
+        applyFilters({ preserveScrollPosition: true });
     }
 
     /**
      * @brief Renders the filtered entries into the log container.
      */
-    function render() {
+    function render(options = {}) {
+        const preserveScrollPosition = options.preserveScrollPosition === true;
+        const previousScrollTop = preserveScrollPosition ? logContainer.scrollTop : 0;
+        const previousScrollHeight = preserveScrollPosition ? logContainer.scrollHeight : 0;
         const visible = state.filtered;
         const highlights = getHighlightDescriptors();
         state.activeSearchEntry = -1;
@@ -234,7 +238,10 @@
             frag.appendChild(div);
         }
         logContainer.appendChild(frag);
-        if (state.searchIndex === -1 && state.autoScrollEnabled) {
+        if (preserveScrollPosition) {
+            const scrollDelta = logContainer.scrollHeight - previousScrollHeight;
+            logContainer.scrollTop = Math.max(0, previousScrollTop + scrollDelta);
+        } else if (state.searchIndex === -1 && state.autoScrollEnabled) {
             logContainer.scrollTop = logContainer.scrollHeight;
         }
     }
@@ -277,13 +284,8 @@
      * @param line Raw log text to parse and display.
      */
     function handleLogLine(line, options = {}) {
-        const level = parseLevel(line);
+        const entry = createEntry(line);
         const lowerLine = line.toLowerCase();
-        const entry = {
-            timestamp: Date.now(),
-            level,
-            rawLine: line,
-        };
         state.entries.push(entry);
         if (state.entries.length > 10000) {
             state.entries.shift();
@@ -327,6 +329,30 @@
             }
             updateSearchStatus();
         }
+    }
+
+    /**
+     * @brief Creates a log entry object from the provided line.
+     * @param line Raw log line.
+     * @param timestamp Timestamp to assign to the entry.
+     * @returns Log entry with parsed metadata.
+     */
+    function createEntry(line, timestamp = Date.now()) {
+        return {
+            timestamp,
+            level: parseLevel(line),
+            rawLine: line,
+        };
+    }
+
+    /**
+     * @brief Replaces all stored entries using an initial batch payload.
+     * @param lines Array of raw log lines to ingest.
+     */
+    function ingestInitialLines(lines) {
+        const baseTimestamp = Date.now();
+        state.entries = lines.map((line, index) => createEntry(line, baseTimestamp + index));
+        applyFilters();
     }
 
     /**
@@ -462,7 +488,9 @@
     function handleSessionClosed(message, closedAt) {
         const formattedTimestamp = formatLocalTimestamp(closedAt);
         handleConnectionLoss(message || 'Session closed.');
+        handleLogLine('', { className: 'session-closed-buffer' });
         handleLogLine(`--- SSH session closed on ${formattedTimestamp}`, { className: 'session-closed' });
+        handleLogLine('', { className: 'session-closed-buffer' });
     }
 
     /**
@@ -818,6 +846,11 @@
                 autoReconnectToggle.checked = state.autoReconnectEnabled;
                 updatePresetDropdown();
                 applyFilters();
+                break;
+            case 'initialLines':
+                if (Array.isArray(message.lines)) {
+                    ingestInitialLines(message.lines);
+                }
                 break;
             case 'logLine':
                 handleLogLine(message.line);
