@@ -58,7 +58,7 @@
 
             const subtitle = document.createElement('span');
             subtitle.className = 'subtitle';
-            subtitle.textContent = `${device.host}${device.port ? `:${device.port}` : ''}`;
+            subtitle.textContent = device.host;
             info.appendChild(subtitle);
 
             card.appendChild(info);
