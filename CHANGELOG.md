@@ -7,10 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
-## [0.5.0] - 2025-12-02 [CONFIGURABLE-LINE-LIMIT]
+## [0.5.0] - 2025-12-02 [AUTO-AUTO-SCROLL]
 
 ### Added
 - Introduce `embeddedLogger.maxLinesPerTab` to configure how many log lines each tab retains (default: 100000).
+- Add background color to SSH session closed message
+- Adjust auto-scroll behavior based on log panel scrolling
 
 ### Changed
 - None
@@ -22,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - None
 
 ### Fixed
-- None
+- Preserve log panel scroll during highlight updates
 
 ### Security
 - None
