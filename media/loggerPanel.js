@@ -73,6 +73,7 @@
     const statusEl = document.getElementById('status');
     const reconnectButton = document.getElementById('reconnectButton');
     const searchInput = document.getElementById('searchInput');
+    const searchClearBtn = document.getElementById('searchClear');
     const searchPrevBtn = document.getElementById('searchPrev');
     const searchNextBtn = document.getElementById('searchNext');
     const searchCount = document.getElementById('searchCount');
@@ -589,6 +590,17 @@
     }
 
     /**
+     * @brief Enables or disables the clear button based on input content.
+     */
+    function updateSearchClearButton() {
+        if (!searchClearBtn) {
+            return;
+        }
+
+        searchClearBtn.disabled = !searchInput.value.trim();
+    }
+
+    /**
      * @brief Removes the active search line styling, if present.
      */
     function clearActiveSearchLine() {
@@ -637,6 +649,7 @@
             state.searchIndex = -1;
             clearActiveSearchLine();
             updateSearchStatus();
+            updateSearchClearButton();
             return;
         }
 
@@ -650,6 +663,7 @@
             state.searchIndex = -1;
             clearActiveSearchLine();
             updateSearchStatus();
+            updateSearchClearButton();
             return;
         }
 
@@ -658,6 +672,7 @@
         }
 
         scrollToActiveMatch();
+        updateSearchClearButton();
     }
 
     /**
@@ -812,6 +827,8 @@
         }, 150)
     );
 
+    searchInput.addEventListener('input', updateSearchClearButton);
+
     searchInput.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {
             event.preventDefault();
@@ -822,6 +839,21 @@
     searchPrevBtn.addEventListener('click', () => stepSearch(-1));
     searchNextBtn.addEventListener('click', () => stepSearch(1));
 
+    if (searchClearBtn) {
+        searchClearBtn.addEventListener('click', () => {
+            if (!searchInput.value) {
+                return;
+            }
+
+            searchInput.value = '';
+            state.searchTerm = '';
+            render();
+            updateSearchMatches();
+            updateSearchClearButton();
+            searchInput.focus();
+        });
+    }
+
     window.addEventListener('keydown', (event) => {
         if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f') {
             event.preventDefault();
@@ -829,6 +861,8 @@
             searchInput.select();
         }
     });
+
+    updateSearchClearButton();
 
     window.addEventListener('message', (event) => {
         const message = event.data;

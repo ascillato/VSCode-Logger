@@ -362,6 +362,7 @@ export class LogPanel {
             <label>Find
                 <input type="text" id="searchInput" placeholder="Find in logs (Ctrl/Cmd+F)" />
             </label>
+            <button id="searchClear" class="icon-button" title="Clear search" aria-label="Clear search">&times;</button>
             <div class="search-controls">
                 <button id="searchPrev" title="Previous match">Prev</button>
                 <button id="searchNext" title="Next match">Next</button>
