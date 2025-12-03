@@ -191,7 +191,10 @@ export class LogPanel {
      * @brief Emits preloaded log lines for local files into the Webview.
      */
     private sendInitialLines() {
-        this.panel.webview.postMessage({ type: 'initialLines', lines: this.initialLines });
+        for (const line of this.initialLines) {
+            this.panel.webview.postMessage({ type: 'logLine', line });
+        }
+
         this.panel.webview.postMessage({
             type: 'status',
             message: `Loaded ${this.initialLines.length} lines.`,

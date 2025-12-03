@@ -79,6 +79,7 @@
     let reconnectTimeoutId = null;
     let reconnectIntervalId = null;
     let reconnectCountdown = 0;
+    const AUTO_SCROLL_BOTTOM_THRESHOLD = 4;
 
     /**
      * @brief Extracts the log level from a raw log line.
@@ -283,8 +284,13 @@
      * @param line Raw log text to parse and display.
      */
     function handleLogLine(line, options = {}) {
-        const entry = createEntry(line);
+        const level = parseLevel(line);
         const lowerLine = line.toLowerCase();
+        const entry = {
+            timestamp: Date.now(),
+            level,
+            rawLine: line,
+        };
         state.entries.push(entry);
         if (state.entries.length > 10000) {
             state.entries.shift();
@@ -328,30 +334,6 @@
             }
             updateSearchStatus();
         }
-    }
-
-    /**
-     * @brief Creates a log entry object from the provided line.
-     * @param line Raw log line.
-     * @param timestamp Timestamp to assign to the entry.
-     * @returns Log entry with parsed metadata.
-     */
-    function createEntry(line, timestamp = Date.now()) {
-        return {
-            timestamp,
-            level: parseLevel(line),
-            rawLine: line,
-        };
-    }
-
-    /**
-     * @brief Replaces all stored entries using an initial batch payload.
-     * @param lines Array of raw log lines to ingest.
-     */
-    function ingestInitialLines(lines) {
-        const baseTimestamp = Date.now();
-        state.entries = lines.map((line, index) => createEntry(line, baseTimestamp + index));
-        applyFilters();
     }
 
     /**
@@ -544,6 +526,28 @@
     }
 
     /**
+     * @brief Updates auto scroll state and keeps the toggle in sync.
+     * @param enabled Whether auto scroll should be enabled.
+     */
+    function setAutoScrollEnabled(enabled) {
+        if (state.autoScrollEnabled === enabled) {
+            return;
+        }
+
+        state.autoScrollEnabled = enabled;
+        autoScrollToggle.checked = enabled;
+    }
+
+    /**
+     * @brief Determines whether the log container is scrolled to the bottom.
+     * @returns True when the scroll position is within a threshold of the bottom.
+     */
+    function isAtLogBottom() {
+        const distanceFromBottom = logContainer.scrollHeight - logContainer.scrollTop - logContainer.clientHeight;
+        return distanceFromBottom <= AUTO_SCROLL_BOTTOM_THRESHOLD;
+    }
+
+    /**
      * @brief Updates the search status label and button states.
      */
     function updateSearchStatus() {
@@ -721,7 +725,7 @@
     });
 
     autoScrollToggle.addEventListener('change', () => {
-        state.autoScrollEnabled = autoScrollToggle.checked;
+        setAutoScrollEnabled(autoScrollToggle.checked);
         if (state.autoScrollEnabled && state.searchIndex === -1) {
             logContainer.scrollTop = logContainer.scrollHeight;
         }
@@ -733,6 +737,26 @@
             clearReconnectTimers();
         } else if (state.connectionState === 'disconnected') {
             startReconnectCountdown('Connection closed.');
+        }
+    });
+
+    logContainer.addEventListener('scroll', () => {
+        if (!state.isLiveLog) {
+            return;
+        }
+
+        const atBottom = isAtLogBottom();
+
+        if (state.autoScrollEnabled && !atBottom) {
+            setAutoScrollEnabled(false);
+            return;
+        }
+
+        if (!state.autoScrollEnabled && atBottom) {
+            setAutoScrollEnabled(true);
+            if (state.searchIndex === -1) {
+                logContainer.scrollTop = logContainer.scrollHeight;
+            }
         }
     });
 
@@ -803,11 +827,6 @@
                 autoReconnectToggle.checked = state.autoReconnectEnabled;
                 updatePresetDropdown();
                 applyFilters();
-                break;
-            case 'initialLines':
-                if (Array.isArray(message.lines)) {
-                    ingestInitialLines(message.lines);
-                }
                 break;
             case 'logLine':
                 handleLogLine(message.line);
