@@ -105,6 +105,19 @@ body {
 #logContainer.wrap-enabled .log-line {
     white-space: pre-wrap;
     word-break: break-word;
+    line-height: 1.4;
+    --wrap-indent: 14px;
+    --wrap-guide-offset: 1.4em;
+    padding-left: var(--wrap-indent);
+    text-indent: calc(var(--wrap-indent) * -1);
+    background-image: linear-gradient(
+        to bottom,
+        var(--vscode-editorIndentGuide-activeBackground, rgba(128, 128, 128, 0.4)),
+        var(--vscode-editorIndentGuide-activeBackground, rgba(128, 128, 128, 0.4))
+    );
+    background-repeat: no-repeat;
+    background-size: 2px calc(100% - var(--wrap-guide-offset));
+    background-position: 4px var(--wrap-guide-offset);
 }
 
 .level-debug { color: gray; }
