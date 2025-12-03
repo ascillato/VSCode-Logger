@@ -56,7 +56,7 @@
         connectionState: 'unknown',
         maxEntries: 100000,
         statusText: '',
-        autoSaveStatus: '',
+        autoSaveStatus: null,
         autoSaveActive: false,
     };
 
@@ -441,22 +441,58 @@
      * @brief Updates the status element by combining connection and auto-save messages.
      */
     function renderStatusText() {
-        const parts = [];
+        if (!statusEl) {
+            return;
+        }
+
+        const lines = [];
         if (state.statusText) {
-            parts.push(state.statusText);
+            lines.push({ text: state.statusText });
         }
-        if (state.autoSaveStatus) {
-            parts.push(state.autoSaveStatus);
+        if (state.autoSaveStatus && (state.autoSaveStatus.text || state.autoSaveStatus.fileName)) {
+            lines.push({
+                text: state.autoSaveStatus.text || '',
+                fileName: state.autoSaveStatus.fileName,
+            });
         }
-        statusEl.textContent = parts.join('\n');
+
+        statusEl.textContent = '';
+
+        for (let i = 0; i < lines.length; i += 1) {
+            if (i > 0) {
+                statusEl.appendChild(document.createElement('br'));
+            }
+
+            const line = lines[i];
+            const trimmedText = line.text || '';
+
+            if (line.fileName) {
+                if (trimmedText) {
+                    const textNode = document.createTextNode(trimmedText.endsWith(' ')
+                        ? trimmedText
+                        : `${trimmedText} `);
+                    statusEl.appendChild(textNode);
+                }
+
+                const strong = document.createElement('strong');
+                strong.textContent = line.fileName;
+                statusEl.appendChild(strong);
+            } else if (trimmedText) {
+                statusEl.appendChild(document.createTextNode(trimmedText));
+            }
+        }
     }
 
     /**
      * @brief Updates the auto-save status message and re-renders the status text.
      * @param text Additional auto-save status message to display.
      */
-    function setAutoSaveStatus(text) {
-        state.autoSaveStatus = text || '';
+    function setAutoSaveStatus(text, fileName) {
+        if (text || fileName) {
+            state.autoSaveStatus = { text: text || '', fileName };
+        } else {
+            state.autoSaveStatus = null;
+        }
         renderStatusText();
     }
 
@@ -982,7 +1018,11 @@
                 break;
             case 'autoSaveStarted':
                 setAutoSaveActive(true);
-                setAutoSaveStatus(message.fileName ? `Auto-saving to ${message.fileName}` : 'Auto-save enabled.');
+                if (message.fileName) {
+                    setAutoSaveStatus('Auto-saving to', message.fileName);
+                } else {
+                    setAutoSaveStatus('Auto-save enabled.');
+                }
                 break;
             case 'autoSaveStopped':
                 setAutoSaveActive(false);
