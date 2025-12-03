@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
-## [0.5.0] - 2025-12-02 [AUTO-AUTO-SCROLL]
+## [0.5.0] - 2025-12-03 [AUTO-AUTO-SCROLL]
 
 ### Added
 - Introduce `embeddedLogger.maxLinesPerTab` to configure how many log lines each tab retains (default: 100000).
@@ -15,15 +15,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adjust auto-scroll behavior based on log panel scrolling.
 - Add clear button for find textbox.
 - Update find functionality for log navigation.
+- Add visual indicators for wrapped log lines.
 
 ### Changed
-- Removed Port from device list view.
+- None.
 
 ### Deprecated
 - None.
 
 ### Removed
-- None.
+- Removed Port from device list view.
 
 ### Fixed
 - Preserve log panel scroll during highlight updates.
