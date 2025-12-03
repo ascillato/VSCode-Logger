@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [0.6.0] - 2025-12-04 [BOOKMARKS]
+
+### Added
+- None.
+
+### Changed
+- Surround auto-saved SSH session closed markers with blank lines to improve visibility.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- None.
+
+### Security
+- None.
+
+----------------------------------------
+
 ## [0.5.0] - 2025-12-03 [AUTO-AUTO-SCROLL]
 
 ### Added

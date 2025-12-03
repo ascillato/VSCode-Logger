@@ -432,7 +432,9 @@ export class LogPanel {
 
     private appendSessionClosedMarker(closedAt: number) {
         const timestamp = this.formatTimestamp(closedAt);
-        this.writeAutoSaveLine(`--- SSH Session Closed on ${timestamp}`);
+        this.writeAutoSaveLine('');
+        this.writeAutoSaveLine(`--- SSH session closed on ${timestamp}`);
+        this.writeAutoSaveLine('');
     }
 
     private formatTimestamp(value: number) {
