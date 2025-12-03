@@ -800,6 +800,30 @@
         }
     });
 
+    logContainer.addEventListener('click', (event) => {
+        if (!state.searchMatches.length) {
+            return;
+        }
+
+        const logLine = event.target.closest('.log-line');
+        if (!logLine) {
+            return;
+        }
+
+        const entryIndex = Array.prototype.indexOf.call(logContainer.children, logLine);
+        if (entryIndex === -1) {
+            return;
+        }
+
+        const matchIndex = state.searchMatches.indexOf(entryIndex);
+        if (matchIndex === -1) {
+            return;
+        }
+
+        state.searchIndex = matchIndex;
+        scrollToActiveMatch();
+    });
+
     reconnectButton.addEventListener('click', () => {
         clearReconnectTimers();
         if (state.connectionState === 'connected') {

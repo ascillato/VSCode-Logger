@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add full-width background color to SSH session closed message for better spotting.
 - Adjust auto-scroll behavior based on log panel scrolling.
 - Add clear button for find textbox.
+- Update find functionality for log navigation.
 
 ### Changed
 - Removed Port from device list view.
