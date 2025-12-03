@@ -11,24 +11,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Introduce `embeddedLogger.maxLinesPerTab` to configure how many log lines each tab retains (default: 100000).
-- Add background color to SSH session closed message
-- Adjust auto-scroll behavior based on log panel scrolling
+- Add full-width background color to SSH session closed message for better spotting.
+- Adjust auto-scroll behavior based on log panel scrolling.
+- Add clear button for find textbox.
 
 ### Changed
-- None
+- Removed Port from device list view.
 
 ### Deprecated
-- None
+- None.
 
 ### Removed
-- None
+- None.
 
 ### Fixed
-- Preserve log panel scroll during highlight updates
-- Load offline log files in a single batch to reduce tab initialization time
+- Preserve log panel scroll during highlight updates.
+- Load offline log files in a single batch to reduce tab initialization time.
 
 ### Security
-- None
+- None.
 
 ----------------------------------------
 
@@ -42,19 +43,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add Clear Logs button.
 
 ### Changed
-- None
+- None.
 
 ### Deprecated
-- None
+- None.
 
 ### Removed
-- None
+- None.
 
 ### Fixed
 - Fix sidebar device list not loading after switching views.
 
 ### Security
-- None
+- None.
 
 ----------------------------------------
 
@@ -69,16 +70,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Restructure the log panel header to accommodate the new highlight controls and preserve readability on smaller widths.
 
 ### Deprecated
-- None
+- None.
 
 ### Removed
-- None
+- None.
 
 ### Fixed
-- None
+- None.
 
 ### Security
-- None
+- None.
 
 ----------------------------------------
 
@@ -99,10 +100,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved Readme file.
 
 ### Deprecated
-- None
+- None.
 
 ### Removed
-- None
+- None.
 
 ### Fixed
 - Fix top bar when status plus buttons are wider than screen's width.
@@ -116,19 +117,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.1] - 2025-11-29 [INITIAL]
 
 ### Added
-- Initial publication of the extension
-
-### Changed
-- None
-
-### Deprecated
-- None
-
-### Removed
-- None
-
-### Fixed
-- None
-
-### Security
-- None
+- Initial publication of the extension.
