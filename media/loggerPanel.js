@@ -447,7 +447,7 @@
         if (state.autoSaveStatus) {
             parts.push(state.autoSaveStatus);
         }
-        statusEl.textContent = parts.join(' | ');
+        statusEl.textContent = parts.join('\n');
     }
 
     /**
@@ -468,6 +468,7 @@
         if (autoSaveToggle) {
             autoSaveToggle.textContent = active ? 'Stop Auto-Save' : 'Auto-Save';
             autoSaveToggle.disabled = false;
+            autoSaveToggle.classList.toggle('auto-save-active', active);
         }
     }
 
@@ -968,7 +969,7 @@
                 break;
             case 'autoSaveStarted':
                 setAutoSaveActive(true);
-                setAutoSaveStatus(message.filePath ? `Auto-saving to ${message.filePath}` : 'Auto-save enabled.');
+                setAutoSaveStatus(message.fileName ? `Auto-saving to ${message.fileName}` : 'Auto-save enabled.');
                 break;
             case 'autoSaveStopped':
                 setAutoSaveActive(false);

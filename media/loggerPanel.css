@@ -143,6 +143,7 @@ body {
 #status {
     flex: 0 1 auto;
     font-style: italic;
+    white-space: pre-line;
 }
 
 .status-action {
@@ -184,4 +185,10 @@ body {
 
 .hidden {
     display: none !important;
+}
+
+#autoSaveToggle.auto-save-active {
+    background: var(--vscode-inputValidation-errorBackground, #5a1d1d);
+    color: var(--vscode-errorForeground, #e51400);
+    border-color: var(--vscode-errorForeground, #e51400);
 }

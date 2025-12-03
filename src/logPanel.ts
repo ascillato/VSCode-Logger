@@ -288,7 +288,7 @@ export class LogPanel {
         this.session = undefined;
         const closedAt = Date.now();
         this.appendSessionClosedMarker(closedAt);
-        void this.stopAutoSave({ message: 'Auto-save stopped because you disconnected.' });
+        void this.stopAutoSave({ message: '' });
         this.panel.webview.postMessage({
             type: 'sessionClosed',
             message: 'Disconnected.',
@@ -378,7 +378,11 @@ export class LogPanel {
                 void this.stopAutoSave({ silent: true });
             });
 
-            await this.panel.webview.postMessage({ type: 'autoSaveStarted', filePath: this.autoSavePath });
+            await this.panel.webview.postMessage({
+                type: 'autoSaveStarted',
+                filePath: this.autoSavePath,
+                fileName: path.basename(this.autoSavePath),
+            });
         } catch (err: any) {
             await this.panel.webview.postMessage({
                 type: 'autoSaveError',
@@ -421,12 +425,7 @@ export class LogPanel {
         if (!silent && hadAutoSave) {
             await this.panel.webview.postMessage({
                 type: 'autoSaveStopped',
-                message: typeof message === 'string' ? message : stoppedPath ? 'Auto-save stopped.' : '',
-            });
-        } else if (!silent && !hadAutoSave) {
-            await this.panel.webview.postMessage({
-                type: 'autoSaveStopped',
-                message: 'Auto-save not running.',
+                message: typeof message === 'string' ? message : '',
             });
         }
     }
