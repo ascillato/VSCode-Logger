@@ -107,13 +107,14 @@
     /**
      * @brief Applies the active filters to all entries and re-renders the list.
      */
-    function applyFilters() {
+    function applyFilters(options = {}) {
+        const preserveScrollPosition = options.preserveScrollPosition === true;
         const filterText = state.textFilter.toLowerCase();
         state.filtered = state.entries.filter((entry) => {
             const textMatches = filterText ? entry.rawLine.toLowerCase().includes(filterText) : true;
             return textMatches && levelPasses(entry.level);
         });
-        render();
+        render({ preserveScrollPosition });
         updateSearchMatches();
     }
 
@@ -214,13 +215,16 @@
             ...highlight,
             normalizedKey: (highlight.key || '').trim().toLowerCase(),
         }));
-        applyFilters();
+        applyFilters({ preserveScrollPosition: true });
     }
 
     /**
      * @brief Renders the filtered entries into the log container.
      */
-    function render() {
+    function render(options = {}) {
+        const preserveScrollPosition = options.preserveScrollPosition === true;
+        const previousScrollTop = preserveScrollPosition ? logContainer.scrollTop : 0;
+        const previousScrollHeight = preserveScrollPosition ? logContainer.scrollHeight : 0;
         const visible = state.filtered;
         const highlights = getHighlightDescriptors();
         state.activeSearchEntry = -1;
@@ -233,7 +237,10 @@
             frag.appendChild(div);
         }
         logContainer.appendChild(frag);
-        if (state.searchIndex === -1 && state.autoScrollEnabled) {
+        if (preserveScrollPosition) {
+            const scrollDelta = logContainer.scrollHeight - previousScrollHeight;
+            logContainer.scrollTop = Math.max(0, previousScrollTop + scrollDelta);
+        } else if (state.searchIndex === -1 && state.autoScrollEnabled) {
             logContainer.scrollTop = logContainer.scrollHeight;
         }
     }
