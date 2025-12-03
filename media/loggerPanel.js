@@ -80,6 +80,7 @@
     let reconnectTimeoutId = null;
     let reconnectIntervalId = null;
     let reconnectCountdown = 0;
+    const AUTO_SCROLL_BOTTOM_THRESHOLD = 4;
 
     /**
      * @brief Extracts the log level from a raw log line.
@@ -108,13 +109,14 @@
     /**
      * @brief Applies the active filters to all entries and re-renders the list.
      */
-    function applyFilters() {
+    function applyFilters(options = {}) {
+        const preserveScrollPosition = options.preserveScrollPosition === true;
         const filterText = state.textFilter.toLowerCase();
         state.filtered = state.entries.filter((entry) => {
             const textMatches = filterText ? entry.rawLine.toLowerCase().includes(filterText) : true;
             return textMatches && levelPasses(entry.level);
         });
-        render();
+        render({ preserveScrollPosition });
         updateSearchMatches();
     }
 
@@ -215,13 +217,16 @@
             ...highlight,
             normalizedKey: (highlight.key || '').trim().toLowerCase(),
         }));
-        applyFilters();
+        applyFilters({ preserveScrollPosition: true });
     }
 
     /**
      * @brief Renders the filtered entries into the log container.
      */
-    function render() {
+    function render(options = {}) {
+        const preserveScrollPosition = options.preserveScrollPosition === true;
+        const previousScrollTop = preserveScrollPosition ? logContainer.scrollTop : 0;
+        const previousScrollHeight = preserveScrollPosition ? logContainer.scrollHeight : 0;
         const visible = state.filtered;
         const highlights = getHighlightDescriptors();
         state.activeSearchEntry = -1;
@@ -234,7 +239,10 @@
             frag.appendChild(div);
         }
         logContainer.appendChild(frag);
-        if (state.searchIndex === -1 && state.autoScrollEnabled) {
+        if (preserveScrollPosition) {
+            const scrollDelta = logContainer.scrollHeight - previousScrollHeight;
+            logContainer.scrollTop = Math.max(0, previousScrollTop + scrollDelta);
+        } else if (state.searchIndex === -1 && state.autoScrollEnabled) {
             logContainer.scrollTop = logContainer.scrollHeight;
         }
     }
@@ -462,7 +470,9 @@
     function handleSessionClosed(message, closedAt) {
         const formattedTimestamp = formatLocalTimestamp(closedAt);
         handleConnectionLoss(message || 'Session closed.');
+        handleLogLine('', { className: 'session-closed-buffer' });
         handleLogLine(`--- SSH session closed on ${formattedTimestamp}`, { className: 'session-closed' });
+        handleLogLine('', { className: 'session-closed-buffer' });
     }
 
     /**
@@ -514,6 +524,28 @@
      */
     function updateWordWrapClass() {
         logContainer.classList.toggle('wrap-enabled', state.wordWrapEnabled);
+    }
+
+    /**
+     * @brief Updates auto scroll state and keeps the toggle in sync.
+     * @param enabled Whether auto scroll should be enabled.
+     */
+    function setAutoScrollEnabled(enabled) {
+        if (state.autoScrollEnabled === enabled) {
+            return;
+        }
+
+        state.autoScrollEnabled = enabled;
+        autoScrollToggle.checked = enabled;
+    }
+
+    /**
+     * @brief Determines whether the log container is scrolled to the bottom.
+     * @returns True when the scroll position is within a threshold of the bottom.
+     */
+    function isAtLogBottom() {
+        const distanceFromBottom = logContainer.scrollHeight - logContainer.scrollTop - logContainer.clientHeight;
+        return distanceFromBottom <= AUTO_SCROLL_BOTTOM_THRESHOLD;
     }
 
     /**
@@ -694,7 +726,7 @@
     });
 
     autoScrollToggle.addEventListener('change', () => {
-        state.autoScrollEnabled = autoScrollToggle.checked;
+        setAutoScrollEnabled(autoScrollToggle.checked);
         if (state.autoScrollEnabled && state.searchIndex === -1) {
             logContainer.scrollTop = logContainer.scrollHeight;
         }
@@ -706,6 +738,26 @@
             clearReconnectTimers();
         } else if (state.connectionState === 'disconnected') {
             startReconnectCountdown('Connection closed.');
+        }
+    });
+
+    logContainer.addEventListener('scroll', () => {
+        if (!state.isLiveLog) {
+            return;
+        }
+
+        const atBottom = isAtLogBottom();
+
+        if (state.autoScrollEnabled && !atBottom) {
+            setAutoScrollEnabled(false);
+            return;
+        }
+
+        if (!state.autoScrollEnabled && atBottom) {
+            setAutoScrollEnabled(true);
+            if (state.searchIndex === -1) {
+                logContainer.scrollTop = logContainer.scrollHeight;
+            }
         }
     });
 

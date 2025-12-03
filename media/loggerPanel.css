@@ -110,7 +110,18 @@ body {
 .level-crit { color: #e74c3c; font-weight: bold; }
 .level-alert { color: #c0392b; font-weight: bold; }
 .level-emerg { color: #922b21; font-weight: bold; }
-.log-line.session-closed { color: var(--vscode-errorForeground, #e51400); font-weight: 700; }
+.log-line.session-closed {
+    color: var(--vscode-errorForeground, #e51400);
+    font-weight: 700;
+    background-color: var(--vscode-inputValidation-errorBackground, #5a1d1d);
+    padding: 2px 6px;
+    display: inline-block;
+    border-radius: 3px;
+}
+
+.log-line.session-closed-buffer {
+    min-height: 1em;
+}
 
 .top-bar-spacer {
     flex: 1 1 auto;
