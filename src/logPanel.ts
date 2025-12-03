@@ -47,6 +47,7 @@ export class LogPanel {
     private readonly sourcePath?: string;
     private readonly device?: EmbeddedDevice;
     private highlights: HighlightDefinition[];
+    private readonly maxLogEntries: number;
     private disposed = false;
 
     /**
@@ -75,6 +76,9 @@ export class LogPanel {
 
         this.presetsKey = `embeddedLogger.presets.${this.targetId}`;
         this.highlights = initialHighlights;
+        const config = vscode.workspace.getConfiguration('embeddedLogger');
+        const configuredLimit = config.get<number>('maxLinesPerTab', 100000);
+        this.maxLogEntries = Math.max(1, configuredLimit || 100000);
 
         this.panel = vscode.window.createWebviewPanel(
             'embeddedLogger.logPanel',
@@ -398,6 +402,7 @@ export class LogPanel {
             presets,
             highlights: this.highlights,
             isLive: !!this.session,
+            maxEntries: this.maxLogEntries,
         });
     }
 
