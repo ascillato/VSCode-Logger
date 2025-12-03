@@ -284,8 +284,13 @@
      * @param line Raw log text to parse and display.
      */
     function handleLogLine(line, options = {}) {
-        const entry = createEntry(line);
+        const level = parseLevel(line);
         const lowerLine = line.toLowerCase();
+        const entry = {
+            timestamp: Date.now(),
+            level,
+            rawLine: line,
+        };
         state.entries.push(entry);
         if (state.entries.length > 10000) {
             state.entries.shift();
@@ -329,30 +334,6 @@
             }
             updateSearchStatus();
         }
-    }
-
-    /**
-     * @brief Creates a log entry object from the provided line.
-     * @param line Raw log line.
-     * @param timestamp Timestamp to assign to the entry.
-     * @returns Log entry with parsed metadata.
-     */
-    function createEntry(line, timestamp = Date.now()) {
-        return {
-            timestamp,
-            level: parseLevel(line),
-            rawLine: line,
-        };
-    }
-
-    /**
-     * @brief Replaces all stored entries using an initial batch payload.
-     * @param lines Array of raw log lines to ingest.
-     */
-    function ingestInitialLines(lines) {
-        const baseTimestamp = Date.now();
-        state.entries = lines.map((line, index) => createEntry(line, baseTimestamp + index));
-        applyFilters();
     }
 
     /**
@@ -846,11 +827,6 @@
                 autoReconnectToggle.checked = state.autoReconnectEnabled;
                 updatePresetDropdown();
                 applyFilters();
-                break;
-            case 'initialLines':
-                if (Array.isArray(message.lines)) {
-                    ingestInitialLines(message.lines);
-                }
                 break;
             case 'logLine':
                 handleLogLine(message.line);
