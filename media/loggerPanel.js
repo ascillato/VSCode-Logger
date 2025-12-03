@@ -423,6 +423,7 @@
             clearReconnectTimers();
         }
         updateActionButton();
+        updateAutoSaveToggleState();
         updateConnectionDecorations();
     }
 
@@ -467,9 +468,21 @@
         state.autoSaveActive = active;
         if (autoSaveToggle) {
             autoSaveToggle.textContent = active ? 'Stop Auto-Save' : 'Auto-Save';
-            autoSaveToggle.disabled = false;
             autoSaveToggle.classList.toggle('auto-save-active', active);
+            updateAutoSaveToggleState();
         }
+    }
+
+    /**
+     * @brief Enables or disables the auto-save toggle based on connection and auto-save state.
+     */
+    function updateAutoSaveToggleState() {
+        if (!autoSaveToggle) {
+            return;
+        }
+
+        const isConnected = state.isLiveLog && state.connectionState === 'connected';
+        autoSaveToggle.disabled = state.autoSaveActive ? false : !isConnected;
     }
 
     /**

@@ -342,8 +342,8 @@ export class LogPanel {
     private async startAutoSave() {
         if (!this.session) {
             await this.panel.webview.postMessage({
-                type: 'autoSaveError',
-                message: 'Auto-save is only available for live logs.',
+                type: 'autoSaveStopped',
+                message: '',
             });
             return;
         }
