@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Preserve log panel scroll during highlight updates
+- Load offline log files in a single batch to reduce tab initialization time
 
 ### Security
 - None

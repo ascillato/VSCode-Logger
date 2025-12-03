@@ -338,6 +338,30 @@
     }
 
     /**
+     * @brief Handles bulk log lines sent during offline file loading.
+     * @param lines Collection of preloaded lines to add.
+     */
+    function handleInitialLogLines(lines) {
+        if (!Array.isArray(lines) || !lines.length) {
+            return;
+        }
+
+        const timestamp = Date.now();
+        const newEntries = lines.map((line) => ({
+            timestamp,
+            level: parseLevel(line),
+            rawLine: line,
+        }));
+
+        state.entries = state.entries.concat(newEntries);
+        if (state.entries.length > state.maxEntries) {
+            state.entries = state.entries.slice(-state.maxEntries);
+        }
+
+        applyFilters();
+    }
+
+    /**
      * @brief Clears all rendered and stored log entries while preserving filters.
      */
     function clearLogs() {
@@ -829,6 +853,9 @@
                 autoReconnectToggle.checked = state.autoReconnectEnabled;
                 updatePresetDropdown();
                 applyFilters();
+                break;
+            case 'initialLines':
+                handleInitialLogLines(message.lines);
                 break;
             case 'logLine':
                 handleLogLine(message.line);
