@@ -166,7 +166,7 @@ export class LogPanel {
                     break;
                 }
                 case 'stopAutoSave': {
-                    await this.stopAutoSave();
+                    await this.stopAutoSave({ message: '' });
                     break;
                 }
             }
@@ -227,7 +227,7 @@ export class LogPanel {
                 type: 'autoSaveError',
                 message: err?.message ? `Auto-save failed: ${err.message}` : 'Auto-save failed.',
             });
-            void this.stopAutoSave(true);
+            void this.stopAutoSave({ silent: true });
         }
     }
 
@@ -257,7 +257,7 @@ export class LogPanel {
             return;
         }
         this.disposed = true;
-        void this.stopAutoSave(true);
+        void this.stopAutoSave({ silent: true });
         this.session?.dispose();
         this.panel.dispose();
     }
@@ -268,14 +268,7 @@ export class LogPanel {
     private handleSessionClose() {
         const closedAt = Date.now();
         this.session = undefined;
-        const hadAutoSave = !!(this.autoSaveStream || this.autoSavePath);
-        void this.stopAutoSave(true);
-        if (hadAutoSave) {
-            void this.panel.webview.postMessage({
-                type: 'autoSaveStopped',
-                message: 'Auto-save stopped because the session closed.',
-            });
-        }
+        this.appendSessionClosedMarker(closedAt);
         this.panel.webview.postMessage({
             type: 'sessionClosed',
             message: 'Session closed.',
@@ -294,14 +287,8 @@ export class LogPanel {
         this.session.dispose();
         this.session = undefined;
         const closedAt = Date.now();
-        const hadAutoSave = !!(this.autoSaveStream || this.autoSavePath);
-        void this.stopAutoSave(true);
-        if (hadAutoSave) {
-            void this.panel.webview.postMessage({
-                type: 'autoSaveStopped',
-                message: 'Auto-save stopped because the session disconnected.',
-            });
-        }
+        this.appendSessionClosedMarker(closedAt);
+        void this.stopAutoSave({ message: 'Auto-save stopped because you disconnected.' });
         this.panel.webview.postMessage({
             type: 'sessionClosed',
             message: 'Disconnected.',
@@ -380,7 +367,7 @@ export class LogPanel {
         }
 
         try {
-            await this.stopAutoSave(true);
+            await this.stopAutoSave({ silent: true });
             this.autoSavePath = selectedUri.fsPath;
             this.autoSaveStream = fs.createWriteStream(this.autoSavePath, { flags: 'a' });
             this.autoSaveStream.on('error', async (err) => {
@@ -388,7 +375,7 @@ export class LogPanel {
                     type: 'autoSaveError',
                     message: err?.message ? `Auto-save failed: ${err.message}` : 'Auto-save failed.',
                 });
-                void this.stopAutoSave(true);
+                void this.stopAutoSave({ silent: true });
             });
 
             await this.panel.webview.postMessage({ type: 'autoSaveStarted', filePath: this.autoSavePath });
@@ -397,15 +384,18 @@ export class LogPanel {
                 type: 'autoSaveError',
                 message: err?.message ? `Auto-save failed: ${err.message}` : 'Auto-save failed.',
             });
-            void this.stopAutoSave(true);
+            void this.stopAutoSave({ silent: true });
         }
     }
 
     /**
      * @brief Stops any active auto-save stream and notifies the Webview unless silenced.
-     * @param silent When true, no user-facing notification is sent.
+     * @param options Optional flags to silence notifications or override the status message.
      */
-    private async stopAutoSave(silent = false) {
+    private async stopAutoSave(options: { silent?: boolean; message?: string } = {}) {
+        const { silent = false, message } = options;
+        const hadAutoSave = !!(this.autoSaveStream || this.autoSavePath);
+
         if (this.autoSaveStream) {
             await new Promise((resolve) => {
                 const stream = this.autoSaveStream;
@@ -428,12 +418,30 @@ export class LogPanel {
         const stoppedPath = this.autoSavePath;
         this.autoSavePath = undefined;
 
-        if (!silent) {
+        if (!silent && hadAutoSave) {
             await this.panel.webview.postMessage({
                 type: 'autoSaveStopped',
-                message: stoppedPath ? 'Auto-save stopped.' : 'Auto-save not running.',
+                message: typeof message === 'string' ? message : stoppedPath ? 'Auto-save stopped.' : '',
+            });
+        } else if (!silent && !hadAutoSave) {
+            await this.panel.webview.postMessage({
+                type: 'autoSaveStopped',
+                message: 'Auto-save not running.',
             });
         }
+    }
+
+    private appendSessionClosedMarker(closedAt: number) {
+        const timestamp = this.formatTimestamp(closedAt);
+        this.writeAutoSaveLine(`--- SSH Session Closed on ${timestamp}`);
+    }
+
+    private formatTimestamp(value: number) {
+        const timestamp = new Date(value);
+        if (Number.isNaN(timestamp.valueOf())) {
+            return new Date().toLocaleString();
+        }
+        return timestamp.toLocaleString();
     }
 
     /**
@@ -502,6 +510,9 @@ export class LogPanel {
             <button id="exportLogs">Export Logs</button>
         </label>
         <label>&nbsp;
+            <button id="autoSaveToggle">Auto-Save</button>
+        </label>
+        <label>&nbsp;
             <button id="clearLogs">Clear Logs</button>
         </label>
         <label class="word-wrap-toggle">
@@ -526,7 +537,6 @@ export class LogPanel {
                 <button id="searchNext" title="Next match">Next</button>
                 <span id="searchCount">0 / 0</span>
             </div>
-            <button id="autoSaveToggle">Auto-Save</button>
         </div>
         <div class="top-bar-spacer"></div>
         <div class="status-area">
