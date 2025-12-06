@@ -9,14 +9,15 @@ A Visual Studio Code extension that connects to embedded Linux devices over SSH,
 - Activity Bar view listing configured devices.
 - **Real-time log streaming over SSH** using a configurable command (default: `tail -F /var/log/syslog`).
 - **Log level parsing, filtering, and colorization** inside a Webview panel per device.
+- Saved filter presets stored per device.
 - **Highlight up to 10 custom keywords** with color-coded, bold, underlined text in both live and imported logs.
 - **Find text inside live or imported logs** with Ctrl/Cmd+F, including next/previous navigation.
 - **Reconnect closed SSH sessions** directly from the log panel and automatically mark the log when a device closes a session.
-- Saved filter presets stored per device.
 - **Export** currently visible (filtered) logs to a file.
+- **Auto-save** to file option for live SSH logs.
 - **Open any log files and filter them** with the same interface.
 - SSH passwords are **stored securely** with VS Code Secret Storage.
-- Privacy focused. **No telemetry**. Everything **runs locally**.
+- **Privacy focused**. **No telemetry**. Everything **runs locally**.
 - **Built with security in mind**.
 
 ## Configuration
@@ -41,7 +42,7 @@ Add devices in your VS Code settings under `embeddedLogger.devices`:
 
 If no password is stored yet, the extension prompts for it when connecting and saves it locally and securely.
 
-- Control memory usage by capping retained lines per log tab with `embeddedLogger.maxLinesPerTab` (default: 100000).
+- Control memory usage by capping retained lines per log tab with `embeddedLogger.maxLinesPerTab` (default: 100000). For auto-save, this limit is not applied to a file. Everything is saved.
 
 ## Notes
 
