@@ -58,6 +58,7 @@
         statusText: '',
         secondaryStatus: null,
         autoSaveActive: false,
+        lineLimitReached: false,
     };
 
     const minLevelSelect = document.getElementById('minLevel');
@@ -73,6 +74,7 @@
     const autoReconnectToggle = document.getElementById('autoReconnectToggle');
     const autoReconnectContainer = document.getElementById('autoReconnectContainer');
     const logContainer = document.getElementById('logContainer');
+    const logContent = document.getElementById('logContent');
     const statusEl = document.getElementById('status');
     const reconnectButton = document.getElementById('reconnectButton');
     const searchInput = document.getElementById('searchInput');
@@ -81,6 +83,7 @@
     const searchNextBtn = document.getElementById('searchNext');
     const searchCount = document.getElementById('searchCount');
     const autoSaveToggle = document.getElementById('autoSaveToggle');
+    const lineLimitNotice = document.getElementById('lineLimitNotice');
 
     let reconnectTimeoutId = null;
     let reconnectIntervalId = null;
@@ -123,6 +126,17 @@
         });
         render({ preserveScrollPosition });
         updateSearchMatches();
+    }
+
+    /**
+     * @brief Toggles the visibility of the line limit notice.
+     * @param reached True when the maximum number of entries has been hit.
+     */
+    function setLineLimitReached(reached) {
+        state.lineLimitReached = reached;
+        if (lineLimitNotice) {
+            lineLimitNotice.classList.toggle('hidden', !reached);
+        }
     }
 
     /**
@@ -235,7 +249,10 @@
         const visible = state.filtered;
         const highlights = getHighlightDescriptors();
         state.activeSearchEntry = -1;
-        logContainer.innerHTML = '';
+        if (!logContent) {
+            return;
+        }
+        logContent.innerHTML = '';
         const frag = document.createDocumentFragment();
         for (const entry of visible) {
             const div = document.createElement('div');
@@ -243,7 +260,7 @@
             div.appendChild(buildHighlightedContent(entry.rawLine, highlights));
             frag.appendChild(div);
         }
-        logContainer.appendChild(frag);
+        logContent.appendChild(frag);
         if (preserveScrollPosition) {
             const scrollDelta = logContainer.scrollHeight - previousScrollHeight;
             logContainer.scrollTop = Math.max(0, previousScrollTop + scrollDelta);
@@ -297,17 +314,20 @@
             level,
             rawLine: line,
         };
+        let trimmedEntries = false;
         state.entries.push(entry);
         if (state.entries.length > state.maxEntries) {
             state.entries.shift();
+            trimmedEntries = true;
         }
         const searchTerm = state.searchTerm.trim().toLowerCase();
         if (levelPasses(level) && (!state.textFilter || lowerLine.includes(state.textFilter.toLowerCase()))) {
             state.filtered.push(entry);
             if (state.filtered.length > state.maxEntries) {
                 state.filtered.shift();
-                if (logContainer.firstChild) {
-                    logContainer.removeChild(logContainer.firstChild);
+                trimmedEntries = true;
+                if (logContent && logContent.firstChild) {
+                    logContent.removeChild(logContent.firstChild);
                 }
                 state.searchMatches = state.searchMatches
                     .map((idx) => idx - 1)
@@ -326,7 +346,9 @@
             }
             div.className = classes.join(' ');
             div.appendChild(buildHighlightedContent(entry.rawLine, highlights));
-            logContainer.appendChild(div);
+            if (logContent) {
+                logContent.appendChild(div);
+            }
             if (searchTerm && lowerLine.includes(searchTerm)) {
                 state.searchMatches.push(state.filtered.length - 1);
                 if (state.searchIndex === -1) {
@@ -339,6 +361,9 @@
                 scrollToActiveMatch();
             }
             updateSearchStatus();
+            if (trimmedEntries) {
+                setLineLimitReached(true);
+            }
         }
     }
 
@@ -359,11 +384,16 @@
         }));
 
         state.entries = state.entries.concat(newEntries);
+        let trimmed = false;
         if (state.entries.length > state.maxEntries) {
             state.entries = state.entries.slice(-state.maxEntries);
+            trimmed = true;
         }
 
         applyFilters();
+        if (trimmed) {
+            setLineLimitReached(true);
+        }
     }
 
     /**
@@ -377,6 +407,7 @@
         state.activeSearchEntry = -1;
         render();
         updateSearchStatus();
+        setLineLimitReached(false);
     }
 
     /**
@@ -731,7 +762,7 @@
      */
     function clearActiveSearchLine() {
         if (state.activeSearchEntry !== -1) {
-            const prev = logContainer.children[state.activeSearchEntry];
+            const prev = logContent?.children[state.activeSearchEntry];
             if (prev) {
                 prev.classList.remove('active-search-line');
             }
@@ -750,7 +781,7 @@
         }
 
         const entryIndex = state.searchMatches[state.searchIndex];
-        const node = logContainer.children[entryIndex];
+        const node = logContent?.children[entryIndex];
         if (!node) {
             clearActiveSearchLine();
             updateSearchStatus();
@@ -936,7 +967,7 @@
             return;
         }
 
-        const entryIndex = Array.prototype.indexOf.call(logContainer.children, logLine);
+        const entryIndex = Array.prototype.indexOf.call(logContent?.children || [], logLine);
         if (entryIndex === -1) {
             return;
         }

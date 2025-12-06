@@ -79,6 +79,25 @@ body {
     background: var(--vscode-editor-background);
     flex: 1 1 auto;
     min-height: 200px;
+    position: relative;
+}
+
+#logContent {
+    display: flex;
+    flex-direction: column;
+}
+
+.line-limit-notice {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: var(--vscode-editorWidget-border);
+    color: var(--vscode-editor-foreground);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    pointer-events: none;
+    z-index: 1;
 }
 
 #logContainer.disconnected {

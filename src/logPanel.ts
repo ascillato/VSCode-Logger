@@ -545,7 +545,10 @@ export class LogPanel {
             <button id="reconnectButton" class="status-action" hidden>Reconnect</button>
         </div>
     </div>
-    <div id="logContainer"></div>
+    <div id="logContainer">
+        <div id="lineLimitNotice" class="line-limit-notice hidden">Line limit reached; older lines are being replaced with newer entries.</div>
+        <div id="logContent"></div>
+    </div>
     <script nonce="${nonce}" src="${scriptUri}"></script>
 </body>
 </html>`;
