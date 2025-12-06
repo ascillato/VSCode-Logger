@@ -696,8 +696,9 @@
                 return;
             }
             event.preventDefault();
-            handleBookmarkAction(action);
+            const targetEntryId = contextMenuEntryId;
             hideBookmarkContextMenu();
+            handleBookmarkAction(action, targetEntryId);
         });
         document.addEventListener('click', (event) => {
             if (!menu.contains(event.target)) {
@@ -758,30 +759,31 @@
      * @brief Executes a bookmark-related action from the context menu.
      * @param action Action identifier to run.
      */
-    function handleBookmarkAction(action) {
-        if (contextMenuEntryId === null && action !== 'removeAll') {
-            return;
-        }
+    function handleBookmarkAction(action, entryId) {
         switch (action) {
             case 'add':
                 promptForBookmarkLabel('', (label) => {
-                    insertBookmarkBefore(contextMenuEntryId, label);
+                    if (entryId !== null) {
+                        insertBookmarkBefore(entryId, label);
+                    }
                 });
                 break;
             case 'edit':
-                promptToEditBookmark(contextMenuEntryId);
+                promptToEditBookmark(entryId);
                 break;
             case 'remove':
-                removeBookmark(contextMenuEntryId);
+                if (entryId !== null) {
+                    removeBookmark(entryId);
+                }
                 break;
             case 'removeAll':
                 removeAllBookmarks();
                 break;
             case 'next':
-                navigateToBookmark(contextMenuEntryId, 'next');
+                navigateToBookmark(entryId ?? state.filtered[0]?.id ?? null, 'next');
                 break;
             case 'previous':
-                navigateToBookmark(contextMenuEntryId, 'previous');
+                navigateToBookmark(entryId ?? state.filtered[0]?.id ?? null, 'previous');
                 break;
             default:
                 break;
