@@ -538,10 +538,6 @@ export class LogPanel {
             <span>Auto Scroll</span>
             <input type="checkbox" id="autoScrollToggle" checked />
         </label>
-        <label class="word-wrap-toggle" id="autoReconnectContainer">
-            <span>Auto Reconnect</span>
-            <input type="checkbox" id="autoReconnectToggle" checked />
-        </label>
         <div class="search-bar">
             <label>Find
                 <input type="text" id="searchInput" placeholder="Find in logs (Ctrl/Cmd+F)" />
@@ -554,9 +550,15 @@ export class LogPanel {
             </div>
         </div>
         <div class="top-bar-spacer"></div>
-        <div class="status-area">
-            <span id="status"></span>
-            <button id="reconnectButton" class="status-action" hidden>Reconnect</button>
+        <div class="connection-row">
+            <div class="status-area">
+                <span id="status"></span>
+                <button id="reconnectButton" class="status-action" hidden>Reconnect</button>
+            </div>
+            <label class="word-wrap-toggle" id="autoReconnectContainer">
+                <span>Auto Reconnect</span>
+                <input type="checkbox" id="autoReconnectToggle" checked />
+            </label>
         </div>
     </div>
     <div id="logContainer">

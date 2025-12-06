@@ -188,16 +188,39 @@ body {
     flex: 1 1 auto;
 }
 
+
+.connection-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1 1 auto;
+}
+
 .status-area {
     display: flex;
     align-items: center;
     gap: 8px;
+    flex: 1 1 auto;
 }
 
 #status {
-    flex: 0 1 auto;
+    flex: 1 1 auto;
     font-style: italic;
     white-space: pre-line;
+}
+
+.status-line {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 6px;
+    border-radius: 4px;
+}
+
+.status-line--error {
+    background: var(--vscode-inputValidation-errorBackground, #5a1d1d);
+    color: var(--vscode-errorForeground, #e51400);
+    font-weight: 700;
 }
 
 .status-action {

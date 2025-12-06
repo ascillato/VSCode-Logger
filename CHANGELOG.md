@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [0.8.1] - 2025-12-21 [CONSOLE-RECONNECT]
+
+### Added
+- Add auto-reconnect checkbox to SSH console tabs (enabled by default) that retries every 5 seconds without closing the tab, showing bold red status when sessions drop.
+- Show connection status and reconnect/disconnect actions alongside the auto-reconnect toggle for quicker recovery.
+
+### Changed
+- Update README and package assets for version 0.8.1.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- None.
+
+### Security
+- None.
+
+----------------------------------------
+
 ## [0.8.0] - 2025-12-20 [CONSOLE]
 
 ### Added

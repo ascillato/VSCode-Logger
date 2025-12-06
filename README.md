@@ -12,7 +12,7 @@ A Visual Studio Code extension that connects to embedded Linux devices over SSH,
 - Saved filter presets stored per device.
 - **Highlight up to 10 custom keywords** with color-coded, bold, underlined text in both live and imported logs.
 - **Find text inside live or imported logs** with Ctrl/Cmd+F, including next/previous navigation.
-- **Reconnect closed SSH sessions** directly from the log panel and automatically mark the log when a device closes a session.
+- **Reconnect closed SSH sessions** directly from the log panel with a default-on auto-reconnect toggle that retries every 5 seconds and keeps the tab open.
 - **Export** currently visible (filtered) logs to a file.
 - **Auto-save** to file option for live SSH logs.
 - **Open any log files and filter them** with the same interface.
@@ -61,7 +61,7 @@ If no password is stored yet, the extension prompts for it when connecting and s
 - **Colorization of lines* is performed based on the loglevel (DEBUG, INFO, ERROR, etc). If these keys are not present in the log, no colorization is be applied.
 - **Filtering presets** are stored per-device in the workspace state using the key `embeddedLogger.presets.<deviceId>`.
 - Exports only include log lines currently visible after applying filters.
-- When an SSH session closes, the log view appends `--- SSH session closed on <timestamp>` and offers a **Reconnect** button next to the status text to restart streaming.
+- When an SSH session closes, the log view appends `--- SSH session closed on <timestamp>` and surfaces a bold, red status message while auto-reconnecting every 5 seconds (when enabled) and keeping the tab open.
 - Click the highlight icon in the Embedded Logger devices view to add up to ten highlight rows, each with its own colour and editable keyword that updates live and imported logs instantly.
 - Use the **Open Local Log File** button in the Embedded Logger devices view (or run the command with the same name) to select a `.log` or `.txt` file from your machine. The chosen file is loaded into the log viewer so you can reuse filtering, presets, export filtered logs and highlights just like a live connection.
 - **Status** text also shows messages from the log command used in the configuration like `tail -F /var/log/syslog`. So, some messages like: `tail: '/var/log/syslog' has appeared; following new file` may appear. This message in particular happens when the log file is rotated or recreated. The `-F` flag tells `tail` to keep watching for the file to reappear, so the message is informational and indicates that log streaming will continue with the new file. If you prefer a different log source, update the `logCommand` in your device configuration.
@@ -122,12 +122,12 @@ If you find this extension useful, please [rate it](https://marketplace.visualst
 
 - Requires: `npm install -g @vscode/vsce`
 - Run: `vsce package` to generate vsix file to be installed into VSCode
-- Install locally on VSCode: `code --install-extension embedded-device-logger-0.8.0.vsix`
+- Install locally on VSCode: `code --install-extension embedded-device-logger-0.8.1.vsix`
 
 ### Clean and re-compile
 
 - `clear; rm -rf node_modules; rm -rf out; rm *.vsix; npm install; npm run compile; vsce package`
-- `code --install-extension embedded-device-logger-0.8.0.vsix`
+- `code --install-extension embedded-device-logger-0.8.1.vsix`
 
 ### Generating Source Code Documentation
 
