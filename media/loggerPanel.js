@@ -41,6 +41,8 @@
         'Configured display line limit reached. Older lines are being replaced with newer entries.';
     const LINE_LIMIT_NOTICE_OFFLINE = 'Configured display line limit reached. Older lines are not shown.';
 
+    let entryIdCounter = 0;
+
     const state = {
         deviceId: '',
         presets: [],
@@ -63,6 +65,7 @@
         secondaryStatus: null,
         autoSaveActive: false,
         lineLimitReached: false,
+        activeBookmarkId: null,
     };
 
     const minLevelSelect = document.getElementById('minLevel');
@@ -92,6 +95,8 @@
     const searchCount = document.getElementById('searchCount');
     const autoSaveToggle = document.getElementById('autoSaveToggle');
     const lineLimitNotice = document.getElementById('lineLimitNotice');
+    const bookmarkContextMenu = createBookmarkContextMenu();
+    let contextMenuEntryId = null;
 
     let reconnectTimeoutId = null;
     let reconnectIntervalId = null;
@@ -275,13 +280,7 @@
         logContent.innerHTML = '';
         const frag = document.createDocumentFragment();
         for (const entry of visible) {
-            const div = document.createElement('div');
-            const classes = [`log-line`, `level-${entry.level.toLowerCase()}`];
-            if (entry.className) {
-                classes.push(entry.className);
-            }
-            div.className = classes.join(' ');
-            div.appendChild(buildHighlightedContent(entry.rawLine, highlights));
+            const div = createLogLineElement(entry, highlights);
             frag.appendChild(div);
         }
         logContent.appendChild(frag);
@@ -291,6 +290,7 @@
         } else if (state.searchIndex === -1 && state.autoScrollEnabled) {
             logContainer.scrollTop = logContainer.scrollHeight;
         }
+        updateActiveBookmarkHighlight();
     }
 
     /**
@@ -333,10 +333,82 @@
      */
     function classifyLogLine(line) {
         const normalized = line.trim().toLowerCase();
+        const bookmarkMatch = line.match(/^---\s*bookmark\s*---\s*(.*)$/i);
+        if (bookmarkMatch) {
+            return {
+                className: 'bookmark-line',
+                bypassFilters: true,
+                isBookmark: true,
+                bookmarkLabel: bookmarkMatch[1].trim(),
+            };
+        }
         if (normalized.startsWith('--- ssh session closed')) {
             return { className: 'session-closed', bypassFilters: true };
         }
-        return { className: null, bypassFilters: false };
+        return { className: null, bypassFilters: false, isBookmark: false, bookmarkLabel: '' };
+    }
+
+    /**
+     * @brief Generates a new log entry with a unique identifier.
+     * @param line Raw log line to store.
+     * @param options Additional entry options.
+     * @returns A populated log entry object.
+     */
+    function createEntry(line, options = {}) {
+        const classification = classifyLogLine(line);
+        const isBookmark = options.isBookmark === true || classification.isBookmark === true;
+        const bookmarkLabel = options.bookmarkLabel ?? classification.bookmarkLabel ?? '';
+        return {
+            id: entryIdCounter++,
+            timestamp: options.timestamp ?? Date.now(),
+            level: options.level ?? (isBookmark ? 'INFO' : parseLevel(line)),
+            rawLine: line,
+            className: options.className ?? classification.className,
+            bypassFilters: options.bypassFilters === true || classification.bypassFilters === true,
+            isBookmark,
+            bookmarkLabel,
+        };
+    }
+
+    /**
+     * @brief Builds the DOM element for a log entry.
+     * @param entry The entry to render.
+     * @param highlights Highlight descriptors to apply.
+     * @returns A configured DIV element for the log line.
+     */
+    function createLogLineElement(entry, highlights) {
+        const div = document.createElement('div');
+        const classes = [`log-line`, `level-${entry.level.toLowerCase()}`];
+        if (entry.className) {
+            classes.push(entry.className);
+        }
+        if (entry.isBookmark) {
+            classes.push('bookmark-line');
+        }
+        if (state.activeBookmarkId === entry.id) {
+            classes.push('active-bookmark');
+        }
+        div.className = classes.join(' ');
+        div.dataset.entryId = String(entry.id);
+        div.appendChild(buildHighlightedContent(entry.rawLine, highlights));
+        return div;
+    }
+
+    /**
+     * @brief Updates the active bookmark styling in the DOM.
+     */
+    function updateActiveBookmarkHighlight() {
+        const active = logContent?.querySelector('.log-line.active-bookmark');
+        if (active) {
+            active.classList.remove('active-bookmark');
+        }
+        if (state.activeBookmarkId === null) {
+            return;
+        }
+        const next = logContent?.querySelector(`[data-entry-id="${state.activeBookmarkId}"]`);
+        if (next) {
+            next.classList.add('active-bookmark');
+        }
     }
 
     /**
@@ -344,18 +416,8 @@
      * @param line Raw log text to parse and display.
      */
     function handleLogLine(line, options = {}) {
-        const level = parseLevel(line);
         const lowerLine = line.toLowerCase();
-        const classification = classifyLogLine(line);
-        const bypassFilters = options.bypassFilters === true || classification.bypassFilters === true;
-        const className = options.className || classification.className;
-        const entry = {
-            timestamp: Date.now(),
-            level,
-            rawLine: line,
-            className,
-            bypassFilters,
-        };
+        const entry = createEntry(line, options);
         let trimmedEntries = false;
         state.entries.push(entry);
         if (state.entries.length > state.maxEntries) {
@@ -364,8 +426,8 @@
         }
         const searchTerm = state.searchTerm.trim().toLowerCase();
         if (
-            bypassFilters ||
-            (levelPasses(level) && (!state.textFilter || lowerLine.includes(state.textFilter.toLowerCase())))
+            entry.bypassFilters ||
+            (levelPasses(entry.level) && (!state.textFilter || lowerLine.includes(state.textFilter.toLowerCase())))
         ) {
             state.filtered.push(entry);
             if (state.filtered.length > state.maxEntries) {
@@ -384,13 +446,7 @@
                 }
             }
             const highlights = getHighlightDescriptors();
-            const div = document.createElement('div');
-            const classes = [`log-line`, `level-${entry.level.toLowerCase()}`];
-            if (entry.className) {
-                classes.push(entry.className);
-            }
-            div.className = classes.join(' ');
-            div.appendChild(buildHighlightedContent(entry.rawLine, highlights));
+            const div = createLogLineElement(entry, highlights);
             if (logContent) {
                 logContent.appendChild(div);
             }
@@ -406,6 +462,7 @@
                 scrollToActiveMatch();
             }
             updateSearchStatus();
+            updateActiveBookmarkHighlight();
             if (trimmedEntries) {
                 setLineLimitReached(true);
             }
@@ -422,16 +479,7 @@
         }
 
         const timestamp = Date.now();
-        const newEntries = lines.map((line) => {
-            const classification = classifyLogLine(line);
-            return {
-                timestamp,
-                level: parseLevel(line),
-                rawLine: line,
-                className: classification.className,
-                bypassFilters: classification.bypassFilters,
-            };
-        });
+        const newEntries = lines.map((line) => createEntry(line, { timestamp }));
 
         state.entries = state.entries.concat(newEntries);
         let trimmed = false;
@@ -455,9 +503,287 @@
         state.searchMatches = [];
         state.searchIndex = -1;
         state.activeSearchEntry = -1;
+        state.activeBookmarkId = null;
+        entryIdCounter = 0;
         render();
         updateSearchStatus();
         setLineLimitReached(false);
+    }
+
+    /**
+     * @brief Formats the bookmark line text with an optional label.
+     * @param label Label to append after the bookmark marker.
+     * @returns Formatted bookmark text.
+     */
+    function formatBookmarkText(label) {
+        const trimmedLabel = label.trim();
+        return trimmedLabel ? `--- Bookmark --- ${trimmedLabel}` : '--- Bookmark ---';
+    }
+
+    /**
+     * @brief Creates a bookmark entry instance.
+     * @param label Optional label for the bookmark.
+     * @returns A bookmark entry object.
+     */
+    function createBookmarkEntry(label = '') {
+        const text = formatBookmarkText(label);
+        return createEntry(text, {
+            bypassFilters: true,
+            className: 'bookmark-line',
+            isBookmark: true,
+            bookmarkLabel: label.trim(),
+            level: 'INFO',
+        });
+    }
+
+    /**
+     * @brief Inserts a bookmark entry before the specified entry identifier.
+     * @param entryId Target entry identifier to insert before.
+     * @param label Optional bookmark label.
+     */
+    function insertBookmarkBefore(entryId, label = '') {
+        const targetIndex = state.entries.findIndex((entry) => entry.id === entryId);
+        if (targetIndex === -1) {
+            return;
+        }
+        const bookmarkEntry = createBookmarkEntry(label);
+        state.entries.splice(targetIndex, 0, bookmarkEntry);
+        applyFilters({ preserveScrollPosition: true });
+        scrollToEntryId(bookmarkEntry.id);
+    }
+
+    /**
+     * @brief Updates the label for an existing bookmark.
+     * @param entryId Identifier of the bookmark to update.
+     */
+    function editBookmarkLabel(entryId) {
+        const entry = state.entries.find((item) => item.id === entryId && item.isBookmark);
+        if (!entry) {
+            return;
+        }
+        const label = window.prompt('Bookmark label', entry.bookmarkLabel || '') ?? undefined;
+        if (label === undefined) {
+            return;
+        }
+        entry.bookmarkLabel = label.trim();
+        entry.rawLine = formatBookmarkText(entry.bookmarkLabel);
+        applyFilters({ preserveScrollPosition: true });
+        scrollToEntryId(entry.id);
+    }
+
+    /**
+     * @brief Removes a single bookmark entry.
+     * @param entryId Identifier of the bookmark to remove.
+     */
+    function removeBookmark(entryId) {
+        const index = state.entries.findIndex((entry) => entry.id === entryId && entry.isBookmark);
+        if (index === -1) {
+            return;
+        }
+        state.entries.splice(index, 1);
+        if (state.activeBookmarkId === entryId) {
+            state.activeBookmarkId = null;
+        }
+        applyFilters({ preserveScrollPosition: true });
+    }
+
+    /**
+     * @brief Removes all bookmark entries from the log list.
+     */
+    function removeAllBookmarks() {
+        if (!state.entries.some((entry) => entry.isBookmark)) {
+            return;
+        }
+        state.entries = state.entries.filter((entry) => !entry.isBookmark);
+        state.activeBookmarkId = null;
+        applyFilters({ preserveScrollPosition: true });
+    }
+
+    /**
+     * @brief Retrieves filtered bookmark indices.
+     * @returns An array of indices within the filtered list that are bookmarks.
+     */
+    function getFilteredBookmarkIndices() {
+        const indices = [];
+        for (let i = 0; i < state.filtered.length; i += 1) {
+            if (state.filtered[i].isBookmark) {
+                indices.push(i);
+            }
+        }
+        return indices;
+    }
+
+    /**
+     * @brief Finds the filtered index for a given entry identifier.
+     * @param entryId Entry identifier to locate.
+     * @returns Filtered index or -1 when missing.
+     */
+    function findFilteredIndexById(entryId) {
+        return state.filtered.findIndex((entry) => entry.id === entryId);
+    }
+
+    /**
+     * @brief Scrolls to the log line matching the specified entry id.
+     * @param entryId Entry identifier to scroll to.
+     */
+    function scrollToEntryId(entryId) {
+        const element = logContent?.querySelector(`[data-entry-id="${entryId}"]`);
+        const entry = state.entries.find((item) => item.id === entryId && item.isBookmark);
+        if (element && entry) {
+            element.scrollIntoView({ block: 'center' });
+            state.activeBookmarkId = entryId;
+            updateActiveBookmarkHighlight();
+        }
+    }
+
+    /**
+     * @brief Navigates to the next or previous bookmark relative to the current entry.
+     * @param entryId Current entry identifier.
+     * @param direction Direction to travel, either 'next' or 'previous'.
+     */
+    function navigateToBookmark(entryId, direction) {
+        const bookmarkIndices = getFilteredBookmarkIndices();
+        if (!bookmarkIndices.length) {
+            return;
+        }
+        const currentIndex = findFilteredIndexById(entryId);
+        if (currentIndex === -1) {
+            scrollToEntryId(state.filtered[bookmarkIndices[0]].id);
+            return;
+        }
+        if (direction === 'next') {
+            const target = bookmarkIndices.find((idx) => idx > currentIndex) ?? bookmarkIndices[0];
+            scrollToEntryId(state.filtered[target].id);
+            return;
+        }
+        const reversed = [...bookmarkIndices].reverse();
+        const target = reversed.find((idx) => idx < currentIndex) ?? reversed[0];
+        scrollToEntryId(state.filtered[target].id);
+    }
+
+    /**
+     * @brief Constructs the bookmark context menu DOM and wires event handlers.
+     * @returns The created context menu element.
+     */
+    function createBookmarkContextMenu() {
+        const menu = document.createElement('div');
+        menu.id = 'bookmarkContextMenu';
+        menu.className = 'bookmark-context-menu hidden';
+        const actions = [
+            { action: 'add', label: 'Add bookmark' },
+            { action: 'edit', label: 'Edit bookmark label' },
+            { action: 'remove', label: 'Remove bookmark' },
+            { action: 'removeAll', label: 'Remove all bookmarks' },
+            { action: 'next', label: 'Go to next bookmark' },
+            { action: 'previous', label: 'Go to previous bookmark' },
+        ];
+        const list = document.createElement('ul');
+        for (const item of actions) {
+            const li = document.createElement('li');
+            const button = document.createElement('button');
+            button.textContent = item.label;
+            button.dataset.action = item.action;
+            li.appendChild(button);
+            list.appendChild(li);
+        }
+        menu.appendChild(list);
+        menu.addEventListener('click', (event) => {
+            const target = event.target;
+            if (!(target instanceof HTMLElement)) {
+                return;
+            }
+            const action = target.dataset.action;
+            if (!action) {
+                return;
+            }
+            event.preventDefault();
+            handleBookmarkAction(action);
+            hideBookmarkContextMenu();
+        });
+        document.addEventListener('click', (event) => {
+            if (!menu.contains(event.target)) {
+                hideBookmarkContextMenu();
+            }
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                hideBookmarkContextMenu();
+            }
+        });
+        logContainer.addEventListener('scroll', hideBookmarkContextMenu);
+        window.addEventListener('resize', hideBookmarkContextMenu);
+        document.body.appendChild(menu);
+        return menu;
+    }
+
+    /**
+     * @brief Displays the bookmark context menu at the pointer location.
+     * @param event Context menu mouse event.
+     * @param entryId Target entry identifier.
+     */
+    function showBookmarkContextMenu(event, entryId) {
+        contextMenuEntryId = entryId;
+        bookmarkContextMenu.style.top = `${event.clientY}px`;
+        bookmarkContextMenu.style.left = `${event.clientX}px`;
+        updateBookmarkMenuState(entryId);
+        bookmarkContextMenu.classList.remove('hidden');
+    }
+
+    /**
+     * @brief Hides the bookmark context menu.
+     */
+    function hideBookmarkContextMenu() {
+        bookmarkContextMenu.classList.add('hidden');
+        contextMenuEntryId = null;
+    }
+
+    /**
+     * @brief Enables or disables menu items based on the selected entry.
+     * @param entryId Currently selected entry id.
+     */
+    function updateBookmarkMenuState(entryId) {
+        const entry = state.entries.find((item) => item.id === entryId);
+        const isBookmark = !!entry?.isBookmark;
+        const editButton = bookmarkContextMenu.querySelector('button[data-action="edit"]');
+        const removeButton = bookmarkContextMenu.querySelector('button[data-action="remove"]');
+        if (editButton instanceof HTMLButtonElement) {
+            editButton.disabled = !isBookmark;
+        }
+        if (removeButton instanceof HTMLButtonElement) {
+            removeButton.disabled = !isBookmark;
+        }
+    }
+
+    /**
+     * @brief Executes a bookmark-related action from the context menu.
+     * @param action Action identifier to run.
+     */
+    function handleBookmarkAction(action) {
+        if (contextMenuEntryId === null && action !== 'removeAll') {
+            return;
+        }
+        switch (action) {
+            case 'add':
+                insertBookmarkBefore(contextMenuEntryId);
+                break;
+            case 'edit':
+                editBookmarkLabel(contextMenuEntryId);
+                break;
+            case 'remove':
+                removeBookmark(contextMenuEntryId);
+                break;
+            case 'removeAll':
+                removeAllBookmarks();
+                break;
+            case 'next':
+                navigateToBookmark(contextMenuEntryId, 'next');
+                break;
+            case 'previous':
+                navigateToBookmark(contextMenuEntryId, 'previous');
+                break;
+            default:
+                break;
+        }
     }
 
     /**
@@ -931,6 +1257,19 @@
             applyFilters();
         }, 150)
     );
+
+    logContent.addEventListener('contextmenu', (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) {
+            return;
+        }
+        const line = target.closest('.log-line');
+        if (!line || !line.dataset.entryId) {
+            return;
+        }
+        event.preventDefault();
+        showBookmarkContextMenu(event, Number(line.dataset.entryId));
+    });
 
     presetSelect.addEventListener('change', () => {
         const value = presetSelect.value;

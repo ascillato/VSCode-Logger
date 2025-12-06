@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.6.0] - 2025-12-04 [BOOKMARKS]
 
 ### Added
+- Add Bookmarks to live logs and imported logs.
 - Add line limit display notice to log panel.
 - Highlight session closed markers in imported logs.
 - Add Edit and Refresh controls to imported log tabs for opening files or reloading content.
