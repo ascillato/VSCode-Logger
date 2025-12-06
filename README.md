@@ -54,6 +54,8 @@ If no password is stored yet, the extension prompts for it when connecting and s
 
 - Set `enableSshTerminal` to `true` to show an **Open SSH Terminal** button alongside any configured SSH commands for that device.
 
+- The **Open SSH Terminal** action opens a dedicated VS Code terminal tab for the device and authenticates using the stored password (prompting and saving it securely when missing).
+
 - Control memory usage by capping retained lines per log tab with `embeddedLogger.maxLinesPerTab` (default: 100000). For auto-save, this limit is not applied to a file. Everything is saved.
 
 ## Notes
