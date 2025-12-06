@@ -94,6 +94,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Restructure the log panel header to accommodate the new highlight controls and preserve readability on smaller widths.
+- Update log message handling behavior. Messages from auto-save or from logger commands are handled in a secondary line from the connection status. 
 
 ### Deprecated
 - None.

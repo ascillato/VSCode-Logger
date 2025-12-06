@@ -56,7 +56,7 @@
         connectionState: 'unknown',
         maxEntries: 100000,
         statusText: '',
-        autoSaveStatus: null,
+        secondaryStatus: null,
         autoSaveActive: false,
     };
 
@@ -432,9 +432,26 @@
      * @param text Status message to display.
      */
     function updateStatus(text, options = {}) {
+        if (!options.preserveSecondary) {
+            state.secondaryStatus = null;
+        }
+
         state.statusText = text || '';
         renderStatusText();
         updateActionButton(options);
+    }
+
+    /**
+     * @brief Updates the secondary status line reserved for auto-save and default log command messages.
+     * @param text Status message to display in the secondary line.
+     */
+    function setSecondaryStatus(text) {
+        if (text) {
+            state.secondaryStatus = { text, source: 'logCommand' };
+        } else {
+            state.secondaryStatus = null;
+        }
+        renderStatusText();
     }
 
     /**
@@ -449,10 +466,10 @@
         if (state.statusText) {
             lines.push({ text: state.statusText });
         }
-        if (state.autoSaveStatus && (state.autoSaveStatus.text || state.autoSaveStatus.fileName)) {
+        if (state.secondaryStatus && (state.secondaryStatus.text || state.secondaryStatus.fileName)) {
             lines.push({
-                text: state.autoSaveStatus.text || '',
-                fileName: state.autoSaveStatus.fileName,
+                text: state.secondaryStatus.text || '',
+                fileName: state.secondaryStatus.fileName,
             });
         }
 
@@ -489,9 +506,9 @@
      */
     function setAutoSaveStatus(text, fileName) {
         if (text || fileName) {
-            state.autoSaveStatus = { text: text || '', fileName };
+            state.secondaryStatus = { text: text || '', fileName, source: 'autoSave' };
         } else {
-            state.autoSaveStatus = null;
+            state.secondaryStatus = null;
         }
         renderStatusText();
     }
@@ -605,12 +622,31 @@
     }
 
     /**
+     * @brief Determines whether a status message originates from the default log command.
+     * @param text Status message to inspect.
+     * @returns True when the message matches a known default command notice.
+     */
+    function isDefaultLogCommandMessage(text) {
+        if (!text) {
+            return false;
+        }
+
+        const normalized = text.toLowerCase();
+        return normalized.startsWith('tail:') && normalized.includes('/var/log/syslog');
+    }
+
+    /**
      * @brief Interprets status messages from the extension host.
      * @param text Status message to display.
      */
     function handleStatusMessage(text) {
         if (!text) {
             updateStatus('');
+            return;
+        }
+
+        if (isDefaultLogCommandMessage(text)) {
+            setSecondaryStatus(text);
             return;
         }
 
@@ -1032,7 +1068,11 @@
                 handleStatusMessage(message.message);
                 break;
             case 'error':
-                updateStatus(message.message);
+                if (isDefaultLogCommandMessage(message.message)) {
+                    setSecondaryStatus(message.message);
+                } else {
+                    updateStatus(message.message);
+                }
                 break;
             case 'sessionClosed':
                 handleSessionClosed(message.message, message.closedAt);
