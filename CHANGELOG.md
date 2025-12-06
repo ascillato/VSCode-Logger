@@ -32,7 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
-## [0.5.0] - 2025-12-03 [AUTO-AUTO-SCROLL]
+## [0.5.0] - 2025-12-03 [AUTO-AUTOSCROLL]
 
 ### Added
 - Introduce `embeddedLogger.maxLinesPerTab` to configure how many log lines each tab retains (default: 100000).
