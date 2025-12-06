@@ -557,16 +557,23 @@
      * @param entryId Identifier of the bookmark to update.
      */
     function editBookmarkLabel(entryId) {
-        const entry = state.entries.find((item) => item.id === entryId && item.isBookmark);
+        const entry = state.entries.find((item) => item.id === entryId);
         if (!entry) {
             return;
         }
-        const bookmarkLabel = entry.bookmarkLabel || classifyLogLine(entry.rawLine).bookmarkLabel || '';
+        const classification = classifyLogLine(entry.rawLine);
+        if (!entry.isBookmark && !classification.isBookmark) {
+            return;
+        }
+        const bookmarkLabel = entry.bookmarkLabel || classification.bookmarkLabel || '';
         const label = window.prompt('Bookmark label', bookmarkLabel) ?? undefined;
         if (label === undefined) {
             return;
         }
         entry.bookmarkLabel = label.trim();
+        entry.isBookmark = true;
+        entry.className = 'bookmark-line';
+        entry.bypassFilters = true;
         entry.rawLine = formatBookmarkText(entry.bookmarkLabel);
         applyFilters({ preserveScrollPosition: true });
         scrollToEntryId(entry.id);
@@ -744,7 +751,8 @@
      */
     function updateBookmarkMenuState(entryId) {
         const entry = state.entries.find((item) => item.id === entryId);
-        const isBookmark = !!entry?.isBookmark;
+        const classification = entry ? classifyLogLine(entry.rawLine) : { isBookmark: false };
+        const isBookmark = !!entry?.isBookmark || classification.isBookmark === true;
         const editButton = bookmarkContextMenu.querySelector('button[data-action="edit"]');
         const removeButton = bookmarkContextMenu.querySelector('button[data-action="remove"]');
         if (editButton instanceof HTMLButtonElement) {
