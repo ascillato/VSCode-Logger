@@ -132,7 +132,7 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
         if (!this.view) {
             return;
         }
-        this.view.webview.postMessage({ type: 'devicesUpdated', devices: this.getDevices() });
+        this.view.webview.postMessage({ type: 'devicesUpdated', devices: this.getDevicesForWebview() });
     }
 
     syncHighlights() {
@@ -146,11 +146,19 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
         if (!this.view) {
             return;
         }
-        this.view.webview.postMessage({ type: 'initDevices', devices: this.getDevices() });
+        this.view.webview.postMessage({ type: 'initDevices', devices: this.getDevicesForWebview() });
         this.view.webview.postMessage({ type: 'applyHighlights', highlights: this.getHighlights() });
         if (this.pendingAdd) {
             this.addHighlightRow();
         }
+    }
+
+    private getDevicesForWebview(): EmbeddedDevice[] {
+        return this.getDevices().map((device) => ({
+            ...device,
+            enableSshTerminal: Boolean(device.enableSshTerminal),
+            sshCommands: Array.isArray(device.sshCommands) ? device.sshCommands : [],
+        }));
     }
 
     private getHtml(webview: vscode.Webview): string {
