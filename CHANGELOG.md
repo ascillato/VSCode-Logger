@@ -7,13 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
-## [0.6.0] - 2025-12-04 [BOOKMARKS]
+## [0.6.0] - 2025-12-06 [BOOKMARKS]
 
 ### Added
 - Add Bookmarks to live logs and imported logs.
 - Add line limit display notice to log panel.
 - Highlight session closed markers in imported logs.
-- Add Edit and Refresh controls to imported log tabs for opening files or reloading content.
+- Add Edit button to imported log tabs for opening files in a separated editor tab.
+- Add Refresh button to imported log tabs for reloading content in case it was externally updated.
 
 ### Changed
 - Surround auto-saved SSH session closed markers with blank lines to improve visibility.
