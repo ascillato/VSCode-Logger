@@ -153,6 +153,14 @@ export class LogPanel {
                     await this.exportLogs(message.lines);
                     break;
                 }
+                case 'openSourceFile': {
+                    await this.openSourceFile();
+                    break;
+                }
+                case 'refreshSourceFile': {
+                    await this.refreshFromSource();
+                    break;
+                }
                 case 'requestReconnect': {
                     await this.reconnect();
                     break;
@@ -511,6 +519,12 @@ export class LogPanel {
             <button id="exportLogs">Export Logs</button>
         </label>
         <label>&nbsp;
+            <button id="editLogFile" class="hidden">Edit</button>
+        </label>
+        <label>&nbsp;
+            <button id="refreshLogFile" class="hidden">Refresh</button>
+        </label>
+        <label>&nbsp;
             <button id="autoSaveToggle">Auto-Save</button>
         </label>
         <label>&nbsp;
@@ -621,6 +635,52 @@ export class LogPanel {
         } catch (err: any) {
             vscode.window.showErrorMessage(`Failed to export logs: ${err?.message ?? err}`);
         }
+    }
+
+    /**
+     * @brief Opens the source log file in a standard VS Code editor tab.
+     */
+    private async openSourceFile() {
+        if (!this.sourcePath) {
+            vscode.window.showErrorMessage('Edit is only available for imported log files.');
+            return;
+        }
+
+        try {
+            const document = await vscode.workspace.openTextDocument(vscode.Uri.file(this.sourcePath));
+            await vscode.window.showTextDocument(document, { preview: false });
+        } catch (err: any) {
+            vscode.window.showErrorMessage(`Failed to open log file: ${err?.message ?? err}`);
+        }
+    }
+
+    /**
+     * @brief Reloads the source log file and replaces the Webview contents.
+     */
+    private async refreshFromSource() {
+        if (!this.sourcePath) {
+            vscode.window.showErrorMessage('Refresh is only available for imported log files.');
+            return;
+        }
+
+        let content: Uint8Array;
+        try {
+            content = await vscode.workspace.fs.readFile(vscode.Uri.file(this.sourcePath));
+        } catch (err: any) {
+            vscode.window.showErrorMessage(`Failed to read log file: ${err?.message ?? err}`);
+            return;
+        }
+
+        const decoded = Buffer.from(content).toString('utf8');
+        const lines = decoded.split(/\r?\n/);
+        this.initialLines.length = 0;
+        this.initialLines.push(...lines);
+
+        await this.panel.webview.postMessage({
+            type: 'replaceLines',
+            lines,
+            message: `Reloaded ${lines.length} lines from ${path.basename(this.sourcePath)}.`,
+        });
     }
 
     /**
