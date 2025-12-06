@@ -79,6 +79,8 @@
     const autoScrollContainer = document.getElementById('autoScrollContainer');
     const autoReconnectToggle = document.getElementById('autoReconnectToggle');
     const autoReconnectContainer = document.getElementById('autoReconnectContainer');
+    const editContainer = editBtn?.closest('label');
+    const refreshContainer = refreshBtn?.closest('label');
     const logContainer = document.getElementById('logContainer');
     const logContent = document.getElementById('logContent');
     const statusEl = document.getElementById('status');
@@ -1139,11 +1141,18 @@
                 if (clearLogsBtn) {
                     clearLogsBtn.classList.toggle('hidden', !state.isLiveLog);
                 }
+                const showImportedControls = !state.isLiveLog;
+                if (editContainer) {
+                    editContainer.classList.toggle('hidden', !showImportedControls);
+                }
+                if (refreshContainer) {
+                    refreshContainer.classList.toggle('hidden', !showImportedControls);
+                }
                 if (editBtn) {
-                    editBtn.classList.toggle('hidden', state.isLiveLog);
+                    editBtn.classList.toggle('hidden', !showImportedControls);
                 }
                 if (refreshBtn) {
-                    refreshBtn.classList.toggle('hidden', state.isLiveLog);
+                    refreshBtn.classList.toggle('hidden', !showImportedControls);
                 }
                 if (autoSaveToggle) {
                     autoSaveToggle.classList.toggle('hidden', !state.isLiveLog);
