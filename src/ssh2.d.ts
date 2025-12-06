@@ -16,6 +16,7 @@ declare module 'ssh2' {
 
     export interface ClientChannel extends EventEmitter {
         on(event: 'data', listener: (data: Buffer) => void): this;
+        on(event: 'exit', listener: (code: number | null, signal: string | null) => void): this;
         on(event: 'close', listener: () => void): this;
         stderr: EventEmitter & { on(event: 'data', listener: (data: Buffer) => void): this };
         close(): void;

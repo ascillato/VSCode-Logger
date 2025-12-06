@@ -55,23 +55,29 @@
 
 .device-card {
     display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px;
+    flex-direction: column;
     border-radius: 4px;
     border: 1px solid var(--vscode-panel-border);
     background: var(--vscode-sideBar-background);
-    cursor: pointer;
     width: 100%;
+}
+
+.device-card__header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background: transparent;
+    border: 1px solid transparent;
+    cursor: pointer;
     text-align: left;
     color: inherit;
     font: inherit;
     outline: none;
-    appearance: none;
 }
 
-.device-card:hover,
-.device-card:focus-visible {
+.device-card__header:hover,
+.device-card__header:focus-visible {
     border-color: var(--vscode-focusBorder);
     box-shadow: 0 0 0 1px var(--vscode-focusBorder);
 }
@@ -98,6 +104,56 @@
 .device-card .subtitle {
     color: var(--vscode-descriptionForeground);
     font-size: 12px;
+}
+
+.command-group {
+    border-top: 1px solid var(--vscode-panel-border);
+}
+
+.command-group summary {
+    cursor: pointer;
+    padding: 6px 8px;
+    list-style: none;
+    font-weight: 600;
+}
+
+.command-group summary::-webkit-details-marker {
+    display: none;
+}
+
+.command-group summary::before {
+    content: '\25B6';
+    display: inline-block;
+    margin-right: 8px;
+    transition: transform 0.2s ease;
+    font-size: 10px;
+}
+
+.command-group[open] summary::before {
+    transform: rotate(90deg);
+}
+
+.command-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 0 8px 8px 32px;
+}
+
+.command-button {
+    padding: 6px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--vscode-panel-border);
+    background: var(--vscode-button-secondaryBackground);
+    color: var(--vscode-button-secondaryForeground);
+    cursor: pointer;
+    text-align: left;
+}
+
+.command-button:hover,
+.command-button:focus-visible {
+    background: var(--vscode-button-secondaryHoverBackground);
+    border-color: var(--vscode-focusBorder);
 }
 
 .sidebar-status {

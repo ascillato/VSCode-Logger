@@ -17,6 +17,7 @@ A Visual Studio Code extension that connects to embedded Linux devices over SSH,
 - **Auto-save** to file option for live SSH logs.
 - **Open any log files and filter them** with the same interface.
 - Add, edit and remove **Bookmarks** in live logs and imported logs.
+- Run optional **on-demand SSH commands** configured per device from the Devices view.
 - SSH passwords are **stored securely** with VS Code Secret Storage.
 - **Privacy focused**. **No telemetry**. Everything **runs locally**.
 - **Built with security in mind**.
@@ -36,7 +37,13 @@ Add devices in your VS Code settings under `embeddedLogger.devices`:
     "host": "192.168.1.10",
     "port": 22,
     "username": "root",
-    "logCommand": "tail -F /var/log/syslog"
+    "logCommand": "tail -F /var/log/syslog",
+    "sshCommands": [
+      {
+        "name": "Restart IOT",
+        "command": "systemctl restart fw-iot"
+      }
+    ]
   }
 ]
 ```
@@ -100,12 +107,12 @@ If you find this extension useful, please [rate it](https://marketplace.visualst
 
 - Requires: `npm install -g @vscode/vsce`
 - Run: `vsce package` to generate vsix file to be installed into VSCode
-- Install locally on VSCode: `code --install-extension embedded-device-logger-0.6.0.vsix`
+- Install locally on VSCode: `code --install-extension embedded-device-logger-0.7.0.vsix`
 
 ### Clean and re-compile
 
 - `clear; rm -rf node_modules; rm -rf out; rm *.vsix; npm install; npm run compile; vsce package`
-- `code --install-extension embedded-device-logger-0.6.0.vsix`
+- `code --install-extension embedded-device-logger-0.7.0.vsix`
 
 ### Generating Source Code Documentation
 

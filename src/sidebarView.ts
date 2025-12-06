@@ -37,7 +37,20 @@ interface RequestInitPayload {
     type: 'requestInit';
 }
 
-type IncomingMessage = SidebarMessage | HighlightUpdateMessage | AddRowRequest | RequestFocus | RequestInitPayload;
+interface RunDeviceCommandMessage {
+    type: 'runDeviceCommand';
+    deviceId: string;
+    commandName: string;
+    command: string;
+}
+
+type IncomingMessage =
+    | SidebarMessage
+    | HighlightUpdateMessage
+    | AddRowRequest
+    | RequestFocus
+    | RequestInitPayload
+    | RunDeviceCommandMessage;
 
 export class SidebarViewProvider implements vscode.WebviewViewProvider {
     private view?: vscode.WebviewView;
@@ -48,7 +61,8 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
         private readonly getDevices: () => EmbeddedDevice[],
         private readonly onOpenDevice: (deviceId: string) => void,
         private readonly onHighlightsChanged: (highlights: HighlightDefinition[]) => void,
-        private readonly getHighlights: () => HighlightDefinition[]
+        private readonly getHighlights: () => HighlightDefinition[],
+        private readonly onRunDeviceCommand: (deviceId: string, commandName: string, command: string) => void
     ) {}
 
     resolveWebviewView(webviewView: vscode.WebviewView): void | Thenable<void> {
@@ -79,6 +93,9 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
                     break;
                 case 'addRow':
                     this.addHighlightRow();
+                    break;
+                case 'runDeviceCommand':
+                    this.onRunDeviceCommand(message.deviceId, message.commandName, message.command);
                     break;
             }
         });
