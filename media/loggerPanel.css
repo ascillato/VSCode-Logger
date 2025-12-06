@@ -128,7 +128,6 @@ body {
 #logContainer.wrap-enabled .log-line {
     white-space: pre-wrap;
     word-break: break-word;
-    line-height: 1.4;
     --wrap-indent: 14px;
     --wrap-guide-offset: 1.4em;
     padding-left: var(--wrap-indent);
