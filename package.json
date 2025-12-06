@@ -121,7 +121,8 @@
         {
           "id": "embeddedLogger.devicesView",
           "name": "Devices",
-          "type": "webview"
+          "type": "webview",
+          "icon": "resources/terminal.svg"
         }
       ]
     },
