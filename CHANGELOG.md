@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Surround auto-saved SSH session closed markers with blank lines to improve visibility.
+- Increase log panel SSH message height to improve visibility.
 
 ### Deprecated
 - None.
