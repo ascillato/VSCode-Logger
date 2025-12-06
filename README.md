@@ -89,6 +89,17 @@ If you find this extension useful, please [rate it](https://marketplace.visualst
 
 ----
 
+## TODO
+
+* **Add to SSH connections:**
+
+  - Support keys
+  - Support going through a bastion
+
+* **Support SFTP**
+
+----
+
 ## For Developers
 
 ### Source Code
