@@ -181,7 +181,7 @@ body {
 }
 
 .log-line.bookmark-line.active-bookmark {
-    box-shadow: 0 0 0 2px var(--vscode-inputValidation-infoBorder, #75beff);
+    box-shadow: 0 0 0 2px #ffffff;
 }
 
 .top-bar-spacer {
