@@ -1064,6 +1064,10 @@
                 state.presets = message.presets || [];
                 state.isLiveLog = message.isLive !== false;
                 state.maxEntries = Math.max(1, Number(message.maxEntries) || state.maxEntries);
+                if (state.entries.length > state.maxEntries) {
+                    state.entries = state.entries.slice(-state.maxEntries);
+                    setLineLimitReached(true);
+                }
                 setConnectionState(state.isLiveLog ? 'connecting' : 'disconnected');
                 setHighlights(message.highlights || []);
                 if (!state.isLiveLog && autoScrollContainer) {
