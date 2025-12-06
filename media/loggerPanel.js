@@ -161,6 +161,11 @@
     function buildHighlightedContent(line, highlights) {
         const fragment = document.createDocumentFragment();
 
+        if (line.length === 0) {
+            fragment.appendChild(document.createTextNode('\u00A0'));
+            return fragment;
+        }
+
         if (!highlights.length) {
             fragment.appendChild(document.createTextNode(line));
             return fragment;

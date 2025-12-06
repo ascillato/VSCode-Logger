@@ -135,9 +135,6 @@ export async function activate(context: vscode.ExtensionContext) {
 
             const decoded = Buffer.from(content).toString('utf8');
             const lines = decoded.split(/\r?\n/);
-            if (lines.length > 0 && lines[lines.length - 1] === '') {
-                lines.pop();
-            }
 
             const panelId = `local:${uri.fsPath}`;
             const existing = panelMap.get(panelId);
