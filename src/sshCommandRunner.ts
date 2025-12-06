@@ -12,6 +12,19 @@ export interface DeviceCommand {
     command: string;
 }
 
+export class SshCommandError extends Error {
+    constructor(
+        message: string,
+        public readonly exitCode: number | null,
+        public readonly signal: string | null,
+        public readonly stdout: string,
+        public readonly stderr: string
+    ) {
+        super(message);
+        this.name = 'SshCommandError';
+    }
+}
+
 export class SshCommandRunner {
     constructor(private readonly device: EmbeddedDevice, private readonly context: vscode.ExtensionContext) {}
 
@@ -88,6 +101,8 @@ export class SshCommandRunner {
             const username = this.device.username.trim();
             let stdout = '';
             let stderr = '';
+            let exitCode: number | null = null;
+            let exitSignal: string | null = null;
 
             client
                 .on('ready', () => {
@@ -105,8 +120,28 @@ export class SshCommandRunner {
                             .stderr.on('data', (data: Buffer) => {
                                 stderr += data.toString();
                             })
+                            .on('exit', (code: number | null, signal: string | null) => {
+                                exitCode = code;
+                                exitSignal = signal;
+                            })
                             .on('close', () => {
                                 client.end();
+                                const terminatedBySignal = !!exitSignal;
+                                const hasErrorCode = exitCode !== null && exitCode !== 0;
+                                if (terminatedBySignal || hasErrorCode) {
+                                    const output = [stderr, stdout].filter(Boolean).join('\n').trim();
+                                    const reason = terminatedBySignal
+                                        ? `signal ${exitSignal}`
+                                        : `exit code ${exitCode}`;
+                                    const message = output
+                                        ? `Command "${command}" failed on ${this.device.name} (${reason}). Output:\n${output}`
+                                        : `Command "${command}" failed on ${this.device.name} (${reason}).`;
+                                    reject(
+                                        new SshCommandError(message, exitCode, exitSignal, stdout, stderr)
+                                    );
+                                    return;
+                                }
+
                                 resolve(stdout || stderr);
                             });
                     });
