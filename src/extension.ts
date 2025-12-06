@@ -9,6 +9,7 @@ import * as path from 'path';
 import { EmbeddedDevice } from './deviceTree';
 import { HighlightDefinition, SidebarViewProvider } from './sidebarView';
 import { LogPanel } from './logPanel';
+import { SshCommandRunner } from './sshCommandRunner';
 
 // Map of deviceId to existing log panels so multiple clicks reuse tabs.
 const panelMap: Map<string, LogPanel> = new Map();
@@ -74,7 +75,32 @@ export async function activate(context: vscode.ExtensionContext) {
                 panel.updateHighlights(highlights);
             }
         },
-        () => highlights
+        () => highlights,
+        async (deviceId, commandName, command) => {
+            const device = getDevices().find((item) => item.id === deviceId);
+            if (!device) {
+                vscode.window.showErrorMessage('Device not found. Check embeddedLogger.devices.');
+                return;
+            }
+
+            try {
+                await vscode.window.withProgress(
+                    {
+                        title: `Running "${commandName}" on ${device.name}`,
+                        location: vscode.ProgressLocation.Notification,
+                    },
+                    async () => {
+                        const runner = new SshCommandRunner(device, context);
+                        const output = await runner.run({ name: commandName, command });
+                        const trimmed = output.trim();
+                        const message = trimmed || `Command "${commandName}" finished on ${device.name}.`;
+                        vscode.window.showInformationMessage(message);
+                    }
+                );
+            } catch (err: any) {
+                vscode.window.showErrorMessage(err?.message ?? String(err));
+            }
+        }
     );
 
     context.subscriptions.push(vscode.window.registerWebviewViewProvider('embeddedLogger.devicesView', sidebarProvider));

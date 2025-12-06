@@ -42,9 +42,12 @@
 
         const fragment = document.createDocumentFragment();
         state.devices.forEach((device) => {
-            const card = document.createElement('button');
+            const card = document.createElement('div');
             card.className = 'device-card';
-            card.addEventListener('click', () => {
+
+            const header = document.createElement('button');
+            header.className = 'device-card__header';
+            header.addEventListener('click', () => {
                 vscode.postMessage({ type: 'openDevice', deviceId: device.id });
             });
 
@@ -61,7 +64,41 @@
             subtitle.textContent = device.host;
             info.appendChild(subtitle);
 
-            card.appendChild(info);
+            header.appendChild(info);
+            card.appendChild(header);
+
+            if (device.sshCommands && device.sshCommands.length) {
+                const commandsSection = document.createElement('details');
+                commandsSection.className = 'command-group';
+
+                const summary = document.createElement('summary');
+                summary.textContent = `SSH Commands (${device.sshCommands.length})`;
+                summary.addEventListener('click', (event) => event.stopPropagation());
+                commandsSection.appendChild(summary);
+
+                const list = document.createElement('div');
+                list.className = 'command-list';
+
+                device.sshCommands.forEach((cmd) => {
+                    const commandButton = document.createElement('button');
+                    commandButton.className = 'command-button';
+                    commandButton.textContent = cmd.name;
+                    commandButton.title = cmd.command;
+                    commandButton.addEventListener('click', (event) => {
+                        event.stopPropagation();
+                        vscode.postMessage({
+                            type: 'runDeviceCommand',
+                            deviceId: device.id,
+                            commandName: cmd.name,
+                            command: cmd.command,
+                        });
+                    });
+                    list.appendChild(commandButton);
+                });
+
+                commandsSection.appendChild(list);
+                card.appendChild(commandsSection);
+            }
 
             fragment.appendChild(card);
         });

@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [0.7.0] - 2025-12-14 [COMMANDS]
+
+### Added
+- Allow configuring optional SSH commands per device and show them as collapsible lists in the Devices view.
+- Run one-off SSH commands from the Devices view and surface command output in VS Code notifications.
+
+### Changed
+- None.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- None.
+
+### Security
+- None.
+
+----------------------------------------
+
 ## [0.6.0] - 2025-12-06 [BOOKMARKS]
 
 ### Added
