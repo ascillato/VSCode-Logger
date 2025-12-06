@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Add line limit display notice to log panel.
+- Highlight session closed markers in imported logs.
 
 ### Changed
 - Surround auto-saved SSH session closed markers with blank lines to improve visibility.
