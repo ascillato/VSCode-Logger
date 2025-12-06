@@ -95,6 +95,7 @@
     const searchCount = document.getElementById('searchCount');
     const autoSaveToggle = document.getElementById('autoSaveToggle');
     const lineLimitNotice = document.getElementById('lineLimitNotice');
+    const bookmarkLabelDialog = createBookmarkLabelDialog();
     const bookmarkContextMenu = createBookmarkContextMenu();
     let contextMenuEntryId = null;
 
@@ -521,6 +522,96 @@
     }
 
     /**
+     * @brief Creates a reusable dialog for editing bookmark labels.
+     * @returns Object exposing an open method that resolves to the submitted label or null when cancelled.
+     */
+    function createBookmarkLabelDialog() {
+        const overlay = document.createElement('div');
+        overlay.className = 'bookmark-dialog hidden';
+
+        const dialog = document.createElement('div');
+        dialog.className = 'bookmark-dialog__content';
+
+        const title = document.createElement('h3');
+        title.textContent = 'Bookmark label';
+
+        const form = document.createElement('form');
+        form.className = 'bookmark-dialog__form';
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.name = 'bookmarkLabel';
+        input.className = 'bookmark-dialog__input';
+        input.placeholder = 'Enter bookmark label';
+
+        const actions = document.createElement('div');
+        actions.className = 'bookmark-dialog__actions';
+
+        const cancelButton = document.createElement('button');
+        cancelButton.type = 'button';
+        cancelButton.className = 'secondary';
+        cancelButton.textContent = 'Cancel';
+
+        const saveButton = document.createElement('button');
+        saveButton.type = 'submit';
+        saveButton.textContent = 'Save';
+
+        actions.appendChild(cancelButton);
+        actions.appendChild(saveButton);
+        form.appendChild(input);
+        form.appendChild(actions);
+        dialog.appendChild(title);
+        dialog.appendChild(form);
+        overlay.appendChild(dialog);
+        document.body.appendChild(overlay);
+
+        let resolver = null;
+
+        function closeDialog(value) {
+            overlay.classList.add('hidden');
+            resolver?.(value);
+            resolver = null;
+        }
+
+        form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            closeDialog(input.value.trim());
+        });
+
+        cancelButton.addEventListener('click', () => closeDialog(null));
+
+        overlay.addEventListener('click', (event) => {
+            if (event.target === overlay) {
+                closeDialog(null);
+            }
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (overlay.classList.contains('hidden')) {
+                return;
+            }
+            if (event.key === 'Escape') {
+                closeDialog(null);
+            }
+        });
+
+        return {
+            open(initialLabel = '') {
+                if (resolver) {
+                    return Promise.resolve(null);
+                }
+                input.value = initialLabel;
+                overlay.classList.remove('hidden');
+                input.focus();
+                input.select();
+                return new Promise((resolve) => {
+                    resolver = resolve;
+                });
+            },
+        };
+    }
+
+    /**
      * @brief Creates a bookmark entry instance.
      * @param label Optional label for the bookmark.
      * @returns A bookmark entry object.
@@ -556,7 +647,7 @@
      * @brief Updates the label for an existing bookmark.
      * @param entryId Identifier of the bookmark to update.
      */
-    function editBookmarkLabel(entryId) {
+    async function editBookmarkLabel(entryId) {
         const entry = state.entries.find((item) => item.id === entryId);
         if (!entry) {
             return;
@@ -566,8 +657,8 @@
             return;
         }
         const bookmarkLabel = entry.bookmarkLabel || classification.bookmarkLabel || '';
-        const label = window.prompt('Bookmark label', bookmarkLabel) ?? undefined;
-        if (label === undefined) {
+        const label = await bookmarkLabelDialog.open(bookmarkLabel);
+        if (label === null) {
             return;
         }
         entry.bookmarkLabel = label.trim();
