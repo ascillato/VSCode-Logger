@@ -56,6 +56,7 @@
         connectionState: 'unknown',
         maxEntries: 100000,
         statusText: '',
+        limitStatusText: '',
         autoSaveStatus: null,
         autoSaveActive: false,
     };
@@ -73,6 +74,7 @@
     const autoReconnectToggle = document.getElementById('autoReconnectToggle');
     const autoReconnectContainer = document.getElementById('autoReconnectContainer');
     const logContainer = document.getElementById('logContainer');
+    const logLimitBadge = document.getElementById('logLimitBadge');
     const statusEl = document.getElementById('status');
     const reconnectButton = document.getElementById('reconnectButton');
     const searchInput = document.getElementById('searchInput');
@@ -300,12 +302,14 @@
         state.entries.push(entry);
         if (state.entries.length > state.maxEntries) {
             state.entries.shift();
+            setLimitStatus(true);
         }
         const searchTerm = state.searchTerm.trim().toLowerCase();
         if (levelPasses(level) && (!state.textFilter || lowerLine.includes(state.textFilter.toLowerCase()))) {
             state.filtered.push(entry);
             if (state.filtered.length > state.maxEntries) {
                 state.filtered.shift();
+                setLimitStatus(true);
                 if (logContainer.firstChild) {
                     logContainer.removeChild(logContainer.firstChild);
                 }
@@ -361,6 +365,7 @@
         state.entries = state.entries.concat(newEntries);
         if (state.entries.length > state.maxEntries) {
             state.entries = state.entries.slice(-state.maxEntries);
+            setLimitStatus(true);
         }
 
         applyFilters();
@@ -377,6 +382,7 @@
         state.activeSearchEntry = -1;
         render();
         updateSearchStatus();
+        setLimitStatus(false);
     }
 
     /**
@@ -435,6 +441,31 @@
         state.statusText = text || '';
         renderStatusText();
         updateActionButton(options);
+    }
+
+    /**
+     * @brief Updates the limit status line when log entries exceed the configured maximum.
+     * @param active Whether the limit warning should be shown.
+     */
+    function setLimitStatus(active) {
+        const nextText = active
+            ? 'Line display limit reached; older entries are being replaced by newer ones.'
+            : '';
+
+        if (state.limitStatusText === nextText) {
+            return;
+        }
+
+        state.limitStatusText = nextText;
+        if (logLimitBadge) {
+            if (nextText) {
+                logLimitBadge.textContent = nextText;
+                logLimitBadge.classList.remove('hidden');
+            } else {
+                logLimitBadge.textContent = '';
+                logLimitBadge.classList.add('hidden');
+            }
+        }
     }
 
     /**

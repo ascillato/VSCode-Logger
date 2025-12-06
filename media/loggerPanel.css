@@ -73,12 +73,28 @@ body {
 }
 
 #logContainer {
+    position: relative;
     border: 1px solid var(--vscode-editorWidget-border);
     overflow-y: auto;
     padding: 8px;
     background: var(--vscode-editor-background);
     flex: 1 1 auto;
     min-height: 200px;
+    box-sizing: border-box;
+}
+
+#logLimitBadge {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: var(--vscode-editor-background);
+    color: var(--vscode-editor-foreground);
+    border: 1px solid var(--vscode-editorWidget-border);
+    font-size: 12px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+    pointer-events: none;
 }
 
 #logContainer.disconnected {

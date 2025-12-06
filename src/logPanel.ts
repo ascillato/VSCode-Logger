@@ -545,7 +545,9 @@ export class LogPanel {
             <button id="reconnectButton" class="status-action" hidden>Reconnect</button>
         </div>
     </div>
-    <div id="logContainer"></div>
+    <div id="logContainer">
+        <div id="logLimitBadge" class="hidden"></div>
+    </div>
     <script nonce="${nonce}" src="${scriptUri}"></script>
 </body>
 </html>`;
