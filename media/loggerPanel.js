@@ -321,6 +321,7 @@
     function handleLogLine(line, options = {}) {
         const level = parseLevel(line);
         const lowerLine = line.toLowerCase();
+        const bypassFilters = options.bypassFilters === true;
         const entry = {
             timestamp: Date.now(),
             level,
@@ -333,7 +334,10 @@
             trimmedEntries = true;
         }
         const searchTerm = state.searchTerm.trim().toLowerCase();
-        if (levelPasses(level) && (!state.textFilter || lowerLine.includes(state.textFilter.toLowerCase()))) {
+        if (
+            bypassFilters ||
+            (levelPasses(level) && (!state.textFilter || lowerLine.includes(state.textFilter.toLowerCase())))
+        ) {
             state.filtered.push(entry);
             if (state.filtered.length > state.maxEntries) {
                 state.filtered.shift();
@@ -645,9 +649,12 @@
     function handleSessionClosed(message, closedAt) {
         const formattedTimestamp = formatLocalTimestamp(closedAt);
         handleConnectionLoss(message || 'Session closed.');
-        handleLogLine('', { className: 'session-closed-buffer' });
-        handleLogLine(`--- SSH session closed on ${formattedTimestamp}`, { className: 'session-closed' });
-        handleLogLine('', { className: 'session-closed-buffer' });
+        handleLogLine('', { className: 'session-closed-buffer', bypassFilters: true });
+        handleLogLine(`--- SSH session closed on ${formattedTimestamp}`, {
+            className: 'session-closed',
+            bypassFilters: true,
+        });
+        handleLogLine('', { className: 'session-closed-buffer', bypassFilters: true });
     }
 
     /**
