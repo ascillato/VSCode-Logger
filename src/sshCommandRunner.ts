@@ -117,9 +117,6 @@ export class SshCommandRunner {
                             .on('data', (data: Buffer) => {
                                 stdout += data.toString();
                             })
-                            .stderr.on('data', (data: Buffer) => {
-                                stderr += data.toString();
-                            })
                             .on('exit', (code: number | null, signal: string | null) => {
                                 exitCode = code;
                                 exitSignal = signal;
@@ -145,6 +142,10 @@ export class SshCommandRunner {
                                 const combinedOutput = [stdout, stderr].filter(Boolean).join('\n');
                                 resolve(combinedOutput);
                             });
+
+                        stream.stderr.on('data', (data: Buffer) => {
+                            stderr += data.toString();
+                        });
                     });
                 })
                 .on('error', (err) => {
