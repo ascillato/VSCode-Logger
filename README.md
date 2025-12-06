@@ -113,12 +113,12 @@ If you find this extension useful, please [rate it](https://marketplace.visualst
 
 - Requires: `npm install -g @vscode/vsce`
 - Run: `vsce package` to generate vsix file to be installed into VSCode
-- Install locally on VSCode: `code --install-extension embedded-device-logger-0.7.0.vsix`
+- Install locally on VSCode: `code --install-extension embedded-device-logger-0.8.0.vsix`
 
 ### Clean and re-compile
 
 - `clear; rm -rf node_modules; rm -rf out; rm *.vsix; npm install; npm run compile; vsce package`
-- `code --install-extension embedded-device-logger-0.7.0.vsix`
+- `code --install-extension embedded-device-logger-0.8.0.vsix`
 
 ### Generating Source Code Documentation
 

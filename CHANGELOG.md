@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [0.8.0] - 2025-12-20 [CONSOLE]
+
+### Added
+- Expose the Open SSH Terminal device action as a dedicated terminal tab that uses stored or prompted passwords for authentication.
+
+### Changed
+- None.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- None.
+
+### Security
+- None.
+
+----------------------------------------
+
 ## [0.7.0] - 2025-12-14 [COMMANDS]
 
 ### Added
