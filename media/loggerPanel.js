@@ -333,13 +333,13 @@
      */
     function classifyLogLine(line) {
         const normalized = line.trim().toLowerCase();
-        const bookmarkMatch = line.match(/^---\s*bookmark\s*---\s*(.*)$/i);
+        const bookmarkMatch = line.match(/^\s*---\s*bookmark\s*---\s*(.*)$/i);
         if (bookmarkMatch) {
             return {
                 className: 'bookmark-line',
                 bypassFilters: true,
                 isBookmark: true,
-                bookmarkLabel: bookmarkMatch[1].trim(),
+                bookmarkLabel: (bookmarkMatch[1] || '').trim(),
             };
         }
         if (normalized.startsWith('--- ssh session closed')) {
