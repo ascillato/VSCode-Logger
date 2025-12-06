@@ -37,6 +37,10 @@
         FATAL: 'EMERG',
     };
 
+    const LINE_LIMIT_NOTICE_LIVE =
+        'Configured display line limit reached. Older lines are being replaced with newer entries.';
+    const LINE_LIMIT_NOTICE_OFFLINE = 'Configured display line limit reached. Older lines are not shown.';
+
     const state = {
         deviceId: '',
         presets: [],
@@ -135,6 +139,9 @@
     function setLineLimitReached(reached) {
         state.lineLimitReached = reached;
         if (lineLimitNotice) {
+            lineLimitNotice.textContent = state.isLiveLog
+                ? LINE_LIMIT_NOTICE_LIVE
+                : LINE_LIMIT_NOTICE_OFFLINE;
             lineLimitNotice.classList.toggle('hidden', !reached);
         }
     }
@@ -1069,6 +1076,7 @@
                 state.presets = message.presets || [];
                 state.isLiveLog = message.isLive !== false;
                 state.maxEntries = Math.max(1, Number(message.maxEntries) || state.maxEntries);
+                setLineLimitReached(state.lineLimitReached);
                 if (state.entries.length > state.maxEntries) {
                     state.entries = state.entries.slice(-state.maxEntries);
                     setLineLimitReached(true);
