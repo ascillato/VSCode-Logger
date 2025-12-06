@@ -142,7 +142,8 @@ export class SshCommandRunner {
                                     return;
                                 }
 
-                                resolve(stdout || stderr);
+                                const combinedOutput = [stdout, stderr].filter(Boolean).join('\n');
+                                resolve(combinedOutput);
                             });
                     });
                 })
