@@ -544,13 +544,12 @@
     function insertBookmarkBefore(entryId, label = '') {
         const targetIndex = state.entries.findIndex((entry) => entry.id === entryId);
         if (targetIndex === -1) {
-            return null;
+            return;
         }
         const bookmarkEntry = createBookmarkEntry(label);
         state.entries.splice(targetIndex, 0, bookmarkEntry);
         applyFilters({ preserveScrollPosition: true });
         scrollToEntryId(bookmarkEntry.id);
-        return bookmarkEntry;
     }
 
     /**
@@ -562,12 +561,14 @@
         if (!entry) {
             return;
         }
-        promptForBookmarkLabel(entry.bookmarkLabel || '', (label) => {
-            entry.bookmarkLabel = label;
-            entry.rawLine = formatBookmarkText(entry.bookmarkLabel);
-            applyFilters({ preserveScrollPosition: true });
-            scrollToEntryId(entry.id);
-        });
+        const label = window.prompt('Bookmark label', entry.bookmarkLabel || '') ?? undefined;
+        if (label === undefined) {
+            return;
+        }
+        entry.bookmarkLabel = label.trim();
+        entry.rawLine = formatBookmarkText(entry.bookmarkLabel);
+        applyFilters({ preserveScrollPosition: true });
+        scrollToEntryId(entry.id);
     }
 
     /**
@@ -743,11 +744,10 @@
     function updateBookmarkMenuState(entryId) {
         const entry = state.entries.find((item) => item.id === entryId);
         const isBookmark = !!entry?.isBookmark;
-        const hasBookmarks = state.entries.some((item) => item.isBookmark);
         const editButton = bookmarkContextMenu.querySelector('button[data-action="edit"]');
         const removeButton = bookmarkContextMenu.querySelector('button[data-action="remove"]');
         if (editButton instanceof HTMLButtonElement) {
-            editButton.disabled = !hasBookmarks;
+            editButton.disabled = !isBookmark;
         }
         if (removeButton instanceof HTMLButtonElement) {
             removeButton.disabled = !isBookmark;
@@ -764,12 +764,10 @@
         }
         switch (action) {
             case 'add':
-                promptForBookmarkLabel('', (label) => {
-                    insertBookmarkBefore(contextMenuEntryId, label);
-                });
+                insertBookmarkBefore(contextMenuEntryId);
                 break;
             case 'edit':
-                promptToEditBookmark(contextMenuEntryId);
+                editBookmarkLabel(contextMenuEntryId);
                 break;
             case 'remove':
                 removeBookmark(contextMenuEntryId);
@@ -786,50 +784,6 @@
             default:
                 break;
         }
-    }
-
-    /**
-     * @brief Invokes a label prompt and applies the value to the target bookmark.
-     * @param entryId Identifier of the bookmark to edit.
-     */
-    function promptToEditBookmark(entryId) {
-        const target = resolveBookmarkTarget(entryId);
-        if (!target) {
-            return;
-        }
-        editBookmarkLabel(target.id);
-    }
-
-    /**
-     * @brief Resolves which bookmark entry should be edited for the provided id.
-     * @param entryId Identifier from the context menu target.
-     * @returns Bookmark entry or null.
-     */
-    function resolveBookmarkTarget(entryId) {
-        const direct = state.entries.find((item) => item.id === entryId && item.isBookmark);
-        if (direct) {
-            return direct;
-        }
-        if (state.activeBookmarkId !== null) {
-            const active = state.entries.find((item) => item.id === state.activeBookmarkId && item.isBookmark);
-            if (active) {
-                return active;
-            }
-        }
-        return state.entries.find((item) => item.isBookmark) || null;
-    }
-
-    /**
-     * @brief Shows an input prompt for a bookmark label and returns the trimmed value.
-     * @param initialLabel Initial label value.
-     * @param onSubmit Callback to invoke when the user provides a label.
-     */
-    function promptForBookmarkLabel(initialLabel, onSubmit) {
-        const result = window.prompt('Bookmark label', initialLabel) ?? undefined;
-        if (result === undefined) {
-            return;
-        }
-        onSubmit(result.trim());
     }
 
     /**
