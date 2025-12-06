@@ -46,13 +46,13 @@ If no password is stored yet, the extension prompts for it when connecting and s
 
 ## Notes
 
-- Colorization of lines are done based on the loglevel (DEBUG, INFO, ERROR, etc). If these keys are not present in the log, no colorization will be applied.
-- Presets are stored per-device in the workspace state using the key `embeddedLogger.presets.<deviceId>`.
+- **Colorization of lines* is performed based on the loglevel (DEBUG, INFO, ERROR, etc). If these keys are not present in the log, no colorization is be applied.
+- **Filtering presets** are stored per-device in the workspace state using the key `embeddedLogger.presets.<deviceId>`.
 - Exports only include log lines currently visible after applying filters.
 - When an SSH session closes, the log view appends `--- SSH session closed on <timestamp>` and offers a **Reconnect** button next to the status text to restart streaming.
-- Click the search icon in the Embedded Logger devices view to add up to ten highlight rows, each with its own colour and editable keyword that updates live and imported logs instantly.
-- Use the **Open Local Log File** title button in the Embedded Logger devices view (or run the command with the same name) to select a `.log` or `.txt` file from your machine. The chosen file is loaded into the log viewer so you can reuse filtering, presets, export filtered logs and highlights just like a live connection.
-- **Status** also shows messages from the log command used in the configuration like `tail -F /var/log/syslog`. So, some messages like: `tail: '/var/log/syslog' has appeared; following new file` may appear. This message in particular happens when the log file is rotated or recreated. The `-F` flag tells `tail` to keep watching for the file to reappear, so the message is informational and indicates that log streaming will continue with the new file. If you prefer a different log source, update the `logCommand` in your device configuration.
+- Click the highlight icon in the Embedded Logger devices view to add up to ten highlight rows, each with its own colour and editable keyword that updates live and imported logs instantly.
+- Use the **Open Local Log File** button in the Embedded Logger devices view (or run the command with the same name) to select a `.log` or `.txt` file from your machine. The chosen file is loaded into the log viewer so you can reuse filtering, presets, export filtered logs and highlights just like a live connection.
+- **Status** text also shows messages from the log command used in the configuration like `tail -F /var/log/syslog`. So, some messages like: `tail: '/var/log/syslog' has appeared; following new file` may appear. This message in particular happens when the log file is rotated or recreated. The `-F` flag tells `tail` to keep watching for the file to reappear, so the message is informational and indicates that log streaming will continue with the new file. If you prefer a different log source, update the `logCommand` in your device configuration.
 
 ## Share Activity Bar with other extensions
 
