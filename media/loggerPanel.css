@@ -168,6 +168,22 @@ body {
     min-height: 1em;
 }
 
+.log-line.bookmark-line {
+    background: var(--vscode-button-secondaryBackground, #0e639c);
+    color: var(--vscode-button-foreground, #ffffff);
+    font-weight: 700;
+    line-height: 1.4;
+    min-height: calc(1.4em * 3);
+    padding: 6px 6px;
+    display: flex;
+    align-items: center;
+    border-radius: 3px;
+}
+
+.log-line.bookmark-line.active-bookmark {
+    box-shadow: 0 0 0 2px var(--vscode-focusBorder, #007fd4);
+}
+
 .top-bar-spacer {
     flex: 1 1 auto;
 }
@@ -198,6 +214,51 @@ body {
 
 .word-wrap-toggle input {
     margin: 0;
+}
+
+.bookmark-context-menu {
+    position: fixed;
+    background: var(--vscode-editorWidget-background, var(--vscode-editor-background));
+    border: 1px solid var(--vscode-editorWidget-border, #3c3c3c);
+    border-radius: 4px;
+    padding: 4px 0;
+    min-width: 220px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    z-index: 10;
+}
+
+.bookmark-context-menu.hidden {
+    display: none;
+}
+
+.bookmark-context-menu ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.bookmark-context-menu li {
+    margin: 0;
+}
+
+.bookmark-context-menu button {
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    color: var(--vscode-editor-foreground);
+    padding: 8px 12px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.bookmark-context-menu button:hover:enabled {
+    background: var(--vscode-list-hoverBackground);
+}
+
+.bookmark-context-menu button:disabled {
+    opacity: 0.6;
+    cursor: default;
 }
 
 .highlighted-text {
