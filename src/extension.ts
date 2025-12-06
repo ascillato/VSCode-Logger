@@ -10,12 +10,28 @@ import { EmbeddedDevice } from './deviceTree';
 import { HighlightDefinition, SidebarViewProvider } from './sidebarView';
 import { LogPanel } from './logPanel';
 import { SshCommandRunner } from './sshCommandRunner';
+import { SshTerminalSession } from './sshTerminal';
 
 // Map of deviceId to existing log panels so multiple clicks reuse tabs.
 const panelMap: Map<string, LogPanel> = new Map();
 let activePanel: LogPanel | undefined;
 let sidebarProvider: SidebarViewProvider | undefined;
 let highlights: HighlightDefinition[] = [];
+
+function validateSshDevice(device: EmbeddedDevice): string | undefined {
+    const host = device.host?.trim();
+    const username = device.username?.trim();
+    if (!host) {
+        return `Device "${device.name}" is missing a host.`;
+    }
+    if (!username) {
+        return `Device "${device.name}" is missing a username.`;
+    }
+    if (device.port !== undefined && (!Number.isInteger(device.port) || device.port <= 0)) {
+        return `Device "${device.name}" has an invalid port.`;
+    }
+    return undefined;
+}
 
 /**
  * @brief Migrates legacy passwords into VS Code SecretStorage.
@@ -100,6 +116,30 @@ export async function activate(context: vscode.ExtensionContext) {
             } catch (err: any) {
                 vscode.window.showErrorMessage(err?.message ?? String(err));
             }
+        },
+        async (deviceId) => {
+            const device = getDevices().find((item) => item.id === deviceId);
+            if (!device) {
+                vscode.window.showErrorMessage('Device not found. Check embeddedLogger.devices.');
+                return;
+            }
+
+            if (!vscode.workspace.isTrusted) {
+                vscode.window.showErrorMessage('Workspace trust is required before connecting to devices.');
+                return;
+            }
+
+            const error = validateSshDevice(device);
+            if (error) {
+                vscode.window.showErrorMessage(error);
+                return;
+            }
+
+            const terminal = vscode.window.createTerminal({
+                name: `${device.name} SSH`,
+                pty: new SshTerminalSession(device, context),
+            });
+            terminal.show(true);
         }
     );
 

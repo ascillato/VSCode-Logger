@@ -44,13 +44,19 @@ interface RunDeviceCommandMessage {
     command: string;
 }
 
+interface OpenSshTerminalMessage {
+    type: 'openSshTerminal';
+    deviceId: string;
+}
+
 type IncomingMessage =
     | SidebarMessage
     | HighlightUpdateMessage
     | AddRowRequest
     | RequestFocus
     | RequestInitPayload
-    | RunDeviceCommandMessage;
+    | RunDeviceCommandMessage
+    | OpenSshTerminalMessage;
 
 export class SidebarViewProvider implements vscode.WebviewViewProvider {
     private view?: vscode.WebviewView;
@@ -62,7 +68,8 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
         private readonly onOpenDevice: (deviceId: string) => void,
         private readonly onHighlightsChanged: (highlights: HighlightDefinition[]) => void,
         private readonly getHighlights: () => HighlightDefinition[],
-        private readonly onRunDeviceCommand: (deviceId: string, commandName: string, command: string) => void
+        private readonly onRunDeviceCommand: (deviceId: string, commandName: string, command: string) => void,
+        private readonly onOpenSshTerminal: (deviceId: string) => void
     ) {}
 
     resolveWebviewView(webviewView: vscode.WebviewView): void | Thenable<void> {
@@ -97,6 +104,9 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
                 case 'runDeviceCommand':
                     this.onRunDeviceCommand(message.deviceId, message.commandName, message.command);
                     break;
+                case 'openSshTerminal':
+                    this.onOpenSshTerminal(message.deviceId);
+                    break;
             }
         });
 
@@ -122,7 +132,7 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
         if (!this.view) {
             return;
         }
-        this.view.webview.postMessage({ type: 'devicesUpdated', devices: this.getDevices() });
+        this.view.webview.postMessage({ type: 'devicesUpdated', devices: this.getDevicesForWebview() });
     }
 
     syncHighlights() {
@@ -136,11 +146,19 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
         if (!this.view) {
             return;
         }
-        this.view.webview.postMessage({ type: 'initDevices', devices: this.getDevices() });
+        this.view.webview.postMessage({ type: 'initDevices', devices: this.getDevicesForWebview() });
         this.view.webview.postMessage({ type: 'applyHighlights', highlights: this.getHighlights() });
         if (this.pendingAdd) {
             this.addHighlightRow();
         }
+    }
+
+    private getDevicesForWebview(): EmbeddedDevice[] {
+        return this.getDevices().map((device) => ({
+            ...device,
+            enableSshTerminal: Boolean(device.enableSshTerminal),
+            sshCommands: Array.isArray(device.sshCommands) ? device.sshCommands : [],
+        }));
     }
 
     private getHtml(webview: vscode.Webview): string {

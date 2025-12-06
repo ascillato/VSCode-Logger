@@ -67,19 +67,36 @@
             header.appendChild(info);
             card.appendChild(header);
 
-            if (device.sshCommands && device.sshCommands.length) {
+            const sshCommands = device.sshCommands || [];
+            const totalSshActions = sshCommands.length + (device.enableSshTerminal ? 1 : 0);
+            if (totalSshActions) {
                 const commandsSection = document.createElement('details');
                 commandsSection.className = 'command-group';
 
                 const summary = document.createElement('summary');
-                summary.textContent = `SSH Commands (${device.sshCommands.length})`;
+                summary.textContent = `SSH Commands (${totalSshActions})`;
                 summary.addEventListener('click', (event) => event.stopPropagation());
                 commandsSection.appendChild(summary);
 
                 const list = document.createElement('div');
                 list.className = 'command-list';
 
-                device.sshCommands.forEach((cmd) => {
+                if (device.enableSshTerminal) {
+                    const terminalButton = document.createElement('button');
+                    terminalButton.className = 'command-button';
+                    terminalButton.textContent = 'Open SSH Terminal';
+                    terminalButton.title = `Open an SSH terminal session for ${device.name}`;
+                    terminalButton.addEventListener('click', (event) => {
+                        event.stopPropagation();
+                        vscode.postMessage({
+                            type: 'openSshTerminal',
+                            deviceId: device.id,
+                        });
+                    });
+                    list.appendChild(terminalButton);
+                }
+
+                sshCommands.forEach((cmd) => {
                     const commandButton = document.createElement('button');
                     commandButton.className = 'command-button';
                     commandButton.textContent = cmd.name;
