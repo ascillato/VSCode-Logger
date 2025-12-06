@@ -71,12 +71,16 @@
     const savePresetBtn = document.getElementById('savePreset');
     const deletePresetBtn = document.getElementById('deletePreset');
     const exportBtn = document.getElementById('exportLogs');
+    const editBtn = document.getElementById('editLogFile');
+    const refreshBtn = document.getElementById('refreshLogFile');
     const clearLogsBtn = document.getElementById('clearLogs');
     const wordWrapToggle = document.getElementById('wordWrapToggle');
     const autoScrollToggle = document.getElementById('autoScrollToggle');
     const autoScrollContainer = document.getElementById('autoScrollContainer');
     const autoReconnectToggle = document.getElementById('autoReconnectToggle');
     const autoReconnectContainer = document.getElementById('autoReconnectContainer');
+    const editContainer = editBtn?.closest('label');
+    const refreshContainer = refreshBtn?.closest('label');
     const logContainer = document.getElementById('logContainer');
     const logContent = document.getElementById('logContent');
     const statusEl = document.getElementById('status');
@@ -961,6 +965,14 @@
         vscode.postMessage({ type: 'exportLogs', deviceId: state.deviceId, lines });
     });
 
+    editBtn.addEventListener('click', () => {
+        vscode.postMessage({ type: 'openSourceFile' });
+    });
+
+    refreshBtn.addEventListener('click', () => {
+        vscode.postMessage({ type: 'refreshSourceFile' });
+    });
+
     if (clearLogsBtn) {
         clearLogsBtn.addEventListener('click', clearLogs);
     }
@@ -1129,6 +1141,19 @@
                 if (clearLogsBtn) {
                     clearLogsBtn.classList.toggle('hidden', !state.isLiveLog);
                 }
+                const showImportedControls = !state.isLiveLog;
+                if (editContainer) {
+                    editContainer.classList.toggle('hidden', !showImportedControls);
+                }
+                if (refreshContainer) {
+                    refreshContainer.classList.toggle('hidden', !showImportedControls);
+                }
+                if (editBtn) {
+                    editBtn.classList.toggle('hidden', !showImportedControls);
+                }
+                if (refreshBtn) {
+                    refreshBtn.classList.toggle('hidden', !showImportedControls);
+                }
                 if (autoSaveToggle) {
                     autoSaveToggle.classList.toggle('hidden', !state.isLiveLog);
                     autoSaveToggle.disabled = !state.isLiveLog;
@@ -1148,6 +1173,13 @@
             case 'presetsUpdated':
                 state.presets = message.presets || [];
                 updatePresetDropdown();
+                break;
+            case 'replaceLines':
+                clearLogs();
+                handleInitialLogLines(message.lines || []);
+                if (message.message) {
+                    updateStatus(message.message, { preserveSecondary: true });
+                }
                 break;
             case 'status':
                 handleStatusMessage(message.message);
