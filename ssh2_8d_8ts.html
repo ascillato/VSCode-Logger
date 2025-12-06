@@ -99,10 +99,10 @@ Variables</h2></td></tr>
 <tr class="separator:ab85d040def6d401605592dc23f97ddd5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9202370736ee3612830d8ec3606ab41f" id="r_a9202370736ee3612830d8ec3606ab41f"><td class="memItemLeft" align="right" valign="top">export interface ClientChannel extends&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ssh2_8d_8ts.html#a9202370736ee3612830d8ec3606ab41f">EventEmitter</a></td></tr>
 <tr class="separator:a9202370736ee3612830d8ec3606ab41f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab3aced442d90febda5a650ad868d2f0c" id="r_ab3aced442d90febda5a650ad868d2f0c"><td class="memItemLeft" align="right" valign="top">on(event:'close', listener:()=&gt; void)&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ssh2_8d_8ts.html#ab3aced442d90febda5a650ad868d2f0c">stderr</a></td></tr>
-<tr class="separator:ab3aced442d90febda5a650ad868d2f0c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a62cca0a874fa335032a0812121d33aa2" id="r_a62cca0a874fa335032a0812121d33aa2"><td class="memItemLeft" align="right" valign="top">on(event:'close', listener:()=&gt; void)&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ssh2_8d_8ts.html#a62cca0a874fa335032a0812121d33aa2">listener</a></td></tr>
-<tr class="separator:a62cca0a874fa335032a0812121d33aa2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab2aca055fa00512653fc5a462d40d321" id="r_ab2aca055fa00512653fc5a462d40d321"><td class="memItemLeft" align="right" valign="top">on(event:'exit', listener:(code:number|null, signal:string|null)=&gt; void) on(event:'close', listener:()=&gt; void)&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ssh2_8d_8ts.html#ab2aca055fa00512653fc5a462d40d321">stderr</a></td></tr>
+<tr class="separator:ab2aca055fa00512653fc5a462d40d321"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a96db2f2a626e4950f7cd47c1b0f3b513" id="r_a96db2f2a626e4950f7cd47c1b0f3b513"><td class="memItemLeft" align="right" valign="top">on(event:'exit', listener:(code:number|null, signal:string|null)=&gt; void) on(event:'close', listener:()=&gt; void)&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="ssh2_8d_8ts.html#a96db2f2a626e4950f7cd47c1b0f3b513">listener</a></td></tr>
+<tr class="separator:a96db2f2a626e4950f7cd47c1b0f3b513"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Minimal type declarations for the ssh2 package used by the extension. </p>
@@ -178,19 +178,19 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 <b>Initial value:</b><div class="fragment"><div class="line">{</div>
-<div class="line">        on(event: <span class="stringliteral">&#39;data&#39;</span>, <a class="code hl_variable" href="ssh2_8d_8ts.html#a62cca0a874fa335032a0812121d33aa2">listener</a>: (data: Buffer) =&gt; void): this</div>
-<div class="ttc" id="assh2_8d_8ts_html_a62cca0a874fa335032a0812121d33aa2"><div class="ttname"><a href="ssh2_8d_8ts.html#a62cca0a874fa335032a0812121d33aa2">listener</a></div><div class="ttdeci">on(event:'close', listener:()=&gt; void) listener</div><div class="ttdef"><b>Definition</b> ssh2.d.ts:20</div></div>
+<div class="line">        on(event: <span class="stringliteral">&#39;data&#39;</span>, <a class="code hl_variable" href="ssh2_8d_8ts.html#a96db2f2a626e4950f7cd47c1b0f3b513">listener</a>: (data: Buffer) =&gt; void): this</div>
+<div class="ttc" id="assh2_8d_8ts_html_a96db2f2a626e4950f7cd47c1b0f3b513"><div class="ttname"><a href="ssh2_8d_8ts.html#a96db2f2a626e4950f7cd47c1b0f3b513">listener</a></div><div class="ttdeci">on(event:'exit', listener:(code:number|null, signal:string|null)=&gt; void) on(event:'close', listener:()=&gt; void) listener</div><div class="ttdef"><b>Definition</b> ssh2.d.ts:21</div></div>
 </div><!-- fragment -->
 </div>
 </div>
-<a id="a62cca0a874fa335032a0812121d33aa2" name="a62cca0a874fa335032a0812121d33aa2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a62cca0a874fa335032a0812121d33aa2">&#9670;&#160;</a></span>listener</h2>
+<a id="a96db2f2a626e4950f7cd47c1b0f3b513" name="a96db2f2a626e4950f7cd47c1b0f3b513"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a96db2f2a626e4950f7cd47c1b0f3b513">&#9670;&#160;</a></span>listener</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">on (event: 'close', listener: () =&gt; void) listener</td>
+          <td class="memname">on (event: 'exit', listener: (code: number | null, signal: string | null) =&gt; void) on (event: 'close', listener: () =&gt; void) listener</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -214,14 +214,14 @@ Variables</h2></td></tr>
 </div><!-- fragment -->
 </div>
 </div>
-<a id="ab3aced442d90febda5a650ad868d2f0c" name="ab3aced442d90febda5a650ad868d2f0c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab3aced442d90febda5a650ad868d2f0c">&#9670;&#160;</a></span>stderr</h2>
+<a id="ab2aca055fa00512653fc5a462d40d321" name="ab2aca055fa00512653fc5a462d40d321"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab2aca055fa00512653fc5a462d40d321">&#9670;&#160;</a></span>stderr</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">on (event: 'close', listener: () =&gt; void) stderr</td>
+          <td class="memname">on (event: 'exit', listener: (code: number | null, signal: string | null) =&gt; void) on (event: 'close', listener: () =&gt; void) stderr</td>
         </tr>
       </table>
 </div><div class="memdoc">

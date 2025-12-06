@@ -1,14 +1,11 @@
 var searchData=
 [
-  ['package_20generation_0',['Package Generation',['../index.html#autotoc_md11',1,'']]],
-  ['panel_1',['panel',['../classLogPanel.html#ae7831a09011fd1b6b4e43f39c88b9428',1,'LogPanel']]],
-  ['panelmap_2',['panelMap',['../extension_8ts.html#a4161d9e40c3681f21244ba3962ff41d1',1,'extension.ts']]],
-  ['pendingadd_3',['pendingAdd',['../classSidebarViewProvider.html#a13ac27b7ba423140e00395f5f217fd11',1,'SidebarViewProvider']]],
-  ['permanent_20ban_4',['4. Permanent Ban',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CODE__OF__CONDUCT.html#autotoc_md79',1,'']]],
-  ['pledge_5',['Our Pledge',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CODE__OF__CONDUCT.html#autotoc_md70',1,'']]],
-  ['policy_6',['Security Policy',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2SECURITY.html',1,'']]],
-  ['postinitialpayload_7',['postInitialPayload',['../classSidebarViewProvider.html#a94e82e101cfc5d0937c890c38776746f',1,'SidebarViewProvider']]],
-  ['presetskey_8',['presetsKey',['../classLogPanel.html#ab660abe2c91b6710ff1d70a17e71c119',1,'LogPanel']]],
-  ['principles_9',['General principles',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html#autotoc_md63',1,'']]],
-  ['publishing_10',['Versioning and publishing',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html#autotoc_md67',1,'']]]
+  ['of_20conduct_0',['Contributor Covenant Code of Conduct',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CODE__OF__CONDUCT.html',1,'']]],
+  ['ondidchangetreedata_1',['onDidChangeTreeData',['../classDeviceTreeDataProvider.html#aec917958936afd2172ece30452a688ac',1,'DeviceTreeDataProvider']]],
+  ['ondidchangeviewstate_2',['onDidChangeViewState',['../classLogPanel.html#afd3853553956a916454a2e6a23747c3f',1,'LogPanel']]],
+  ['opensourcefile_3',['openSourceFile',['../classLogPanel.html#a5e11f154a268402a0211da2560f94f52',1,'LogPanel']]],
+  ['other_20extensions_4',['Share Activity Bar with other extensions',['../index.html#autotoc_md4',1,'']]],
+  ['our_20pledge_5',['Our Pledge',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CODE__OF__CONDUCT.html#autotoc_md78',1,'']]],
+  ['our_20standards_6',['Our Standards',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CODE__OF__CONDUCT.html#autotoc_md79',1,'']]],
+  ['overview_7',['Overview',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html#autotoc_md67',1,'']]]
 ];

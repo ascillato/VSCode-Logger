@@ -1,3 +1,5 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="Node000000" href="$classLogPanel.html" title="Hosts the WebviewPanel for a device and wires it to the SSH log session." alt="" coords="5,5,85,31"/>
+<area shape="rect" id="Node000000" title=" " alt="" coords="5,5,112,31"/>
+<area shape="rect" id="Node000001" href="$classClient.html" title=" " alt="" coords="160,5,220,31"/>
+<area shape="poly" id="edge2_Node000000_Node000001" title=" " alt="" coords="126,15,160,15,160,21,126,21"/>
 </map>

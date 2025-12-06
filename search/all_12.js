@@ -1,5 +1,15 @@
 var searchData=
 [
-  ['maxlogentries_0',['maxLogEntries',['../classLogPanel.html#ad706dc7870d3c9ef2278ce8d3bf3b41b',1,'LogPanel']]],
-  ['migratelegacypasswords_1',['migrateLegacyPasswords',['../extension_8ts.html#a675dbabf688395d51b8fda3b658dca42',1,'extension.ts']]]
+  ['listener_0',['listener',['../ssh2_8d_8ts.html#a96db2f2a626e4950f7cd47c1b0f3b513',1,'ssh2.d.ts']]],
+  ['locallogtarget_1',['LocalLogTarget',['../logPanel_8ts.html#a4b873a1073d60768ad5ba4bff7731a50',1,'logPanel.ts']]],
+  ['locally_2',['Running The Extension Locally',['../index.html#autotoc_md10',1,'']]],
+  ['log_20files_3',['[0.2.0] - 2025-11-30 [LOG-FILES]',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md56',1,'']]],
+  ['logger_4',['Embedded Device Logger',['../index.html',1,'']]],
+  ['loggerpanel_2ejs_5',['loggerPanel.js',['../loggerPanel_8js.html',1,'']]],
+  ['logpanel_6',['logpanel',['../classLogPanel.html',1,'LogPanel'],['../extension_8ts.html#a9ae2ee473822fd73f304dfdd84c42d20',1,'LogPanel:&#160;extension.ts']]],
+  ['logpanel_2ets_7',['logPanel.ts',['../logPanel_8ts.html',1,'']]],
+  ['logpaneltarget_8',['LogPanelTarget',['../logPanel_8ts.html#a9e99e6e2984f3df9d4d03b1525fd65d1',1,'logPanel.ts']]],
+  ['logsession_9',['LogSession',['../classLogSession.html',1,'']]],
+  ['logsession_2ets_10',['logSession.ts',['../logSession_8ts.html',1,'']]],
+  ['logsessioncallbacks_11',['LogSessionCallbacks',['../logSession_8ts.html#a0b193a330738859ca68016a2273f14ed',1,'logSession.ts']]]
 ];

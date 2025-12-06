@@ -1,13 +1,18 @@
 var searchData=
 [
-  ['embedded_20device_20logger_0',['Embedded Device Logger',['../index.html',1,'']]],
-  ['embeddeddevice_1',['EmbeddedDevice',['../deviceTree_8ts.html#a79002184a69cc451004e7311917c4644',1,'deviceTree.ts']]],
-  ['enforcement_2',['Enforcement',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CODE__OF__CONDUCT.html#autotoc_md74',1,'']]],
-  ['enforcement_20guidelines_3',['Enforcement Guidelines',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CODE__OF__CONDUCT.html#autotoc_md75',1,'']]],
-  ['enforcement_20responsibilities_4',['Enforcement Responsibilities',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CODE__OF__CONDUCT.html#autotoc_md72',1,'']]],
-  ['eventemitter_5',['EventEmitter',['../ssh2_8d_8ts.html#a9202370736ee3612830d8ec3606ab41f',1,'ssh2.d.ts']]],
-  ['exportlogs_6',['exportLogs',['../classLogPanel.html#a47578d54f47cf4f5e00f883e1599291a',1,'LogPanel']]],
-  ['extension_20locally_7',['Running The Extension Locally',['../index.html#autotoc_md10',1,'']]],
-  ['extension_2ets_8',['extension.ts',['../extension_8ts.html',1,'']]],
-  ['extensions_9',['Share Activity Bar with other extensions',['../index.html#autotoc_md4',1,'']]]
+  ['deactivate_0',['deactivate',['../extension_8ts.html#a8dcc8f9ef7ae7d655cfd17784e16f01d',1,'extension.ts']]],
+  ['deletepreset_1',['deletePreset',['../classLogPanel.html#a10d4bd31601caf5a4dc8f3aeadfe3627',1,'LogPanel']]],
+  ['deprecated_2',['deprecated',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md59',1,'Deprecated'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md51',1,'Deprecated'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md43',1,'Deprecated'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md35',1,'Deprecated'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md27',1,'Deprecated'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md19',1,'Deprecated']]],
+  ['developers_3',['For Developers',['../index.html#autotoc_md7',1,'']]],
+  ['development_4',['Setup and development',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html#autotoc_md69',1,'']]],
+  ['device_5',['device',['../classLogPanel.html#a98925453191807557ada30e7ad91e12b',1,'LogPanel']]],
+  ['device_20logger_6',['Embedded Device Logger',['../index.html',1,'']]],
+  ['devicecommand_7',['DeviceCommand',['../sshCommandRunner_8ts.html#aa33314a312c0b4de6f115960d0f5b67d',1,'sshCommandRunner.ts']]],
+  ['deviceitem_8',['DeviceItem',['../classDeviceItem.html',1,'']]],
+  ['devicetree_2ets_9',['deviceTree.ts',['../deviceTree_8ts.html',1,'']]],
+  ['devicetreedataprovider_10',['DeviceTreeDataProvider',['../classDeviceTreeDataProvider.html',1,'']]],
+  ['disconnect_11',['disconnect',['../classLogPanel.html#a6711453942883bad1421077ebf9a7de0',1,'LogPanel']]],
+  ['dispose_12',['dispose',['../classLogSession.html#a92b932a7dde722db0ac362c9d540255c',1,'LogSession::dispose()'],['../classLogPanel.html#a882d4b32e4450037527cd246d60ca4d1',1,'LogPanel::dispose()']]],
+  ['disposed_13',['disposed',['../classLogSession.html#a3c0f5ea1ba91b3247d3329dee9280b2d',1,'LogSession::disposed'],['../classLogPanel.html#ab8305554400c48dd806a5491681e9954',1,'LogPanel::disposed']]],
+  ['documentation_14',['documentation',['../index.html#autotoc_md13',1,'Generating Source Code Documentation'],['../index.html#autotoc_md9',1,'Source Code Documentation']]]
 ];
