@@ -27,13 +27,12 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
     }
 
     close(): void {
-        if (this.closed) {
-            return;
+        if (!this.closed) {
+            this.closed = true;
+            this.closeEmitter.fire();
         }
-        this.closed = true;
         this.shell?.end();
         this.client?.end();
-        this.closeEmitter.fire();
     }
 
     handleInput(data: string): void {
@@ -57,9 +56,17 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
                 throw new Error(validationError);
             }
 
+            if (this.closed) {
+                return;
+            }
+
             const password = await this.getPassword();
             if (!password) {
                 throw new Error('Password is required to connect to the device.');
+            }
+
+            if (this.closed) {
+                return;
             }
 
             await this.connect(password, initialDimensions);
@@ -116,6 +123,11 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
 
             client
                 .on('ready', () => {
+                    if (this.closed) {
+                        client.end();
+                        return;
+                    }
+
                     const cols = initialDimensions?.columns ?? 80;
                     const rows = initialDimensions?.rows ?? 24;
                     client.shell({ term: 'xterm-color', cols, rows }, (err, stream) => {
