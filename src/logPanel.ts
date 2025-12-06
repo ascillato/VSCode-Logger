@@ -45,7 +45,6 @@ export class LogPanel {
     private readonly targetName: string;
     private readonly targetId: string;
     private readonly initialLines: string[] = [];
-    private initialLinesTrimmed = false;
     private readonly sourcePath?: string;
     private readonly device?: EmbeddedDevice;
     private highlights: HighlightDefinition[];
@@ -83,11 +82,6 @@ export class LogPanel {
         const config = vscode.workspace.getConfiguration('embeddedLogger');
         const configuredLimit = config.get<number>('maxLinesPerTab', 100000);
         this.maxLogEntries = Math.max(1, configuredLimit || 100000);
-
-        if (this.initialLines.length > this.maxLogEntries) {
-            this.initialLines.splice(0, this.initialLines.length - this.maxLogEntries);
-            this.initialLinesTrimmed = true;
-        }
 
         this.panel = vscode.window.createWebviewPanel(
             'embeddedLogger.logPanel',
@@ -580,7 +574,6 @@ export class LogPanel {
             highlights: this.highlights,
             isLive: !!this.session,
             maxEntries: this.maxLogEntries,
-            lineLimitReached: this.initialLinesTrimmed,
         });
     }
 

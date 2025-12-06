@@ -1068,9 +1068,6 @@
                     state.entries = state.entries.slice(-state.maxEntries);
                     setLineLimitReached(true);
                 }
-                if (message.lineLimitReached) {
-                    setLineLimitReached(true);
-                }
                 setConnectionState(state.isLiveLog ? 'connecting' : 'disconnected');
                 setHighlights(message.highlights || []);
                 if (!state.isLiveLog && autoScrollContainer) {
