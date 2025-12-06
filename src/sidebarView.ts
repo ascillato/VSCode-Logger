@@ -44,13 +44,19 @@ interface RunDeviceCommandMessage {
     command: string;
 }
 
+interface OpenSshTerminalMessage {
+    type: 'openSshTerminal';
+    deviceId: string;
+}
+
 type IncomingMessage =
     | SidebarMessage
     | HighlightUpdateMessage
     | AddRowRequest
     | RequestFocus
     | RequestInitPayload
-    | RunDeviceCommandMessage;
+    | RunDeviceCommandMessage
+    | OpenSshTerminalMessage;
 
 export class SidebarViewProvider implements vscode.WebviewViewProvider {
     private view?: vscode.WebviewView;
@@ -62,7 +68,8 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
         private readonly onOpenDevice: (deviceId: string) => void,
         private readonly onHighlightsChanged: (highlights: HighlightDefinition[]) => void,
         private readonly getHighlights: () => HighlightDefinition[],
-        private readonly onRunDeviceCommand: (deviceId: string, commandName: string, command: string) => void
+        private readonly onRunDeviceCommand: (deviceId: string, commandName: string, command: string) => void,
+        private readonly onOpenSshTerminal: (deviceId: string) => void
     ) {}
 
     resolveWebviewView(webviewView: vscode.WebviewView): void | Thenable<void> {
@@ -96,6 +103,9 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
                     break;
                 case 'runDeviceCommand':
                     this.onRunDeviceCommand(message.deviceId, message.commandName, message.command);
+                    break;
+                case 'openSshTerminal':
+                    this.onOpenSshTerminal(message.deviceId);
                     break;
             }
         });

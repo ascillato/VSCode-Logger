@@ -3,7 +3,7 @@
   "displayName": "Embedded Device Logger",
   "description": "Stream and filter embedded Linux device logs over SSH inside VS Code.",
   "icon": "media/icon.png",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "publisher": "Scallant",
   "author": "A. Scillato",
   "engines": {
@@ -80,6 +80,11 @@
                 "description": "Command to stream logs (defaults to tail -F /var/log/syslog).",
                 "default": "tail -F /var/log/syslog"
               },
+              "enableSshTerminal": {
+                "type": "boolean",
+                "default": false,
+                "description": "Whether to show an Open SSH Terminal action for this device."
+              },
               "sshCommands": {
                 "type": "array",
                 "description": "Optional list of on-demand SSH commands available from the Devices view.",
@@ -117,6 +122,7 @@
               "port": 22,
               "username": "root",
               "logCommand": "tail -F /var/log/syslog",
+              "enableSshTerminal": true,
               "sshCommands": [
                 {
                   "name": "Restart Service",
