@@ -28,7 +28,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fix spacing for word wrapped lines.
-- Remove extra toolbar spacing between Export and Auto-Save in live log tabs.
 
 ### Security
 - None.
