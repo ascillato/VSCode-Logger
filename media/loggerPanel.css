@@ -169,7 +169,7 @@ body {
 }
 
 .log-line.bookmark-line {
-    background: var(--vscode-button-secondaryBackground, #0e639c);
+    background: var(--vscode-button-background, #0e639c);
     color: var(--vscode-button-foreground, #ffffff);
     font-weight: 700;
     line-height: 1.4;
