@@ -1,0 +1,5 @@
+<map id="SshTerminalSession" name="SshTerminalSession">
+<area shape="rect" id="Node000001" title="Pseudoterminal that proxies input/output to an SSH shell session." alt="" coords="19,79,170,104"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,5,184,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="97,44,97,79,92,79,92,44"/>
+</map>

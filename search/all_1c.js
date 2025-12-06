@@ -1,9 +1,7 @@
 var searchData=
 [
-  ['warning_0',['2. Warning',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CODE__OF__CONDUCT.html#autotoc_md85',1,'']]],
-  ['webview_20guidelines_1',['Webview guidelines',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html#autotoc_md74',1,'']]],
-  ['with_20other_20extensions_2',['Share Activity Bar with other extensions',['../index.html#autotoc_md4',1,'']]],
-  ['with_20ssh_20connections_3',['Working with SSH connections',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html#autotoc_md73',1,'']]],
-  ['working_20with_20ssh_20connections_4',['Working with SSH connections',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html#autotoc_md73',1,'']]],
-  ['writeautosaveline_5',['writeAutoSaveLine',['../classLogPanel.html#a9340da6e285509b537dc9423072ddbea',1,'LogPanel']]]
+  ['validatesshdevice_0',['validateSshDevice',['../extension_8ts.html#a12a0e006d7ed8267ee3e00fba46dc904',1,'extension.ts']]],
+  ['versioning_20and_20publishing_1',['Versioning and publishing',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html#autotoc_md83',1,'']]],
+  ['vscode‑logger_2',['Contributing Guidelines for VSCode‑Logger',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html',1,'']]],
+  ['vulnerability_3',['Reporting a Vulnerability',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2SECURITY.html#autotoc_md98',1,'']]]
 ];

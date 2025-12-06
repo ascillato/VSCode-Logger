@@ -101,8 +101,8 @@ Collaboration diagram for SidebarViewProvider:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ad02184b72a011656a66a340790ef3988" id="r_ad02184b72a011656a66a340790ef3988"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSidebarViewProvider.html#ad02184b72a011656a66a340790ef3988">constructor</a> (private readonly context:vscode.ExtensionContext, private readonly getDevices:()=&gt; <a class="el" href="deviceTree_8ts.html#a79002184a69cc451004e7311917c4644">EmbeddedDevice</a>[], private readonly onOpenDevice:(deviceId:string)=&gt; void, private readonly onHighlightsChanged:(highlights:HighlightDefinition[])=&gt; void, private readonly getHighlights:()=&gt; <a class="el" href="sidebarView_8ts.html#a70c58d2bba69e40d44ba5316f17dd427">HighlightDefinition</a>[], private readonly onRunDeviceCommand:(deviceId:string, commandName:string, command:string)=&gt; void)</td></tr>
-<tr class="separator:ad02184b72a011656a66a340790ef3988"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af5c273d4ba3ce400fe01a8b4a2f36cd9" id="r_af5c273d4ba3ce400fe01a8b4a2f36cd9"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSidebarViewProvider.html#af5c273d4ba3ce400fe01a8b4a2f36cd9">constructor</a> (private readonly context:vscode.ExtensionContext, private readonly getDevices:()=&gt; <a class="el" href="deviceTree_8ts.html#a79002184a69cc451004e7311917c4644">EmbeddedDevice</a>[], private readonly onOpenDevice:(deviceId:string)=&gt; void, private readonly onHighlightsChanged:(highlights:HighlightDefinition[])=&gt; void, private readonly getHighlights:()=&gt; <a class="el" href="sidebarView_8ts.html#a70c58d2bba69e40d44ba5316f17dd427">HighlightDefinition</a>[], private readonly onRunDeviceCommand:(deviceId:string, commandName:string, command:string)=&gt; void, private readonly onOpenSshTerminal:(deviceId:string)=&gt; void)</td></tr>
+<tr class="separator:af5c273d4ba3ce400fe01a8b4a2f36cd9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aebc60db57a06b49926a74f5ffbdfb4c1" id="r_aebc60db57a06b49926a74f5ffbdfb4c1"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSidebarViewProvider.html#aebc60db57a06b49926a74f5ffbdfb4c1">resolveWebviewView</a> (webviewView:vscode.WebviewView)</td></tr>
 <tr class="separator:aebc60db57a06b49926a74f5ffbdfb4c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1274daa12d2f034b62ccde5979fb134c" id="r_a1274daa12d2f034b62ccde5979fb134c"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSidebarViewProvider.html#a1274daa12d2f034b62ccde5979fb134c">refreshDevices</a> ()</td></tr>
@@ -114,6 +114,8 @@ Public Member Functions</h2></td></tr>
 Private Member Functions</h2></td></tr>
 <tr class="memitem:a94e82e101cfc5d0937c890c38776746f" id="r_a94e82e101cfc5d0937c890c38776746f"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSidebarViewProvider.html#a94e82e101cfc5d0937c890c38776746f">postInitialPayload</a> ()</td></tr>
 <tr class="separator:a94e82e101cfc5d0937c890c38776746f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a16c15cae2b593a43a2d29d8b29636a9b" id="r_a16c15cae2b593a43a2d29d8b29636a9b"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSidebarViewProvider.html#a16c15cae2b593a43a2d29d8b29636a9b">getDevicesForWebview</a> ()</td></tr>
+<tr class="separator:a16c15cae2b593a43a2d29d8b29636a9b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-attribs" name="pri-attribs"></a>
 Private Attributes</h2></td></tr>
@@ -123,8 +125,8 @@ Private Attributes</h2></td></tr>
 <tr class="separator:a13ac27b7ba423140e00395f5f217fd11"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="ad02184b72a011656a66a340790ef3988" name="ad02184b72a011656a66a340790ef3988"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad02184b72a011656a66a340790ef3988">&#9670;&#160;</a></span>constructor()</h2>
+<a id="af5c273d4ba3ce400fe01a8b4a2f36cd9" name="af5c273d4ba3ce400fe01a8b4a2f36cd9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af5c273d4ba3ce400fe01a8b4a2f36cd9">&#9670;&#160;</a></span>constructor()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -196,6 +198,18 @@ Private Attributes</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>void</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">private readonly &#160;</td>
+          <td class="paramname"><em>onOpenSshTerminal:</em>deviceId:string, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">&#160;</td>
           <td class="paramname"><em>void</em>&#160;</td>
         </tr>
         <tr>
@@ -207,6 +221,31 @@ Private Attributes</h2></td></tr>
   </td>
   <td class="mlabels-right">
 <span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a16c15cae2b593a43a2d29d8b29636a9b" name="a16c15cae2b593a43a2d29d8b29636a9b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a16c15cae2b593a43a2d29d8b29636a9b">&#9670;&#160;</a></span>getDevicesForWebview()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">SidebarViewProvider::getDevicesForWebview </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">private</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">

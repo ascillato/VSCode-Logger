@@ -1,29 +1,7 @@
 var searchData=
 [
-  ['changed_0',['changed',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md18',1,'Changed'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md26',1,'Changed'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md34',1,'Changed'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md58',1,'Changed'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md50',1,'Changed'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md42',1,'Changed']]],
-  ['changelog_1',['Changelog',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html',1,'']]],
-  ['changelog_2emd_2',['CHANGELOG.md',['../CHANGELOG_8md.html',1,'']]],
-  ['clean_20and_20re_20compile_3',['Clean and re-compile',['../index.html#autotoc_md12',1,'']]],
-  ['client_4',['Client',['../classClient.html',1,'']]],
-  ['closednotified_5',['closedNotified',['../classLogSession.html#af28acbbfe58236afb88d7b42d9ff1c95',1,'LogSession']]],
-  ['code_6',['Source Code',['../index.html#autotoc_md8',1,'']]],
-  ['code_20documentation_7',['code documentation',['../index.html#autotoc_md13',1,'Generating Source Code Documentation'],['../index.html#autotoc_md9',1,'Source Code Documentation']]],
-  ['code_20of_20conduct_8',['Contributor Covenant Code of Conduct',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CODE__OF__CONDUCT.html',1,'']]],
-  ['code_5fof_5fconduct_2emd_9',['CODE_OF_CONDUCT.md',['../CODE__OF__CONDUCT_8md.html',1,'']]],
-  ['commands_10',['[0.7.0] - 2025-12-14 [COMMANDS]',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md16',1,'']]],
-  ['compile_11',['Clean and re-compile',['../index.html#autotoc_md12',1,'']]],
-  ['conclusion_12',['Conclusion',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html#autotoc_md76',1,'']]],
-  ['conduct_13',['Contributor Covenant Code of Conduct',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CODE__OF__CONDUCT.html',1,'']]],
-  ['configuration_14',['Configuration',['../index.html#autotoc_md2',1,'']]],
-  ['connectconfig_15',['ConnectConfig',['../ssh2_8d_8ts.html#a0b6cfa99430ba3e65ebbd110bc30d9c2',1,'ssh2.d.ts']]],
-  ['connections_16',['Working with SSH connections',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html#autotoc_md73',1,'']]],
-  ['constructor_17',['constructor',['../classDeviceTreeDataProvider.html#a6f116f5ee766acbc3d0d348c8d17d656',1,'DeviceTreeDataProvider::constructor()'],['../classDeviceItem.html#af6e5dc5302e9a62804e860ae463f0d96',1,'DeviceItem::constructor()'],['../classSshCommandRunner.html#a2ae4f24d3a0545ae34739da07d8cc81b',1,'SshCommandRunner::constructor()'],['../classSshCommandError.html#a599fc7d37ec9acc86e78b8721cdcfcaf',1,'SshCommandError::constructor()'],['../classSidebarViewProvider.html#ad02184b72a011656a66a340790ef3988',1,'SidebarViewProvider::constructor()'],['../classLogSession.html#a61ef78d4d91ff8936a528899795808bd',1,'LogSession::constructor()'],['../classLogPanel.html#aa1db5b9f66c2765588aa1f9d050134c8',1,'LogPanel::constructor()']]],
-  ['contact_18',['Contact',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2SECURITY.html#autotoc_md91',1,'']]],
-  ['contributing_20guidelines_20for_20vscode‑logger_19',['Contributing Guidelines for VSCode‑Logger',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html',1,'']]],
-  ['contributing_2emd_20',['CONTRIBUTING.md',['../CONTRIBUTING_8md.html',1,'']]],
-  ['contribution_20guidelines_21',['Contribution guidelines',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html#autotoc_md70',1,'']]],
-  ['contributor_20covenant_20code_20of_20conduct_22',['Contributor Covenant Code of Conduct',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CODE__OF__CONDUCT.html',1,'']]],
-  ['correction_23',['1. Correction',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CODE__OF__CONDUCT.html#autotoc_md84',1,'']]],
-  ['covenant_20code_20of_20conduct_24',['Contributor Covenant Code of Conduct',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CODE__OF__CONDUCT.html',1,'']]],
-  ['createsession_25',['createSession',['../classLogPanel.html#a0530e568c5d2ed38c4c9a4f842000347',1,'LogPanel']]]
+  ['ban_0',['ban',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CODE__OF__CONDUCT.html#autotoc_md94',1,'3. Temporary Ban'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CODE__OF__CONDUCT.html#autotoc_md95',1,'4. Permanent Ban']]],
+  ['bar_20with_20other_20extensions_1',['Share Activity Bar with other extensions',['../index.html#autotoc_md4',1,'']]],
+  ['bookmarks_2',['[0.6.0] - 2025-12-06 [BOOKMARKS]',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md32',1,'']]],
+  ['buffer_3',['buffer',['../classLogSession.html#ad8b1eb14f73dea9fb79b859a53e56720',1,'LogSession']]]
 ];

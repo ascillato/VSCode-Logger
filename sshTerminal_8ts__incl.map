@@ -1,0 +1,5 @@
+<map id="sshTerminal.ts" name="sshTerminal.ts">
+<area shape="rect" id="Node000001" title="Provides a pseudoterminal that opens an interactive SSH shell for a device." alt="" coords="5,5,121,31"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="44,79,83,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="66,31,66,65,61,65,61,31"/>
+</map>

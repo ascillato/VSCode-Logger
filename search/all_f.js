@@ -1,11 +1,9 @@
 var searchData=
 [
-  ['general_20principles_0',['General principles',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html#autotoc_md71',1,'']]],
-  ['generating_20source_20code_20documentation_1',['Generating Source Code Documentation',['../index.html#autotoc_md13',1,'']]],
-  ['generation_2',['Package Generation',['../index.html#autotoc_md11',1,'']]],
-  ['getdefaultautosaveuri_3',['getDefaultAutoSaveUri',['../classLogPanel.html#ae374c7c75d937ec73b29ed6a1e05afe6',1,'LogPanel']]],
-  ['gethtml_4',['getHtml',['../classLogPanel.html#a9fa9817b3321b1f5ab4e3110733d0ea6',1,'LogPanel']]],
-  ['getnonce_5',['getnonce',['../logPanel_8ts.html#aa73ef9c2e62f634cda1a8b511c0a2d81',1,'getNonce():&#160;logPanel.ts'],['../sidebarView_8ts.html#aa73ef9c2e62f634cda1a8b511c0a2d81',1,'getNonce():&#160;sidebarView.ts']]],
-  ['guidelines_6',['guidelines',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html#autotoc_md70',1,'Contribution guidelines'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CODE__OF__CONDUCT.html#autotoc_md83',1,'Enforcement Guidelines'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html#autotoc_md74',1,'Webview guidelines']]],
-  ['guidelines_20for_20vscode‑logger_7',['Contributing Guidelines for VSCode‑Logger',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html',1,'']]]
+  ['features_0',['features',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html#autotoc_md80',1,'Adding new features'],['../index.html#autotoc_md1',1,'Features']]],
+  ['files_1',['[0.2.0] - 2025-11-30 [LOG-FILES]',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md64',1,'']]],
+  ['fixed_2',['fixed',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md21',1,'Fixed'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md29',1,'Fixed'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md37',1,'Fixed'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md45',1,'Fixed'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md53',1,'Fixed'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md61',1,'Fixed'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md69',1,'Fixed']]],
+  ['for_20developers_3',['For Developers',['../index.html#autotoc_md7',1,'']]],
+  ['for_20vscode‑logger_4',['Contributing Guidelines for VSCode‑Logger',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html',1,'']]],
+  ['formattimestamp_5',['formatTimestamp',['../classLogPanel.html#ad6317d37e4b8cbc286c48e0674efa3e4',1,'LogPanel']]]
 ];

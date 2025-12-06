@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['updatehighlights_0',['updateHighlights',['../classLogPanel.html#ac7ecf18d55e5f56b0aa96e120301cd5c',1,'LogPanel']]]
+  ['validatesshdevice_0',['validateSshDevice',['../extension_8ts.html#a12a0e006d7ed8267ee3e00fba46dc904',1,'extension.ts']]]
 ];

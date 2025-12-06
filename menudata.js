@@ -78,10 +78,10 @@ var menudata={children:[
 {text:"h",url:"globals.html#index_h"},
 {text:"i",url:"globals.html#index_i"},
 {text:"l",url:"globals.html#index_l"},
-{text:"m",url:"globals.html#index_m"},
 {text:"p",url:"globals.html#index_p"},
 {text:"r",url:"globals.html#index_r"},
-{text:"s",url:"globals.html#index_s"}]},
+{text:"s",url:"globals.html#index_s"},
+{text:"v",url:"globals.html#index_v"}]},
 {text:"Functions",url:"globals_func.html"},
 {text:"Variables",url:"globals_vars.html",children:[
 {text:"_",url:"globals_vars.html#index__5F"},

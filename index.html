@@ -93,6 +93,7 @@ Features</h1>
 <li><b>Open any log files and filter them</b> with the same interface.</li>
 <li>Add, edit and remove <b>Bookmarks</b> in live logs and imported logs.</li>
 <li>Run optional <b>on-demand SSH commands</b> configured per device from the Devices view.</li>
+<li>Optionally <b>launch an SSH terminal</b> directly from a device card when enabled in settings.</li>
 <li>SSH passwords are <b>stored securely</b> with VS Code Secret Storage.</li>
 <li><b>Privacy focused</b>. <b>No telemetry</b>. Everything <b>runs locally</b>.</li>
 <li><b>Built with security in mind</b>.</li>
@@ -113,6 +114,7 @@ Screenshot2</div></div>
 <div class="line">    &quot;port&quot;: 22,</div>
 <div class="line">    &quot;username&quot;: &quot;root&quot;,</div>
 <div class="line">    &quot;logCommand&quot;: &quot;tail -F /var/log/syslog&quot;,</div>
+<div class="line">    &quot;enableSshTerminal&quot;: true,</div>
 <div class="line">    &quot;sshCommands&quot;: [</div>
 <div class="line">      {</div>
 <div class="line">        &quot;name&quot;: &quot;Restart IOT&quot;,</div>
@@ -123,6 +125,7 @@ Screenshot2</div></div>
 <div class="line">]</div>
 </div><!-- fragment --><p>If no password is stored yet, the extension prompts for it when connecting and saves it locally and securely.</p>
 <ul>
+<li>Set <code>enableSshTerminal</code> to <code>true</code> to show an <b>Open SSH Terminal</b> button alongside any configured SSH commands for that device. The <b>Open SSH Terminal</b> action opens a dedicated VS Code terminal tab for the device and authenticates using the stored password (prompting and saving it securely when missing).</li>
 <li>Control memory usage by capping retained lines per log tab with <code>embeddedLogger.maxLinesPerTab</code> (default: 100000). For auto-save, this limit is not applied to a file. Everything is saved.</li>
 </ul>
 <h1><a class="anchor" id="autotoc_md3"></a>
@@ -183,13 +186,13 @@ Package Generation</h2>
 <ul>
 <li>Requires: <code>npm install -g @vscode/vsce</code></li>
 <li>Run: <code>vsce package</code> to generate vsix file to be installed into VSCode</li>
-<li>Install locally on VSCode: <code>code --install-extension embedded-device-logger-0.7.0.vsix</code></li>
+<li>Install locally on VSCode: <code>code --install-extension embedded-device-logger-0.8.0.vsix</code></li>
 </ul>
 <h2><a class="anchor" id="autotoc_md12"></a>
 Clean and re-compile</h2>
 <ul>
 <li><code>clear; rm -rf node_modules; rm -rf out; rm *.vsix; npm install; npm run compile; vsce package</code></li>
-<li><code>code --install-extension embedded-device-logger-0.7.0.vsix</code></li>
+<li><code>code --install-extension embedded-device-logger-0.8.0.vsix</code></li>
 </ul>
 <h2><a class="anchor" id="autotoc_md13"></a>
 Generating Source Code Documentation</h2>
