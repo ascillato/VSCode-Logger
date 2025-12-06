@@ -98,6 +98,7 @@
     const bookmarkLabelDialog = createBookmarkLabelDialog();
     const bookmarkContextMenu = createBookmarkContextMenu();
     let contextMenuEntryId = null;
+    let contextMenuSelectedText = '';
 
     let reconnectTimeoutId = null;
     let reconnectIntervalId = null;
@@ -816,6 +817,31 @@
     }
 
     /**
+     * @brief Updates the context menu options based on the current text selection.
+     * @param selectedText Text currently selected in the document.
+     */
+    function updateBookmarkContextMenuOptions(selectedText) {
+        const existingCopyButton = bookmarkContextMenu.querySelector('button[data-action="copy"]');
+        if (existingCopyButton?.parentElement) {
+            existingCopyButton.parentElement.remove();
+        }
+
+        const list = bookmarkContextMenu.querySelector('ul');
+        const hasSelection = selectedText && selectedText.trim() !== '';
+        contextMenuSelectedText = hasSelection ? selectedText : '';
+        if (!list || !hasSelection) {
+            return;
+        }
+
+        const copyListItem = document.createElement('li');
+        const copyButton = document.createElement('button');
+        copyButton.textContent = 'Copy';
+        copyButton.dataset.action = 'copy';
+        copyListItem.appendChild(copyButton);
+        list.insertBefore(copyListItem, list.firstChild);
+    }
+
+    /**
      * @brief Displays the bookmark context menu at the pointer location.
      * @param event Context menu mouse event.
      * @param entryId Target entry identifier.
@@ -824,6 +850,9 @@
         contextMenuEntryId = entryId;
         bookmarkContextMenu.style.top = `${event.clientY}px`;
         bookmarkContextMenu.style.left = `${event.clientX}px`;
+        const selection = window.getSelection();
+        const selectedText = selection && !selection.isCollapsed ? selection.toString() : '';
+        updateBookmarkContextMenuOptions(selectedText);
         updateBookmarkMenuState(entryId);
         bookmarkContextMenu.classList.remove('hidden');
     }
@@ -863,6 +892,13 @@
             return;
         }
         switch (action) {
+            case 'copy':
+                if (contextMenuSelectedText) {
+                    navigator.clipboard?.writeText(contextMenuSelectedText).catch((error) => {
+                        console.error('Failed to copy selected text', error);
+                    });
+                }
+                break;
             case 'add':
                 insertBookmarkBefore(contextMenuEntryId);
                 break;
