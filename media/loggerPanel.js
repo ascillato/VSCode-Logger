@@ -561,7 +561,8 @@
         if (!entry) {
             return;
         }
-        const label = window.prompt('Bookmark label', entry.bookmarkLabel || '') ?? undefined;
+        const bookmarkLabel = entry.bookmarkLabel || classifyLogLine(entry.rawLine).bookmarkLabel || '';
+        const label = window.prompt('Bookmark label', bookmarkLabel) ?? undefined;
         if (label === undefined) {
             return;
         }
