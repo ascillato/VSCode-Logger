@@ -333,10 +333,19 @@
      */
     function classifyLogLine(line) {
         const normalized = line.trim().toLowerCase();
+        const bookmarkMatch = line.match(/^---\s*bookmark\s*---\s*(.*)$/i);
+        if (bookmarkMatch) {
+            return {
+                className: 'bookmark-line',
+                bypassFilters: true,
+                isBookmark: true,
+                bookmarkLabel: bookmarkMatch[1].trim(),
+            };
+        }
         if (normalized.startsWith('--- ssh session closed')) {
             return { className: 'session-closed', bypassFilters: true };
         }
-        return { className: null, bypassFilters: false };
+        return { className: null, bypassFilters: false, isBookmark: false, bookmarkLabel: '' };
     }
 
     /**
@@ -347,15 +356,17 @@
      */
     function createEntry(line, options = {}) {
         const classification = classifyLogLine(line);
+        const isBookmark = options.isBookmark === true || classification.isBookmark === true;
+        const bookmarkLabel = options.bookmarkLabel ?? classification.bookmarkLabel ?? '';
         return {
             id: entryIdCounter++,
-            timestamp: Date.now(),
-            level: options.level ?? parseLevel(line),
+            timestamp: options.timestamp ?? Date.now(),
+            level: options.level ?? (isBookmark ? 'INFO' : parseLevel(line)),
             rawLine: line,
             className: options.className ?? classification.className,
             bypassFilters: options.bypassFilters === true || classification.bypassFilters === true,
-            isBookmark: options.isBookmark === true,
-            bookmarkLabel: options.bookmarkLabel ?? '',
+            isBookmark,
+            bookmarkLabel,
         };
     }
 
@@ -468,19 +479,7 @@
         }
 
         const timestamp = Date.now();
-        const newEntries = lines.map((line) => {
-            const classification = classifyLogLine(line);
-            return {
-                id: entryIdCounter++,
-                timestamp,
-                level: parseLevel(line),
-                rawLine: line,
-                className: classification.className,
-                bypassFilters: classification.bypassFilters,
-                isBookmark: false,
-                bookmarkLabel: '',
-            };
-        });
+        const newEntries = lines.map((line) => createEntry(line, { timestamp }));
 
         state.entries = state.entries.concat(newEntries);
         let trimmed = false;
