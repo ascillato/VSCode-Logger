@@ -80,6 +80,9 @@ body {
     flex: 1 1 auto;
     min-height: 200px;
     position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
 #logContent {
@@ -88,9 +91,10 @@ body {
 }
 
 .line-limit-notice {
-    position: absolute;
+    position: sticky;
     top: 6px;
-    right: 6px;
+    align-self: flex-end;
+    margin-left: auto;
     background: var(--vscode-editorWidget-border);
     color: var(--vscode-editor-foreground);
     padding: 4px 8px;

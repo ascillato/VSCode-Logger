@@ -546,7 +546,7 @@ export class LogPanel {
         </div>
     </div>
     <div id="logContainer">
-        <div id="lineLimitNotice" class="line-limit-notice hidden">Line limit reached; older lines are being replaced with newer entries.</div>
+        <div id="lineLimitNotice" class="line-limit-notice hidden">Configured display line limit reached. Older lines are being replaced with newer entries.</div>
         <div id="logContent"></div>
     </div>
     <script nonce="${nonce}" src="${scriptUri}"></script>
