@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.6.0] - 2025-12-04 [BOOKMARKS]
 
 ### Added
-- None.
+- Add line limit display notice to log panel.
 
 ### Changed
 - Surround auto-saved SSH session closed markers with blank lines to improve visibility.
