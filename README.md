@@ -66,8 +66,8 @@ In the example, the other extensions (from other publishers) are:
 
 ## Installation
 
-* **From VSCode:** Search for Embedded Device Logger (Publisher: Scallant, Author: A. Scillato).
-* **From VSCode Marketplace:** https://marketplace.visualstudio.com/items?itemName=Scallant.embedded-device-logger
+* **From VSCode:** Click on Extensions in the side bar and Search for Embedded Device Logger (Publisher: Scallant, Author: A. Scillato).
+* **From VSCode Marketplace:** See https://marketplace.visualstudio.com/items?itemName=Scallant.embedded-device-logger
 
 ----
 
