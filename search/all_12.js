@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['new_20features_0',['Adding new features',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html#autotoc_md56',1,'']]],
-  ['notes_1',['Notes',['../index.html#autotoc_md3',1,'']]]
+  ['maxlogentries_0',['maxLogEntries',['../classLogPanel.html#ad706dc7870d3c9ef2278ce8d3bf3b41b',1,'LogPanel']]],
+  ['migratelegacypasswords_1',['migrateLegacyPasswords',['../extension_8ts.html#a675dbabf688395d51b8fda3b658dca42',1,'extension.ts']]]
 ];

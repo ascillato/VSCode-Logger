@@ -148,6 +148,12 @@ Private Member Functions</h2></td></tr>
 <tr class="memitem:a47578d54f47cf4f5e00f883e1599291a" id="r_a47578d54f47cf4f5e00f883e1599291a"><td class="memItemLeft" align="right" valign="top">async&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLogPanel.html#a47578d54f47cf4f5e00f883e1599291a">exportLogs</a> (lines:string[])</td></tr>
 <tr class="memdesc:a47578d54f47cf4f5e00f883e1599291a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exports the provided log lines to a user-specified file.  <br /></td></tr>
 <tr class="separator:a47578d54f47cf4f5e00f883e1599291a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5e11f154a268402a0211da2560f94f52" id="r_a5e11f154a268402a0211da2560f94f52"><td class="memItemLeft" align="right" valign="top">async&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLogPanel.html#a5e11f154a268402a0211da2560f94f52">openSourceFile</a> ()</td></tr>
+<tr class="memdesc:a5e11f154a268402a0211da2560f94f52"><td class="mdescLeft">&#160;</td><td class="mdescRight">Opens the source log file in a standard VS Code editor tab.  <br /></td></tr>
+<tr class="separator:a5e11f154a268402a0211da2560f94f52"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acecbf1fe0b2889dacc124c059989ed13" id="r_acecbf1fe0b2889dacc124c059989ed13"><td class="memItemLeft" align="right" valign="top">async&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLogPanel.html#acecbf1fe0b2889dacc124c059989ed13">refreshFromSource</a> ()</td></tr>
+<tr class="memdesc:acecbf1fe0b2889dacc124c059989ed13"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reloads the source log file and replaces the Webview contents.  <br /></td></tr>
+<tr class="separator:acecbf1fe0b2889dacc124c059989ed13"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aea61e4c7d77824a1c3c78d4cae98bb76" id="r_aea61e4c7d77824a1c3c78d4cae98bb76"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLogPanel.html#aea61e4c7d77824a1c3c78d4cae98bb76">isValidPresetPayload</a> (message:any)</td></tr>
 <tr class="memdesc:aea61e4c7d77824a1c3c78d4cae98bb76"><td class="mdescLeft">&#160;</td><td class="mdescRight">Type guard verifying preset payloads from the Webview.  <br /></td></tr>
 <tr class="separator:aea61e4c7d77824a1c3c78d4cae98bb76"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -655,6 +661,60 @@ Private Attributes</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>Disposable subscription handle.</dd></dl>
 <p>Attempts to reconnect the SSH session when requested by the Webview. </p>
+
+</div>
+</div>
+<a id="a5e11f154a268402a0211da2560f94f52" name="a5e11f154a268402a0211da2560f94f52"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5e11f154a268402a0211da2560f94f52">&#9670;&#160;</a></span>openSourceFile()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">async LogPanel::openSourceFile </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Opens the source log file in a standard VS Code editor tab. </p>
+
+</div>
+</div>
+<a id="acecbf1fe0b2889dacc124c059989ed13" name="acecbf1fe0b2889dacc124c059989ed13"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acecbf1fe0b2889dacc124c059989ed13">&#9670;&#160;</a></span>refreshFromSource()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">async LogPanel::refreshFromSource </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Reloads the source log file and replaces the Webview contents. </p>
 
 </div>
 </div>

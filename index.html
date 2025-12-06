@@ -84,14 +84,16 @@ Features</h1>
 <li>Activity Bar view listing configured devices.</li>
 <li><b>Real-time log streaming over SSH</b> using a configurable command (default: <code>tail -F /var/log/syslog</code>).</li>
 <li><b>Log level parsing, filtering, and colorization</b> inside a Webview panel per device.</li>
+<li>Saved filter presets stored per device.</li>
 <li><b>Highlight up to 10 custom keywords</b> with color-coded, bold, underlined text in both live and imported logs.</li>
 <li><b>Find text inside live or imported logs</b> with Ctrl/Cmd+F, including next/previous navigation.</li>
 <li><b>Reconnect closed SSH sessions</b> directly from the log panel and automatically mark the log when a device closes a session.</li>
-<li>Saved filter presets stored per device.</li>
 <li><b>Export</b> currently visible (filtered) logs to a file.</li>
+<li><b>Auto-save</b> to file option for live SSH logs.</li>
 <li><b>Open any log files and filter them</b> with the same interface.</li>
+<li>Add, edit and remove <b>Bookmarks</b> in live logs and imported logs.</li>
 <li>SSH passwords are <b>stored securely</b> with VS Code Secret Storage.</li>
-<li>Privacy focused. <b>No telemetry</b>. Everything <b>runs locally</b>.</li>
+<li><b>Privacy focused</b>. <b>No telemetry</b>. Everything <b>runs locally</b>.</li>
 <li><b>Built with security in mind</b>.</li>
 </ul>
 <h1><a class="anchor" id="autotoc_md2"></a>
@@ -114,17 +116,18 @@ Screenshot2</div></div>
 <div class="line">]</div>
 </div><!-- fragment --><p>If no password is stored yet, the extension prompts for it when connecting and saves it locally and securely.</p>
 <ul>
-<li>Control memory usage by capping retained lines per log tab with <code>embeddedLogger.maxLinesPerTab</code> (default: 100000).</li>
+<li>Control memory usage by capping retained lines per log tab with <code>embeddedLogger.maxLinesPerTab</code> (default: 100000). For auto-save, this limit is not applied to a file. Everything is saved.</li>
 </ul>
 <h1><a class="anchor" id="autotoc_md3"></a>
 Notes</h1>
 <ul>
-<li>Colorization of lines are done based on the loglevel (DEBUG, INFO, ERROR, etc). If these keys are not present in the log, no colorization will be applied.</li>
-<li>Presets are stored per-device in the workspace state using the key <code>embeddedLogger.presets.&lt;deviceId&gt;</code>.</li>
+<li><b>Colorization of lines* is performed based on the loglevel (DEBUG, INFO, ERROR, etc). If these keys are not present in the log, no colorization is be applied.</b></li>
+<li><b>**Filtering presets</b> are stored per-device in the workspace state using the key <code>embeddedLogger.presets.&lt;deviceId&gt;</code>.</li>
 <li>Exports only include log lines currently visible after applying filters.</li>
 <li>When an SSH session closes, the log view appends <code>--- SSH session closed on &lt;timestamp&gt;</code> and offers a <b>Reconnect</b> button next to the status text to restart streaming.</li>
-<li>Click the search icon in the Embedded Logger devices view to add up to ten highlight rows, each with its own colour and editable keyword that updates live and imported logs instantly.</li>
-<li>Use the <b>Open Local Log File</b> title button in the Embedded Logger devices view (or run the command with the same name) to select a <code>.log</code> or <code>.txt</code> file from your machine. The chosen file is loaded into the log viewer so you can reuse filtering, presets, export filtered logs and highlights just like a live connection.</li>
+<li>Click the highlight icon in the Embedded Logger devices view to add up to ten highlight rows, each with its own colour and editable keyword that updates live and imported logs instantly.</li>
+<li>Use the <b>Open Local Log File</b> button in the Embedded Logger devices view (or run the command with the same name) to select a <code>.log</code> or <code>.txt</code> file from your machine. The chosen file is loaded into the log viewer so you can reuse filtering, presets, export filtered logs and highlights just like a live connection.</li>
+<li><b>Status</b> text also shows messages from the log command used in the configuration like <code>tail -F /var/log/syslog</code>. So, some messages like: &lsquo;tail: &rsquo;/var/log/syslog' has appeared; following new file<code>may appear. This message in particular happens when the log file is rotated or recreated. The</code>-F<code>flag tells</code>tail<code>to keep watching for the file to reappear, so the message is informational and indicates that log streaming will continue with the new file. If you prefer a different log source, update the</code>logCommand` in your device configuration.</li>
 </ul>
 <h1><a class="anchor" id="autotoc_md4"></a>
 Share Activity Bar with other extensions</h1>
@@ -139,10 +142,13 @@ Screenshot3</div></div>
 </ul>
 <h1><a class="anchor" id="autotoc_md5"></a>
 Installation</h1>
-<ul>
-<li><b>From VSCode:</b> Search for Embedded Device Logger (Publisher: Scallant, Author: A. Scillato).</li>
-<li><b>From VSCode Marketplace:</b> <a href="https://marketplace.visualstudio.com/items?itemName=Scallant.embedded-device-logger">https://marketplace.visualstudio.com/items?itemName=Scallant.embedded-device-logger</a></li>
+<p><b>From VSCode:</b></p><ul>
+<li>Click on Extensions in the side bar and Search for Embedded Device Logger (Publisher: Scallant, Author: A. Scillato).</li>
+<li>Or from the VS Code Quick Open (Ctrl+P), paste the command: <code>ext install Scallant.embedded-device-logger</code>, and press enter.</li>
+<li>Or from the console: <code>code --install-extension Scallant.embedded-device-logger</code></li>
 </ul>
+<p><b>For more information visit the <a href="https://marketplace.visualstudio.com/items?itemName=Scallant.embedded-device-logger">Embedded Device Logger Extension</a> in the VSCode Marketplace.</b></p>
+<p>If you find this extension useful, please <a href="https://marketplace.visualstudio.com/items?itemName=Scallant.embedded-device-logger&amp;ssr=false#review-details">rate it</a>.</p>
 <hr  />
 <h1><a class="anchor" id="autotoc_md7"></a>
 For Developers</h1>
@@ -170,13 +176,13 @@ Package Generation</h2>
 <ul>
 <li>Requires: <code>npm install -g @vscode/vsce</code></li>
 <li>Run: <code>vsce package</code> to generate vsix file to be installed into VSCode</li>
-<li>Install locally on VSCode: <code>code --install-extension embedded-device-logger-0.5.0.vsix</code></li>
+<li>Install locally on VSCode: <code>code --install-extension embedded-device-logger-0.6.0.vsix</code></li>
 </ul>
 <h2><a class="anchor" id="autotoc_md12"></a>
 Clean and re-compile</h2>
 <ul>
 <li><code>clear; rm -rf node_modules; rm -rf out; rm *.vsix; npm install; npm run compile; vsce package</code></li>
-<li><code>code --install-extension embedded-device-logger-0.5.0.vsix</code></li>
+<li><code>code --install-extension embedded-device-logger-0.6.0.vsix</code></li>
 </ul>
 <h2><a class="anchor" id="autotoc_md13"></a>
 Generating Source Code Documentation</h2>
