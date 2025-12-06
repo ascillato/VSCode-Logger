@@ -125,6 +125,10 @@
         const preserveScrollPosition = options.preserveScrollPosition === true;
         const filterText = state.textFilter.toLowerCase();
         state.filtered = state.entries.filter((entry) => {
+            if (entry.bypassFilters) {
+                return true;
+            }
+
             const textMatches = filterText ? entry.rawLine.toLowerCase().includes(filterText) : true;
             return textMatches && levelPasses(entry.level);
         });
@@ -268,7 +272,11 @@
         const frag = document.createDocumentFragment();
         for (const entry of visible) {
             const div = document.createElement('div');
-            div.className = `log-line level-${entry.level.toLowerCase()}`;
+            const classes = [`log-line`, `level-${entry.level.toLowerCase()}`];
+            if (entry.className) {
+                classes.push(entry.className);
+            }
+            div.className = classes.join(' ');
             div.appendChild(buildHighlightedContent(entry.rawLine, highlights));
             frag.appendChild(div);
         }
@@ -315,17 +323,34 @@
     }
 
     /**
+     * @brief Identifies special line types that should bypass filters or have custom styling.
+     * @param line Raw log line to inspect.
+     * @returns An object containing optional className and bypassFilters flags.
+     */
+    function classifyLogLine(line) {
+        const normalized = line.trim().toLowerCase();
+        if (normalized.startsWith('--- ssh session closed')) {
+            return { className: 'session-closed', bypassFilters: true };
+        }
+        return { className: null, bypassFilters: false };
+    }
+
+    /**
      * @brief Handles incoming log lines from the extension host.
      * @param line Raw log text to parse and display.
      */
     function handleLogLine(line, options = {}) {
         const level = parseLevel(line);
         const lowerLine = line.toLowerCase();
-        const bypassFilters = options.bypassFilters === true;
+        const classification = classifyLogLine(line);
+        const bypassFilters = options.bypassFilters === true || classification.bypassFilters === true;
+        const className = options.className || classification.className;
         const entry = {
             timestamp: Date.now(),
             level,
             rawLine: line,
+            className,
+            bypassFilters,
         };
         let trimmedEntries = false;
         state.entries.push(entry);
@@ -357,8 +382,8 @@
             const highlights = getHighlightDescriptors();
             const div = document.createElement('div');
             const classes = [`log-line`, `level-${entry.level.toLowerCase()}`];
-            if (options.className) {
-                classes.push(options.className);
+            if (entry.className) {
+                classes.push(entry.className);
             }
             div.className = classes.join(' ');
             div.appendChild(buildHighlightedContent(entry.rawLine, highlights));
@@ -393,11 +418,16 @@
         }
 
         const timestamp = Date.now();
-        const newEntries = lines.map((line) => ({
-            timestamp,
-            level: parseLevel(line),
-            rawLine: line,
-        }));
+        const newEntries = lines.map((line) => {
+            const classification = classifyLogLine(line);
+            return {
+                timestamp,
+                level: parseLevel(line),
+                rawLine: line,
+                className: classification.className,
+                bypassFilters: classification.bypassFilters,
+            };
+        });
 
         state.entries = state.entries.concat(newEntries);
         let trimmed = false;
