@@ -66,8 +66,14 @@ In the example, the other extensions (from other publishers) are:
 
 ## Installation
 
-* **From VSCode:** Click on Extensions in the side bar and Search for Embedded Device Logger (Publisher: Scallant, Author: A. Scillato).
-* **From VSCode Marketplace:** See https://marketplace.visualstudio.com/items?itemName=Scallant.embedded-device-logger
+**From VSCode:**
+- Click on Extensions in the side bar and Search for Embedded Device Logger (Publisher: Scallant, Author: A. Scillato).
+- Or from the VS Code Quick Open (Ctrl+P), paste the command: `ext install Scallant.embedded-device-logger`, and press enter.
+- Or from the console: `code --install-extension Scallant.embedded-device-logger`
+
+**More information see VSCode Marketplace:** https://marketplace.visualstudio.com/items?itemName=Scallant.embedded-device-logger
+
+If you like the Extension, please [rate it](https://marketplace.visualstudio.com/items?itemName=Scallant.embedded-device-logger&ssr=false#review-details)
 
 ----
 
