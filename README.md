@@ -16,6 +16,7 @@ A Visual Studio Code extension that connects to embedded Linux devices over SSH,
 - **Export** currently visible (filtered) logs to a file.
 - **Auto-save** to file option for live SSH logs.
 - **Open any log files and filter them** with the same interface.
+- Add, edit and remove **Bookmarks** in live logs and imported logs.
 - SSH passwords are **stored securely** with VS Code Secret Storage.
 - **Privacy focused**. **No telemetry**. Everything **runs locally**.
 - **Built with security in mind**.
