@@ -4,8 +4,6 @@
     const connectionButton = document.getElementById('connectionButton');
     const autoReconnect = document.getElementById('autoReconnect');
     const terminalOutput = document.getElementById('terminalOutput');
-    const terminalInput = document.getElementById('terminalInput');
-    const sendInput = document.getElementById('sendInput');
     const consoleFrame = document.getElementById('consoleFrame');
 
     const state = {
@@ -35,13 +33,51 @@
         terminalOutput.scrollTop = terminalOutput.scrollHeight;
     }
 
-    function handleInputSubmit() {
-        const text = terminalInput.value;
+    function sendInput(text) {
         if (!text) {
             return;
         }
         vscode.postMessage({ type: 'input', text });
-        terminalInput.value = '';
+    }
+
+    function handleKey(event) {
+        if (state.connectionState !== 'connected') {
+            return;
+        }
+
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            sendInput('\n');
+            return;
+        }
+
+        if (event.key === 'Backspace') {
+            event.preventDefault();
+            sendInput('\u007f');
+            return;
+        }
+
+        if (event.key === 'Tab') {
+            event.preventDefault();
+            sendInput('\t');
+            return;
+        }
+
+        if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+            event.preventDefault();
+            sendInput(event.key);
+        }
+    }
+
+    function handlePaste(event) {
+        if (state.connectionState !== 'connected') {
+            return;
+        }
+        event.preventDefault();
+        const text = event.clipboardData?.getData('text');
+        if (text) {
+            sendInput(text);
+        }
     }
 
     window.addEventListener('message', (event) => {
@@ -81,13 +117,11 @@
         vscode.postMessage({ type: 'setAutoReconnect', autoReconnect: value });
     });
 
-    sendInput.addEventListener('click', handleInputSubmit);
-    terminalInput.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            handleInputSubmit();
-        }
-    });
+    terminalOutput.addEventListener('keydown', handleKey);
+    terminalOutput.addEventListener('paste', handlePaste);
+    consoleFrame.addEventListener('click', () => terminalOutput.focus());
+
+    terminalOutput.focus();
 
     postReady();
 })();

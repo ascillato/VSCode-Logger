@@ -28,14 +28,14 @@ body {
 .console-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 8px;
+    gap: 12px;
 }
 
 .status-group {
     display: flex;
     align-items: center;
     gap: 8px;
+    margin-left: auto;
 }
 
 .status {
@@ -103,20 +103,5 @@ body {
     white-space: pre-wrap;
     font-family: var(--vscode-editor-font-family, monospace);
     background: var(--vscode-editor-inactiveSelectionBackground, rgba(0, 0, 0, 0.05));
-}
-
-.input-row {
-    display: flex;
-    gap: 8px;
-    padding: 8px 12px 12px;
-    border-top: 1px solid var(--border-color);
-}
-
-.terminal-input {
-    flex: 1;
-    padding: 6px 8px;
-    border-radius: 4px;
-    border: 1px solid var(--border-color);
-    background: var(--bg);
-    color: var(--text);
+    outline: none;
 }

@@ -65,7 +65,7 @@ export class SshConsolePanel implements vscode.Disposable {
                     break;
                 case 'input':
                     if (message.text) {
-                        this.shell?.write(message.text.endsWith('\n') ? message.text : `${message.text}\n`);
+                        this.shell?.write(message.text);
                     }
                     break;
                 case 'disconnect':
@@ -321,21 +321,17 @@ export class SshConsolePanel implements vscode.Disposable {
 <body>
     <div class="console-container">
         <div class="console-header">
-            <div class="status-group">
-                <span id="statusText" class="status status-default">Connecting…</span>
-                <button id="connectionButton" class="action-button">Disconnect</button>
-            </div>
             <label class="auto-reconnect">
                 <input type="checkbox" id="autoReconnect" checked />
                 Auto-reconnect
             </label>
-        </div>
-        <div id="consoleFrame" class="console-frame state-disconnected">
-            <pre id="terminalOutput" class="terminal-output"></pre>
-            <div class="input-row">
-                <input id="terminalInput" class="terminal-input" type="text" autocomplete="off" placeholder="Type a command and press Enter" />
-                <button id="sendInput" class="action-button">Send</button>
+            <div class="status-group">
+                <span id="statusText" class="status status-default">Connecting…</span>
+                <button id="connectionButton" class="action-button">Disconnect</button>
             </div>
+        </div>
+        <div id="consoleFrame" class="console-frame state-connecting">
+            <pre id="terminalOutput" class="terminal-output" tabindex="0"></pre>
         </div>
     </div>
     <script nonce="${nonce}" src="${scriptUri}"></script>
