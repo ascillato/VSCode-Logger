@@ -18,6 +18,9 @@ This document explains how the VSCode-Logger extension streams logs from embedde
 - **Webview clients (`media/loggerPanel.js` + `media/loggerPanel.css`)**: Receive log lines, parse severity, apply filters, manage presets and bookmarks, enforce the max-lines cap, and render the terminal-like UI. They can request preset persistence, deletion, exports, bookmark toggles, and highlight updates via `postMessage` events.
 
 ## Data and control flow
+
+![Diagram1](images/diagram1.png)
+
 ```mermaid
 graph TD
     A[Extension activation] --> B[getEmbeddedLoggerConfiguration]
