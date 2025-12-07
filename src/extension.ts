@@ -46,13 +46,87 @@ function validateSshDevice(device: EmbeddedDevice): string | undefined {
  */
 async function migrateLegacyPasswords(context: vscode.ExtensionContext, devices: EmbeddedDevice[]) {
     const secrets = context.secrets;
+    const hasLegacyPasswords = devices.some((device) => device.password !== undefined);
+
     for (const device of devices) {
+        if (device.password === undefined) {
+            continue;
+        }
+
         const key = `embeddedLogger.password.${device.id}`;
         const existing = await secrets.get(key);
-        if (!existing && device.password) {
+        if (!existing) {
             await secrets.store(key, device.password);
             console.log(`Migrated password for device ${device.id} into secret storage.`);
         }
+    }
+
+    if (!hasLegacyPasswords) {
+        return;
+    }
+
+    const configuredDevices = vscode.workspace.getConfiguration('embeddedLogger').get<EmbeddedDevice[]>('devices', []);
+    if (!configuredDevices.some((device) => device.password !== undefined)) {
+        return;
+    }
+
+    const sanitizedDevices = configuredDevices.map((device) => {
+        if (device.password === undefined) {
+            return device;
+        }
+
+        const { password, ...rest } = device;
+        return rest;
+    });
+
+    const warningMessage =
+        'Passwords were migrated to Secret Storage, but the legacy "password" fields could not be removed. ' +
+        'Please delete them from embeddedLogger.devices in your settings.';
+
+    const workspaceFolders = vscode.workspace.workspaceFolders ?? [];
+    let removalAttempted = false;
+
+    for (const folder of workspaceFolders) {
+        const folderConfig = vscode.workspace.getConfiguration('embeddedLogger', folder.uri);
+        const folderInspection = folderConfig.inspect<EmbeddedDevice[]>('devices');
+        if (!folderInspection?.workspaceFolderValue) {
+            continue;
+        }
+
+        removalAttempted = true;
+
+        try {
+            await folderConfig.update('devices', sanitizedDevices, vscode.ConfigurationTarget.WorkspaceFolder);
+        } catch (err: any) {
+            console.error('Failed to remove legacy passwords from workspace folder settings.', err);
+            vscode.window.showWarningMessage(warningMessage);
+            return;
+        }
+    }
+
+    if (removalAttempted) {
+        return;
+    }
+
+    const config = vscode.workspace.getConfiguration('embeddedLogger');
+    const inspection = config.inspect<EmbeddedDevice[]>('devices');
+
+    const target = inspection?.workspaceValue !== undefined
+        ? vscode.ConfigurationTarget.Workspace
+        : inspection?.globalValue !== undefined
+            ? vscode.ConfigurationTarget.Global
+            : undefined;
+
+    if (!target) {
+        vscode.window.showWarningMessage(warningMessage);
+        return;
+    }
+
+    try {
+        await config.update('devices', sanitizedDevices, target);
+    } catch (err: any) {
+        console.error('Failed to remove legacy passwords from settings.', err);
+        vscode.window.showWarningMessage(warningMessage);
     }
 }
 
