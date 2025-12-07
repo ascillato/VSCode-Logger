@@ -1224,8 +1224,8 @@
     }
 
     /**
-     * @brief Updates auto scroll state and keeps the toggle in sync.
-     * @param enabled Whether auto scroll should be enabled.
+     * @brief Updates auto-scroll state and keeps the toggle in sync.
+     * @param enabled Whether auto-scroll should be enabled.
      */
     function setAutoScrollEnabled(enabled) {
         if (state.autoScrollEnabled === enabled) {

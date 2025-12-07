@@ -535,11 +535,11 @@ export class LogPanel {
             <input type="checkbox" id="wordWrapToggle" />
         </label>
         <label class="word-wrap-toggle" id="autoScrollContainer">
-            <span>Auto Scroll</span>
+            <span>Auto-Scroll</span>
             <input type="checkbox" id="autoScrollToggle" checked />
         </label>
         <label class="word-wrap-toggle" id="autoReconnectContainer">
-            <span>Auto Reconnect</span>
+            <span>Auto-Reconnect</span>
             <input type="checkbox" id="autoReconnectToggle" checked />
         </label>
         <div class="search-bar">
