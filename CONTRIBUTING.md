@@ -31,7 +31,7 @@ This document provides guidelines with the intention of making informed, safe an
 3. **Launch the extension**: open the repository in VS Code and press `F5` to start a development host. The **Embedded Logger** view should appear in the activity bar.
 4. **Configure devices**: in VS Code settings (or via `settings.json`), add entries under `embeddedLogger.devices` as shown in the README. Do not hard‑code devices in the source.
 5. **Testing**: manually verify that log panels open, logs stream correctly, filtering and presets behave as expected, and exports work. When adding new features, test with multiple devices and both default and custom `logCommand` values.
-6. **Documentation**: install Doxygen (`sudo apt-get install doxygen`) and run `doxygen Doxyfile` from the repository root. The generated HTML lives at `docs/html/index.html`.
+6. **Documentation**: install Python 3 and the doc dependencies (`pip install -r docs/requirements.txt`), then generate the docs with `sphinx-build -M html docs docs/_build` (or `cd docs && make html`). The generated HTML lives at `docs/_build/html/index.html`.
 
 ## Contribution guidelines
 

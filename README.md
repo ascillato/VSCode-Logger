@@ -87,7 +87,8 @@ In the example, the other extensions (from other publishers) are:
 - `clear; rm -rf node_modules; rm -rf out; rm *.vsix; npm install; npm run compile; vsce package`
 - `code --install-extension embedded-device-logger-0.4.0.vsix`
 
-### Generating Source Code Documentation
-1. Ensure Doxygen is available locally (`sudo apt-get install doxygen`).
-2. From the repository root, run `doxygen Doxyfile` to build the documentation into `docs/html`.
-3. Open `docs/html/index.html` in a browser to review the generated API reference.
+### Generating Documentation Locally
+1. Ensure Python 3.10+ is available.
+2. Install the documentation dependencies: `pip install -r docs/requirements.txt`.
+3. From the repository root, run `sphinx-build -M html docs docs/_build` (or `cd docs && make html`).
+4. Open `docs/_build/html/index.html` in a browser to review the generated site, including Mermaid diagrams.
