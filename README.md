@@ -56,6 +56,13 @@ If no password is stored yet, the extension prompts for it when connecting and s
 
 - Control memory usage by capping retained lines per log tab with `embeddedLogger.maxLinesPerTab` (default: 100000). For auto-save, this limit is not applied to a file. Everything is saved.
 
+All options are available through the VS Code Settings UI under **Embedded Device Logger**, including defaults for omitted device values:
+
+- `embeddedLogger.defaultPort` – applied when a device does not specify a port.
+- `embeddedLogger.defaultLogCommand` – used when `logCommand` is omitted.
+- `embeddedLogger.defaultEnableSshTerminal` – toggles whether the SSH terminal action is shown by default.
+- `embeddedLogger.defaultSshCommands` – shared SSH actions applied to devices that do not define their own list.
+
 ## Notes
 
 - **Colorization of lines* is performed based on the loglevel (DEBUG, INFO, ERROR, etc). If these keys are not present in the log, no colorization is be applied.

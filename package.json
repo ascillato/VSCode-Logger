@@ -3,7 +3,7 @@
   "displayName": "Embedded Device Logger",
   "description": "Stream and filter embedded Linux device logs over SSH inside VS Code.",
   "icon": "media/icon.png",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "publisher": "Scallant",
   "author": "A. Scillato",
   "engines": {
@@ -43,6 +43,44 @@
     "configuration": {
       "title": "Embedded Device Logger",
       "properties": {
+        "embeddedLogger.defaultPort": {
+          "type": "number",
+          "default": 22,
+          "description": "Default SSH port applied to devices that do not specify one.",
+          "minimum": 1
+        },
+        "embeddedLogger.defaultLogCommand": {
+          "type": "string",
+          "default": "tail -F /var/log/syslog",
+          "description": "Default log command used when a device omits logCommand."
+        },
+        "embeddedLogger.defaultEnableSshTerminal": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether devices without an explicit enableSshTerminal flag should show the SSH terminal action."
+        },
+        "embeddedLogger.defaultSshCommands": {
+          "type": "array",
+          "description": "Reusable SSH commands automatically applied to devices that do not define their own list.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Display name for the SSH command."
+              },
+              "command": {
+                "type": "string",
+                "description": "Command to execute when selected."
+              }
+            },
+            "required": [
+              "name",
+              "command"
+            ]
+          },
+          "default": []
+        },
         "embeddedLogger.devices": {
           "type": "array",
           "description": "List of embedded devices to stream logs from.",
