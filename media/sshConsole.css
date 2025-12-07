@@ -1,0 +1,122 @@
+:root {
+    --green: #3fb950;
+    --yellow: #dcb67a;
+    --red: #f85149;
+    --border-color: var(--vscode-panel-border);
+    --bg: var(--vscode-editor-background);
+    --text: var(--vscode-editor-foreground);
+    --button-bg: var(--vscode-button-background);
+    --button-fg: var(--vscode-button-foreground);
+    --button-hover: var(--vscode-button-hoverBackground);
+}
+
+body {
+    padding: 0;
+    margin: 0;
+    font-family: var(--vscode-font-family);
+    color: var(--text);
+    background: var(--bg);
+}
+
+.console-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+}
+
+.console-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.status-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+    background: var(--vscode-statusBar-noFolderBackground);
+}
+
+.status-default {
+    background: var(--vscode-statusBar-noFolderBackground);
+}
+
+.status-closed {
+    background: var(--red);
+    color: #000;
+    font-weight: 700;
+}
+
+.action-button {
+    background: var(--button-bg);
+    color: var(--button-fg);
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    cursor: pointer;
+}
+
+.action-button:hover {
+    background: var(--button-hover);
+}
+
+.auto-reconnect {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+}
+
+.console-frame {
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    min-height: 320px;
+}
+
+.console-frame.state-connected {
+    border-color: var(--green);
+}
+
+.console-frame.state-connecting {
+    border-color: var(--yellow);
+}
+
+.console-frame.state-disconnected {
+    border-color: var(--red);
+}
+
+.terminal-output {
+    flex: 1;
+    margin: 0;
+    padding: 12px;
+    overflow: auto;
+    white-space: pre-wrap;
+    font-family: var(--vscode-editor-font-family, monospace);
+    background: var(--vscode-editor-inactiveSelectionBackground, rgba(0, 0, 0, 0.05));
+}
+
+.input-row {
+    display: flex;
+    gap: 8px;
+    padding: 8px 12px 12px;
+    border-top: 1px solid var(--border-color);
+}
+
+.terminal-input {
+    flex: 1;
+    padding: 6px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    background: var(--bg);
+    color: var(--text);
+}

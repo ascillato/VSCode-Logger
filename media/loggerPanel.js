@@ -61,7 +61,7 @@
         autoReconnectEnabled: true,
         connectionState: 'unknown',
         maxEntries: 100000,
-        statusText: { text: '', variant: 'default' },
+        statusText: '',
         secondaryStatus: null,
         autoSaveActive: false,
         lineLimitReached: false,
@@ -979,10 +979,7 @@
             state.secondaryStatus = null;
         }
 
-        state.statusText = {
-            text: text || '',
-            variant: options.variant || 'default',
-        };
+        state.statusText = text || '';
         renderStatusText();
         updateActionButton(options);
     }
@@ -1009,8 +1006,8 @@
         }
 
         const lines = [];
-        if (state.statusText.text) {
-            lines.push({ text: state.statusText.text, variant: state.statusText.variant });
+        if (state.statusText) {
+            lines.push({ text: state.statusText });
         }
         if (state.secondaryStatus && (state.secondaryStatus.text || state.secondaryStatus.fileName)) {
             lines.push({
@@ -1041,13 +1038,7 @@
                 strong.textContent = line.fileName;
                 statusEl.appendChild(strong);
             } else if (trimmedText) {
-                const statusSpan = document.createElement('span');
-                statusSpan.textContent = trimmedText;
-                statusSpan.className = 'status-line';
-                if (line.variant) {
-                    statusSpan.classList.add(`status-line--${line.variant}`);
-                }
-                statusEl.appendChild(statusSpan);
+                statusEl.appendChild(document.createTextNode(trimmedText));
             }
         }
     }
@@ -1107,26 +1098,26 @@
      * @brief Starts a countdown and triggers a reconnect request after it elapses.
      * @param baseMessage Message to prefix the countdown with.
      */
-    function startReconnectCountdown(baseMessage = 'Connection closed.', options = {}) {
+    function startReconnectCountdown(baseMessage = 'Connection closed.') {
         if (!state.isLiveLog || !state.autoReconnectEnabled || reconnectTimeoutId) {
-            updateStatus(baseMessage, { disableButton: false, ...options });
+            updateStatus(baseMessage, { disableButton: false });
             return;
         }
 
         reconnectCountdown = 5;
         const renderCountdown = () => `${baseMessage} Retrying in ${reconnectCountdown} seconds...`;
-        updateStatus(renderCountdown(), { disableButton: false, ...options });
+        updateStatus(renderCountdown(), { disableButton: false });
         reconnectIntervalId = window.setInterval(() => {
             reconnectCountdown -= 1;
             if (reconnectCountdown > 0) {
-                updateStatus(renderCountdown(), { disableButton: false, ...options });
+                updateStatus(renderCountdown(), { disableButton: false });
             }
         }, 1000);
 
         reconnectTimeoutId = window.setTimeout(() => {
             clearReconnectTimers();
             setConnectionState('connecting');
-            updateStatus('Reconnecting...', { disableButton: true, ...options });
+            updateStatus('Reconnecting...', { disableButton: true });
             vscode.postMessage({ type: 'requestReconnect' });
         }, 5000);
     }
@@ -1135,16 +1126,15 @@
      * @brief Handles connection losses by updating status and scheduling reconnects.
      * @param message Status message provided by the extension host.
      */
-    function handleConnectionLoss(message, options = {}) {
+    function handleConnectionLoss(message) {
         setConnectionState('disconnected');
         clearReconnectTimers();
-        const statusOptions = { disableButton: false, preserveSecondary: true, ...options };
         if (state.autoReconnectEnabled && state.isLiveLog) {
-            startReconnectCountdown(message || 'Connection closed.', statusOptions);
+            startReconnectCountdown(message || 'Connection closed.');
             return;
         }
 
-        updateStatus(message || 'Connection closed.', statusOptions);
+        updateStatus(message || 'Connection closed.', { disableButton: false });
     }
 
     /**
@@ -1154,8 +1144,7 @@
      */
     function handleSessionClosed(message, closedAt) {
         const formattedTimestamp = formatLocalTimestamp(closedAt);
-        const baseMessage = `SSH session closed on ${formattedTimestamp}`;
-        handleConnectionLoss(baseMessage, { variant: 'error' });
+        handleConnectionLoss(message || 'Session closed.');
         handleLogLine('', { className: 'session-closed-buffer', bypassFilters: true });
         handleLogLine(`--- SSH session closed on ${formattedTimestamp}`, {
             className: 'session-closed',
@@ -1220,7 +1209,7 @@
         }
 
         if (text.startsWith('Connection closed')) {
-            handleConnectionLoss('Connection closed.', { variant: 'error' });
+            handleConnectionLoss('Connection closed.');
             return;
         }
 
@@ -1480,7 +1469,7 @@
         if (!state.autoReconnectEnabled) {
             clearReconnectTimers();
         } else if (state.connectionState === 'disconnected') {
-            startReconnectCountdown('Connection closed.', { variant: 'error' });
+            startReconnectCountdown('Connection closed.');
         }
     });
 
@@ -1673,8 +1662,6 @@
             case 'error':
                 if (isDefaultLogCommandMessage(message.message)) {
                     setSecondaryStatus(message.message);
-                } else if (state.isLiveLog && state.autoReconnectEnabled && state.connectionState !== 'connected') {
-                    handleConnectionLoss(message.message || 'Connection closed.', { variant: 'error' });
                 } else {
                     updateStatus(message.message);
                 }

@@ -10,7 +10,7 @@ import { EmbeddedDevice } from './deviceTree';
 import { HighlightDefinition, SidebarViewProvider } from './sidebarView';
 import { LogPanel } from './logPanel';
 import { SshCommandRunner } from './sshCommandRunner';
-import { SshTerminalSession } from './sshTerminal';
+import { SshConsolePanel } from './sshConsolePanel';
 
 // Map of deviceId to existing log panels so multiple clicks reuse tabs.
 const panelMap: Map<string, LogPanel> = new Map();
@@ -135,11 +135,7 @@ export async function activate(context: vscode.ExtensionContext) {
                 return;
             }
 
-            const terminal = vscode.window.createTerminal({
-                name: `${device.name} SSH`,
-                pty: new SshTerminalSession(device, context),
-            });
-            terminal.show(true);
+            SshConsolePanel.createOrShow(device, context);
         }
     );
 

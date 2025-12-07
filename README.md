@@ -12,7 +12,8 @@ A Visual Studio Code extension that connects to embedded Linux devices over SSH,
 - Saved filter presets stored per device.
 - **Highlight up to 10 custom keywords** with color-coded, bold, underlined text in both live and imported logs.
 - **Find text inside live or imported logs** with Ctrl/Cmd+F, including next/previous navigation.
-- **Reconnect closed SSH sessions** directly from the log panel with a default-on auto-reconnect toggle that retries every 5 seconds and keeps the tab open.
+- **Reconnect closed SSH sessions** directly from the log panel and automatically mark the log when a device closes a session.
+- **Keep SSH console tabs open with auto-reconnect controls**: toggle auto-reconnect (on by default), view live status text, and use a disconnect/reconnect button while colour-coded tab frames show connection state.
 - **Export** currently visible (filtered) logs to a file.
 - **Auto-save** to file option for live SSH logs.
 - **Open any log files and filter them** with the same interface.
@@ -52,7 +53,7 @@ Add devices in your VS Code settings under `embeddedLogger.devices`:
 
 If no password is stored yet, the extension prompts for it when connecting and saves it locally and securely.
 
-- Set `enableSshTerminal` to `true` to show an **Open SSH Terminal** button alongside any configured SSH commands for that device. The **Open SSH Terminal** action opens a dedicated VS Code terminal tab for the device and authenticates using the stored password (prompting and saving it securely when missing).
+- Set `enableSshTerminal` to `true` to show an **Open SSH Terminal** button alongside any configured SSH commands for that device. The **Open SSH Terminal** action opens a dedicated SSH console tab with status text, a disconnect/reconnect button, and an auto-reconnect checkbox (enabled by default to retry every 5 seconds) while authenticating using the stored password (prompting and saving it securely when missing).
 
 - Control memory usage by capping retained lines per log tab with `embeddedLogger.maxLinesPerTab` (default: 100000). For auto-save, this limit is not applied to a file. Everything is saved.
 
@@ -61,7 +62,8 @@ If no password is stored yet, the extension prompts for it when connecting and s
 - **Colorization of lines* is performed based on the loglevel (DEBUG, INFO, ERROR, etc). If these keys are not present in the log, no colorization is be applied.
 - **Filtering presets** are stored per-device in the workspace state using the key `embeddedLogger.presets.<deviceId>`.
 - Exports only include log lines currently visible after applying filters.
-- When an SSH session closes, the log view appends `--- SSH session closed on <timestamp>` and surfaces a bold, red status message while auto-reconnecting every 5 seconds (when enabled) and keeping the tab open.
+- When an SSH session closes, the log view appends `--- SSH session closed on <timestamp>` and offers a **Reconnect** button next to the status text to restart streaming.
+- SSH console tabs show a bold red `SSH session closed on <timestamp>` status when a session drops and keep the tab open to reconnect if auto-reconnect is enabled.
 - Click the highlight icon in the Embedded Logger devices view to add up to ten highlight rows, each with its own colour and editable keyword that updates live and imported logs instantly.
 - Use the **Open Local Log File** button in the Embedded Logger devices view (or run the command with the same name) to select a `.log` or `.txt` file from your machine. The chosen file is loaded into the log viewer so you can reuse filtering, presets, export filtered logs and highlights just like a live connection.
 - **Status** text also shows messages from the log command used in the configuration like `tail -F /var/log/syslog`. So, some messages like: `tail: '/var/log/syslog' has appeared; following new file` may appear. This message in particular happens when the log file is rotated or recreated. The `-F` flag tells `tail` to keep watching for the file to reappear, so the message is informational and indicates that log streaming will continue with the new file. If you prefer a different log source, update the `logCommand` in your device configuration.

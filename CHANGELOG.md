@@ -10,11 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.8.1] - 2025-12-21 [CONSOLE-RECONNECT]
 
 ### Added
-- Add auto-reconnect checkbox to SSH console tabs (enabled by default) that retries every 5 seconds without closing the tab, showing bold red status when sessions drop.
-- Show connection status and reconnect/disconnect actions alongside the auto-reconnect toggle for quicker recovery.
+- Add auto-reconnect checkbox (enabled by default) plus status text and disconnect/reconnect controls to SSH console tabs opened from device cards.
+- Keep SSH console tabs open on disconnects, retrying every five seconds with colour-coded frames and bold red `SSH session closed on <timestamp>` notices.
 
 ### Changed
-- Update README and package assets for version 0.8.1.
+- None.
 
 ### Deprecated
 - None.
