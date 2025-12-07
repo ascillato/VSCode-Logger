@@ -231,16 +231,18 @@ export class SshConsolePanel implements vscode.Disposable {
         if (this.disposed) {
             return;
         }
+        const nextAttempt = Date.now() + this.reconnectDelayMs;
         this.reconnectTimer = setTimeout(() => {
             this.connect();
         }, this.reconnectDelayMs);
-        this.panel.webview.postMessage({ type: 'autoReconnectScheduled' });
+        this.panel.webview.postMessage({ type: 'autoReconnectScheduled', nextAttempt });
     }
 
     private cancelReconnect() {
         if (this.reconnectTimer) {
             clearTimeout(this.reconnectTimer);
             this.reconnectTimer = undefined;
+            this.panel.webview.postMessage({ type: 'autoReconnectCancelled' });
         }
     }
 
@@ -323,7 +325,7 @@ export class SshConsolePanel implements vscode.Disposable {
         <div class="console-header">
             <label class="auto-reconnect">
                 <input type="checkbox" id="autoReconnect" checked />
-                Auto-reconnect
+                Auto-Reconnect
             </label>
             <div class="status-group">
                 <span id="statusText" class="status status-default">Connecting…</span>

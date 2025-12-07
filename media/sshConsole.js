@@ -9,20 +9,70 @@
     const state = {
         connectionState: 'disconnected',
         autoReconnect: true,
+        statusText: '',
+        statusVariant: 'default',
+        nextAttemptAt: undefined,
+        countdownInterval: undefined,
     };
 
     function postReady() {
         vscode.postMessage({ type: 'ready' });
     }
 
+    function renderStatus() {
+        const now = Date.now();
+        const remaining =
+            state.nextAttemptAt && state.connectionState === 'disconnected' && state.autoReconnect
+                ? Math.ceil((state.nextAttemptAt - now) / 1000)
+                : undefined;
+
+        const suffix = remaining && remaining > 0 ? ` (reconnecting in ${remaining}s)` : '';
+        statusText.textContent = `${state.statusText}${suffix}`;
+        statusText.classList.toggle('status-closed', state.statusVariant === 'closed');
+        statusText.classList.toggle('status-default', state.statusVariant !== 'closed');
+    }
+
+    function clearCountdown() {
+        if (state.countdownInterval) {
+            clearInterval(state.countdownInterval);
+            state.countdownInterval = undefined;
+        }
+        state.nextAttemptAt = undefined;
+        renderStatus();
+    }
+
+    function startCountdown(nextAttemptAt) {
+        state.nextAttemptAt = nextAttemptAt;
+        if (state.countdownInterval) {
+            clearInterval(state.countdownInterval);
+        }
+        renderStatus();
+        state.countdownInterval = setInterval(() => {
+            if (!state.nextAttemptAt || state.connectionState !== 'disconnected' || !state.autoReconnect) {
+                clearCountdown();
+                return;
+            }
+
+            const remaining = Math.ceil((state.nextAttemptAt - Date.now()) / 1000);
+            if (remaining <= 0) {
+                clearCountdown();
+            } else {
+                renderStatus();
+            }
+        }, 500);
+    }
+
     function setStatus(text, variant) {
-        statusText.textContent = text || '';
-        statusText.classList.toggle('status-closed', variant === 'closed');
-        statusText.classList.toggle('status-default', variant !== 'closed');
+        state.statusText = text || '';
+        state.statusVariant = variant === 'closed' ? 'closed' : 'default';
+        renderStatus();
     }
 
     function setState(connectionState) {
         state.connectionState = connectionState;
+        if (connectionState !== 'disconnected') {
+            clearCountdown();
+        }
         consoleFrame.classList.remove('state-connected', 'state-connecting', 'state-disconnected');
         consoleFrame.classList.add(`state-${connectionState}`);
         connectionButton.textContent = connectionState === 'disconnected' ? 'Reconnect' : 'Disconnect';
@@ -98,7 +148,12 @@
                 setState(message.state);
                 break;
             case 'autoReconnectScheduled':
-                // no-op placeholder for future indicator
+                if (typeof message.nextAttempt === 'number') {
+                    startCountdown(message.nextAttempt);
+                }
+                break;
+            case 'autoReconnectCancelled':
+                clearCountdown();
                 break;
         }
     });
@@ -115,6 +170,9 @@
         const value = autoReconnect.checked;
         state.autoReconnect = value;
         vscode.postMessage({ type: 'setAutoReconnect', autoReconnect: value });
+        if (!value) {
+            clearCountdown();
+        }
     });
 
     terminalOutput.addEventListener('keydown', handleKey);
