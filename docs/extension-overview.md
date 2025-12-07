@@ -20,13 +20,13 @@ This document explains how the VSCode-Logger extension streams logs from embedde
 ## Data and control flow
 ```mermaid
 graph TD
-    A[Extension activation] --> B[getEmbeddedLoggerConfiguration]<br/>(devices + defaults)
+    A[Extension activation] --> B[getEmbeddedLoggerConfiguration]
     B --> C[Register sidebar view & commands]
     C --> D[Sidebar renders devices, highlights, SSH commands]
     D -- Open device --> E[embeddedLogger.openDevice]
     D -- Run SSH command --> M[SshCommandRunner executes via ssh2]
     D -- Open SSH terminal --> N[Create terminal using SshTerminalSession]
-    E --> F[Create LogPanel (remote or local)]
+    E --> F["Create LogPanel (remote or local)"]
     F --> G["Start LogSession for remote devices"]
     G --> H[Fetch credentials from Secret Storage or prompt]
     H --> I[Run logCommand via ssh2]
