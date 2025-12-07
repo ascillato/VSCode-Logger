@@ -16,7 +16,8 @@ MULTILINE_CPP_IS_BRIEF = YES
 CASE_SENSE_NAMES       = YES
 EXTENSION_MAPPING      = ts=JavaScript
 FILE_PATTERNS          = *.ts *.js *.d.ts *.md
-INPUT                  = README.md CHANGELOG.md CONTRIBUTING.md CODE_OF_CONDUCT.md SECURITY.md src media
+INPUT                  = README.md docs/extension-overview.md CHANGELOG.md CONTRIBUTING.md CODE_OF_CONDUCT.md SECURITY.md src media
+EXCLUDE_PATTERNS       = docs/html/* docs/latex/*
 IMAGE_PATH             = docs/images
 RECURSIVE              = YES
 FULL_PATH_NAMES        = NO

@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Surface default device options (port, log command, SSH terminal toggle, and shared SSH commands) plus the max-line limit as configurable fields in the VS Code Settings UI.
 - Provide JSON examples for device definitions and default SSH commands directly in the Settings descriptions.
+- Add Design Overview Document.
 
 ### Changed
 - Consolidate configuration resolution so default values apply consistently when loading devices and log panels.
