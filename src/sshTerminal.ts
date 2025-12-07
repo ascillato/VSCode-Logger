@@ -19,6 +19,10 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
     private client: Client | undefined;
     private shell: ClientChannel | undefined;
     private closed = false;
+    private reconnectTimer: NodeJS.Timeout | undefined;
+    private readonly reconnectDelayMs = 5000;
+    private passwordCache: string | undefined;
+    private hasConnected = false;
 
     constructor(private readonly device: EmbeddedDevice, private readonly context: vscode.ExtensionContext) {}
 
@@ -31,6 +35,7 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
             this.closed = true;
             this.closeEmitter.fire();
         }
+        this.clearReconnectTimer();
         this.shell?.end();
         this.client?.end();
     }
@@ -46,35 +51,50 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
     }
 
     private async start(initialDimensions?: vscode.TerminalDimensions): Promise<void> {
+        if (!vscode.workspace.isTrusted) {
+            const message = 'Workspace trust is required before connecting to devices.';
+            this.writeEmitter.fire(`${message}\r\n`);
+            vscode.window.showErrorMessage(message);
+            this.close();
+            return;
+        }
+
+        const validationError = this.validateDeviceConfiguration();
+        if (validationError) {
+            this.writeEmitter.fire(`Connection error: ${validationError}\r\n`);
+            vscode.window.showErrorMessage(validationError);
+            this.close();
+            return;
+        }
+
+        if (this.closed) {
+            return;
+        }
+
+        const password = this.passwordCache ?? (await this.getPassword());
+        if (!password) {
+            const message = 'Password is required to connect to the device.';
+            this.writeEmitter.fire(`${message}\r\n`);
+            vscode.window.showErrorMessage(message);
+            this.close();
+            return;
+        }
+
+        this.passwordCache = password;
+
+        if (this.closed) {
+            return;
+        }
+
         try {
-            if (!vscode.workspace.isTrusted) {
-                throw new Error('Workspace trust is required before connecting to devices.');
-            }
-
-            const validationError = this.validateDeviceConfiguration();
-            if (validationError) {
-                throw new Error(validationError);
-            }
-
-            if (this.closed) {
-                return;
-            }
-
-            const password = await this.getPassword();
-            if (!password) {
-                throw new Error('Password is required to connect to the device.');
-            }
-
-            if (this.closed) {
-                return;
-            }
-
             await this.connect(password, initialDimensions);
+            this.hasConnected = true;
         } catch (err: any) {
             const message = err?.message ?? String(err);
             this.writeEmitter.fire(`Connection error: ${message}\r\n`);
-            vscode.window.showErrorMessage(message);
-            this.close();
+            if (!this.closed) {
+                this.scheduleReconnect();
+            }
         }
     }
 
@@ -144,7 +164,7 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
                                 this.writeEmitter.fire(data.toString().replace(/\n/g, '\r\n'));
                             })
                             .on('close', () => {
-                                this.close();
+                                this.handleDisconnect('Connection closed.');
                             });
 
                         stream.stderr.on('data', (data: Buffer) => {
@@ -158,7 +178,7 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
                     reject(new Error(`SSH error: ${err.message}`));
                 })
                 .on('close', () => {
-                    this.close();
+                    this.handleDisconnect('Connection closed.');
                 })
                 .connect({
                     host,
@@ -167,5 +187,45 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
                     password,
                 });
         });
+    }
+
+    private handleDisconnect(reason: string): void {
+        if (this.closed) {
+            return;
+        }
+
+        const alreadyScheduled = Boolean(this.reconnectTimer);
+        this.cleanupConnection();
+        if (!alreadyScheduled) {
+            this.writeEmitter.fire(`${reason}\r\n`);
+            this.scheduleReconnect();
+        }
+    }
+
+    private scheduleReconnect(): void {
+        if (this.closed || this.reconnectTimer) {
+            return;
+        }
+
+        this.writeEmitter.fire(`Trying to reconnect in ${this.reconnectDelayMs / 1000} seconds...\r\n`);
+        this.reconnectTimer = setTimeout(() => {
+            this.reconnectTimer = undefined;
+            void this.start();
+        }, this.reconnectDelayMs);
+    }
+
+    private clearReconnectTimer(): void {
+        if (this.reconnectTimer) {
+            clearTimeout(this.reconnectTimer);
+            this.reconnectTimer = undefined;
+        }
+    }
+
+    private cleanupConnection(): void {
+        this.clearReconnectTimer();
+        this.shell?.end();
+        this.client?.end();
+        this.shell = undefined;
+        this.client = undefined;
     }
 }
