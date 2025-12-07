@@ -168,7 +168,7 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
                                 this.writeEmitter.fire(data.toString().replace(/\n/g, '\r\n'));
                             })
                             .on('close', () => {
-                                this.handleDisconnect('Connection closed.');
+                                this.handleDisconnect('Connection closed.', stream, client);
                             });
 
                         stream.stderr.on('data', (data: Buffer) => {
@@ -182,7 +182,7 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
                     reject(new Error(`SSH error: ${err.message}`));
                 })
                 .on('close', () => {
-                    this.handleDisconnect('Connection closed.');
+                    this.handleDisconnect('Connection closed.', undefined, client);
                 })
                 .connect({
                     host,
@@ -193,8 +193,16 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
         });
     }
 
-    private handleDisconnect(reason: string): void {
+    private handleDisconnect(reason: string, sourceShell?: ClientChannel, sourceClient?: Client): void {
         if (this.closed) {
+            return;
+        }
+
+        if (sourceShell && sourceShell !== this.shell) {
+            return;
+        }
+
+        if (sourceClient && sourceClient !== this.client) {
             return;
         }
 
