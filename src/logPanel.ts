@@ -10,6 +10,7 @@ import { LogSession } from './logSession';
 import * as fs from 'fs';
 import * as path from 'path';
 import { HighlightDefinition } from './sidebarView';
+import { getEmbeddedLoggerConfiguration } from './configuration';
 
 /**
  * @brief Saved filtering preferences for a device.
@@ -79,9 +80,7 @@ export class LogPanel {
 
         this.presetsKey = `embeddedLogger.presets.${this.targetId}`;
         this.highlights = initialHighlights;
-        const config = vscode.workspace.getConfiguration('embeddedLogger');
-        const configuredLimit = config.get<number>('maxLinesPerTab', 100000);
-        this.maxLogEntries = Math.max(1, configuredLimit || 100000);
+        this.maxLogEntries = getEmbeddedLoggerConfiguration().maxLinesPerTab;
 
         this.panel = vscode.window.createWebviewPanel(
             'embeddedLogger.logPanel',

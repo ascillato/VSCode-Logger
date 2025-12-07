@@ -11,6 +11,7 @@ import { HighlightDefinition, SidebarViewProvider } from './sidebarView';
 import { LogPanel } from './logPanel';
 import { SshCommandRunner } from './sshCommandRunner';
 import { SshTerminalSession } from './sshTerminal';
+import { getEmbeddedLoggerConfiguration } from './configuration';
 
 // Map of deviceId to existing log panels so multiple clicks reuse tabs.
 const panelMap: Map<string, LogPanel> = new Map();
@@ -64,12 +65,11 @@ async function migrateLegacyPasswords(context: vscode.ExtensionContext, devices:
  * @param context VS Code extension context provided on activation.
  */
 export async function activate(context: vscode.ExtensionContext) {
-    const config = vscode.workspace.getConfiguration('embeddedLogger');
-    const devices = config.get<EmbeddedDevice[]>('devices', []);
+    const { devices } = getEmbeddedLoggerConfiguration();
 
     await migrateLegacyPasswords(context, devices);
 
-    const getDevices = () => vscode.workspace.getConfiguration('embeddedLogger').get<EmbeddedDevice[]>('devices', []);
+    const getDevices = () => getEmbeddedLoggerConfiguration().devices;
 
     sidebarProvider = new SidebarViewProvider(
         context,
@@ -153,14 +153,14 @@ export async function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('embeddedLogger.editDevicesConfig', async () => {
-            await vscode.commands.executeCommand('workbench.action.openSettings', 'embeddedLogger.devices');
+            await vscode.commands.executeCommand('workbench.action.openSettings', 'embeddedLogger');
         })
     );
 
     context.subscriptions.push(
         vscode.commands.registerCommand('embeddedLogger.clearStoredPasswords', async () => {
             const config = vscode.workspace.getConfiguration('embeddedLogger');
-            const devices = config.get<EmbeddedDevice[]>('devices', []);
+            const devices = getDevices();
 
             if (!devices || devices.length === 0) {
                 vscode.window.showInformationMessage('No devices configured to clear passwords for.');
@@ -277,7 +277,7 @@ export async function activate(context: vscode.ExtensionContext) {
     // Refresh the tree when configuration changes.
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration((e) => {
-            if (e.affectsConfiguration('embeddedLogger.devices')) {
+            if (e.affectsConfiguration('embeddedLogger')) {
                 sidebarProvider?.refreshDevices();
             }
         })
