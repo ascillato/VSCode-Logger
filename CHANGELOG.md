@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - None.
 
 ### Security
-- None.
+- Enforce SSH host key verification.
 
 ----------------------------------------
 
