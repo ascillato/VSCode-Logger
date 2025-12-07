@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
-## [0.8.0] - 2025-12-20 [CONSOLE]
+## [0.8.0] - 2025-12-06 [CONSOLE]
 
 ### Added
 - Add Open SSH Terminal action alongside SSH commands in the Devices view when enabled, to open a dedicated terminal tab that uses stored or prompted passwords for authentication.
@@ -29,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
-## [0.7.0] - 2025-12-14 [COMMANDS]
+## [0.7.0] - 2025-12-06 [COMMANDS]
 
 ### Added
 - Allow configuring optional SSH commands per device and show them as collapsible lists in the Devices view.
