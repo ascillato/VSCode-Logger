@@ -5,7 +5,7 @@ The project documentation is now built with **Sphinx** so that Markdown content 
 ## Prerequisites
 
 1. Ensure Python 3.10+ is available.
-2. Install the documentation dependencies:
+2. Install the documentation dependencies (re-run this after pulling updates to pick up new plugins such as `linkify-it-py`):
 
    ```bash
    pip install -r docs/requirements.txt
