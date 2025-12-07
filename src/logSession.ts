@@ -7,6 +7,7 @@
 import * as vscode from 'vscode';
 import { Client } from 'ssh2';
 import { EmbeddedDevice } from './deviceTree';
+import { getPasswordWithWorkspaceScope } from './secrets';
 
 /**
  * @brief Callback contract used to surface session events to the UI.
@@ -55,7 +56,7 @@ export class LogSession {
             }
 
             const logCommand = this.getLogCommand();
-            const password = await this.getPassword();
+            const password = await getPasswordWithWorkspaceScope(this.context, this.device);
             if (!password) {
                 throw new Error('Password is required to connect to the device.');
             }
@@ -97,30 +98,6 @@ export class LogSession {
             throw new Error('Log command must not contain control characters or new lines.');
         }
         return command;
-    }
-
-    /**
-     * @brief Retrieves the password for the device, prompting the user if necessary.
-     * @returns The stored or newly entered password, or undefined when missing.
-     */
-    private async getPassword(): Promise<string | undefined> {
-        const key = `embeddedLogger.password.${this.device.id}`;
-        const stored = await this.context.secrets.get(key);
-        if (stored) {
-            return stored;
-        }
-
-        const input = await vscode.window.showInputBox({
-            prompt: `Enter SSH password for ${this.device.name}`,
-            password: true,
-            ignoreFocusOut: true,
-        });
-
-        if (input) {
-            await this.context.secrets.store(key, input);
-        }
-
-        return input;
     }
 
     /**

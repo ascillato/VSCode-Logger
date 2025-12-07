@@ -12,6 +12,7 @@ import { LogPanel } from './logPanel';
 import { SshCommandRunner } from './sshCommandRunner';
 import { SshTerminalSession } from './sshTerminal';
 import { getEmbeddedLoggerConfiguration } from './configuration';
+import { clearStoredPassword, migratePasswordToScopedKey } from './secrets';
 
 // Map of deviceId to existing log panels so multiple clicks reuse tabs.
 const panelMap: Map<string, LogPanel> = new Map();
@@ -45,14 +46,8 @@ function validateSshDevice(device: EmbeddedDevice): string | undefined {
  * @param devices The list of configured devices whose passwords need migration.
  */
 async function migrateLegacyPasswords(context: vscode.ExtensionContext, devices: EmbeddedDevice[]) {
-    const secrets = context.secrets;
     for (const device of devices) {
-        const key = `embeddedLogger.password.${device.id}`;
-        const existing = await secrets.get(key);
-        if (!existing && device.password) {
-            await secrets.store(key, device.password);
-            console.log(`Migrated password for device ${device.id} into secret storage.`);
-        }
+        await migratePasswordToScopedKey(context, device, device.password);
     }
 }
 
@@ -159,7 +154,6 @@ export async function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('embeddedLogger.clearStoredPasswords', async () => {
-            const config = vscode.workspace.getConfiguration('embeddedLogger');
             const devices = getDevices();
 
             if (!devices || devices.length === 0) {
@@ -168,8 +162,7 @@ export async function activate(context: vscode.ExtensionContext) {
             }
 
             for (const device of devices) {
-                const key = `embeddedLogger.password.${device.id}`;
-                await context.secrets.delete(key);
+                await clearStoredPassword(context, device);
             }
 
             vscode.window.showInformationMessage('Stored passwords have been removed for configured devices.');

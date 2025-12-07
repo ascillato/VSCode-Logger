@@ -27,7 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - None.
 
 ### Security
-- None.
+- Scope stored device passwords to the active workspace, host, and username to reduce cross-project reuse and prompt before
+  applying legacy secrets.
 
 ----------------------------------------
 

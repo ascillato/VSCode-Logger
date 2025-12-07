@@ -6,6 +6,7 @@
 import * as vscode from 'vscode';
 import { Client, ClientChannel } from 'ssh2';
 import { EmbeddedDevice } from './deviceTree';
+import { getPasswordWithWorkspaceScope } from './secrets';
 
 /**
  * @brief Pseudoterminal that proxies input/output to an SSH shell session.
@@ -60,7 +61,7 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
                 return;
             }
 
-            const password = await this.getPassword();
+            const password = await getPasswordWithWorkspaceScope(this.context, this.device);
             if (!password) {
                 throw new Error('Password is required to connect to the device.');
             }
@@ -91,26 +92,6 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
             return `Device "${this.device.name}" has an invalid port.`;
         }
         return undefined;
-    }
-
-    private async getPassword(): Promise<string | undefined> {
-        const key = `embeddedLogger.password.${this.device.id}`;
-        const stored = await this.context.secrets.get(key);
-        if (stored) {
-            return stored;
-        }
-
-        const input = await vscode.window.showInputBox({
-            prompt: `Enter SSH password for ${this.device.name}`,
-            password: true,
-            ignoreFocusOut: true,
-        });
-
-        if (input) {
-            await this.context.secrets.store(key, input);
-        }
-
-        return input;
     }
 
     private connect(password: string, initialDimensions?: vscode.TerminalDimensions): Promise<void> {

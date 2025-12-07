@@ -6,6 +6,7 @@
 import * as vscode from 'vscode';
 import { Client } from 'ssh2';
 import { EmbeddedDevice } from './deviceTree';
+import { getPasswordWithWorkspaceScope } from './secrets';
 
 export interface DeviceCommand {
     name: string;
@@ -39,7 +40,7 @@ export class SshCommandRunner {
         }
 
         const sanitizedCommand = this.sanitizeCommand(command.command);
-        const password = await this.getPassword();
+        const password = await getPasswordWithWorkspaceScope(this.context, this.device);
         if (!password) {
             throw new Error('Password is required to connect to the device.');
         }
@@ -71,26 +72,6 @@ export class SshCommandRunner {
             throw new Error('SSH command is empty.');
         }
         return trimmed;
-    }
-
-    private async getPassword(): Promise<string | undefined> {
-        const key = `embeddedLogger.password.${this.device.id}`;
-        const stored = await this.context.secrets.get(key);
-        if (stored) {
-            return stored;
-        }
-
-        const input = await vscode.window.showInputBox({
-            prompt: `Enter SSH password for ${this.device.name}`,
-            password: true,
-            ignoreFocusOut: true,
-        });
-
-        if (input) {
-            await this.context.secrets.store(key, input);
-        }
-
-        return input;
     }
 
     private executeCommand(command: string, password: string): Promise<string> {
