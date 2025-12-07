@@ -62,7 +62,7 @@
         "embeddedLogger.defaultSshCommands": {
           "type": "array",
           "description": "Reusable SSH commands automatically applied to devices that do not define their own list.",
-          "markdownDescription": "Reusable SSH commands automatically applied to devices that do not define their own list.\\n\\nExample:\\n```json\\n[\\n  { \"name\": \"Reboot\", \"command\": \"sudo reboot\" },\\n  { \"name\": \"Restart service\", \"command\": \"systemctl restart app.service\" }\\n]\\n```",
+          "markdownDescription": "Reusable SSH commands automatically applied to devices that do not define their own list.\n\nExample:\n```json\n[\n  { \"name\": \"Reboot\", \"command\": \"sudo reboot\" },\n  { \"name\": \"Restart service\", \"command\": \"systemctl restart app.service\" }\n]\n```",
           "items": {
             "type": "object",
             "properties": {
