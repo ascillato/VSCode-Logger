@@ -36,6 +36,7 @@ Add devices in your VS Code settings under `embeddedLogger.devices`:
     "id": "deviceA",
     "name": "Device A",
     "host": "192.168.1.10",
+    "hostFingerprint": "SHA256:your-device-fingerprint",
     "port": 22,
     "username": "root",
     "logCommand": "tail -F /var/log/syslog",
@@ -51,6 +52,8 @@ Add devices in your VS Code settings under `embeddedLogger.devices`:
 ```
 
 If no password is stored yet, the extension prompts for it when connecting and saves it locally and securely.
+
+- **Pin each device's host key** by setting `hostFingerprint` to the device's SSH host key fingerprint (for example, `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub -E sha256`). If no fingerprint is configured, the extension records the server's fingerprint on the first successful connection. When a server presents a different fingerprint later, you'll be prompted to accept the new value before reconnecting.
 
 - Set `enableSshTerminal` to `true` to show an **Open SSH Terminal** button alongside any configured SSH commands for that device. The **Open SSH Terminal** action opens a dedicated VS Code terminal tab for the device and authenticates using the stored password (prompting and saving it securely when missing).
 

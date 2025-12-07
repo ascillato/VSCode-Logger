@@ -13,6 +13,7 @@ export interface EmbeddedDevice {
     id: string;
     name: string;
     host: string;
+    hostFingerprint?: string;
     port?: number;
     username: string;
     password?: string; // legacy
