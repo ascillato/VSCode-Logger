@@ -143,7 +143,7 @@ export class SshConsolePanel implements vscode.Disposable {
         } catch (err: any) {
             const message = err?.message ?? String(err);
             vscode.window.showErrorMessage(message);
-            this.handleDisconnect(`SSH session closed on ${new Date().toLocaleString()}`, true);
+            this.handleDisconnect(`SSH session closed on ${new Date().toLocaleString()}`);
         }
     }
 
