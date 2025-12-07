@@ -23,10 +23,12 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
     private readonly reconnectDelayMs = 5000;
     private passwordCache: string | undefined;
     private hasConnected = false;
+    private lastDimensions: vscode.TerminalDimensions | undefined;
 
     constructor(private readonly device: EmbeddedDevice, private readonly context: vscode.ExtensionContext) {}
 
     open(initialDimensions?: vscode.TerminalDimensions): void {
+        this.lastDimensions = initialDimensions;
         void this.start(initialDimensions);
     }
 
@@ -45,6 +47,7 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
     }
 
     setDimensions(dimensions: vscode.TerminalDimensions): void {
+        this.lastDimensions = dimensions;
         if (this.shell) {
             this.shell.setWindow(dimensions.rows, dimensions.columns, dimensions.rows, dimensions.columns);
         }
@@ -148,8 +151,9 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
                         return;
                     }
 
-                    const cols = initialDimensions?.columns ?? 80;
-                    const rows = initialDimensions?.rows ?? 24;
+                    const dims = initialDimensions ?? this.lastDimensions;
+                    const cols = dims?.columns ?? 80;
+                    const rows = dims?.rows ?? 24;
                     client.shell({ term: 'xterm-color', cols, rows }, (err, stream) => {
                         if (err) {
                             reject(err);
@@ -195,9 +199,9 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
         }
 
         const alreadyScheduled = Boolean(this.reconnectTimer);
-        this.cleanupConnection();
+        this.cleanupConnection(alreadyScheduled);
         if (!alreadyScheduled) {
-            this.writeEmitter.fire(`${reason}\r\n`);
+            this.writeEmitter.fire(`\r\n\r\n\x1b[41m${reason}\x1b[0m\r\n`);
             this.scheduleReconnect();
         }
     }
@@ -221,8 +225,10 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
         }
     }
 
-    private cleanupConnection(): void {
-        this.clearReconnectTimer();
+    private cleanupConnection(preserveReconnectTimer = false): void {
+        if (!preserveReconnectTimer) {
+            this.clearReconnectTimer();
+        }
         this.shell?.end();
         this.client?.end();
         this.shell = undefined;
