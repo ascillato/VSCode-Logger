@@ -160,6 +160,12 @@
 
     connectionButton.addEventListener('click', () => {
         if (state.connectionState === 'connected') {
+            if (state.autoReconnect) {
+                autoReconnect.checked = false;
+                state.autoReconnect = false;
+                vscode.postMessage({ type: 'setAutoReconnect', autoReconnect: false });
+                clearCountdown();
+            }
             vscode.postMessage({ type: 'disconnect' });
         } else {
             vscode.postMessage({ type: 'reconnect' });
