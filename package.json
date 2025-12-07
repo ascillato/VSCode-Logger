@@ -3,7 +3,7 @@
   "displayName": "Embedded Device Logger",
   "description": "Stream and filter embedded Linux device logs over SSH inside VS Code.",
   "icon": "media/icon.png",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "publisher": "Scallant",
   "author": "A. Scillato",
   "engines": {
@@ -62,6 +62,7 @@
         "embeddedLogger.defaultSshCommands": {
           "type": "array",
           "description": "Reusable SSH commands automatically applied to devices that do not define their own list.",
+          "markdownDescription": "Reusable SSH commands automatically applied to devices that do not define their own list.\\n\\nExample:\\n```json\\n[\\n  { \"name\": \"Reboot\", \"command\": \"sudo reboot\" },\\n  { \"name\": \"Restart service\", \"command\": \"systemctl restart app.service\" }\\n]\\n```",
           "items": {
             "type": "object",
             "properties": {
