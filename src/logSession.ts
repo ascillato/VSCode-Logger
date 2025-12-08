@@ -7,6 +7,7 @@
 import * as vscode from 'vscode';
 import { Client } from 'ssh2';
 import { EmbeddedDevice } from './deviceTree';
+import { resolveSshAuthentication, SshAuthentication } from './sshAuthentication';
 
 /**
  * @brief Callback contract used to surface session events to the UI.
@@ -55,12 +56,9 @@ export class LogSession {
             }
 
             const logCommand = this.getLogCommand();
-            const password = await this.getPassword();
-            if (!password) {
-                throw new Error('Password is required to connect to the device.');
-            }
+            const auth = await resolveSshAuthentication(this.device, this.context);
 
-            await this.connect(password, logCommand);
+            await this.connect(auth, logCommand);
         } catch (err: any) {
             this.callbacks.onError(err?.message ?? String(err));
             this.dispose();
@@ -100,41 +98,21 @@ export class LogSession {
     }
 
     /**
-     * @brief Retrieves the password for the device, prompting the user if necessary.
-     * @returns The stored or newly entered password, or undefined when missing.
-     */
-    private async getPassword(): Promise<string | undefined> {
-        const key = `embeddedLogger.password.${this.device.id}`;
-        const stored = await this.context.secrets.get(key);
-        if (stored) {
-            return stored;
-        }
-
-        const input = await vscode.window.showInputBox({
-            prompt: `Enter SSH password for ${this.device.name}`,
-            password: true,
-            ignoreFocusOut: true,
-        });
-
-        if (input) {
-            await this.context.secrets.store(key, input);
-        }
-
-        return input;
-    }
-
-    /**
      * @brief Opens the SSH connection and starts the remote log command.
-     * @param password Password used for authentication.
+     * @param auth Authentication information for the connection.
      * @param logCommand Remote command to execute.
      * @returns Promise that resolves once streaming begins.
      */
-    private async connect(password: string, logCommand: string): Promise<void> {
+    private async connect(auth: SshAuthentication, logCommand: string): Promise<void> {
         return new Promise((resolve, reject) => {
             this.client = new Client();
             const port = this.device.port ?? 22;
             const host = this.device.host.trim();
             const username = this.device.username.trim();
+            const authOptions =
+                auth.type === 'password'
+                    ? { password: auth.password }
+                    : { privateKey: auth.privateKey, passphrase: auth.passphrase };
 
             this.callbacks.onStatus(`Connecting to ${host}:${port} ...`);
 
@@ -168,7 +146,7 @@ export class LogSession {
                     host,
                     port,
                     username,
-                    password,
+                    ...authOptions,
                 });
         });
     }

@@ -16,6 +16,8 @@ export interface EmbeddedDevice {
     port?: number;
     username: string;
     password?: string; // legacy
+    privateKeyPath?: string;
+    privateKeyPassphrase?: string; // legacy
     logCommand?: string;
     enableSshTerminal?: boolean;
     sshCommands?: { name: string; command: string }[];

@@ -5,7 +5,7 @@ This document explains how the VSCode-Logger extension streams logs from embedde
 ## Activation and configuration
 - **Activation trigger**: The extension activates when VS Code loads the workspace or when a contributed command or view is invoked.
 - **Configuration resolution**: Devices come from `embeddedLogger.devices` and are enriched with defaults from `embeddedLogger.defaultPort`, `embeddedLogger.defaultLogCommand`, `embeddedLogger.defaultEnableSshTerminal`, and `embeddedLogger.defaultSshCommands`. The max in-memory log history per tab comes from `embeddedLogger.maxLinesPerTab`.
-- **Password migration**: During activation, legacy plaintext passwords from settings are migrated into VS Code Secret Storage so future connections prompt the user instead of persisting raw secrets in configuration.
+- **Credential migration**: During activation, legacy plaintext passwords and SSH key passphrases from settings are migrated into VS Code Secret Storage so future connections prompt the user instead of persisting raw secrets in configuration.
 - **View and command registration**: Activation registers the devices sidebar Webview, highlight-row commands, device-level SSH command/terminal handlers, and `embeddedLogger.openDevice` so selecting a device item opens its log panel or launches auxiliary actions.
 
 ## Major components
@@ -13,8 +13,8 @@ This document explains how the VSCode-Logger extension streams logs from embedde
 - **Sidebar view (`src/sidebarView.ts` + `media/sidebarView.*`)**: Renders devices and highlight rows in a Webview. Users can open devices, run per-device SSH commands, open a dedicated SSH terminal when enabled, or manage highlight definitions that synchronize across log panels.
 - **Device tree (`src/deviceTree.ts`)**: Supplies device metadata to the sidebar view and tree interactions.
 - **Log panel (`src/logPanel.ts`)**: Creates a Webview panel per remote or local log source, injects assets, and wires callbacks for presets, exports, highlights, bookmarks, find/highlight rows, and status updates. It owns a `LogSession` for remote devices.
-- **`LogSession` (`src/logSession.ts`)**: Manages the SSH connection to a device, pulls credentials from secret storage or prompts the user, runs the log command, and forwards complete lines to the panel callbacks. It reports status changes and errors back to the Webview so the UI can react.
-- **SSH helpers (`src/sshCommandRunner.ts`, `src/sshTerminal.ts`)**: Execute one-off SSH commands from the sidebar or spawn an interactive SSH terminal using stored or prompted credentials.
+- **`LogSession` (`src/logSession.ts`)**: Manages the SSH connection to a device, pulls credentials (password or SSH key plus optional passphrase) from secret storage or prompts the user, runs the log command, and forwards complete lines to the panel callbacks. It reports status changes and errors back to the Webview so the UI can react.
+- **SSH helpers (`src/sshCommandRunner.ts`, `src/sshTerminal.ts`)**: Execute one-off SSH commands from the sidebar or spawn an interactive SSH terminal using stored or prompted credentials, supporting both password and key-based authentication.
 - **Webview clients (`media/loggerPanel.js` + `media/loggerPanel.css`)**: Receive log lines, parse severity, apply filters, manage presets and bookmarks, enforce the max-lines cap, and render the terminal-like UI. They can request preset persistence, deletion, exports, bookmark toggles, and highlight updates via `postMessage` events.
 
 ## Data and control flow
@@ -60,7 +60,7 @@ graph TD
 
 ### Strengths
 - Workspace trust gating prevents connections in untrusted workspaces before prompting for credentials. The log command is trimmed and checked for control characters to avoid obvious injection via newlines.
-- Secrets are stored in VS Code Secret Storage after prompting users, keeping interactive credentials off disk by default.
+- Secrets (passwords and SSH key passphrases) are stored in VS Code Secret Storage after prompting users, keeping interactive credentials off disk by default.
 - Webview UIs render log lines using `textContent` with a restrictive Content-Security-Policy that disallows remote scripts and limits styles to extension resources.
 - Webview CSPs block external scripts and restrict styles to bundled assets, reducing XSS risk. Log lines are inserted as text nodes, preventing HTML injection from streamed content.
 - Auto-reconnect logic includes visible status updates and timers

@@ -12,6 +12,10 @@ import { LogPanel } from './logPanel';
 import { SshCommandRunner } from './sshCommandRunner';
 import { SshTerminalSession } from './sshTerminal';
 import { getEmbeddedLoggerConfiguration } from './configuration';
+import {
+    getPasswordSecretKey,
+    getPrivateKeyPassphraseSecretKey,
+} from './sshAuthentication';
 
 // Map of deviceId to existing log panels so multiple clicks reuse tabs.
 const panelMap: Map<string, LogPanel> = new Map();
@@ -47,11 +51,30 @@ function validateSshDevice(device: EmbeddedDevice): string | undefined {
 async function migrateLegacyPasswords(context: vscode.ExtensionContext, devices: EmbeddedDevice[]) {
     const secrets = context.secrets;
     for (const device of devices) {
-        const key = `embeddedLogger.password.${device.id}`;
+        const key = getPasswordSecretKey(device.id);
         const existing = await secrets.get(key);
         if (!existing && device.password) {
             await secrets.store(key, device.password);
             console.log(`Migrated password for device ${device.id} into secret storage.`);
+        }
+    }
+}
+
+async function migrateLegacyPrivateKeyPassphrases(
+    context: vscode.ExtensionContext,
+    devices: EmbeddedDevice[]
+) {
+    const secrets = context.secrets;
+    for (const device of devices) {
+        if (!device.privateKeyPassphrase) {
+            continue;
+        }
+
+        const key = getPrivateKeyPassphraseSecretKey(device.id);
+        const existing = await secrets.get(key);
+        if (!existing) {
+            await secrets.store(key, device.privateKeyPassphrase);
+            console.log(`Migrated SSH key passphrase for device ${device.id} into secret storage.`);
         }
     }
 }
@@ -68,6 +91,7 @@ export async function activate(context: vscode.ExtensionContext) {
     const { devices } = getEmbeddedLoggerConfiguration();
 
     await migrateLegacyPasswords(context, devices);
+    await migrateLegacyPrivateKeyPassphrases(context, devices);
 
     const getDevices = () => getEmbeddedLoggerConfiguration().devices;
 
@@ -168,11 +192,15 @@ export async function activate(context: vscode.ExtensionContext) {
             }
 
             for (const device of devices) {
-                const key = `embeddedLogger.password.${device.id}`;
-                await context.secrets.delete(key);
+                const passwordKey = getPasswordSecretKey(device.id);
+                const passphraseKey = getPrivateKeyPassphraseSecretKey(device.id);
+                await context.secrets.delete(passwordKey);
+                await context.secrets.delete(passphraseKey);
             }
 
-            vscode.window.showInformationMessage('Stored passwords have been removed for configured devices.');
+            vscode.window.showInformationMessage(
+                'Stored passwords and SSH key passphrases have been removed for configured devices.'
+            );
         })
     );
 

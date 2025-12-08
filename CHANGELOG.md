@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [0.10.0] - 2026-02-14 [SSH-KEYS]
+
+### Added
+- Support SSH private key authentication (including encrypted keys) across log streaming, SSH commands, and interactive terminals, with passphrases stored in Secret Storage.
+
+### Changed
+- Clearing stored credentials now removes SSH key passphrases alongside passwords.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- None.
+
+### Security
+- None.
+
+----------------------------------------
+
 ## [0.9.0] - 2026-02-07 [SETTINGS]
 
 ### Added

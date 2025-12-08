@@ -19,7 +19,7 @@ A Visual Studio Code extension that connects to embedded Linux devices over SSH,
 - Add, edit and remove **Bookmarks** in live logs and imported logs.
 - Run optional **on-demand SSH commands** configured per device from the Devices view.
 - Optionally **launch an SSH terminal** directly from a device card when enabled in settings.
-- SSH passwords are **stored securely** with VS Code Secret Storage.
+- SSH passwords and SSH key passphrases are **stored securely** with VS Code Secret Storage.
 - **Privacy focused**. **No telemetry**. Everything **runs locally**.
 - **Built with security in mind**.
 
@@ -38,6 +38,7 @@ Add devices in your VS Code settings under `embeddedLogger.devices`:
     "host": "192.168.1.10",
     "port": 22,
     "username": "root",
+    "privateKeyPath": "~/.ssh/id_ed25519",
     "logCommand": "tail -F /var/log/syslog",
     "enableSshTerminal": true,
     "sshCommands": [
@@ -50,9 +51,11 @@ Add devices in your VS Code settings under `embeddedLogger.devices`:
 ]
 ```
 
-If no password is stored yet, the extension prompts for it when connecting and saves it locally and securely.
+If no password or SSH key passphrase is stored yet, the extension prompts for it when connecting and saves it locally and securely.
 
-- Set `enableSshTerminal` to `true` to show an **Open SSH Terminal** button alongside any configured SSH commands for that device. The **Open SSH Terminal** action opens a dedicated VS Code terminal tab for the device and authenticates using the stored password (prompting and saving it securely when missing).
+To use SSH keys, set `privateKeyPath` to the path of your private key (e.g. `~/.ssh/id_ed25519`). When the key is encrypted, the extension prompts for the passphrase once and stores it securely. Leave `privateKeyPath` unset to use password authentication instead.
+
+- Set `enableSshTerminal` to `true` to show an **Open SSH Terminal** button alongside any configured SSH commands for that device. The **Open SSH Terminal** action opens a dedicated VS Code terminal tab for the device and authenticates using the stored credentials (prompting and saving them securely when missing).
 
 - Control memory usage by capping retained lines per log tab with `embeddedLogger.maxLinesPerTab` (default: 100000). For auto-save, this limit is not applied to a file. Everything is saved.
 
@@ -100,7 +103,6 @@ If you find this extension useful, please [rate it](https://marketplace.visualst
 
 * **Add to SSH connections:**
 
-  - Support keys
   - Support going through a bastion
 
 * **Support SFTP**
@@ -129,12 +131,12 @@ If you find this extension useful, please [rate it](https://marketplace.visualst
 
 - Requires: `npm install -g @vscode/vsce`
 - Run: `vsce package` to generate vsix file to be installed into VSCode
-- Install locally on VSCode: `code --install-extension embedded-device-logger-0.9.0.vsix`
+- Install locally on VSCode: `code --install-extension embedded-device-logger-0.10.0.vsix`
 
 ### Clean and re-compile
 
 - `clear; rm -rf node_modules; rm -rf out; rm *.vsix; npm install; npm run compile; vsce package`
-- `code --install-extension embedded-device-logger-0.9.0.vsix`
+- `code --install-extension embedded-device-logger-0.10.0.vsix`
 
 ### Generating Source Code Documentation
 
