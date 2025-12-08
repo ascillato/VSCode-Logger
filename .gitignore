@@ -138,8 +138,12 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
-#docs
+# Documentation build outputs
 docs/html
+docs/api/*
+!docs/api/index.md
+build/
+site/
 
 #compiled
 *.vsix

@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Consolidate configuration resolution so default values apply consistently when loading devices and log panels.
+- Switch the documentation toolchain to MkDocs with Material and Doxybook2 for publishing the reference site.
 
 ### Deprecated
 - None.

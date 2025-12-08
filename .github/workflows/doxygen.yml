@@ -1,4 +1,4 @@
-name: Publish Doxygen Documentation
+name: Publish MkDocs Documentation
 
 permissions:
   contents: write
@@ -30,27 +30,49 @@ jobs:
               && echo "on_main=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Install Doxygen
+      - name: Set up Python
         if: steps.verify.outputs.on_main == 'true'
-        run: sudo apt-get update && sudo apt-get install -y doxygen graphviz
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
 
-      - name: Generate documentation
+      - name: Install documentation dependencies
+        if: steps.verify.outputs.on_main == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y doxygen graphviz jq
+          python -m pip install --upgrade pip
+          python -m pip install mkdocs mkdocs-material
+
+      - name: Install Doxybook2
+        if: steps.verify.outputs.on_main == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download --repo matusnovak/doxybook2 --pattern "*linux*.tar.gz" --dir /tmp/doxybook2
+          tar -xzf /tmp/doxybook2/*.tar.gz -C /tmp/doxybook2
+          DOXYBOOK2_BIN=$(find /tmp/doxybook2 -maxdepth 4 -type f -name doxybook2 | head -n 1)
+          sudo install -m 0755 "$DOXYBOOK2_BIN" /usr/local/bin/doxybook2
+
+      - name: Generate Doxygen XML
         if: steps.verify.outputs.on_main == 'true'
         run: doxygen Doxyfile
 
-      - name: Prepare GitHub Pages content
+      - name: Build API reference
         if: steps.verify.outputs.on_main == 'true'
         run: |
-          # The GitHub Pages workflow expects the site at ./docs/index.html
-          # Move the generated HTML output up one level so docs/ is the site root.
-          cp -a docs/html/. docs/
-          rm -rf docs/html
+          mkdir -p docs/api
+          rm -rf docs/api/*
+          doxybook2 --config doxybook/config.json --input build/doxygen/xml --output docs/api
+
+      - name: Build MkDocs site
+        if: steps.verify.outputs.on_main == 'true'
+        run: mkdocs build
 
       - name: Deploy to GitHub Pages
         if: steps.verify.outputs.on_main == 'true'
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs
+          publish_dir: ./site
           publish_branch: gh-pages
-          # force_orphan: true

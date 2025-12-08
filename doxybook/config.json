@@ -1,0 +1,7 @@
+{
+  "baseUrl": "/",
+  "generateToc": true,
+  "tocMaxDepth": 3,
+  "mainPageInNavbar": true,
+  "indexInNavbar": true
+}

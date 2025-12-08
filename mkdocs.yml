@@ -1,0 +1,35 @@
+site_name: VSCode Logger
+site_description: Streaming embedded Linux logs inside VS Code
+repo_url: https://github.com/ascillato/VSCode-Logger
+site_dir: site
+
+nav:
+  - Overview: index.md
+  - Extension Guide: extension-overview.md
+  - API Reference: api/index.md
+
+theme:
+  name: material
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.top
+    - content.code.copy
+  palette:
+    - scheme: default
+      primary: blue
+      accent: light blue
+
+markdown_extensions:
+  - admonition
+  - footnotes
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.highlight
+
+plugins:
+  - search

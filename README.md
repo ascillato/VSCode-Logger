@@ -138,6 +138,7 @@ If you find this extension useful, please [rate it](https://marketplace.visualst
 
 ### Generating Source Code Documentation
 
-1. Ensure Doxygen is available locally (`sudo apt-get install doxygen`).
-2. From the repository root, run `doxygen Doxyfile` to build the documentation into `docs/html`.
-3. Open `docs/html/index.html` in a browser to review the generated API reference.
+1. Ensure the documentation toolchain is installed locally: Doxygen (`sudo apt-get install doxygen`), Doxybook2 (download from the [Doxybook2 releases](https://github.com/matusnovak/doxybook2/releases)), and the MkDocs Material plugins (`pip install mkdocs mkdocs-material`).
+2. From the repository root, run `doxygen Doxyfile` to emit XML output under `build/doxygen/xml`.
+3. Convert the XML to MkDocs-ready Markdown with `doxybook2 --config doxybook/config.json --input build/doxygen/xml --output docs/api`.
+4. Build the site with `mkdocs build` and open `site/index.html` in a browser, or use `mkdocs serve` for a live preview.
