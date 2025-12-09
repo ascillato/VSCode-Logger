@@ -8,6 +8,7 @@ import * as vscode from 'vscode';
 import { createHash } from 'crypto';
 import { Client } from 'ssh2';
 import { EmbeddedDevice } from './deviceTree';
+import { PasswordManager } from './passwordManager';
 
 /**
  * @brief Callback contract used to surface session events to the UI.
@@ -42,6 +43,7 @@ export class LogSession {
     private closedNotified = false;
     private hostKeyFailure: { expected: string; received: string } | undefined;
     private lastSeenHostFingerprint: { display: string; hex: string } | undefined;
+    private readonly passwordManager: PasswordManager;
 
     /**
      * @brief Creates a new log session.
@@ -53,7 +55,9 @@ export class LogSession {
         private readonly device: EmbeddedDevice,
         private readonly context: vscode.ExtensionContext,
         private readonly callbacks: LogSessionCallbacks
-    ) {}
+    ) {
+        this.passwordManager = new PasswordManager(this.context);
+    }
 
     /**
      * @brief Starts the SSH session and begins streaming logs.
@@ -70,7 +74,7 @@ export class LogSession {
             }
 
             const logCommand = this.getLogCommand();
-            const password = await this.getPassword();
+            const password = await this.passwordManager.getPassword(this.device);
             if (!password) {
                 throw new Error('Password is required to connect to the device.');
             }
@@ -129,30 +133,6 @@ export class LogSession {
             throw new Error('Log command must not contain control characters or new lines.');
         }
         return command;
-    }
-
-    /**
-     * @brief Retrieves the password for the device, prompting the user if necessary.
-     * @returns The stored or newly entered password, or undefined when missing.
-     */
-    private async getPassword(): Promise<string | undefined> {
-        const key = `embeddedLogger.password.${this.device.id}`;
-        const stored = await this.context.secrets.get(key);
-        if (stored) {
-            return stored;
-        }
-
-        const input = await vscode.window.showInputBox({
-            prompt: `Enter SSH password for ${this.device.name}`,
-            password: true,
-            ignoreFocusOut: true,
-        });
-
-        if (input) {
-            await this.context.secrets.store(key, input);
-        }
-
-        return input;
     }
 
     /**

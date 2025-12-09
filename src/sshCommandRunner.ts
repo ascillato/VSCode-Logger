@@ -6,6 +6,7 @@
 import * as vscode from 'vscode';
 import { Client } from 'ssh2';
 import { EmbeddedDevice } from './deviceTree';
+import { PasswordManager } from './passwordManager';
 
 export interface DeviceCommand {
     name: string;
@@ -26,7 +27,11 @@ export class SshCommandError extends Error {
 }
 
 export class SshCommandRunner {
-    constructor(private readonly device: EmbeddedDevice, private readonly context: vscode.ExtensionContext) {}
+    private readonly passwordManager: PasswordManager;
+
+    constructor(private readonly device: EmbeddedDevice, private readonly context: vscode.ExtensionContext) {
+        this.passwordManager = new PasswordManager(this.context);
+    }
 
     async run(command: DeviceCommand): Promise<string> {
         if (!vscode.workspace.isTrusted) {
@@ -74,23 +79,7 @@ export class SshCommandRunner {
     }
 
     private async getPassword(): Promise<string | undefined> {
-        const key = `embeddedLogger.password.${this.device.id}`;
-        const stored = await this.context.secrets.get(key);
-        if (stored) {
-            return stored;
-        }
-
-        const input = await vscode.window.showInputBox({
-            prompt: `Enter SSH password for ${this.device.name}`,
-            password: true,
-            ignoreFocusOut: true,
-        });
-
-        if (input) {
-            await this.context.secrets.store(key, input);
-        }
-
-        return input;
+        return this.passwordManager.getPassword(this.device);
     }
 
     private executeCommand(command: string, password: string): Promise<string> {
