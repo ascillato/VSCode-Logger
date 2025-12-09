@@ -6,7 +6,10 @@
 
 import * as vscode from 'vscode';
 import { createHash } from 'crypto';
-import { Client } from 'ssh2';
+import * as fs from 'fs/promises';
+import * as os from 'os';
+import * as path from 'path';
+import { Client, ConnectConfig } from 'ssh2';
 import { EmbeddedDevice } from './deviceTree';
 import { PasswordManager } from './passwordManager';
 
@@ -74,14 +77,11 @@ export class LogSession {
             }
 
             const logCommand = this.getLogCommand();
-            const password = await this.passwordManager.getPassword(this.device);
-            if (!password) {
-                throw new Error('Password is required to connect to the device.');
-            }
+            const authentication = await this.getAuthentication();
 
             while (!this.disposed) {
                 try {
-                    await this.connect(password, logCommand);
+                    await this.connect(authentication, logCommand);
                     return;
                 } catch (err: any) {
                     if (err instanceof HostKeyMismatchError) {
@@ -135,13 +135,54 @@ export class LogSession {
         return command;
     }
 
+    private async getAuthentication(): Promise<Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>> {
+        const privateKeyPath = this.device.privateKeyPath?.trim();
+        if (privateKeyPath) {
+            const privateKey = await this.loadPrivateKey(privateKeyPath);
+            const passphrase = await this.passwordManager.getPassphrase(this.device);
+            return { privateKey, passphrase: passphrase || undefined };
+        }
+
+        const password = await this.passwordManager.getPassword(this.device);
+        if (!password) {
+            throw new Error('Password or private key is required to connect to the device.');
+        }
+
+        return { password };
+    }
+
+    private async loadPrivateKey(filePath: string): Promise<Buffer> {
+        const expanded = this.expandPath(filePath);
+        try {
+            const content = await fs.readFile(expanded);
+            if (!content.length) {
+                throw new Error('The private key file is empty.');
+            }
+            return content;
+        } catch (err: any) {
+            const reason = err?.message ?? String(err);
+            throw new Error(`Failed to read private key from ${expanded}: ${reason}`);
+        }
+    }
+
+    private expandPath(value: string): string {
+        const envExpanded = value.replace(/\$\{env:([^}]+)\}/g, (_, name: string) => process.env[name] ?? '');
+        const tildeExpanded = envExpanded.startsWith('~')
+            ? path.join(os.homedir(), envExpanded.slice(1))
+            : envExpanded;
+        return path.resolve(tildeExpanded);
+    }
+
     /**
      * @brief Opens the SSH connection and starts the remote log command.
-     * @param password Password used for authentication.
+     * @param authentication Authentication configuration for the SSH connection.
      * @param logCommand Remote command to execute.
      * @returns Promise that resolves once streaming begins.
      */
-    private async connect(password: string, logCommand: string): Promise<void> {
+    private async connect(
+        authentication: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>,
+        logCommand: string
+    ): Promise<void> {
         const expectedFingerprint = this.getExpectedFingerprint();
         this.hostKeyFailure = undefined;
         this.lastSeenHostFingerprint = undefined;
@@ -191,7 +232,7 @@ export class LogSession {
                     host,
                     port,
                     username,
-                    password,
+                    ...authentication,
                     hostHash: 'sha256',
                     hostVerifier: (key) => this.verifyHostKey(key, expectedFingerprint),
                 });

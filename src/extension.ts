@@ -52,33 +52,34 @@ async function migrateLegacyPasswords(
 ) {
     const secrets = context.secrets;
     const hasLegacyPasswords = devices.some((device) => device.password !== undefined);
+    const hasLegacyPassphrases = devices.some((device) => device.privateKeyPassphrase !== undefined);
 
     const sanitizeDevices = (entries: EmbeddedDevice[]) =>
         entries.map((device) => {
-            if (device.password === undefined) {
-                return device;
-            }
-
-            const { password: _password, ...rest } = device;
+            const { password: _password, privateKeyPassphrase: _passphrase, ...rest } = device;
             return rest;
         });
 
     for (const device of devices) {
-        if (device.password === undefined) {
-            continue;
+        if (device.password !== undefined) {
+            await passwordManager.storePassword(device, device.password);
+            await secrets.delete(`embeddedLogger.password.${device.id}`);
+            console.log(`Migrated password for device ${device.id} into secret storage.`);
         }
 
-        await passwordManager.storePassword(device, device.password);
-        await secrets.delete(`embeddedLogger.password.${device.id}`);
-        console.log(`Migrated password for device ${device.id} into secret storage.`);
+        if (device.privateKeyPassphrase !== undefined) {
+            await passwordManager.storePassphrase(device, device.privateKeyPassphrase);
+            await secrets.delete(`embeddedLogger.passphrase.${device.id}`);
+            console.log(`Migrated private key passphrase for device ${device.id} into secret storage.`);
+        }
     }
 
-    if (!hasLegacyPasswords) {
+    if (!hasLegacyPasswords && !hasLegacyPassphrases) {
         return;
     }
 
     const warningMessage =
-        'Passwords were migrated to Secret Storage, but the legacy "password" fields could not be removed. ' +
+        'Credentials were migrated to Secret Storage, but the legacy "password" or "privateKeyPassphrase" fields could not be removed. ' +
         'Please delete them from embeddedLogger.devices in your settings.';
 
     const workspaceFolders = vscode.workspace.workspaceFolders ?? [];
@@ -252,7 +253,7 @@ export async function activate(context: vscode.ExtensionContext) {
                 await passwordManager.clearPassword(device.id);
             }
 
-            vscode.window.showInformationMessage('Stored passwords have been removed for configured devices.');
+            vscode.window.showInformationMessage('Stored passwords and passphrases have been removed for configured devices.');
         })
     );
 

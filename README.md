@@ -19,7 +19,8 @@ A Visual Studio Code extension that connects to embedded Linux devices over SSH,
 - Add, edit and remove **Bookmarks** in live logs and imported logs.
 - Run optional **on-demand SSH commands** configured per device from the Devices view.
 - Optionally **launch an SSH terminal** directly from a device card when enabled in settings.
-- SSH passwords are **stored securely** with VS Code Secret Storage.
+- Authenticate with SSH passwords or private keys.
+- SSH passwords and private key passphrases are **stored securely** with VS Code Secret Storage.
 - **Privacy focused**. **No telemetry**. Everything **runs locally**.
 - **Built with security in mind**.
 
@@ -38,6 +39,7 @@ Add devices in your VS Code settings under `embeddedLogger.devices`:
     "host": "192.168.1.10",
     "hostFingerprint": "SHA256:your-device-fingerprint",
     "port": 22,
+    "privateKeyPath": "${env:HOME}/.ssh/id_ed25519",
     "username": "root",
     "logCommand": "tail -F /var/log/syslog",
     "enableSshTerminal": true,
@@ -51,11 +53,11 @@ Add devices in your VS Code settings under `embeddedLogger.devices`:
 ]
 ```
 
-If no password is stored yet, the extension prompts for it when connecting and saves it locally and securely.
+If no password is stored yet, the extension prompts for it when connecting and saves it locally and securely. When using an encrypted private key, the passphrase is requested once and stored securely in VS Code Secret Storage. Private key paths may include `~` or `${env:VAR}` tokens for convenience.
 
 - **Pin each device's host key** by setting `hostFingerprint` to the device's SSH host key fingerprint (for example, `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub -E sha256`). If no fingerprint is configured, the extension records the server's fingerprint on the first successful connection. When a server presents a different fingerprint later, you'll be prompted to accept the new value before reconnecting.
 
-- Set `enableSshTerminal` to `true` to show an **Open SSH Terminal** button alongside any configured SSH commands for that device. The **Open SSH Terminal** action opens a dedicated VS Code terminal tab for the device and authenticates using the stored password (prompting and saving it securely when missing).
+- Set `enableSshTerminal` to `true` to show an **Open SSH Terminal** button alongside any configured SSH commands for that device. The **Open SSH Terminal** action opens a dedicated VS Code terminal tab for the device and authenticates using the stored password or private key (prompting for and saving the credential securely when missing).
 
 - Control memory usage by capping retained lines per log tab with `embeddedLogger.maxLinesPerTab` (default: 100000). For auto-save, this limit is not applied to a file. Everything is saved.
 
@@ -103,7 +105,6 @@ If you find this extension useful, please [rate it](https://marketplace.visualst
 
 * **Add to SSH connections:**
 
-  - Support keys
   - Support going through a bastion
 
 * **Support SFTP**
@@ -132,12 +133,12 @@ If you find this extension useful, please [rate it](https://marketplace.visualst
 
 - Requires: `npm install -g @vscode/vsce`
 - Run: `vsce package` to generate vsix file to be installed into VSCode
-- Install locally on VSCode: `code --install-extension embedded-device-logger-0.9.0.vsix`
+- Install locally on VSCode: `code --install-extension embedded-device-logger-1.0.0.vsix`
 
 ### Clean and re-compile
 
 - `clear; rm -rf node_modules; rm -rf out; rm *.vsix; npm install; npm run compile; vsce package`
-- `code --install-extension embedded-device-logger-0.9.0.vsix`
+- `code --install-extension embedded-device-logger-1.0.0.vsix`
 
 ### Generating Source Code Documentation
 

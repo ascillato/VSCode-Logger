@@ -22,19 +22,61 @@ interface PasswordMetadata {
 
 const PASSWORD_PREFIX = 'embeddedLogger.password.';
 const PASSWORD_METADATA_PREFIX = 'embeddedLogger.passwordMetadata.';
+const PASSPHRASE_PREFIX = 'embeddedLogger.passphrase.';
+const PASSPHRASE_METADATA_PREFIX = 'embeddedLogger.passphraseMetadata.';
+
+type SecretKind = 'password' | 'passphrase';
+
+interface SecretConfig {
+    prefix: string;
+    metadataPrefix: string;
+    legacyKey?: (device: EmbeddedDevice) => string;
+    promptLabel: (device: EmbeddedDevice) => string;
+}
+
+const SECRET_CONFIG: Record<SecretKind, SecretConfig> = {
+    password: {
+        prefix: PASSWORD_PREFIX,
+        metadataPrefix: PASSWORD_METADATA_PREFIX,
+        legacyKey: (device) => `${PASSWORD_PREFIX}${device.id}`,
+        promptLabel: (device) => `Enter SSH password for ${device.name}`,
+    },
+    passphrase: {
+        prefix: PASSPHRASE_PREFIX,
+        metadataPrefix: PASSPHRASE_METADATA_PREFIX,
+        promptLabel: (device) => `Enter passphrase for ${device.name} private key`,
+    },
+};
 
 export class PasswordManager {
     constructor(private readonly context: vscode.ExtensionContext) {}
 
     async getPassword(device: EmbeddedDevice): Promise<string | undefined> {
+        return this.getSecret('password', device);
+    }
+
+    async getPassphrase(device: EmbeddedDevice): Promise<string | undefined> {
+        return this.getSecret('passphrase', device);
+    }
+
+    async storePassword(device: EmbeddedDevice, password: string): Promise<void> {
+        await this.storeSecret('password', device, password);
+    }
+
+    async storePassphrase(device: EmbeddedDevice, passphrase: string): Promise<void> {
+        await this.storeSecret('passphrase', device, passphrase);
+    }
+
+    private async getSecret(kind: SecretKind, device: EmbeddedDevice): Promise<string | undefined> {
         const host = device.host.trim();
         const username = device.username.trim();
         const workspaceScope = this.getWorkspaceScope();
-        const key = this.buildKey(device, workspaceScope.id);
+        const config = SECRET_CONFIG[kind];
+        const key = this.buildKey(config.prefix, device, workspaceScope.id);
 
         const existing = await this.context.secrets.get(key);
         if (existing) {
-            await this.saveMetadata(device.id, {
+            await this.saveMetadata(config.metadataPrefix, device.id, {
                 key,
                 host,
                 username,
@@ -44,32 +86,33 @@ export class PasswordManager {
             return existing;
         }
 
-        const migrated = await this.tryReuseStoredPassword(device, host, username, workspaceScope);
+        const migrated = await this.tryReuseStoredSecret(kind, device, host, username, workspaceScope);
         if (migrated) {
             return migrated;
         }
 
         const input = await vscode.window.showInputBox({
-            prompt: `Enter SSH password for ${device.name}`,
+            prompt: config.promptLabel(device),
             password: true,
             ignoreFocusOut: true,
         });
 
         if (input) {
-            await this.storePassword(device, input);
+            await this.storeSecret(kind, device, input);
         }
 
         return input;
     }
 
-    async storePassword(device: EmbeddedDevice, password: string): Promise<void> {
+    private async storeSecret(kind: SecretKind, device: EmbeddedDevice, value: string): Promise<void> {
         const host = device.host.trim();
         const username = device.username.trim();
         const workspaceScope = this.getWorkspaceScope();
-        const key = this.buildKey(device, workspaceScope.id);
+        const config = SECRET_CONFIG[kind];
+        const key = this.buildKey(config.prefix, device, workspaceScope.id);
 
-        await this.context.secrets.store(key, password);
-        await this.saveMetadata(device.id, {
+        await this.context.secrets.store(key, value);
+        await this.saveMetadata(config.metadataPrefix, device.id, {
             key,
             host,
             username,
@@ -78,29 +121,32 @@ export class PasswordManager {
         });
     }
 
-    private async tryReuseStoredPassword(
+    private async tryReuseStoredSecret(
+        kind: SecretKind,
         device: EmbeddedDevice,
         host: string,
         username: string,
         workspaceScope: WorkspaceScope
     ): Promise<string | undefined> {
-        const metadata = await this.getMetadata(device.id);
-        const legacyKey = `${PASSWORD_PREFIX}${device.id}`;
-        const legacyPassword = await this.context.secrets.get(legacyKey);
+        const config = SECRET_CONFIG[kind];
+        const metadata = await this.getMetadata(config.metadataPrefix, device.id);
+        const legacyKey = config.legacyKey?.(device);
+        const legacyValue = legacyKey ? await this.context.secrets.get(legacyKey) : undefined;
 
-        if (!metadata && legacyPassword) {
+        if (!metadata && legacyValue) {
             const reuseLegacy = await this.promptForReuse(
                 device,
                 username,
                 host,
                 'a previous version',
-                `${device.name}`
+                `${device.name}`,
+                kind === 'passphrase' ? 'passphrase' : 'password'
             );
 
             if (reuseLegacy) {
-                await this.storePassword(device, legacyPassword);
-                await this.context.secrets.delete(legacyKey);
-                return legacyPassword;
+                await this.storeSecret(kind, device, legacyValue);
+                await this.context.secrets.delete(legacyKey!);
+                return legacyValue;
             }
             return undefined;
         }
@@ -125,7 +171,8 @@ export class PasswordManager {
                 username,
                 host,
                 metadata.workspaceLabel || 'another workspace',
-                `${metadata.username}@${metadata.host}`
+                `${metadata.username}@${metadata.host}`,
+                kind === 'passphrase' ? 'passphrase' : 'password'
             );
             if (!reuse) {
                 return undefined;
@@ -133,11 +180,11 @@ export class PasswordManager {
         }
 
         await this.context.secrets.store(
-            this.buildKey(device, workspaceScope.id),
+            this.buildKey(config.prefix, device, workspaceScope.id),
             candidate
         );
-        await this.saveMetadata(device.id, {
-            key: this.buildKey(device, workspaceScope.id),
+        await this.saveMetadata(config.metadataPrefix, device.id, {
+            key: this.buildKey(config.prefix, device, workspaceScope.id),
             host,
             username,
             workspaceId: workspaceScope.id,
@@ -147,10 +194,10 @@ export class PasswordManager {
         return candidate;
     }
 
-    private buildKey(device: EmbeddedDevice, workspaceId: string): string {
+    private buildKey(prefix: string, device: EmbeddedDevice, workspaceId: string): string {
         const hostHash = this.hashValue(device.host.trim().toLowerCase());
         const userHash = this.hashValue(device.username.trim());
-        return `${PASSWORD_PREFIX}${device.id}.${workspaceId}.${hostHash}.${userHash}`;
+        return `${prefix}${device.id}.${workspaceId}.${hostHash}.${userHash}`;
     }
 
     private getWorkspaceScope(): WorkspaceScope {
@@ -164,8 +211,8 @@ export class PasswordManager {
         };
     }
 
-    private async getMetadata(deviceId: string): Promise<PasswordMetadata | undefined> {
-        const raw = await this.context.secrets.get(`${PASSWORD_METADATA_PREFIX}${deviceId}`);
+    private async getMetadata(prefix: string, deviceId: string): Promise<PasswordMetadata | undefined> {
+        const raw = await this.context.secrets.get(`${prefix}${deviceId}`);
         if (!raw) {
             return undefined;
         }
@@ -181,21 +228,24 @@ export class PasswordManager {
         }
     }
 
-    private async saveMetadata(deviceId: string, metadata: PasswordMetadata): Promise<void> {
-        await this.context.secrets.store(
-            `${PASSWORD_METADATA_PREFIX}${deviceId}`,
-            JSON.stringify(metadata)
-        );
+    private async saveMetadata(prefix: string, deviceId: string, metadata: PasswordMetadata): Promise<void> {
+        await this.context.secrets.store(`${prefix}${deviceId}`, JSON.stringify(metadata));
     }
 
     async clearPassword(deviceId: string): Promise<void> {
-        const metadata = await this.getMetadata(deviceId);
+        await this.clearSecret('password', deviceId);
+        await this.clearSecret('passphrase', deviceId);
+    }
+
+    private async clearSecret(kind: SecretKind, deviceId: string): Promise<void> {
+        const config = SECRET_CONFIG[kind];
+        const metadata = await this.getMetadata(config.metadataPrefix, deviceId);
         if (metadata?.key) {
             await this.context.secrets.delete(metadata.key);
         }
 
-        await this.context.secrets.delete(`${PASSWORD_PREFIX}${deviceId}`);
-        await this.context.secrets.delete(`${PASSWORD_METADATA_PREFIX}${deviceId}`);
+        await this.context.secrets.delete(`${config.prefix}${deviceId}`);
+        await this.context.secrets.delete(`${config.metadataPrefix}${deviceId}`);
     }
 
     private async promptForReuse(
@@ -203,11 +253,12 @@ export class PasswordManager {
         username: string,
         host: string,
         source: string,
-        storedFor: string
+        storedFor: string,
+        secretLabel: string
     ): Promise<boolean> {
-        const reuseOption = 'Reuse saved password';
-        const enterNewOption = 'Enter a new password';
-        const message = `A saved password for ${device.name} exists from ${source} (${storedFor}). ` +
+        const reuseOption = `Reuse saved ${secretLabel}`;
+        const enterNewOption = `Enter a new ${secretLabel}`;
+        const message = `A saved ${secretLabel} for ${device.name} exists from ${source} (${storedFor}). ` +
             `Do you want to reuse it for ${username}@${host}?`;
 
         const choice = await vscode.window.showWarningMessage(message, { modal: true }, reuseOption, enterNewOption);

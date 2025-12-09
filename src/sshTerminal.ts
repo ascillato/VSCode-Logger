@@ -4,7 +4,10 @@
  */
 
 import * as vscode from 'vscode';
-import { Client, ClientChannel } from 'ssh2';
+import * as fs from 'fs/promises';
+import * as os from 'os';
+import * as path from 'path';
+import { Client, ClientChannel, ConnectConfig } from 'ssh2';
 import { EmbeddedDevice } from './deviceTree';
 import { PasswordManager } from './passwordManager';
 
@@ -64,16 +67,13 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
                 return;
             }
 
-            const password = await this.passwordManager.getPassword(this.device);
-            if (!password) {
-                throw new Error('Password is required to connect to the device.');
-            }
+            const authentication = await this.getAuthentication();
 
             if (this.closed) {
                 return;
             }
 
-            await this.connect(password, initialDimensions);
+            await this.connect(authentication, initialDimensions);
         } catch (err: any) {
             const message = err?.message ?? String(err);
             this.writeEmitter.fire(`Connection error: ${message}\r\n`);
@@ -97,7 +97,26 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
         return undefined;
     }
 
-    private connect(password: string, initialDimensions?: vscode.TerminalDimensions): Promise<void> {
+    private async getAuthentication(): Promise<Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>> {
+        const privateKeyPath = this.device.privateKeyPath?.trim();
+        if (privateKeyPath) {
+            const privateKey = await this.loadPrivateKey(privateKeyPath);
+            const passphrase = await this.passwordManager.getPassphrase(this.device);
+            return { privateKey, passphrase: passphrase || undefined };
+        }
+
+        const password = await this.passwordManager.getPassword(this.device);
+        if (!password) {
+            throw new Error('Password or private key is required to connect to the device.');
+        }
+
+        return { password };
+    }
+
+    private connect(
+        authentication: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>,
+        initialDimensions?: vscode.TerminalDimensions
+    ): Promise<void> {
         return new Promise((resolve, reject) => {
             const client = new Client();
             this.client = client;
@@ -148,8 +167,30 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
                     host,
                     port,
                     username,
-                    password,
+                    ...authentication,
                 });
         });
+    }
+
+    private async loadPrivateKey(filePath: string): Promise<Buffer> {
+        const expanded = this.expandPath(filePath);
+        try {
+            const content = await fs.readFile(expanded);
+            if (!content.length) {
+                throw new Error('The private key file is empty.');
+            }
+            return content;
+        } catch (err: any) {
+            const reason = err?.message ?? String(err);
+            throw new Error(`Failed to read private key from ${expanded}: ${reason}`);
+        }
+    }
+
+    private expandPath(value: string): string {
+        const envExpanded = value.replace(/\$\{env:([^}]+)\}/g, (_, name: string) => process.env[name] ?? '');
+        const tildeExpanded = envExpanded.startsWith('~')
+            ? path.join(os.homedir(), envExpanded.slice(1))
+            : envExpanded;
+        return path.resolve(tildeExpanded);
     }
 }

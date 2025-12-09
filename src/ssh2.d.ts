@@ -12,6 +12,8 @@ declare module 'ssh2' {
         port?: number;
         username: string;
         password?: string;
+        privateKey?: string | Buffer;
+        passphrase?: string;
         hostHash?: string;
         hostVerifier?: (key: string | Buffer) => boolean;
     }
