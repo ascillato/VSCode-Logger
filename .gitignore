@@ -140,6 +140,8 @@ vite.config.ts.timestamp-*
 
 #docs
 docs/html
+docs/build
+docs/xml
 
 #compiled
 *.vsix
