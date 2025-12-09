@@ -27,6 +27,7 @@ WARN_IF_DOC_ERROR      = YES
 GENERATE_HTML          = YES
 HTML_OUTPUT            = html
 GENERATE_LATEX         = NO
-GENERATE_XML           = NO
+GENERATE_XML           = YES
+XML_OUTPUT             = xml
 USE_MDFILE_AS_MAINPAGE = README.md
 ALIASES                = copyright="@copyright"

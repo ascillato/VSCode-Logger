@@ -143,5 +143,9 @@ If you find this extension useful, please [rate it](https://marketplace.visualst
 ### Generating Source Code Documentation
 
 1. Ensure Doxygen is available locally (`sudo apt-get install doxygen`).
-2. From the repository root, run `doxygen Doxyfile` to build the documentation into `docs/html`.
-3. Open `docs/html/index.html` in a browser to review the generated API reference.
+2. Install Python documentation dependencies: `pip install -r docs/requirements.txt`.
+3. From the repository root, run `doxygen Doxyfile` to build the XML output into `docs/xml`.
+4. Build the full site with Sphinx: `sphinx-build -b html docs/source docs/build/html`.
+5. Open `docs/build/html/index.html` locally or visit the published docs at https://ascillato.github.io/VSCode-Logger/.
+
+> GitHub Actions automatically runs this pipeline on pushes to `main` and publishes to the `gh-pages` branch.
