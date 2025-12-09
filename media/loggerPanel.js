@@ -1137,6 +1137,20 @@
         updateStatus(message || 'Connection closed.', { disableButton: false });
     }
 
+    function handleHostKeyMismatch(expected, received) {
+        state.autoReconnectEnabled = false;
+        if (autoReconnectToggle) {
+            autoReconnectToggle.checked = false;
+            autoReconnectToggle.disabled = true;
+        }
+        clearReconnectTimers();
+        setConnectionState('disconnected');
+        const message = expected && received
+            ? `Host key verification failed. Expected ${expected} but received ${received}. Update the fingerprint to reconnect.`
+            : 'Host key verification failed. Update the stored fingerprint before reconnecting.';
+        updateStatus(message, { disableButton: false });
+    }
+
     /**
      * @brief Handles session closed notifications by updating status and appending a marker line.
      * @param message Status message provided by the extension host.
@@ -1199,6 +1213,9 @@
         if (text.startsWith('Connected')) {
             setConnectionState('connected');
             updateStatus(text, { disableButton: false });
+            if (autoReconnectToggle) {
+                autoReconnectToggle.disabled = false;
+            }
             return;
         }
 
@@ -1665,6 +1682,9 @@
                 } else {
                     updateStatus(message.message);
                 }
+                break;
+            case 'hostKeyMismatch':
+                handleHostKeyMismatch(message.expected, message.received);
                 break;
             case 'sessionClosed':
                 handleSessionClosed(message.message, message.closedAt);

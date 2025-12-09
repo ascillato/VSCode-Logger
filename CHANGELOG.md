@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 - Migrate legacy device passwords to Secret Storage and clear plaintext values from settings when possible.
+- Enforce SSH host key verification.
 
 ----------------------------------------
 

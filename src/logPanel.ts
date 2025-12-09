@@ -206,7 +206,15 @@ export class LogPanel {
             onError: (message) => this.panel.webview.postMessage({ type: 'error', message }),
             onStatus: (message) => this.panel.webview.postMessage({ type: 'status', message }),
             onClose: () => this.handleSessionClose(),
+            onHostKeyMismatch: (details) => this.handleHostKeyMismatch(details),
         });
+    }
+
+    private async handleHostKeyMismatch(details: { expected: string; received: string }) {
+        await this.panel.webview.postMessage({ type: 'hostKeyMismatch', ...details });
+        void vscode.window.showErrorMessage(
+            `Host key verification failed for ${this.targetName}. Expected ${details.expected} but received ${details.received}. Update the fingerprint in settings to reconnect.`
+        );
     }
 
     /**

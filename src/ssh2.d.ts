@@ -12,6 +12,8 @@ declare module 'ssh2' {
         port?: number;
         username: string;
         password?: string;
+        hostHash?: string;
+        hostVerifier?: (key: string | Buffer) => boolean;
     }
 
     export interface ClientChannel extends EventEmitter {
