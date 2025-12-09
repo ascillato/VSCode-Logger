@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [1.0.0] - 2026-02-08 [SSH-KEYS]
+
+### Added
+- Support authenticating with SSH private keys (including passphrases) for log streaming, SSH commands, and interactive terminals.
+- Expand private key paths that include `~` or `${env:VAR}` tokens for convenience.
+
+### Changed
+- Migrate legacy private key passphrases into VS Code Secret Storage alongside passwords.
+- Bump extension version to 1.0.0.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- None.
+
+### Security
+- Store SSH private key passphrases securely in Secret Storage and sanitize configuration to remove inlined secrets when possible.
+
+----------------------------------------
+
 ## [0.9.0] - 2026-02-07 [SETTINGS]
 
 ### Added

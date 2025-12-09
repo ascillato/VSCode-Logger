@@ -4,7 +4,10 @@
  */
 
 import * as vscode from 'vscode';
-import { Client } from 'ssh2';
+import * as fs from 'fs/promises';
+import * as os from 'os';
+import * as path from 'path';
+import { Client, ConnectConfig } from 'ssh2';
 import { EmbeddedDevice } from './deviceTree';
 import { PasswordManager } from './passwordManager';
 
@@ -44,12 +47,9 @@ export class SshCommandRunner {
         }
 
         const sanitizedCommand = this.sanitizeCommand(command.command);
-        const password = await this.getPassword();
-        if (!password) {
-            throw new Error('Password is required to connect to the device.');
-        }
+        const authentication = await this.getAuthentication();
 
-        return this.executeCommand(sanitizedCommand, password);
+        return this.executeCommand(sanitizedCommand, authentication);
     }
 
     private validateDeviceConfiguration(): string | undefined {
@@ -78,11 +78,26 @@ export class SshCommandRunner {
         return trimmed;
     }
 
-    private async getPassword(): Promise<string | undefined> {
-        return this.passwordManager.getPassword(this.device);
+    private async getAuthentication(): Promise<Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>> {
+        const privateKeyPath = this.device.privateKeyPath?.trim();
+        if (privateKeyPath) {
+            const privateKey = await this.loadPrivateKey(privateKeyPath);
+            const passphrase = await this.passwordManager.getPassphrase(this.device);
+            return { privateKey, passphrase: passphrase || undefined };
+        }
+
+        const password = await this.passwordManager.getPassword(this.device);
+        if (!password) {
+            throw new Error('Password or private key is required to connect to the device.');
+        }
+
+        return { password };
     }
 
-    private executeCommand(command: string, password: string): Promise<string> {
+    private executeCommand(
+        command: string,
+        authentication: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>
+    ): Promise<string> {
         return new Promise((resolve, reject) => {
             const client = new Client();
             const port = this.device.port ?? 22;
@@ -147,8 +162,30 @@ export class SshCommandRunner {
                     host,
                     port,
                     username,
-                    password,
+                    ...authentication,
                 });
         });
+    }
+
+    private async loadPrivateKey(filePath: string): Promise<Buffer> {
+        const expanded = this.expandPath(filePath);
+        try {
+            const content = await fs.readFile(expanded);
+            if (!content.length) {
+                throw new Error('The private key file is empty.');
+            }
+            return content;
+        } catch (err: any) {
+            const reason = err?.message ?? String(err);
+            throw new Error(`Failed to read private key from ${expanded}: ${reason}`);
+        }
+    }
+
+    private expandPath(value: string): string {
+        const envExpanded = value.replace(/\$\{env:([^}]+)\}/g, (_, name: string) => process.env[name] ?? '');
+        const tildeExpanded = envExpanded.startsWith('~')
+            ? path.join(os.homedir(), envExpanded.slice(1))
+            : envExpanded;
+        return path.resolve(tildeExpanded);
     }
 }

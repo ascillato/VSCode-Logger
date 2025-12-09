@@ -3,7 +3,7 @@
   "displayName": "Embedded Device Logger",
   "description": "Stream and filter embedded Linux device logs over SSH inside VS Code.",
   "icon": "media/icon.png",
-  "version": "0.9.0",
+  "version": "1.0.0",
   "publisher": "Scallant",
   "author": "A. Scillato",
   "engines": {
@@ -119,6 +119,17 @@
                 "description": "Legacy password field; stored to secret storage on first use.",
                 "default": ""
               },
+              "privateKeyPath": {
+                "type": "string",
+                "description": "Path to an SSH private key to authenticate with instead of a password.",
+                "markdownDescription": "Path to an SSH private key to authenticate with instead of a password.\n\nExamples:\n- `/home/user/.ssh/id_ed25519`\n- `${env:HOME}/.ssh/id_rsa`",
+                "default": ""
+              },
+              "privateKeyPassphrase": {
+                "type": "string",
+                "description": "Legacy passphrase field for encrypted keys; stored to secret storage on first use.",
+                "default": ""
+              },
               "logCommand": {
                 "type": "string",
                 "description": "Command to stream logs (defaults to tail -F /var/log/syslog).",
@@ -165,6 +176,7 @@
               "host": "192.168.1.10",
               "hostFingerprint": "SHA256:replace-with-device-fingerprint",
               "port": 22,
+              "privateKeyPath": "${env:HOME}/.ssh/id_ed25519",
               "username": "root",
               "logCommand": "tail -F /var/log/syslog",
               "enableSshTerminal": true,
