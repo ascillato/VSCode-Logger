@@ -15,7 +15,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Migrate legacy private key passphrases into VS Code Secret Storage alongside passwords.
-- Bump extension version to 1.0.0.
 
 ### Deprecated
 - None.
