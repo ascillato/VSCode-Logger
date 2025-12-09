@@ -1,5 +1,5 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="Node000000" title=" " alt="" coords="5,5,193,31"/>
-<area shape="rect" id="Node000001" href="$classDeviceTreeDataProvider.html" title="Tree provider that lists configured devices." alt="" coords="241,5,420,31"/>
-<area shape="poly" id="edge4_Node000000_Node000001" title=" " alt="" coords="207,15,241,15,241,21,207,21"/>
+<area shape="rect" id="Node000000" title=" " alt="" coords="5,5,184,31"/>
+<area shape="rect" id="Node000001" href="$classSshTerminalSession.html" title="Pseudoterminal that proxies input/output to an SSH shell session." alt="" coords="232,5,383,31"/>
+<area shape="poly" id="edge4_Node000000_Node000001" title=" " alt="" coords="198,15,232,15,232,21,198,21"/>
 </map>

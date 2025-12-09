@@ -1,13 +1,20 @@
 var searchData=
 [
-  ['embedded_20device_20logger_0',['Embedded Device Logger',['../index.html',1,'']]],
-  ['embeddeddevice_1',['EmbeddedDevice',['../deviceTree_8ts.html#a79002184a69cc451004e7311917c4644',1,'deviceTree.ts']]],
-  ['enforcement_2',['Enforcement',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CODE__OF__CONDUCT.html#autotoc_md90',1,'']]],
-  ['enforcement_20guidelines_3',['Enforcement Guidelines',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CODE__OF__CONDUCT.html#autotoc_md91',1,'']]],
-  ['enforcement_20responsibilities_4',['Enforcement Responsibilities',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CODE__OF__CONDUCT.html#autotoc_md88',1,'']]],
-  ['eventemitter_5',['EventEmitter',['../ssh2_8d_8ts.html#a9202370736ee3612830d8ec3606ab41f',1,'ssh2.d.ts']]],
-  ['exportlogs_6',['exportLogs',['../classLogPanel.html#a47578d54f47cf4f5e00f883e1599291a',1,'LogPanel']]],
-  ['extension_20locally_7',['Running The Extension Locally',['../index.html#autotoc_md10',1,'']]],
-  ['extension_2ets_8',['extension.ts',['../extension_8ts.html',1,'']]],
-  ['extensions_9',['Share Activity Bar with other extensions',['../index.html#autotoc_md4',1,'']]]
+  ['data_20and_20control_20flow_0',['Data and control flow',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2docs_2extension-overview.html#autotoc_md19',1,'']]],
+  ['deactivate_1',['deactivate',['../extension_8ts.html#a8dcc8f9ef7ae7d655cfd17784e16f01d',1,'extension.ts']]],
+  ['deletepreset_2',['deletePreset',['../classLogPanel.html#a10d4bd31601caf5a4dc8f3aeadfe3627',1,'LogPanel']]],
+  ['deprecated_3',['deprecated',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md85',1,'Deprecated'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md77',1,'Deprecated'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md69',1,'Deprecated'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md61',1,'Deprecated'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md53',1,'Deprecated'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md45',1,'Deprecated'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md37',1,'Deprecated'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md29',1,'Deprecated']]],
+  ['details_4',['Lifecycle details',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2docs_2extension-overview.html#autotoc_md20',1,'']]],
+  ['developers_5',['For Developers',['../index.html#autotoc_md9',1,'']]],
+  ['development_6',['Setup and development',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html#autotoc_md95',1,'']]],
+  ['device_7',['device',['../classLogPanel.html#a98925453191807557ada30e7ad91e12b',1,'LogPanel']]],
+  ['device_20logger_8',['Embedded Device Logger',['../index.html',1,'']]],
+  ['devicecommand_9',['DeviceCommand',['../sshCommandRunner_8ts.html#aa33314a312c0b4de6f115960d0f5b67d',1,'sshCommandRunner.ts']]],
+  ['deviceitem_10',['DeviceItem',['../classDeviceItem.html',1,'']]],
+  ['devicetree_2ets_11',['deviceTree.ts',['../deviceTree_8ts.html',1,'']]],
+  ['devicetreedataprovider_12',['DeviceTreeDataProvider',['../classDeviceTreeDataProvider.html',1,'']]],
+  ['disconnect_13',['disconnect',['../classLogPanel.html#a6711453942883bad1421077ebf9a7de0',1,'LogPanel']]],
+  ['dispose_14',['dispose',['../classLogSession.html#a92b932a7dde722db0ac362c9d540255c',1,'LogSession::dispose()'],['../classLogPanel.html#a882d4b32e4450037527cd246d60ca4d1',1,'LogPanel::dispose()']]],
+  ['disposed_15',['disposed',['../classLogSession.html#a3c0f5ea1ba91b3247d3329dee9280b2d',1,'LogSession::disposed'],['../classLogPanel.html#ab8305554400c48dd806a5491681e9954',1,'LogPanel::disposed']]],
+  ['documentation_16',['documentation',['../index.html#autotoc_md15',1,'Generating Source Code Documentation'],['../index.html#autotoc_md11',1,'Source Code Documentation']]]
 ];

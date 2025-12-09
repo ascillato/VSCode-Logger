@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['writeemitter_0',['writeEmitter',['../classSshTerminalSession.html#aa16b1e5d892fa96ef71d3d01679f1db7',1,'SshTerminalSession']]]
+  ['undefined_0',['undefined',['../classLogSession.html#a92023fdb98a09f37b9c016bebbe44dec',1,'LogSession']]]
 ];

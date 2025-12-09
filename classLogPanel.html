@@ -108,6 +108,9 @@ Private Member Functions</h2></td></tr>
 <tr class="memitem:a0530e568c5d2ed38c4c9a4f842000347" id="r_a0530e568c5d2ed38c4c9a4f842000347"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLogPanel.html#a0530e568c5d2ed38c4c9a4f842000347">createSession</a> ()</td></tr>
 <tr class="memdesc:a0530e568c5d2ed38c4c9a4f842000347"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a new log session wired to the current panel callbacks.  <br /></td></tr>
 <tr class="separator:a0530e568c5d2ed38c4c9a4f842000347"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2d936b0a32a73e2d1f787efa4c1c3ea2" id="r_a2d936b0a32a73e2d1f787efa4c1c3ea2"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLogPanel.html#a2d936b0a32a73e2d1f787efa4c1c3ea2">handleIncomingLine</a> (line:string)</td></tr>
+<tr class="memdesc:a2d936b0a32a73e2d1f787efa4c1c3ea2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Forwards an incoming log line to the Webview and any active auto-save stream.  <br /></td></tr>
+<tr class="separator:a2d936b0a32a73e2d1f787efa4c1c3ea2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9340da6e285509b537dc9423072ddbea" id="r_a9340da6e285509b537dc9423072ddbea"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classLogPanel.html#a9340da6e285509b537dc9423072ddbea">writeAutoSaveLine</a> (line:string)</td></tr>
 <tr class="memdesc:a9340da6e285509b537dc9423072ddbea"><td class="mdescLeft">&#160;</td><td class="mdescRight">Attempts to write a log line to the active auto-save stream.  <br /></td></tr>
 <tr class="separator:a9340da6e285509b537dc9423072ddbea"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -307,12 +310,6 @@ Private Attributes</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Creates a new log session wired to the current panel callbacks. </p>
-<p>Forwards an incoming log line to the Webview and any active auto-save stream. </p><dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">line</td><td>Raw log line emitted by the SSH session. </td></tr>
-  </table>
-  </dd>
-</dl>
 
 </div>
 </div>
@@ -518,6 +515,40 @@ Private Attributes</h2></td></tr>
 <p>Builds the HTML string loaded into the Webview. </p>
 <dl class="section return"><dt>Returns</dt><dd>HTML markup with scripts, styles, and initial data payload.</dd></dl>
 <p>Retrieves saved presets from workspace state. </p><dl class="section return"><dt>Returns</dt><dd>The array of stored presets, or an empty array when none exist. </dd></dl>
+
+</div>
+</div>
+<a id="a2d936b0a32a73e2d1f787efa4c1c3ea2" name="a2d936b0a32a73e2d1f787efa4c1c3ea2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2d936b0a32a73e2d1f787efa4c1c3ea2">&#9670;&#160;</a></span>handleIncomingLine()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">LogPanel::handleIncomingLine </td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>line:string</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Forwards an incoming log line to the Webview and any active auto-save stream. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">line</td><td>Raw log line emitted by the SSH session. </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>

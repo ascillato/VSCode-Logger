@@ -1,7 +1,21 @@
 var searchData=
 [
-  ['ban_0',['ban',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CODE__OF__CONDUCT.html#autotoc_md94',1,'3. Temporary Ban'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CODE__OF__CONDUCT.html#autotoc_md95',1,'4. Permanent Ban']]],
-  ['bar_20with_20other_20extensions_1',['Share Activity Bar with other extensions',['../index.html#autotoc_md4',1,'']]],
-  ['bookmarks_2',['[0.6.0] - 2025-12-06 [BOOKMARKS]',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md32',1,'']]],
-  ['buffer_3',['buffer',['../classLogSession.html#ad8b1eb14f73dea9fb79b859a53e56720',1,'LogSession']]]
+  ['a_20vulnerability_0',['Reporting a Vulnerability',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2SECURITY.html#autotoc_md116',1,'']]],
+  ['activate_1',['activate',['../extension_8ts.html#af87179ad96c9c65d63b5a740b170248a',1,'extension.ts']]],
+  ['activation_20and_20configuration_2',['Activation and configuration',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2docs_2extension-overview.html#autotoc_md17',1,'']]],
+  ['activepanel_3',['activePanel',['../extension_8ts.html#acdb3903b7f204dd2eb33937d12daab4c',1,'extension.ts']]],
+  ['activity_20bar_20with_20other_20extensions_4',['Share Activity Bar with other extensions',['../index.html#autotoc_md4',1,'']]],
+  ['added_5',['added',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md51',1,'Added'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md91',1,'Added'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md83',1,'Added'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md75',1,'Added'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md67',1,'Added'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md59',1,'Added'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md43',1,'Added'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md35',1,'Added'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md27',1,'Added']]],
+  ['adding_20new_20features_6',['Adding new features',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html#autotoc_md98',1,'']]],
+  ['and_20configuration_7',['Activation and configuration',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2docs_2extension-overview.html#autotoc_md17',1,'']]],
+  ['and_20control_20flow_8',['Data and control flow',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2docs_2extension-overview.html#autotoc_md19',1,'']]],
+  ['and_20development_9',['Setup and development',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html#autotoc_md95',1,'']]],
+  ['and_20highlights_10',['[0.3.0] - 2025-11-30 [SEARCH-AND-HIGHLIGHTS]',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md74',1,'']]],
+  ['and_20publishing_11',['Versioning and publishing',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html#autotoc_md101',1,'']]],
+  ['and_20re_20compile_12',['Clean and re-compile',['../index.html#autotoc_md14',1,'']]],
+  ['appendsessionclosedmarker_13',['appendSessionClosedMarker',['../classLogPanel.html#ada2a584716d0713dea7c983b05b6e00e',1,'LogPanel']]],
+  ['architecture_20overview_14',['VSCode-Logger Architecture Overview',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2docs_2extension-overview.html',1,'']]],
+  ['attribution_15',['Attribution',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CODE__OF__CONDUCT.html#autotoc_md114',1,'']]],
+  ['auto_20autoscroll_16',['[0.5.0] - 2025-12-03 [AUTO-AUTOSCROLL]',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md58',1,'']]],
+  ['autoscroll_17',['[0.5.0] - 2025-12-03 [AUTO-AUTOSCROLL]',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md58',1,'']]]
 ];

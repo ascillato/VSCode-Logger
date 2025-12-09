@@ -1,15 +1,11 @@
 var searchData=
 [
-  ['listener_0',['listener',['../ssh2_8d_8ts.html#a96db2f2a626e4950f7cd47c1b0f3b513',1,'ssh2.d.ts']]],
-  ['locallogtarget_1',['LocalLogTarget',['../logPanel_8ts.html#a4b873a1073d60768ad5ba4bff7731a50',1,'logPanel.ts']]],
-  ['locally_2',['Running The Extension Locally',['../index.html#autotoc_md10',1,'']]],
-  ['log_20files_3',['[0.2.0] - 2025-11-30 [LOG-FILES]',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md64',1,'']]],
-  ['logger_4',['Embedded Device Logger',['../index.html',1,'']]],
-  ['loggerpanel_2ejs_5',['loggerPanel.js',['../loggerPanel_8js.html',1,'']]],
-  ['logpanel_6',['logpanel',['../classLogPanel.html',1,'LogPanel'],['../extension_8ts.html#a9ae2ee473822fd73f304dfdd84c42d20',1,'LogPanel:&#160;extension.ts']]],
-  ['logpanel_2ets_7',['logPanel.ts',['../logPanel_8ts.html',1,'']]],
-  ['logpaneltarget_8',['LogPanelTarget',['../logPanel_8ts.html#a9e99e6e2984f3df9d4d03b1525fd65d1',1,'logPanel.ts']]],
-  ['logsession_9',['LogSession',['../classLogSession.html',1,'']]],
-  ['logsession_2ets_10',['logSession.ts',['../logSession_8ts.html',1,'']]],
-  ['logsessioncallbacks_11',['LogSessionCallbacks',['../logSession_8ts.html#a0b193a330738859ca68016a2273f14ed',1,'logSession.ts']]]
+  ['if_0',['if',['../classLogSession.html#a186b3ae4b4bdac0099b6beed887d7064',1,'LogSession::if(!fingerprint)'],['../classLogSession.html#a68d4f33bfd428d595058952919e16966',1,'LogSession::if(!trimmed)'],['../classLogSession.html#a10d06bddc9e83cdc70b38bad1d71b1b9',1,'LogSession::if(base64Pattern.test(base64Candidate))'],['../classLogSession.html#ab4c6c63e10eee8d5b9de7bcddab6833a',1,'LogSession::if(isValidHex)']]],
+  ['incomingmessage_1',['IncomingMessage',['../sidebarView_8ts.html#ad45fe784e92278be39e679ff85757402',1,'sidebarView.ts']]],
+  ['initial_2',['[0.1.1] - 2025-11-29 [INITIAL]',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CHANGELOG.html#autotoc_md90',1,'']]],
+  ['initiallines_3',['initialLines',['../classLogPanel.html#a0f472c7758169d509fa14b8eab229f00',1,'LogPanel']]],
+  ['installation_4',['Installation',['../index.html#autotoc_md5',1,'']]],
+  ['isstringarray_5',['isStringArray',['../classLogPanel.html#aafce5d9161feca51f197c28734c20f06',1,'LogPanel']]],
+  ['isvalidhex_6',['isValidHex',['../classLogSession.html#a7b50a077987f79ce2534e1cb1764afff',1,'LogSession']]],
+  ['isvalidpresetpayload_7',['isValidPresetPayload',['../classLogPanel.html#aea61e4c7d77824a1c3c78d4cae98bb76',1,'LogPanel']]]
 ];

@@ -1,5 +1,7 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="Node000000" title=" " alt="" coords="5,5,59,31"/>
-<area shape="rect" id="Node000001" href="$classSshCommandError.html" title=" " alt="" coords="107,5,249,31"/>
-<area shape="poly" id="edge1_Node000000_Node000001" title=" " alt="" coords="72,15,106,15,106,21,72,21"/>
+<area shape="rect" id="Node000000" title=" " alt="" coords="5,31,59,56"/>
+<area shape="rect" id="Node000001" href="$classHostKeyMismatchError.html" title=" " alt="" coords="107,5,277,31"/>
+<area shape="poly" id="edge1_Node000000_Node000001" title=" " alt="" coords="72,34,111,28,112,33,73,40"/>
+<area shape="rect" id="Node000002" href="$classSshCommandError.html" title=" " alt="" coords="121,55,263,80"/>
+<area shape="poly" id="edge2_Node000000_Node000002" title=" " alt="" coords="73,47,121,54,120,59,72,52"/>
 </map>

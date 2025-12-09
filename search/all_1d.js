@@ -1,10 +1,9 @@
 var searchData=
 [
-  ['warning_0',['2. Warning',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CODE__OF__CONDUCT.html#autotoc_md93',1,'']]],
-  ['webview_20guidelines_1',['Webview guidelines',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html#autotoc_md82',1,'']]],
-  ['with_20other_20extensions_2',['Share Activity Bar with other extensions',['../index.html#autotoc_md4',1,'']]],
-  ['with_20ssh_20connections_3',['Working with SSH connections',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html#autotoc_md81',1,'']]],
-  ['working_20with_20ssh_20connections_4',['Working with SSH connections',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html#autotoc_md81',1,'']]],
-  ['writeautosaveline_5',['writeAutoSaveLine',['../classLogPanel.html#a9340da6e285509b537dc9423072ddbea',1,'LogPanel']]],
-  ['writeemitter_6',['writeEmitter',['../classSshTerminalSession.html#aa16b1e5d892fa96ef71d3d01679f1db7',1,'SshTerminalSession']]]
+  ['validatesshdevice_0',['validateSshDevice',['../extension_8ts.html#a12a0e006d7ed8267ee3e00fba46dc904',1,'extension.ts']]],
+  ['verifyhostkey_1',['verifyHostKey',['../classLogSession.html#a7b177094787dc43fabf6de00955e6749',1,'LogSession']]],
+  ['versioning_20and_20publishing_2',['Versioning and publishing',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html#autotoc_md101',1,'']]],
+  ['vscode‑logger_3',['Contributing Guidelines for VSCode‑Logger',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html',1,'']]],
+  ['vscode_20logger_20architecture_20overview_4',['VSCode-Logger Architecture Overview',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2docs_2extension-overview.html',1,'']]],
+  ['vulnerability_5',['Reporting a Vulnerability',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2SECURITY.html#autotoc_md116',1,'']]]
 ];

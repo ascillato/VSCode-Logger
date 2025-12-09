@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['new_20features_0',['Adding new features',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html#autotoc_md80',1,'']]],
-  ['notes_1',['Notes',['../index.html#autotoc_md3',1,'']]]
+  ['major_20components_0',['Major components',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2docs_2extension-overview.html#autotoc_md18',1,'']]],
+  ['maxlogentries_1',['maxLogEntries',['../classLogPanel.html#ad706dc7870d3c9ef2278ce8d3bf3b41b',1,'LogPanel']]]
 ];
