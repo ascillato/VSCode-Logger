@@ -12,6 +12,7 @@ import { LogPanel } from './logPanel';
 import { SshCommandRunner } from './sshCommandRunner';
 import { SshTerminalSession } from './sshTerminal';
 import { getEmbeddedLoggerConfiguration } from './configuration';
+import { PasswordManager } from './passwordManager';
 
 // Map of deviceId to existing log panels so multiple clicks reuse tabs.
 const panelMap: Map<string, LogPanel> = new Map();
@@ -44,7 +45,11 @@ function validateSshDevice(device: EmbeddedDevice): string | undefined {
  * @param context The extension context used to access SecretStorage.
  * @param devices The list of configured devices whose passwords need migration.
  */
-async function migrateLegacyPasswords(context: vscode.ExtensionContext, devices: EmbeddedDevice[]) {
+async function migrateLegacyPasswords(
+    context: vscode.ExtensionContext,
+    devices: EmbeddedDevice[],
+    passwordManager: PasswordManager
+) {
     const secrets = context.secrets;
     const hasLegacyPasswords = devices.some((device) => device.password !== undefined);
 
@@ -63,12 +68,9 @@ async function migrateLegacyPasswords(context: vscode.ExtensionContext, devices:
             continue;
         }
 
-        const key = `embeddedLogger.password.${device.id}`;
-        const existing = await secrets.get(key);
-        if (!existing) {
-            await secrets.store(key, device.password);
-            console.log(`Migrated password for device ${device.id} into secret storage.`);
-        }
+        await passwordManager.storePassword(device, device.password);
+        await secrets.delete(`embeddedLogger.password.${device.id}`);
+        console.log(`Migrated password for device ${device.id} into secret storage.`);
     }
 
     if (!hasLegacyPasswords) {
@@ -144,9 +146,10 @@ async function migrateLegacyPasswords(context: vscode.ExtensionContext, devices:
  * @param context VS Code extension context provided on activation.
  */
 export async function activate(context: vscode.ExtensionContext) {
+    const passwordManager = new PasswordManager(context);
     const { devices } = getEmbeddedLoggerConfiguration();
 
-    await migrateLegacyPasswords(context, devices);
+    await migrateLegacyPasswords(context, devices, passwordManager);
 
     const getDevices = () => getEmbeddedLoggerConfiguration().devices;
 
@@ -238,7 +241,6 @@ export async function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(
         vscode.commands.registerCommand('embeddedLogger.clearStoredPasswords', async () => {
-            const config = vscode.workspace.getConfiguration('embeddedLogger');
             const devices = getDevices();
 
             if (!devices || devices.length === 0) {
@@ -247,8 +249,7 @@ export async function activate(context: vscode.ExtensionContext) {
             }
 
             for (const device of devices) {
-                const key = `embeddedLogger.password.${device.id}`;
-                await context.secrets.delete(key);
+                await passwordManager.clearPassword(device.id);
             }
 
             vscode.window.showInformationMessage('Stored passwords have been removed for configured devices.');
