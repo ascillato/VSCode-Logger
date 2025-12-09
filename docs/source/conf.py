@@ -75,6 +75,15 @@ breathe_domain_by_extension = {
 # building docs, so this mainly helps local preview builds.
 have_doxygen = (_doxygen_xml / "index.xml").exists()
 
+
+def setup(app):
+    """Register custom configuration values for Sphinx extensions."""
+
+    # ``ifconfig`` directives rely on config values registered with Sphinx.
+    # Expose ``have_doxygen`` so API pages can conditionally render when the
+    # XML output is available without raising NameError.
+    app.add_config_value("have_doxygen", have_doxygen, "env")
+
 # -- Options for HTML output -------------------------------------------------
 html_theme = "furo"
 html_static_path = ["_static"]
