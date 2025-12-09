@@ -4,6 +4,8 @@ import sys
 import warnings
 from datetime import datetime
 from pathlib import Path
+from sphinx.highlighting import lexers
+from pygments.lexers.special import TextLexer
 
 # -- Path setup --------------------------------------------------------------
 # Add project root to sys.path if extensions or autodoc need it in the future.
@@ -75,14 +77,19 @@ breathe_domain_by_extension = {
 # building docs, so this mainly helps local preview builds.
 have_doxygen = (_doxygen_xml / "index.xml").exists()
 
+# Map Mermaid fenced blocks to a no-op lexer to silence warnings about the
+# language not being known to Pygments when rendering code fences.
+lexers["mermaid"] = TextLexer()
+
 
 def setup(app):
     """Register custom configuration values for Sphinx extensions."""
 
     # ``ifconfig`` directives rely on config values registered with Sphinx.
-    # Expose ``have_doxygen`` so API pages can conditionally render when the
-    # XML output is available without raising NameError.
-    app.add_config_value("have_doxygen", have_doxygen, "env")
+    # Provide a default and then set the computed value so cached environments
+    # from previous builds reload cleanly even when the value is new.
+    app.add_config_value("have_doxygen", False, "env", types=[bool])
+    app.config.have_doxygen = have_doxygen
 
 # -- Options for HTML output -------------------------------------------------
 html_theme = "furo"
