@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['if_0',['if',['../classLogSession.html#a186b3ae4b4bdac0099b6beed887d7064',1,'LogSession::if(!fingerprint)'],['../classLogSession.html#a68d4f33bfd428d595058952919e16966',1,'LogSession::if(!trimmed)'],['../classLogSession.html#a10d06bddc9e83cdc70b38bad1d71b1b9',1,'LogSession::if(base64Pattern.test(base64Candidate))'],['../classLogSession.html#ab4c6c63e10eee8d5b9de7bcddab6833a',1,'LogSession::if(isValidHex)']]],
+  ['if_0',['if',['../logSession_8ts.html#a8c767c91396520222656966c70631cff',1,'if(!fingerprint):&#160;logSession.ts'],['../logSession_8ts.html#ac42526c181dedcfad914dab5e2756fab',1,'if(base64Pattern.test(base64Candidate)):&#160;logSession.ts'],['../logSession_8ts.html#ad672e820880b7593a1574b9f4bd66c59',1,'if(isValidHex):&#160;logSession.ts']]],
   ['isstringarray_1',['isStringArray',['../classLogPanel.html#aafce5d9161feca51f197c28734c20f06',1,'LogPanel']]],
   ['isvalidpresetpayload_2',['isValidPresetPayload',['../classLogPanel.html#aea61e4c7d77824a1c3c78d4cae98bb76',1,'LogPanel']]]
 ];

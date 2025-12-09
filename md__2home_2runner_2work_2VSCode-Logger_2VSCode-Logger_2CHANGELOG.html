@@ -77,18 +77,17 @@ $(function() {
 <p>The format is based on <a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a>, and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
 <hr  />
 <h1><a class="anchor" id="autotoc_md26"></a>
-[0.9.0] - 2026-02-07 [SETTINGS]</h1>
+[1.0.0] - 2025-12-08 [SSH-KEYS]</h1>
 <h2><a class="anchor" id="autotoc_md27"></a>
 Added</h2>
 <ul>
-<li>Surface default device options (port, log command, SSH terminal toggle, and shared SSH commands) plus the max-line limit as configurable fields in the VS Code Settings UI.</li>
-<li>Provide JSON examples for device definitions and default SSH commands directly in the Settings descriptions.</li>
-<li>Add Design Overview Document.</li>
+<li>Support authenticating with SSH private keys (including passphrases) for log streaming, SSH commands, and interactive terminals.</li>
+<li>Expand private key paths that include <code>~</code> or <code>${env:VAR}</code> tokens for convenience.</li>
 </ul>
 <h2><a class="anchor" id="autotoc_md28"></a>
 Changed</h2>
 <ul>
-<li>Consolidate configuration resolution so default values apply consistently when loading devices and log panels.</li>
+<li>Migrate legacy private key passphrases into VS Code Secret Storage alongside passwords.</li>
 </ul>
 <h2><a class="anchor" id="autotoc_md29"></a>
 Deprecated</h2>
@@ -108,22 +107,22 @@ Fixed</h2>
 <h2><a class="anchor" id="autotoc_md32"></a>
 Security</h2>
 <ul>
-<li>Migrate legacy device passwords to Secret Storage and clear plaintext values from settings when possible.</li>
-<li>Enforce SSH host key verification.</li>
-<li>Scope stored device passwords to the host, username, and workspace with confirmation prompts before reusing secrets when device metadata changes.</li>
+<li>Store SSH private key passphrases securely in Secret Storage and sanitize configuration to remove inlined secrets when possible.</li>
 </ul>
 <hr  />
 <h1><a class="anchor" id="autotoc_md34"></a>
-[0.8.0] - 2025-12-06 [CONSOLE]</h1>
+[0.9.0] - 2025-12-07 [SETTINGS]</h1>
 <h2><a class="anchor" id="autotoc_md35"></a>
 Added</h2>
 <ul>
-<li>Add Open SSH Terminal action alongside SSH commands in the Devices view when enabled, to open a dedicated terminal tab that uses stored or prompted passwords for authentication.</li>
+<li>Surface default device options (port, log command, SSH terminal toggle, and shared SSH commands) plus the max-line limit as configurable fields in the VS Code Settings UI.</li>
+<li>Provide JSON examples for device definitions and default SSH commands directly in the Settings descriptions.</li>
+<li>Add Design Overview Document.</li>
 </ul>
 <h2><a class="anchor" id="autotoc_md36"></a>
 Changed</h2>
 <ul>
-<li>None.</li>
+<li>Consolidate configuration resolution so default values apply consistently when loading devices and log panels.</li>
 </ul>
 <h2><a class="anchor" id="autotoc_md37"></a>
 Deprecated</h2>
@@ -143,16 +142,17 @@ Fixed</h2>
 <h2><a class="anchor" id="autotoc_md40"></a>
 Security</h2>
 <ul>
-<li>None.</li>
+<li>Migrate legacy device passwords to Secret Storage and clear plaintext values from settings when possible.</li>
+<li>Enforce SSH host key verification.</li>
+<li>Scope stored device passwords to the host, username, and workspace with confirmation prompts before reusing secrets when device metadata changes.</li>
 </ul>
 <hr  />
 <h1><a class="anchor" id="autotoc_md42"></a>
-[0.7.0] - 2025-12-06 [COMMANDS]</h1>
+[0.8.0] - 2025-12-06 [CONSOLE]</h1>
 <h2><a class="anchor" id="autotoc_md43"></a>
 Added</h2>
 <ul>
-<li>Allow configuring optional SSH commands per device and show them as collapsible lists in the Devices view.</li>
-<li>Run one-off SSH commands from the Devices view and surface command output in VS Code notifications.</li>
+<li>Add Open SSH Terminal action alongside SSH commands in the Devices view when enabled, to open a dedicated terminal tab that uses stored or prompted passwords for authentication.</li>
 </ul>
 <h2><a class="anchor" id="autotoc_md44"></a>
 Changed</h2>
@@ -181,23 +181,17 @@ Security</h2>
 </ul>
 <hr  />
 <h1><a class="anchor" id="autotoc_md50"></a>
-[0.6.0] - 2025-12-06 [BOOKMARKS]</h1>
+[0.7.0] - 2025-12-06 [COMMANDS]</h1>
 <h2><a class="anchor" id="autotoc_md51"></a>
 Added</h2>
 <ul>
-<li>Add Bookmarks to live logs and imported logs.</li>
-<li>Add line limit display notice to log panel.</li>
-<li>Highlight session closed markers in imported logs.</li>
-<li>Add Edit button to imported log tabs for opening files in a separated editor tab.</li>
-<li>Add Refresh button to imported log tabs for reloading content in case it was externally updated.</li>
+<li>Allow configuring optional SSH commands per device and show them as collapsible lists in the Devices view.</li>
+<li>Run one-off SSH commands from the Devices view and surface command output in VS Code notifications.</li>
 </ul>
 <h2><a class="anchor" id="autotoc_md52"></a>
 Changed</h2>
 <ul>
-<li>Surround auto-saved SSH session closed markers with blank lines to improve visibility.</li>
-<li>Increase log panel SSH message height to improve visibility.</li>
-<li>Update log message handling behavior. Messages from auto-save or from logger commands are handled in a secondary line from the connection status.</li>
-<li>When loglevel filter is set to ALL, do not hide blank lines and lines without a log tag.</li>
+<li>None.</li>
 </ul>
 <h2><a class="anchor" id="autotoc_md53"></a>
 Deprecated</h2>
@@ -212,7 +206,7 @@ Removed</h2>
 <h2><a class="anchor" id="autotoc_md55"></a>
 Fixed</h2>
 <ul>
-<li>Fix spacing for word wrapped lines.</li>
+<li>None.</li>
 </ul>
 <h2><a class="anchor" id="autotoc_md56"></a>
 Security</h2>
@@ -221,22 +215,23 @@ Security</h2>
 </ul>
 <hr  />
 <h1><a class="anchor" id="autotoc_md58"></a>
-[0.5.0] - 2025-12-03 [AUTO-AUTOSCROLL]</h1>
+[0.6.0] - 2025-12-06 [BOOKMARKS]</h1>
 <h2><a class="anchor" id="autotoc_md59"></a>
 Added</h2>
 <ul>
-<li>Introduce <code>embeddedLogger.maxLinesPerTab</code> to configure how many log lines each tab retains (default: 100000).</li>
-<li>Add full-width background color to SSH session closed message for better spotting.</li>
-<li>Adjust auto-scroll behavior based on log panel scrolling.</li>
-<li>Add clear button for find textbox.</li>
-<li>Add auto-save option for live SSH logs.</li>
-<li>Update find functionality for log navigation.</li>
-<li>Add visual indicators for wrapped log lines.</li>
+<li>Add Bookmarks to live logs and imported logs.</li>
+<li>Add line limit display notice to log panel.</li>
+<li>Highlight session closed markers in imported logs.</li>
+<li>Add Edit button to imported log tabs for opening files in a separated editor tab.</li>
+<li>Add Refresh button to imported log tabs for reloading content in case it was externally updated.</li>
 </ul>
 <h2><a class="anchor" id="autotoc_md60"></a>
 Changed</h2>
 <ul>
-<li>None.</li>
+<li>Surround auto-saved SSH session closed markers with blank lines to improve visibility.</li>
+<li>Increase log panel SSH message height to improve visibility.</li>
+<li>Update log message handling behavior. Messages from auto-save or from logger commands are handled in a secondary line from the connection status.</li>
+<li>When loglevel filter is set to ALL, do not hide blank lines and lines without a log tag.</li>
 </ul>
 <h2><a class="anchor" id="autotoc_md61"></a>
 Deprecated</h2>
@@ -246,13 +241,12 @@ Deprecated</h2>
 <h2><a class="anchor" id="autotoc_md62"></a>
 Removed</h2>
 <ul>
-<li>Removed Port from device list view.</li>
+<li>None.</li>
 </ul>
 <h2><a class="anchor" id="autotoc_md63"></a>
 Fixed</h2>
 <ul>
-<li>Preserve log panel scroll during highlight updates.</li>
-<li>Load offline log files in a single batch to reduce tab initialization time.</li>
+<li>Fix spacing for word wrapped lines.</li>
 </ul>
 <h2><a class="anchor" id="autotoc_md64"></a>
 Security</h2>
@@ -261,15 +255,17 @@ Security</h2>
 </ul>
 <hr  />
 <h1><a class="anchor" id="autotoc_md66"></a>
-[0.4.0] - 2025-12-01 [RECONNECT]</h1>
+[0.5.0] - 2025-12-03 [AUTO-AUTOSCROLL]</h1>
 <h2><a class="anchor" id="autotoc_md67"></a>
 Added</h2>
 <ul>
-<li>Add auto-scroll toggle to log panel.</li>
-<li>Append a marker line to the log output when an SSH session closes, including a timestamp.</li>
-<li>Add auto-reconnect controls to live logs.</li>
-<li>Update log panel frame colors depending if the SSH session is connected (green), re-connecting (yellow) or disconnected (red).</li>
-<li>Add Clear Logs button.</li>
+<li>Introduce <code>embeddedLogger.maxLinesPerTab</code> to configure how many log lines each tab retains (default: 100000).</li>
+<li>Add full-width background color to SSH session closed message for better spotting.</li>
+<li>Adjust auto-scroll behavior based on log panel scrolling.</li>
+<li>Add clear button for find textbox.</li>
+<li>Add auto-save option for live SSH logs.</li>
+<li>Update find functionality for log navigation.</li>
+<li>Add visual indicators for wrapped log lines.</li>
 </ul>
 <h2><a class="anchor" id="autotoc_md68"></a>
 Changed</h2>
@@ -284,12 +280,13 @@ Deprecated</h2>
 <h2><a class="anchor" id="autotoc_md70"></a>
 Removed</h2>
 <ul>
-<li>None.</li>
+<li>Removed Port from device list view.</li>
 </ul>
 <h2><a class="anchor" id="autotoc_md71"></a>
 Fixed</h2>
 <ul>
-<li>Fix sidebar device list not loading after switching views.</li>
+<li>Preserve log panel scroll during highlight updates.</li>
+<li>Load offline log files in a single batch to reduce tab initialization time.</li>
 </ul>
 <h2><a class="anchor" id="autotoc_md72"></a>
 Security</h2>
@@ -298,18 +295,20 @@ Security</h2>
 </ul>
 <hr  />
 <h1><a class="anchor" id="autotoc_md74"></a>
-[0.3.0] - 2025-11-30 [SEARCH-AND-HIGHLIGHTS]</h1>
+[0.4.0] - 2025-12-01 [RECONNECT]</h1>
 <h2><a class="anchor" id="autotoc_md75"></a>
 Added</h2>
 <ul>
-<li>Add Ctrl/Cmd+F find support in the log panel, including navigation across matches in both live and imported logs.</li>
-<li>Add a title bar highlight button that spawns up to ten colour-coded rows for emphasizing custom keywords across live and imported logs.</li>
-<li>Render highlighted matches in bold, underlined text with the same colour as their corresponding search row.</li>
+<li>Add auto-scroll toggle to log panel.</li>
+<li>Append a marker line to the log output when an SSH session closes, including a timestamp.</li>
+<li>Add auto-reconnect controls to live logs.</li>
+<li>Update log panel frame colors depending if the SSH session is connected (green), re-connecting (yellow) or disconnected (red).</li>
+<li>Add Clear Logs button.</li>
 </ul>
 <h2><a class="anchor" id="autotoc_md76"></a>
 Changed</h2>
 <ul>
-<li>Restructure the log panel header to accommodate the new highlight controls and preserve readability on smaller widths.</li>
+<li>None.</li>
 </ul>
 <h2><a class="anchor" id="autotoc_md77"></a>
 Deprecated</h2>
@@ -324,7 +323,7 @@ Removed</h2>
 <h2><a class="anchor" id="autotoc_md79"></a>
 Fixed</h2>
 <ul>
-<li>None.</li>
+<li>Fix sidebar device list not loading after switching views.</li>
 </ul>
 <h2><a class="anchor" id="autotoc_md80"></a>
 Security</h2>
@@ -333,24 +332,18 @@ Security</h2>
 </ul>
 <hr  />
 <h1><a class="anchor" id="autotoc_md82"></a>
-[0.2.0] - 2025-11-30 [LOG-FILES]</h1>
+[0.3.0] - 2025-11-30 [SEARCH-AND-HIGHLIGHTS]</h1>
 <h2><a class="anchor" id="autotoc_md83"></a>
 Added</h2>
 <ul>
-<li>Open local log files directly from the Embedded Logger view title button or command palette and reuse the existing log viewer workflow.</li>
-<li>Add word wrap toggle to log panel.</li>
-<li>Add device view title action to edit configuration.</li>
-<li>Add device view title action to clear stored passwords.</li>
-<li>Provide a default device configuration template matching the README example.</li>
+<li>Add Ctrl/Cmd+F find support in the log panel, including navigation across matches in both live and imported logs.</li>
+<li>Add a title bar highlight button that spawns up to ten colour-coded rows for emphasizing custom keywords across live and imported logs.</li>
+<li>Render highlighted matches in bold, underlined text with the same colour as their corresponding search row.</li>
 </ul>
 <h2><a class="anchor" id="autotoc_md84"></a>
 Changed</h2>
 <ul>
-<li>Default log filtering now starts at <b>ALL</b> to show every level on initial load.</li>
-<li>Colorize based on loglevel now accepts a wider range of log formats.</li>
-<li>Align Presets buttons with combo boxes.</li>
-<li>Improve Issues Templates for GH repository.</li>
-<li>Improved Readme file.</li>
+<li>Restructure the log panel header to accommodate the new highlight controls and preserve readability on smaller widths.</li>
 </ul>
 <h2><a class="anchor" id="autotoc_md85"></a>
 Deprecated</h2>
@@ -365,18 +358,59 @@ Removed</h2>
 <h2><a class="anchor" id="autotoc_md87"></a>
 Fixed</h2>
 <ul>
-<li>Fix top bar when status plus buttons are wider than screen's width.</li>
+<li>None.</li>
 </ul>
 <h2><a class="anchor" id="autotoc_md88"></a>
+Security</h2>
+<ul>
+<li>None.</li>
+</ul>
+<hr  />
+<h1><a class="anchor" id="autotoc_md90"></a>
+[0.2.0] - 2025-11-30 [LOG-FILES]</h1>
+<h2><a class="anchor" id="autotoc_md91"></a>
+Added</h2>
+<ul>
+<li>Open local log files directly from the Embedded Logger view title button or command palette and reuse the existing log viewer workflow.</li>
+<li>Add word wrap toggle to log panel.</li>
+<li>Add device view title action to edit configuration.</li>
+<li>Add device view title action to clear stored passwords.</li>
+<li>Provide a default device configuration template matching the README example.</li>
+</ul>
+<h2><a class="anchor" id="autotoc_md92"></a>
+Changed</h2>
+<ul>
+<li>Default log filtering now starts at <b>ALL</b> to show every level on initial load.</li>
+<li>Colorize based on loglevel now accepts a wider range of log formats.</li>
+<li>Align Presets buttons with combo boxes.</li>
+<li>Improve Issues Templates for GH repository.</li>
+<li>Improved Readme file.</li>
+</ul>
+<h2><a class="anchor" id="autotoc_md93"></a>
+Deprecated</h2>
+<ul>
+<li>None.</li>
+</ul>
+<h2><a class="anchor" id="autotoc_md94"></a>
+Removed</h2>
+<ul>
+<li>None.</li>
+</ul>
+<h2><a class="anchor" id="autotoc_md95"></a>
+Fixed</h2>
+<ul>
+<li>Fix top bar when status plus buttons are wider than screen's width.</li>
+</ul>
+<h2><a class="anchor" id="autotoc_md96"></a>
 Security</h2>
 <ul>
 <li>Send webview initialization data securely.</li>
 <li>Fixed Workflow not containing GH permissions.</li>
 </ul>
 <hr  />
-<h1><a class="anchor" id="autotoc_md90"></a>
+<h1><a class="anchor" id="autotoc_md98"></a>
 [0.1.1] - 2025-11-29 [INITIAL]</h1>
-<h2><a class="anchor" id="autotoc_md91"></a>
+<h2><a class="anchor" id="autotoc_md99"></a>
 Added</h2>
 <ul>
 <li>Initial publication of the extension. </li>

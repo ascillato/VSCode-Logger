@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['undefined_0',['undefined',['../classLogSession.html#a92023fdb98a09f37b9c016bebbe44dec',1,'LogSession']]]
+  ['undefined_0',['undefined',['../logSession_8ts.html#ae21cc36bf0d65014c717a481a3f8a468',1,'logSession.ts']]]
 ];

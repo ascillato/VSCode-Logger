@@ -1,21 +1,13 @@
 var searchData=
 [
-  ['package_20generation_0',['Package Generation',['../index.html#autotoc_md13',1,'']]],
-  ['panel_1',['panel',['../classLogPanel.html#ae7831a09011fd1b6b4e43f39c88b9428',1,'LogPanel']]],
-  ['panelmap_2',['panelMap',['../extension_8ts.html#a4161d9e40c3681f21244ba3962ff41d1',1,'extension.ts']]],
-  ['parsed_3',['parsed',['../classLogSession.html#a18091fa7782ab39c1c7e823873bff77c',1,'LogSession::parsed'],['../classLogSession.html#a3ed3397ce7f514b71487f728911a3c32',1,'LogSession::parsed']]],
-  ['parsefingerprint_4',['parseFingerprint',['../classLogSession.html#a76fa502d88667b90d2ccf0b7800459c6',1,'LogSession']]],
-  ['password_5fmetadata_5fprefix_5',['PASSWORD_METADATA_PREFIX',['../passwordManager_8ts.html#a293fecf7e183458427fd451eccc84987',1,'passwordManager.ts']]],
-  ['password_5fprefix_6',['PASSWORD_PREFIX',['../passwordManager_8ts.html#a64576ae5d97399cc143ce119e19c8e58',1,'passwordManager.ts']]],
-  ['passwordmanager_7',['passwordmanager',['../classLogSession.html#ae02f8be45399cb91585c8e051176efce',1,'LogSession::passwordManager'],['../classSshCommandRunner.html#a8353e70d61980c3b7c99a8fbb9bbacfe',1,'SshCommandRunner::passwordManager'],['../classSshTerminalSession.html#abe2a0965ac5028ef9e96e7d94961f56a',1,'SshTerminalSession::passwordManager'],['../classPasswordManager.html',1,'PasswordManager']]],
-  ['passwordmanager_2ets_8',['passwordManager.ts',['../passwordManager_8ts.html',1,'']]],
-  ['pendingadd_9',['pendingAdd',['../classSidebarViewProvider.html#a13ac27b7ba423140e00395f5f217fd11',1,'SidebarViewProvider']]],
-  ['permanent_20ban_10',['4. Permanent Ban',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CODE__OF__CONDUCT.html#autotoc_md113',1,'']]],
-  ['persistfingerprintifmissing_11',['persistFingerprintIfMissing',['../classLogSession.html#ad9f810101ccaea1bd4b53769613faba2',1,'LogSession']]],
-  ['pledge_12',['Our Pledge',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CODE__OF__CONDUCT.html#autotoc_md104',1,'']]],
-  ['policy_13',['Security Policy',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2SECURITY.html',1,'']]],
-  ['postinitialpayload_14',['postInitialPayload',['../classSidebarViewProvider.html#a94e82e101cfc5d0937c890c38776746f',1,'SidebarViewProvider']]],
-  ['presetskey_15',['presetsKey',['../classLogPanel.html#ab660abe2c91b6710ff1d70a17e71c119',1,'LogPanel']]],
-  ['principles_16',['General principles',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html#autotoc_md97',1,'']]],
-  ['publishing_17',['Versioning and publishing',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html#autotoc_md101',1,'']]]
+  ['of_20conduct_0',['Contributor Covenant Code of Conduct',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CODE__OF__CONDUCT.html',1,'']]],
+  ['ondidchangetreedata_1',['onDidChangeTreeData',['../classDeviceTreeDataProvider.html#aec917958936afd2172ece30452a688ac',1,'DeviceTreeDataProvider']]],
+  ['ondidchangeviewstate_2',['onDidChangeViewState',['../classLogPanel.html#afd3853553956a916454a2e6a23747c3f',1,'LogPanel']]],
+  ['ondidclose_3',['onDidClose',['../classSshTerminalSession.html#ae19c11e32976aebb844680284b99a29c',1,'SshTerminalSession']]],
+  ['ondidwrite_4',['onDidWrite',['../classSshTerminalSession.html#af51a5ec96c80e8bfcc48815ccee04a2a',1,'SshTerminalSession']]],
+  ['opensourcefile_5',['openSourceFile',['../classLogPanel.html#a5e11f154a268402a0211da2560f94f52',1,'LogPanel']]],
+  ['other_20extensions_6',['Share Activity Bar with other extensions',['../index.html#autotoc_md4',1,'']]],
+  ['our_20pledge_7',['Our Pledge',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CODE__OF__CONDUCT.html#autotoc_md112',1,'']]],
+  ['our_20standards_8',['Our Standards',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CODE__OF__CONDUCT.html#autotoc_md113',1,'']]],
+  ['overview_9',['overview',['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2CONTRIBUTING.html#autotoc_md101',1,'Overview'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2docs_2extension-overview.html#autotoc_md22',1,'Security Overview'],['../md__2home_2runner_2work_2VSCode-Logger_2VSCode-Logger_2docs_2extension-overview.html',1,'VSCode-Logger Architecture Overview']]]
 ];

@@ -72,6 +72,7 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
+<a href="#func-members">Functions</a> &#124;
 <a href="#var-members">Variables</a>  </div>
   <div class="headertitle"><div class="title">logSession.ts File Reference</div></div>
 </div><!--header-->
@@ -99,6 +100,31 @@ Classes</h2></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Handles the SSH connection and streaming of logs from a device.  <a href="classLogSession.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
+Functions</h2></td></tr>
+<tr class="memitem:a28e6f5ae3590b2ebd0275b12b784ea50" id="r_a28e6f5ae3590b2ebd0275b12b784ea50"><td class="memItemLeft" align="right" valign="top">async&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="logSession_8ts.html#a28e6f5ae3590b2ebd0275b12b784ea50">connect</a> (authentication:Pick&lt; <a class="el" href="ssh2_8d_8ts.html#a0b6cfa99430ba3e65ebbd110bc30d9c2">ConnectConfig</a>, 'password'| 'privateKey'| 'passphrase'&gt;, logCommand:string)</td></tr>
+<tr class="memdesc:a28e6f5ae3590b2ebd0275b12b784ea50"><td class="mdescLeft">&#160;</td><td class="mdescRight">Opens the SSH connection and starts the remote log command.  <br /></td></tr>
+<tr class="separator:a28e6f5ae3590b2ebd0275b12b784ea50"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8c767c91396520222656966c70631cff" id="r_a8c767c91396520222656966c70631cff"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="logSession_8ts.html#a8c767c91396520222656966c70631cff">if</a> (!fingerprint)</td></tr>
+<tr class="separator:a8c767c91396520222656966c70631cff"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad2821cc59cae5ffe4e93738f28f654e5" id="r_ad2821cc59cae5ffe4e93738f28f654e5"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="logSession_8ts.html#ad2821cc59cae5ffe4e93738f28f654e5">parseFingerprint</a> (value:string)</td></tr>
+<tr class="separator:ad2821cc59cae5ffe4e93738f28f654e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac42526c181dedcfad914dab5e2756fab" id="r_ac42526c181dedcfad914dab5e2756fab"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="logSession_8ts.html#ac42526c181dedcfad914dab5e2756fab">if</a> (base64Pattern.test(<a class="el" href="logSession_8ts.html#a1b4efd38ceae484b85241a85c54b527e">base64Candidate</a>))</td></tr>
+<tr class="separator:ac42526c181dedcfad914dab5e2756fab"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad672e820880b7593a1574b9f4bd66c59" id="r_ad672e820880b7593a1574b9f4bd66c59"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="logSession_8ts.html#ad672e820880b7593a1574b9f4bd66c59">if</a> (<a class="el" href="logSession_8ts.html#a9b27171a45ebbbb2585d5a13da574b56">isValidHex</a>)</td></tr>
+<tr class="separator:ad672e820880b7593a1574b9f4bd66c59"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aad5cca3423cddaf55ed7d16a837aad84" id="r_aad5cca3423cddaf55ed7d16a837aad84"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="logSession_8ts.html#aad5cca3423cddaf55ed7d16a837aad84">verifyHostKey</a> (key:string|Buffer, expected?:{ display:string;hex:string })</td></tr>
+<tr class="separator:aad5cca3423cddaf55ed7d16a837aad84"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7b8c06834ff0d7cc8f3c2e9dbc3c82a4" id="r_a7b8c06834ff0d7cc8f3c2e9dbc3c82a4"><td class="memItemLeft" align="right" valign="top">async&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="logSession_8ts.html#a7b8c06834ff0d7cc8f3c2e9dbc3c82a4">persistFingerprintIfMissing</a> ()</td></tr>
+<tr class="memdesc:a7b8c06834ff0d7cc8f3c2e9dbc3c82a4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Processes data buffers from the SSH stream and emits complete lines.  <br /></td></tr>
+<tr class="separator:a7b8c06834ff0d7cc8f3c2e9dbc3c82a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad1ca2579a2d5b196a708fd1385ad51ef" id="r_ad1ca2579a2d5b196a708fd1385ad51ef"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="logSession_8ts.html#ad1ca2579a2d5b196a708fd1385ad51ef">handleClose</a> ()</td></tr>
+<tr class="memdesc:ad1ca2579a2d5b196a708fd1385ad51ef"><td class="mdescLeft">&#160;</td><td class="mdescRight">Handles stream closures and notifies callbacks if not disposed.  <br /></td></tr>
+<tr class="separator:ad1ca2579a2d5b196a708fd1385ad51ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab44a1b8b83b94c7ee4d64b3b0f1ae118" id="r_ab44a1b8b83b94c7ee4d64b3b0f1ae118"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="logSession_8ts.html#ab44a1b8b83b94c7ee4d64b3b0f1ae118">dispose</a> ()</td></tr>
+<tr class="memdesc:ab44a1b8b83b94c7ee4d64b3b0f1ae118"><td class="mdescLeft">&#160;</td><td class="mdescRight">Disposes SSH resources and prevents further callbacks.  <br /></td></tr>
+<tr class="separator:ab44a1b8b83b94c7ee4d64b3b0f1ae118"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="var-members" name="var-members"></a>
 Variables</h2></td></tr>
 <tr class="memitem:a0b193a330738859ca68016a2273f14ed" id="r_a0b193a330738859ca68016a2273f14ed"><td class="memItemLeft" align="right" valign="top">export interface&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="logSession_8ts.html#a0b193a330738859ca68016a2273f14ed">LogSessionCallbacks</a></td></tr>
@@ -114,11 +140,269 @@ Variables</h2></td></tr>
 <tr class="separator:a859d49e7b1e3e6390409d52df6719b64"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4e346d179b7f7de27cff03e77f5c8cf4" id="r_a4e346d179b7f7de27cff03e77f5c8cf4"><td class="memItemLeft" align="right" valign="top">received&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="logSession_8ts.html#a4e346d179b7f7de27cff03e77f5c8cf4">__pad4__</a></td></tr>
 <tr class="separator:a4e346d179b7f7de27cff03e77f5c8cf4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae21cc36bf0d65014c717a481a3f8a468" id="r_ae21cc36bf0d65014c717a481a3f8a468"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="logSession_8ts.html#ae21cc36bf0d65014c717a481a3f8a468">undefined</a></td></tr>
+<tr class="separator:ae21cc36bf0d65014c717a481a3f8a468"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aff20ba08f7d492b66afd68fb3b3ff5d1" id="r_aff20ba08f7d492b66afd68fb3b3ff5d1"><td class="memItemLeft" align="right" valign="top">const&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="logSession_8ts.html#aff20ba08f7d492b66afd68fb3b3ff5d1">parsed</a> = <a class="el" href="logSession_8ts.html#ad2821cc59cae5ffe4e93738f28f654e5">this.parseFingerprint</a>(fingerprint)</td></tr>
+<tr class="separator:aff20ba08f7d492b66afd68fb3b3ff5d1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1b4efd38ceae484b85241a85c54b527e" id="r_a1b4efd38ceae484b85241a85c54b527e"><td class="memItemLeft" align="right" valign="top">const&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="logSession_8ts.html#a1b4efd38ceae484b85241a85c54b527e">base64Candidate</a> = trimmed.startsWith('SHA256:') ? trimmed.slice(7) : trimmed</td></tr>
+<tr class="separator:a1b4efd38ceae484b85241a85c54b527e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a45adb2b64a967467339a519c4736b118" id="r_a45adb2b64a967467339a519c4736b118"><td class="memItemLeft" align="right" valign="top">const&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="logSession_8ts.html#a45adb2b64a967467339a519c4736b118">base64Pattern</a> = /^[A-Za-z0-9+/=]+$/</td></tr>
+<tr class="separator:a45adb2b64a967467339a519c4736b118"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4b86dac5d683dd61e7be1b26a342c3ce" id="r_a4b86dac5d683dd61e7be1b26a342c3ce"><td class="memItemLeft" align="right" valign="top">const&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="logSession_8ts.html#a4b86dac5d683dd61e7be1b26a342c3ce">hexCandidate</a> = trimmed.replace(/:/g, '').toLowerCase()</td></tr>
+<tr class="separator:a4b86dac5d683dd61e7be1b26a342c3ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9b27171a45ebbbb2585d5a13da574b56" id="r_a9b27171a45ebbbb2585d5a13da574b56"><td class="memItemLeft" align="right" valign="top">const&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="logSession_8ts.html#a9b27171a45ebbbb2585d5a13da574b56">isValidHex</a> = /^[0-9a-f]+$/.test(<a class="el" href="logSession_8ts.html#a4b86dac5d683dd61e7be1b26a342c3ce">hexCandidate</a>) &amp;&amp; hexCandidate.length === 64</td></tr>
+<tr class="separator:a9b27171a45ebbbb2585d5a13da574b56"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9717e7bbecb906637e86cef6da3d83c2" id="r_a9717e7bbecb906637e86cef6da3d83c2"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="logSession_8ts.html#a9717e7bbecb906637e86cef6da3d83c2">return</a></td></tr>
+<tr class="separator:a9717e7bbecb906637e86cef6da3d83c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Manages SSH connectivity and streaming of remote log output. </p>
 <dl class="section copyright"><dt>Copyright</dt><dd>Copyright (c) 2025 A. Scillato </dd></dl>
-</div><h2 class="groupheader">Variable Documentation</h2>
+</div><h2 class="groupheader">Function Documentation</h2>
+<a id="a28e6f5ae3590b2ebd0275b12b784ea50" name="a28e6f5ae3590b2ebd0275b12b784ea50"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a28e6f5ae3590b2ebd0275b12b784ea50">&#9670;&#160;</a></span>connect()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">async connect </td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>authentication:Pick&lt; ConnectConfig, 'password'| 'privateKey'| 'passphrase'&gt;</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>logCommand:string</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Opens the SSH connection and starts the remote log command. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">authentication</td><td>Authentication configuration for the SSH connection. </td></tr>
+    <tr><td class="paramname">logCommand</td><td>Remote command to execute. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>Promise that resolves once streaming begins. </dd></dl>
+
+</div>
+</div>
+<a id="ab44a1b8b83b94c7ee4d64b3b0f1ae118" name="ab44a1b8b83b94c7ee4d64b3b0f1ae118"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab44a1b8b83b94c7ee4d64b3b0f1ae118">&#9670;&#160;</a></span>dispose()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">dispose </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Disposes SSH resources and prevents further callbacks. </p>
+
+</div>
+</div>
+<a id="ad1ca2579a2d5b196a708fd1385ad51ef" name="ad1ca2579a2d5b196a708fd1385ad51ef"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad1ca2579a2d5b196a708fd1385ad51ef">&#9670;&#160;</a></span>handleClose()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">handleClose </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Handles stream closures and notifies callbacks if not disposed. </p>
+
+</div>
+</div>
+<a id="a8c767c91396520222656966c70631cff" name="a8c767c91396520222656966c70631cff"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8c767c91396520222656966c70631cff">&#9670;&#160;</a></span>if() <span class="overload">[1/3]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">if </td>
+          <td>(</td>
+          <td class="paramtype">!&#160;</td>
+          <td class="paramname"><em>fingerprint</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">{</div>
+<div class="line">        <span class="keyword">const</span> trimmed = value.trim()</div>
+</div><!-- fragment -->
+</div>
+</div>
+<a id="ac42526c181dedcfad914dab5e2756fab" name="ac42526c181dedcfad914dab5e2756fab"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac42526c181dedcfad914dab5e2756fab">&#9670;&#160;</a></span>if() <span class="overload">[2/3]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">if </td>
+          <td>(</td>
+          <td class="paramtype">base64Pattern.&#160;</td>
+          <td class="paramname"><em>test</em>base64Candidate</td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ad672e820880b7593a1574b9f4bd66c59" name="ad672e820880b7593a1574b9f4bd66c59"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad672e820880b7593a1574b9f4bd66c59">&#9670;&#160;</a></span>if() <span class="overload">[3/3]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">if </td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>isValidHex</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ad2821cc59cae5ffe4e93738f28f654e5" name="ad2821cc59cae5ffe4e93738f28f654e5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad2821cc59cae5ffe4e93738f28f654e5">&#9670;&#160;</a></span>parseFingerprint()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">parseFingerprint </td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>value:string</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a7b8c06834ff0d7cc8f3c2e9dbc3c82a4" name="a7b8c06834ff0d7cc8f3c2e9dbc3c82a4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7b8c06834ff0d7cc8f3c2e9dbc3c82a4">&#9670;&#160;</a></span>persistFingerprintIfMissing()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">async persistFingerprintIfMissing </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Processes data buffers from the SSH stream and emits complete lines. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">data</td><td>Chunk of data received from the remote stream. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="aad5cca3423cddaf55ed7d16a837aad84" name="aad5cca3423cddaf55ed7d16a837aad84"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aad5cca3423cddaf55ed7d16a837aad84">&#9670;&#160;</a></span>verifyHostKey()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">verifyHostKey </td>
+          <td>(</td>
+          <td class="paramtype">key:string|&#160;</td>
+          <td class="paramname"><em>Buffer</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>expected?:{ display:string;hex:string }</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<h2 class="groupheader">Variable Documentation</h2>
 <a id="a00dc6172b2cc8f2de3a5fcde977892e0" name="a00dc6172b2cc8f2de3a5fcde977892e0"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a00dc6172b2cc8f2de3a5fcde977892e0">&#9670;&#160;</a></span>__pad0__</h2>
 
@@ -189,6 +473,62 @@ Variables</h2></td></tr>
 
 </div>
 </div>
+<a id="a1b4efd38ceae484b85241a85c54b527e" name="a1b4efd38ceae484b85241a85c54b527e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1b4efd38ceae484b85241a85c54b527e">&#9670;&#160;</a></span>base64Candidate</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const base64Candidate = trimmed.startsWith('SHA256:') ? trimmed.slice(7) : trimmed</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a45adb2b64a967467339a519c4736b118" name="a45adb2b64a967467339a519c4736b118"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a45adb2b64a967467339a519c4736b118">&#9670;&#160;</a></span>base64Pattern</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const base64Pattern = /^[A-Za-z0-9+/=]+$/</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a4b86dac5d683dd61e7be1b26a342c3ce" name="a4b86dac5d683dd61e7be1b26a342c3ce"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4b86dac5d683dd61e7be1b26a342c3ce">&#9670;&#160;</a></span>hexCandidate</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const hexCandidate = trimmed.replace(/:/g, '').toLowerCase()</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a9b27171a45ebbbb2585d5a13da574b56" name="a9b27171a45ebbbb2585d5a13da574b56"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9b27171a45ebbbb2585d5a13da574b56">&#9670;&#160;</a></span>isValidHex</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const isValidHex = /^[0-9a-f]+$/.test(<a class="el" href="logSession_8ts.html#a4b86dac5d683dd61e7be1b26a342c3ce">hexCandidate</a>) &amp;&amp; hexCandidate.length === 64</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a0b193a330738859ca68016a2273f14ed" name="a0b193a330738859ca68016a2273f14ed"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a0b193a330738859ca68016a2273f14ed">&#9670;&#160;</a></span>LogSessionCallbacks</h2>
 
@@ -205,6 +545,54 @@ Variables</h2></td></tr>
 </div><!-- fragment -->
 <p>Callback contract used to surface session events to the UI. </p>
 
+</div>
+</div>
+<a id="aff20ba08f7d492b66afd68fb3b3ff5d1" name="aff20ba08f7d492b66afd68fb3b3ff5d1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aff20ba08f7d492b66afd68fb3b3ff5d1">&#9670;&#160;</a></span>parsed</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="logSession_8ts.html#a9717e7bbecb906637e86cef6da3d83c2">return</a> parsed = <a class="el" href="logSession_8ts.html#ad2821cc59cae5ffe4e93738f28f654e5">this.parseFingerprint</a>(fingerprint)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a9717e7bbecb906637e86cef6da3d83c2" name="a9717e7bbecb906637e86cef6da3d83c2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9717e7bbecb906637e86cef6da3d83c2">&#9670;&#160;</a></span>return</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">return</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">{</div>
+<div class="line">            display: `SHA256:${digest.toString(<span class="stringliteral">&#39;base64&#39;</span>)}`,</div>
+<div class="line">            hex: digest.toString(<span class="stringliteral">&#39;hex&#39;</span>),</div>
+<div class="line">        }</div>
+</div><!-- fragment -->
+</div>
+</div>
+<a id="ae21cc36bf0d65014c717a481a3f8a468" name="ae21cc36bf0d65014c717a481a3f8a468"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae21cc36bf0d65014c717a481a3f8a468">&#9670;&#160;</a></span>undefined</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">undefined</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">{</div>
+<div class="line">        <span class="keyword">const</span> fingerprint = this.device.hostFingerprint?.trim()</div>
+</div><!-- fragment -->
 </div>
 </div>
 </div><!-- contents -->

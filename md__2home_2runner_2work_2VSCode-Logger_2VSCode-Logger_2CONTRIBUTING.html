@@ -73,8 +73,8 @@ $(function() {
   <div class="headertitle"><div class="title">Contributing Guidelines for VSCode‑Logger</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p><a class="anchor" id="autotoc_md92"></a> </p>
-<h1><a class="anchor" id="autotoc_md93"></a>
+<div class="textblock"><p><a class="anchor" id="autotoc_md100"></a> </p>
+<h1><a class="anchor" id="autotoc_md101"></a>
 Overview</h1>
 <p>This repository contains a Visual Studio Code extension for streaming logs from embedded Linux devices over SSH. Users configure a list of devices in their settings and the extension lists them in a custom activity‑bar view and opens a Webview panel to display live logs. Key features include:</p>
 <ul>
@@ -85,7 +85,7 @@ Overview</h1>
 <li><b>Running the extension</b> – to test locally, install dependencies (<code>npm install</code>), compile TypeScript (<code>npm run compile</code>), then press <code>F5</code> in VS Code to launch a development host with the <b>Embedded Logger</b> view.</li>
 </ul>
 <p>This document provides guidelines with the intention of making informed, safe and high‑quality contributions to the repository. Follow these instructions to maintain coherence with the existing architecture and to avoid breaking functionality.</p>
-<h1><a class="anchor" id="autotoc_md94"></a>
+<h1><a class="anchor" id="autotoc_md102"></a>
 Repository structure</h1>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -105,7 +105,7 @@ Repository structure</h1>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone"><code>package.json</code>   </td><td class="markdownTableBodyNone">Defines extension metadata, contributes settings, commands and views, and specifies build scripts. If you add new configuration options, update the <code>contributes.configuration</code> section accordingly. The compiled output is emitted to <code>out/</code> via <code>npm run compile</code>.   </td></tr>
 </table>
-<h1><a class="anchor" id="autotoc_md95"></a>
+<h1><a class="anchor" id="autotoc_md103"></a>
 Setup and development</h1>
 <ol type="1">
 <li><b>Install dependencies</b>: run <code>npm install</code> from the repository root. This installs <code>typescript</code>, <code>ssh2</code> and VS Code type declarations.</li>
@@ -115,9 +115,9 @@ Setup and development</h1>
 <li><b>Testing</b>: manually verify that log panels open, logs stream correctly, filtering and presets behave as expected, and exports work. When adding new features, test with multiple devices and both default and custom <code>logCommand</code> values.</li>
 <li><b>Documentation</b>: install Doxygen (<code>sudo apt-get install doxygen</code>) and run <code>doxygen Doxyfile</code> from the repository root. The generated HTML lives at <code>docs/html/index.html</code>.</li>
 </ol>
-<h1><a class="anchor" id="autotoc_md96"></a>
+<h1><a class="anchor" id="autotoc_md104"></a>
 Contribution guidelines</h1>
-<h2><a class="anchor" id="autotoc_md97"></a>
+<h2><a class="anchor" id="autotoc_md105"></a>
 General principles</h2>
 <ul>
 <li><b>Follow the existing architecture</b>: separate concerns between the extension host (backend) and the Webview (frontend). Extension code interacts with VS Code APIs and the SSH connection; UI state and DOM manipulation belong in <code><a class="el" href="loggerPanel_8js.html">media/loggerPanel.js</a></code>.</li>
@@ -128,7 +128,7 @@ General principles</h2>
 <li><b>Document your changes</b>: update <code><a class="el" href="README_8md.html">README.md</a></code> and this <code>AGENTS.md</code> file when adding features or altering workflows. Explain new configuration fields, UI elements and behaviours clearly.</li>
 <li><b>Avoid side effects at activation</b>: activation should be fast. Defer heavy operations until a device is selected. Do not perform network operations in the global scope of <code><a class="el" href="extension_8ts.html" title="Activates the VSCode-Logger extension and manages device log panels.">extension.ts</a></code>.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md98"></a>
+<h2><a class="anchor" id="autotoc_md106"></a>
 Adding new features</h2>
 <ul>
 <li><b>Extending the device model</b>: if you need extra fields (e.g., SSH key path or log format), extend the <code>EmbeddedDevice</code> interface in <code><a class="el" href="deviceTree_8ts.html" title="Provides the device tree view for selecting embedded targets.">src/deviceTree.ts</a></code> and update the configuration schema in <code>package.json</code>. Provide reasonable defaults and migrate any legacy fields similarly to how passwords are migrated.</li>
@@ -137,14 +137,14 @@ Adding new features</h2>
 <li><b>Exporting logs</b>: exports write only the visible (filtered) lines. If you add new data (e.g., timestamps) to entries, update the export to include or exclude them intentionally.</li>
 <li><b>Internationalization and accessibility</b>: avoid hard‑coding text in the UI. Wrap user‑visible strings in VS Code’s localisation functions if you add non‑trivial UI elements. Ensure controls are keyboard accessible and have descriptive labels.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md99"></a>
+<h2><a class="anchor" id="autotoc_md107"></a>
 Working with SSH connections</h2>
 <ul>
-<li>The <code>ssh2</code> client is instantiated per session in <code><a class="el" href="classLogSession.html" title="Handles the SSH connection and streaming of logs from a device.">LogSession</a></code> and the log command is executed upon connection. When adding features such as using key‑based authentication or custom terminal settings, configure the <code><a class="el" href="classClient.html">Client</a></code> accordingly without blocking the UI thread. Always call <code>client.end()</code> and close the stream in <code>dispose()</code> to release resources.</li>
+<li>The <code>ssh2</code> client is instantiated per session in <code><a class="el" href="classLogSession.html" title="Handles the SSH connection and streaming of logs from a device.">LogSession</a></code> and the log command is executed upon connection. When adding features such as using key‑based authentication or custom terminal settings, configure the <code><a class="el" href="classClient.html">Client</a></code> accordingly without blocking the UI thread. Always call <code>client.end()</code> and close the stream in <code><a class="el" href="logSession_8ts.html#ab44a1b8b83b94c7ee4d64b3b0f1ae118" title="Disposes SSH resources and prevents further callbacks.">dispose()</a></code> to release resources.</li>
 <li>Do not hard‑code commands or credentials. Respect the <code>logCommand</code> specified by the user and fall back to the default when missing.</li>
 <li>Provide informative status messages by calling <code>callbacks.onStatus</code> at significant points (connecting, streaming, disconnecting). Display errors via <code>onError</code> to the Webview.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md100"></a>
+<h2><a class="anchor" id="autotoc_md108"></a>
 Webview guidelines</h2>
 <ul>
 <li><b>Security</b>: the Webview uses a Content‑Security‑Policy that disables remote code execution and restricts resources. When adding scripts or styles, update the CSP string and set appropriate <code>nonce</code> values to allow them to load. Do not fetch remote resources directly.</li>
@@ -152,14 +152,14 @@ Webview guidelines</h2>
 <li><b>Event handling</b>: register event listeners once at initialization. Use <code>postMessage</code> to request actions from the extension host (save presets, delete presets, export logs) and handle incoming messages in the <code>message</code> event listener. Avoid long‑running work in the Webview; offload heavy processing to the extension host if needed.</li>
 <li><b>Performance</b>: the Webview retains up to 10 000 log lines in memory. If you change this limit, ensure memory usage remains acceptable. Append elements efficiently using DocumentFragments and avoid unnecessary DOM reflows.</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md101"></a>
+<h2><a class="anchor" id="autotoc_md109"></a>
 Versioning and publishing</h2>
 <ul>
 <li>Increment the version in <code>package.json</code> following semantic versioning: bump the patch version for bug fixes, minor for backward‑compatible feature additions, and major for breaking changes.</li>
 <li>Update the changelog or release notes (if present) whenever you release a new version. Summarize notable changes and migration steps.</li>
 <li>Before publishing to the VS Code Marketplace, run <code>npm run compile</code> and ensure the extension passes <code>vsce package</code> or similar packaging commands.</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md102"></a>
+<h1><a class="anchor" id="autotoc_md110"></a>
 Conclusion</h1>
 <p>This document should equip any contributor with the knowledge needed to navigate, maintain and extend the <b>VSCode‑Logger</b> extension. Always align changes with the existing design, respect user configurations and security practices, and accompany code changes with clear documentation. By adhering to these guidelines, agents will produce high‑quality contributions that improve the extension without disrupting the experience for existing users. </p>
 </div></div><!-- contents -->
