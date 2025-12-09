@@ -1,5 +1,7 @@
+import importlib.util
 import os
 import sys
+import warnings
 from datetime import datetime
 from pathlib import Path
 
@@ -28,12 +30,23 @@ source_suffix = {
     ".md": "markdown",
 }
 
-# Enable helpful MyST features (colon fences for directives, linkify URLs, etc.)
-myst_enable_extensions = [
+_myst_extensions = [
     "colon_fence",
-    "linkify",
     "substitution",
 ]
+# Enable linkify automatically when the optional dependency is available so
+# local builds without network access can still succeed.
+if importlib.util.find_spec("linkify_it"):
+    _myst_extensions.append("linkify")
+else:
+    warnings.warn(
+        "linkify-it-py is not installed; MyST linkify support is disabled. "
+        "Install linkify-it-py to enable automatic URL linking."
+    )
+
+# Enable helpful MyST features (colon fences for directives, optional linkify
+# URLs when available, etc.)
+myst_enable_extensions = _myst_extensions
 # Allow fenced code blocks to render as Mermaid diagrams without directives
 myst_fence_as_directive = ["mermaid"]
 
