@@ -148,4 +148,4 @@ If you find this extension useful, please [rate it](https://marketplace.visualst
 4. Build the full site with Sphinx: `sphinx-build -b html docs/source docs/build/html`.
 5. Open `docs/build/html/index.html` locally or visit the published docs at https://ascillato.github.io/VSCode-Logger/.
 
-> GitHub Actions automatically runs this pipeline on pushes to `main` and publishes to the `gh-pages` branch.
+> GitHub Actions automatically runs this pipeline on pushes to `main` with tag and publishes to the `gh-pages` branch.

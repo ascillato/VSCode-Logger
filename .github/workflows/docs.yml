@@ -1,0 +1,70 @@
+name: Build and Deploy Docs
+
+permissions:
+  contents: write
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build-docs:
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify tag targets main
+        id: verify
+        run: |
+          git fetch origin main
+          if git branch --remotes --contains "${GITHUB_SHA}" | grep -q "origin/main"; then
+            echo "on_main=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Tag ${GITHUB_REF} is not based on main; skipping documentation publish." \
+              && echo "on_main=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Python
+        if: steps.verify.outputs.on_main == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install documentation dependencies
+        if: steps.verify.outputs.on_main == 'true'
+        run: pip install -r docs/requirements.txt
+
+      - name: Install Doxygen
+        if: steps.verify.outputs.on_main == 'true'
+        run: sudo apt-get update && sudo apt-get install -y doxygen graphviz
+
+      - name: Generate Doxygen XML
+        if: steps.verify.outputs.on_main == 'true'
+        run: doxygen Doxyfile
+
+      - name: Build Sphinx HTML
+        if: steps.verify.outputs.on_main == 'true'
+        run: sphinx-build -b html docs/source docs/build/html
+
+      - name: Prepare GitHub Pages content
+        if: steps.verify.outputs.on_main == 'true'
+        run: |
+          # The GitHub Pages workflow expects the site at ./docs/index.html
+          # Move the generated HTML output up one level so docs/ is the site root.
+          cp -a docs/build/html/. docs/
+          rm -rf docs/build/html
+
+      - name: Deploy to GitHub Pages
+        if: steps.verify.outputs.on_main == 'true'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
+          publish_branch: gh-pages
+          # force_orphan: true
