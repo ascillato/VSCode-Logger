@@ -18,7 +18,8 @@ copyright = f"{datetime.now().year}, {author}"
 extensions = [
     "myst_parser",          # Markdown support
     "breathe",              # Doxygen + Breathe integration
-    "sphinxcontrib.mermaid"  # Mermaid diagrams
+    "sphinxcontrib.mermaid",  # Mermaid diagrams
+    "sphinx.ext.ifconfig",  # Conditional content blocks
 ]
 
 # Recognize both Markdown and reStructuredText sources
@@ -46,6 +47,17 @@ breathe_projects = {
     "VSCode-Logger": str(_doxygen_xml),
 }
 breathe_default_project = "VSCode-Logger"
+# Route TypeScript and JavaScript entities to the JS domain so Breathe does not
+# try to interpret them as C++ declarations.
+breathe_domain_by_extension = {
+    "ts": "js",
+    "js": "js",
+}
+
+# Expose a flag for the ifconfig directive to avoid hard build failures when
+# Doxygen has not been run locally. The CI workflow generates the XML before
+# building docs, so this mainly helps local preview builds.
+have_doxygen = (_doxygen_xml / "index.xml").exists()
 
 # -- Options for HTML output -------------------------------------------------
 html_theme = "furo"
