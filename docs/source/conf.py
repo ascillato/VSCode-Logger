@@ -47,6 +47,9 @@ breathe_projects = {
     "VSCode-Logger": str(_doxygen_xml),
 }
 breathe_default_project = "VSCode-Logger"
+# Default to the JavaScript domain so TypeScript/JS symbols from Doxygen are
+# not parsed as C++ declarations by Sphinx.
+breathe_default_domain = "js"
 # Route TypeScript and JavaScript entities to the JS domain so Breathe does not
 # try to interpret them as C++ declarations.
 breathe_domain_by_extension = {
