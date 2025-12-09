@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
-## [1.0.0] - 2026-02-08 [SSH-KEYS]
+## [1.0.0] - 2025-12-08 [SSH-KEYS]
 
 ### Added
 - Support authenticating with SSH private keys (including passphrases) for log streaming, SSH commands, and interactive terminals.
@@ -30,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
-## [0.9.0] - 2026-02-07 [SETTINGS]
+## [0.9.0] - 2025-12-07 [SETTINGS]
 
 ### Added
 - Surface default device options (port, log command, SSH terminal toggle, and shared SSH commands) plus the max-line limit as configurable fields in the VS Code Settings UI.
