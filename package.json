@@ -3,7 +3,7 @@
   "displayName": "Embedded Device Logger",
   "description": "Stream and filter embedded Linux device logs over SSH inside VS Code.",
   "icon": "media/icon.png",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "publisher": "Scallant",
   "author": "A. Scillato",
   "engines": {
@@ -59,6 +59,11 @@
           "default": false,
           "description": "Whether devices without an explicit enableSshTerminal flag should show the SSH terminal action."
         },
+        "embeddedLogger.defaultEnableSftpExplorer": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether devices without an explicit enableSftpExplorer flag should show the SFTP explorer action."
+        },
         "embeddedLogger.defaultSshCommands": {
           "type": "array",
           "description": "Reusable SSH commands automatically applied to devices that do not define their own list.",
@@ -85,7 +90,7 @@
         "embeddedLogger.devices": {
           "type": "array",
           "description": "List of embedded devices to stream logs from.",
-          "markdownDescription": "List of embedded devices to stream logs from.\n\nExample:\n```json\n[\n  {\n    \"id\": \"rpi4\",\n    \"name\": \"Raspberry Pi 4\",\n    \"host\": \"192.168.1.50\",\n    \"hostFingerprint\": \"SHA256:your-base64-fingerprint\",\n    \"port\": 22,\n    \"username\": \"pi\",\n    \"logCommand\": \"journalctl -f -u app.service\",\n    \"enableSshTerminal\": true,\n    \"sshCommands\": [\n      { \"name\": \"Reboot\", \"command\": \"sudo reboot\" }\n    ]\n  }\n]\n```",
+          "markdownDescription": "List of embedded devices to stream logs from.\n\nExample:\n```json\n[\n  {\n    \"id\": \"rpi4\",\n    \"name\": \"Raspberry Pi 4\",\n    \"host\": \"192.168.1.50\",\n    \"hostFingerprint\": \"SHA256:your-base64-fingerprint\",\n    \"port\": 22,\n    \"username\": \"pi\",\n    \"logCommand\": \"journalctl -f -u app.service\",\n    \"enableSshTerminal\": true,\n    \"enableSftpExplorer\": true,\n    \"sshCommands\": [\n      { \"name\": \"Reboot\", \"command\": \"sudo reboot\" }\n    ]\n  }\n]\n```",
           "items": {
             "type": "object",
             "properties": {
@@ -140,6 +145,11 @@
                 "default": false,
                 "description": "Whether to show an Open SSH Terminal action for this device."
               },
+              "enableSftpExplorer": {
+                "type": "boolean",
+                "default": false,
+                "description": "Whether to show an Open SFTP Explorer action for this device."
+              },
               "sshCommands": {
                 "type": "array",
                 "description": "Optional list of on-demand SSH commands available from the Devices view.",
@@ -180,6 +190,7 @@
               "username": "root",
               "logCommand": "tail -F /var/log/syslog",
               "enableSshTerminal": true,
+              "enableSftpExplorer": true,
               "sshCommands": [
                 {
                   "name": "Restart Service",
@@ -220,7 +231,8 @@
       "onView:embeddedLogger.devicesView",
       "onCommand:embeddedLogger.openLocalLogFile",
       "onCommand:embeddedLogger.editDevicesConfig",
-      "onCommand:embeddedLogger.clearStoredPasswords"
+      "onCommand:embeddedLogger.clearStoredPasswords",
+      "onCommand:embeddedLogger.openSftpExplorer"
     ],
     "commands": [
       {
@@ -246,6 +258,10 @@
         "command": "embeddedLogger.clearStoredPasswords",
         "title": "Remove Stored Passwords",
         "icon": "$(trash)"
+      },
+      {
+        "command": "embeddedLogger.openSftpExplorer",
+        "title": "Open SFTP Explorer"
       }
     ],
     "menus": {

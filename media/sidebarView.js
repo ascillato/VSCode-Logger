@@ -68,7 +68,7 @@
             card.appendChild(header);
 
             const sshCommands = device.sshCommands || [];
-            const totalSshActions = sshCommands.length + (device.enableSshTerminal ? 1 : 0);
+            const totalSshActions = sshCommands.length + (device.enableSshTerminal ? 1 : 0) + (device.enableSftpExplorer ? 1 : 0);
             if (totalSshActions) {
                 const commandsSection = document.createElement('details');
                 commandsSection.className = 'command-group';
@@ -94,6 +94,21 @@
                         });
                     });
                     list.appendChild(terminalButton);
+                }
+
+                if (device.enableSftpExplorer) {
+                    const sftpButton = document.createElement('button');
+                    sftpButton.className = 'command-button';
+                    sftpButton.textContent = 'Open SFTP Explorer';
+                    sftpButton.title = `Browse and transfer files for ${device.name}`;
+                    sftpButton.addEventListener('click', (event) => {
+                        event.stopPropagation();
+                        vscode.postMessage({
+                            type: 'openSftpExplorer',
+                            deviceId: device.id,
+                        });
+                    });
+                    list.appendChild(sftpButton);
                 }
 
                 sshCommands.forEach((cmd) => {

@@ -19,6 +19,7 @@ A Visual Studio Code extension that connects to embedded Linux devices over SSH,
 - Add, edit and remove **Bookmarks** in live logs and imported logs.
 - Run optional **on-demand SSH commands** configured per device from the Devices view.
 - Optionally **launch an SSH terminal** directly from a device card when enabled in settings.
+- Optionally open a dual-pane **SFTP explorer** to browse remote and local files side-by-side and transfer files.
 - Authenticate with SSH passwords or private keys.
 - SSH passwords and private key passphrases are **stored securely** with VS Code Secret Storage.
 - **Privacy focused**. **No telemetry**. Everything **runs locally**.
@@ -43,6 +44,7 @@ Add devices in your VS Code settings under `embeddedLogger.devices`:
     "username": "root",
     "logCommand": "tail -F /var/log/syslog",
     "enableSshTerminal": true,
+    "enableSftpExplorer": true,
     "sshCommands": [
       {
         "name": "Restart IOT",
@@ -59,6 +61,8 @@ If no password is stored yet, the extension prompts for it when connecting and s
 
 - Set `enableSshTerminal` to `true` to show an **Open SSH Terminal** button alongside any configured SSH commands for that device. The **Open SSH Terminal** action opens a dedicated VS Code terminal tab for the device and authenticates using the stored password or private key (prompting for and saving the credential securely when missing).
 
+- Set `enableSftpExplorer` to `true` to surface an **Open SFTP Explorer** button on the device card. The explorer opens a dual-pane view with the remote home on the left and the local home on the right, including navigation, rename/delete/duplicate actions, and arrows to transfer selected files between panes (or between two remote panes when the right-side mode is switched to remote).
+
 - Control memory usage by capping retained lines per log tab with `embeddedLogger.maxLinesPerTab` (default: 100000). For auto-save, this limit is not applied to a file. Everything is saved.
 
 All options are available through the VS Code Settings UI under **Embedded Device Logger**, including defaults for omitted device values:
@@ -66,6 +70,7 @@ All options are available through the VS Code Settings UI under **Embedded Devic
 - `embeddedLogger.defaultPort` – applied when a device does not specify a port.
 - `embeddedLogger.defaultLogCommand` – used when `logCommand` is omitted.
 - `embeddedLogger.defaultEnableSshTerminal` – toggles whether the SSH terminal action is shown by default.
+- `embeddedLogger.defaultEnableSftpExplorer` – toggles whether the SFTP explorer action is shown by default.
 - `embeddedLogger.defaultSshCommands` – shared SSH actions applied to devices that do not define their own list.
 
 ## Notes
@@ -107,8 +112,6 @@ If you find this extension useful, please [rate it](https://marketplace.visualst
 
   - Support going through a bastion
 
-* **Support SFTP**
-
 ----
 
 ## For Developers
@@ -133,12 +136,12 @@ If you find this extension useful, please [rate it](https://marketplace.visualst
 
 - Requires: `npm install -g @vscode/vsce`
 - Run: `vsce package` to generate vsix file to be installed into VSCode
-- Install locally on VSCode: `code --install-extension embedded-device-logger-1.0.0.vsix`
+- Install locally on VSCode: `code --install-extension embedded-device-logger-1.1.0.vsix`
 
 ### Clean and re-compile
 
 - `clear; rm -rf node_modules; rm -rf out; rm *.vsix; npm install; npm run compile; vsce package`
-- `code --install-extension embedded-device-logger-1.0.0.vsix`
+- `code --install-extension embedded-device-logger-1.1.0.vsix`
 
 ### Generating Source Code Documentation
 
