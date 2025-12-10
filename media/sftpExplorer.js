@@ -201,6 +201,14 @@
             pane.classList.toggle('pane--reconnecting', reconnecting);
         });
 
+        [elements.remoteList, elements.localList].forEach((list) => {
+            if (!list) {
+                return;
+            }
+            list.classList.toggle('list--disconnected', disconnected);
+            list.classList.toggle('list--reconnecting', reconnecting);
+        });
+
         updateButtons();
     }
 

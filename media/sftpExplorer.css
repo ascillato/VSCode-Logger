@@ -124,6 +124,16 @@ body {
     padding: 0.25rem 0.5rem;
     background: var(--vscode-editor-background);
     min-height: 0;
+    border: 1px solid var(--vscode-editorGroup-border);
+    border-radius: 4px;
+}
+
+.list--disconnected {
+    border-color: var(--vscode-errorForeground, #f14c4c);
+}
+
+.list--reconnecting {
+    border-color: var(--vscode-editorWarning-foreground, #d7ba7d);
 }
 
 .entry {
