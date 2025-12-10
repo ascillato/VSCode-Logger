@@ -52,6 +52,8 @@ body {
     display: flex;
     flex-direction: column;
     border-right: 1px solid var(--vscode-editorGroup-border);
+    min-height: 0;
+    min-width: 0;
 }
 
 .pane:last-of-type {
@@ -104,6 +106,7 @@ body {
     overflow: auto;
     padding: 0.25rem 0.5rem;
     background: var(--vscode-editor-background);
+    min-height: 0;
 }
 
 .entry {
