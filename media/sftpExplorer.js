@@ -37,6 +37,17 @@
         rightMode: document.getElementById('rightMode'),
     };
 
+    const pending = {
+        confirmations: new Map(),
+        inputs: new Map(),
+    };
+
+    function createRequestId() {
+        return (typeof crypto !== 'undefined' && crypto.randomUUID)
+            ? crypto.randomUUID()
+            : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    }
+
     function createSnapshot() {
         return { path: '', parentPath: '', isRoot: true, entries: [], location: 'remote', selected: undefined };
     }
@@ -202,12 +213,12 @@
         }
     }
 
-    function deleteSelected(side) {
+    async function deleteSelected(side) {
         const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
         if (!snapshot.selected) {
             return;
         }
-        const confirmed = window.confirm(`Delete ${snapshot.selected.name}?`);
+        const confirmed = await requestConfirmation(`Delete ${snapshot.selected.name}?`);
         if (!confirmed) {
             return;
         }
@@ -219,12 +230,12 @@
         });
     }
 
-    function renameSelected(side) {
+    async function renameSelected(side) {
         const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
         if (!snapshot.selected) {
             return;
         }
-        const newName = window.prompt('New name', snapshot.selected.name);
+        const newName = await requestInput('New name', snapshot.selected.name);
         if (!newName) {
             return;
         }
@@ -297,6 +308,22 @@
         renderLists();
     });
 
+    function requestConfirmation(message) {
+        return new Promise((resolve) => {
+            const requestId = createRequestId();
+            pending.confirmations.set(requestId, resolve);
+            vscode.postMessage({ type: 'requestConfirmation', message, requestId });
+        });
+    }
+
+    function requestInput(promptText, value = '') {
+        return new Promise((resolve) => {
+            const requestId = createRequestId();
+            pending.inputs.set(requestId, resolve);
+            vscode.postMessage({ type: 'requestInput', prompt: promptText, value, requestId });
+        });
+    }
+
     window.addEventListener('message', (event) => {
         const message = event.data;
         switch (message.type) {
@@ -312,6 +339,22 @@
             case 'error':
                 setStatus(message.message, true);
                 break;
+            case 'confirmationResult': {
+                const resolver = pending.confirmations.get(message.requestId);
+                if (resolver) {
+                    resolver(Boolean(message.confirmed));
+                    pending.confirmations.delete(message.requestId);
+                }
+                break;
+            }
+            case 'inputResult': {
+                const resolver = pending.inputs.get(message.requestId);
+                if (resolver) {
+                    resolver(message.value || '');
+                    pending.inputs.delete(message.requestId);
+                }
+                break;
+            }
         }
     });
 

@@ -52,7 +52,10 @@ interface ErrorMessage {
     message: string;
 }
 
-type WebviewResponse = InitResponse | ListResponse | StatusMessage | ErrorMessage;
+type ConfirmationResponse = { type: 'confirmationResult'; requestId: string; confirmed: boolean };
+type InputResponse = { type: 'inputResult'; requestId: string; value?: string };
+
+type WebviewResponse = InitResponse | ListResponse | StatusMessage | ErrorMessage | ConfirmationResponse | InputResponse;
 
 type WebviewRequest =
     | { type: 'requestInit' }
@@ -65,7 +68,9 @@ type WebviewRequest =
           from: { location: 'remote' | 'local'; path: string };
           toDirectory: { location: 'remote' | 'local'; path: string };
           requestId: string;
-      };
+      }
+    | { type: 'requestConfirmation'; message: string; requestId: string }
+    | { type: 'requestInput'; prompt: string; value?: string; requestId: string };
 
 interface HostKeyMismatch {
     expected: string;
@@ -198,6 +203,25 @@ export class SftpExplorerPanel {
                 case 'copyEntry': {
                     const refreshDir = await this.copyEntry(message.from, message.toDirectory);
                     await this.listAndPost(message.toDirectory.location, refreshDir, message.requestId);
+                    break;
+                }
+                case 'requestConfirmation': {
+                    const result = await vscode.window.showWarningMessage(
+                        message.message,
+                        { modal: true },
+                        'Yes',
+                        'No'
+                    );
+                    this.postMessage({
+                        type: 'confirmationResult',
+                        requestId: message.requestId,
+                        confirmed: result === 'Yes',
+                    });
+                    break;
+                }
+                case 'requestInput': {
+                    const value = await vscode.window.showInputBox({ prompt: message.prompt, value: message.value });
+                    this.postMessage({ type: 'inputResult', requestId: message.requestId, value: value ?? '' });
                     break;
                 }
             }
