@@ -133,23 +133,11 @@
     display: none;
 }
 
-.command-group summary::before {
-    content: '\25B6';
-    display: inline-block;
-    margin-right: 8px;
-    transition: transform 0.2s ease;
-    font-size: 10px;
-}
-
-.command-group[open] summary::before {
-    transform: rotate(90deg);
-}
-
 .command-list {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    padding: 0 8px 8px 32px;
+    padding: 0 8px 8px 8px;
 }
 
 .command-button {
