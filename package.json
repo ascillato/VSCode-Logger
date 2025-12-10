@@ -56,12 +56,12 @@
         },
         "embeddedLogger.defaultEnableSshTerminal": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "description": "Whether devices without an explicit enableSshTerminal flag should show the SSH terminal action."
         },
         "embeddedLogger.defaultEnableSftpExplorer": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "description": "Whether devices without an explicit enableSftpExplorer flag should show the SFTP explorer action."
         },
         "embeddedLogger.defaultSshCommands": {

@@ -17,8 +17,8 @@ interface LoggerDefaults {
 function getLoggerDefaults(config: vscode.WorkspaceConfiguration): LoggerDefaults {
     const defaultPort = config.get<number>('defaultPort', 22) || 22;
     const defaultLogCommand = config.get<string>('defaultLogCommand', 'tail -F /var/log/syslog') || 'tail -F /var/log/syslog';
-    const defaultEnableSshTerminal = config.get<boolean>('defaultEnableSshTerminal', false) || false;
-    const defaultEnableSftpExplorer = config.get<boolean>('defaultEnableSftpExplorer', false) || false;
+    const defaultEnableSshTerminal = config.get<boolean>('defaultEnableSshTerminal', true) ?? true;
+    const defaultEnableSftpExplorer = config.get<boolean>('defaultEnableSftpExplorer', true) ?? true;
     const defaultSshCommands = config.get<{ name: string; command: string }[]>('defaultSshCommands', []) || [];
 
     return {

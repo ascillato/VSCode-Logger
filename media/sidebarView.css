@@ -112,9 +112,16 @@
 
 .command-group summary {
     cursor: pointer;
-    padding: 6px 8px;
+    padding: 0;
     list-style: none;
     font-weight: 600;
+}
+
+.command-summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
 }
 
 .command-group summary::-webkit-details-marker {

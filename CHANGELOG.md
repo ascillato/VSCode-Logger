@@ -14,7 +14,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Device-level and default settings to surface the **Open SFTP Explorer** action alongside existing SSH terminal and command options.
 
 ### Changed
-- Bump extension version to 1.1.0.
 - Keep the SFTP explorer open when the SSH session drops, greying out the UI, colouring the remote pane to reflect disconnect/reconnect attempts, showing a countdown beside the title, and retrying every five seconds without losing the current paths.
 
 ### Deprecated
