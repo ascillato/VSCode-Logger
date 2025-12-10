@@ -368,18 +368,18 @@
                 break;
             case 'confirmationResult': {
                 const resolver = pending.confirmations.get(message.requestId);
-                if (resolver) {
+                if (typeof resolver === 'function') {
                     resolver(Boolean(message.confirmed));
-                    pending.confirmations.delete(message.requestId);
                 }
+                pending.confirmations.delete(message.requestId);
                 break;
             }
             case 'inputResult': {
                 const resolver = pending.inputs.get(message.requestId);
-                if (resolver) {
+                if (typeof resolver === 'function') {
                     resolver(message.value || '');
-                    pending.inputs.delete(message.requestId);
                 }
+                pending.inputs.delete(message.requestId);
                 break;
             }
         }
