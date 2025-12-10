@@ -965,7 +965,7 @@ export class SftpExplorerPanel {
                 </div>
                 <div id="remoteList" class="list" role="tree"></div>
             </section>
-            <section class="pane" aria-label="Local files">
+            <section class="pane" id="rightPane" aria-label="Local files">
                 <div class="pane__controls">
                     <div class="actions">
                         <label class="mode-picker">

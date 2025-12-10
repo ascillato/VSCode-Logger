@@ -65,14 +65,12 @@ body {
     min-width: 0;
 }
 
-.pane--remote.pane--disconnected .pane__controls,
-.pane--remote.pane--disconnected .list {
-    background: color-mix(in srgb, var(--vscode-errorBackground, #5a1d1d) 70%, transparent);
+.pane--disconnected {
+    box-shadow: inset 0 0 0 2px var(--vscode-errorForeground, #f14c4c);
 }
 
-.pane--remote.pane--reconnecting .pane__controls,
-.pane--remote.pane--reconnecting .list {
-    background: color-mix(in srgb, var(--vscode-editorWarning-foreground, #d7ba7d) 30%, transparent);
+.pane--reconnecting {
+    box-shadow: inset 0 0 0 2px var(--vscode-editorWarning-foreground, #d7ba7d);
 }
 
 .pane:last-of-type {

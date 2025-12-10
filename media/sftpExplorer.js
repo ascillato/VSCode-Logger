@@ -21,6 +21,7 @@
         status: document.getElementById('status'),
         explorer: document.getElementById('explorer'),
         remotePane: document.getElementById('remotePane'),
+        rightPane: document.getElementById('rightPane'),
         remotePath: document.getElementById('remotePath'),
         localPath: document.getElementById('localPath'),
         remoteList: document.getElementById('remoteList'),
@@ -189,9 +190,16 @@
         const disconnected = payload.state === 'disconnected';
         const reconnecting = payload.state === 'reconnecting';
 
-        elements.explorer.classList.toggle('explorer--disabled', disconnected || reconnecting);
-        elements.remotePane.classList.toggle('pane--disconnected', disconnected);
-        elements.remotePane.classList.toggle('pane--reconnecting', reconnecting);
+        const disableUi = disconnected || reconnecting;
+        elements.explorer.classList.toggle('explorer--disabled', disableUi);
+
+        [elements.remotePane, elements.rightPane].forEach((pane) => {
+            if (!pane) {
+                return;
+            }
+            pane.classList.toggle('pane--disconnected', disconnected);
+            pane.classList.toggle('pane--reconnecting', reconnecting);
+        });
 
         updateButtons();
     }
