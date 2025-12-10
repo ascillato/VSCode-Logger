@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
-## [1.1.0] - 2025-12-09 [SFTP]
+## [1.1.0] - 2025-12-11 [SFTP]
 
 ### Added
 - Optional SFTP explorer panel with dual-pane remote/local navigation, per-pane file operations, and arrows to transfer selected files between remote and local (or remote-to-remote when the right pane is set to remote).
