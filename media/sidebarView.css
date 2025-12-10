@@ -114,9 +114,9 @@
     border-top: 1px solid var(--vscode-panel-border);
 }
 
+
 .command-group summary {
     cursor: pointer;
-    padding: 0;
     list-style: none;
     font-weight: 600;
 }
