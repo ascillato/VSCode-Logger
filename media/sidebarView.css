@@ -161,12 +161,24 @@
     cursor: pointer;
     text-align: left;
     min-height: var(--command-row-min-height);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .command-button:hover,
 .command-button:focus-visible {
     background: var(--vscode-button-secondaryHoverBackground);
     border-color: var(--vscode-focusBorder);
+}
+
+.command-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    font-size: 12px;
+    line-height: 1;
 }
 
 .sidebar-status {

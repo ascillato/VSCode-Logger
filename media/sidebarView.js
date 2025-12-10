@@ -25,6 +25,14 @@
     const status = document.getElementById('sidebarStatus');
     let colorCursor = 0;
 
+    function createIconSpan(symbol) {
+        const span = document.createElement('span');
+        span.className = 'command-icon';
+        span.textContent = symbol;
+        span.setAttribute('aria-hidden', 'true');
+        return span;
+    }
+
     function nextHighlightColor() {
         const pair = highlightPalette[colorCursor % highlightPalette.length];
         colorCursor = (colorCursor + 1) % highlightPalette.length;
@@ -75,7 +83,8 @@
 
             const openLogsButton = document.createElement('button');
             openLogsButton.className = 'command-button';
-            openLogsButton.textContent = 'Open Logs';
+            openLogsButton.appendChild(createIconSpan('📄'));
+            openLogsButton.appendChild(document.createTextNode('Open Logs'));
             openLogsButton.title = `Open logs for ${device.name}`;
             openLogsButton.addEventListener('click', (event) => {
                 event.stopPropagation();
@@ -86,7 +95,8 @@
             if (device.enableSshTerminal) {
                 const terminalButton = document.createElement('button');
                 terminalButton.className = 'command-button';
-                terminalButton.textContent = 'Open SSH Terminal';
+                terminalButton.appendChild(createIconSpan('🖥️'));
+                terminalButton.appendChild(document.createTextNode('Open SSH Terminal'));
                 terminalButton.title = `Open an SSH terminal session for ${device.name}`;
                 terminalButton.addEventListener('click', (event) => {
                     event.stopPropagation();
@@ -101,7 +111,8 @@
             if (device.enableSftpExplorer) {
                 const sftpButton = document.createElement('button');
                 sftpButton.className = 'command-button';
-                sftpButton.textContent = 'Open SFTP Explorer';
+                sftpButton.appendChild(createIconSpan('📁'));
+                sftpButton.appendChild(document.createTextNode('Open SFTP Explorer'));
                 sftpButton.title = `Browse and transfer files for ${device.name}`;
                 sftpButton.addEventListener('click', (event) => {
                     event.stopPropagation();
