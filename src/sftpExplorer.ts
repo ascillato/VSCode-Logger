@@ -47,6 +47,15 @@ interface StatusMessage {
     message: string;
 }
 
+type ConnectionState = 'connected' | 'disconnected' | 'reconnecting';
+
+interface ConnectionStatusMessage {
+    type: 'connectionStatus';
+    state: ConnectionState;
+    countdownSeconds?: number;
+    message: string;
+}
+
 interface ErrorMessage {
     type: 'error';
     message: string;
@@ -55,7 +64,14 @@ interface ErrorMessage {
 type ConfirmationResponse = { type: 'confirmationResult'; requestId: string; confirmed: boolean };
 type InputResponse = { type: 'inputResult'; requestId: string; value?: string };
 
-type WebviewResponse = InitResponse | ListResponse | StatusMessage | ErrorMessage | ConfirmationResponse | InputResponse;
+type WebviewResponse =
+    | InitResponse
+    | ListResponse
+    | StatusMessage
+    | ErrorMessage
+    | ConfirmationResponse
+    | InputResponse
+    | ConnectionStatusMessage;
 
 type WebviewRequest =
     | { type: 'requestInit' }
@@ -122,6 +138,12 @@ export class SftpExplorerPanel {
     private sftpReady?: Promise<SftpClient>;
     private remoteHome?: string;
     private hostKeyFailure?: HostKeyMismatch;
+    private remotePaths: { left?: string; right?: string } = {};
+    private connectionState: ConnectionState = 'connected';
+    private countdownTimer?: NodeJS.Timeout;
+    private reconnectTimer?: NodeJS.Timeout;
+    private readonly reconnectDelayMs = 5000;
+    private hasEverConnected = false;
     private disposed = false;
 
     readonly onDidDispose = this.onDidDisposeEmitter.event;
@@ -167,6 +189,7 @@ export class SftpExplorerPanel {
             const item = this.disposables.pop();
             item?.dispose();
         }
+        this.clearReconnectTimers();
         this.onDidDisposeEmitter.fire();
         this.onDidDisposeEmitter.dispose();
         this.sftp = undefined;
@@ -183,26 +206,51 @@ export class SftpExplorerPanel {
                     await this.postInitialState();
                     break;
                 case 'listEntries':
-                    await this.listAndPost(message.location, message.path, message.requestId);
+                    await this.listAndPost(
+                        message.location,
+                        message.path,
+                        message.requestId,
+                        message.requestId === 'rightRemote' ? 'right' : message.requestId === 'remote' ? 'left' : undefined
+                    );
                     break;
                 case 'deleteEntry': {
                     const refreshDir = await this.deleteEntry(message.location, message.path);
-                    await this.listAndPost(message.location, refreshDir, message.requestId);
+                    await this.listAndPost(
+                        message.location,
+                        refreshDir,
+                        message.requestId,
+                        message.requestId === 'rightRemote' ? 'right' : message.requestId === 'remote' ? 'left' : undefined
+                    );
                     break;
                 }
                 case 'renameEntry': {
                     const refreshDir = await this.renameEntry(message.location, message.path, message.newName);
-                    await this.listAndPost(message.location, refreshDir, message.requestId);
+                    await this.listAndPost(
+                        message.location,
+                        refreshDir,
+                        message.requestId,
+                        message.requestId === 'rightRemote' ? 'right' : message.requestId === 'remote' ? 'left' : undefined
+                    );
                     break;
                 }
                 case 'duplicateEntry': {
                     const refreshDir = await this.duplicateEntry(message.location, message.path);
-                    await this.listAndPost(message.location, refreshDir, message.requestId);
+                    await this.listAndPost(
+                        message.location,
+                        refreshDir,
+                        message.requestId,
+                        message.requestId === 'rightRemote' ? 'right' : message.requestId === 'remote' ? 'left' : undefined
+                    );
                     break;
                 }
                 case 'copyEntry': {
                     const refreshDir = await this.copyEntry(message.from, message.toDirectory);
-                    await this.listAndPost(message.toDirectory.location, refreshDir, message.requestId);
+                    await this.listAndPost(
+                        message.toDirectory.location,
+                        refreshDir,
+                        message.requestId,
+                        message.requestId === 'rightRemote' ? 'right' : message.requestId === 'remote' ? 'left' : undefined
+                    );
                     break;
                 }
                 case 'requestConfirmation': {
@@ -245,17 +293,35 @@ export class SftpExplorerPanel {
             local: localSnapshot,
         };
 
+        this.remotePaths = { left: remoteSnapshot.path, right: remoteSnapshot.path };
+        this.updateConnectionStatus('connected');
         this.postMessage(payload);
     }
 
-    private async listAndPost(location: 'remote' | 'local', dirPath: string, requestId: string): Promise<void> {
-        const snapshot = await this.buildSnapshot(location, dirPath);
+    private async listAndPost(
+        location: 'remote' | 'local',
+        dirPath: string,
+        requestId: string,
+        context: 'left' | 'right' | undefined = undefined
+    ): Promise<void> {
+        const snapshot = await this.buildSnapshot(location, dirPath, context);
         this.postMessage({ type: 'listResponse', requestId, snapshot });
     }
 
-    private async buildSnapshot(location: 'remote' | 'local', dirPath: string): Promise<DirectorySnapshot> {
+    private async buildSnapshot(
+        location: 'remote' | 'local',
+        dirPath: string,
+        context: 'left' | 'right' | undefined = undefined
+    ): Promise<DirectorySnapshot> {
         const normalizedPath = this.normalizePath(location, dirPath || (location === 'remote' ? this.remoteHome ?? '/' : this.localHome));
         const entries = location === 'remote' ? await this.listRemote(normalizedPath) : await this.listLocal(normalizedPath);
+        if (location === 'remote') {
+            if (context === 'right') {
+                this.remotePaths.right = normalizedPath;
+            } else {
+                this.remotePaths.left = normalizedPath;
+            }
+        }
         return {
             path: normalizedPath,
             parentPath: this.getParentDir(location, normalizedPath),
@@ -471,6 +537,96 @@ export class SftpExplorerPanel {
         return normalizedTargetDir;
     }
 
+    private updateConnectionStatus(state: ConnectionState, countdownSeconds?: number, overrideMessage?: string): void {
+        this.connectionState = state;
+        const message =
+            overrideMessage
+                ?? (state === 'connected'
+                    ? 'Connected'
+                    : state === 'reconnecting'
+                    ? 'Reconnecting…'
+                    : countdownSeconds !== undefined
+                    ? `Disconnected. Reconnecting in ${countdownSeconds}s…`
+                    : 'Disconnected. Reconnecting…');
+        this.postMessage({ type: 'connectionStatus', state, countdownSeconds, message });
+    }
+
+    private clearReconnectTimers(): void {
+        if (this.countdownTimer) {
+            clearInterval(this.countdownTimer);
+            this.countdownTimer = undefined;
+        }
+        if (this.reconnectTimer) {
+            clearTimeout(this.reconnectTimer);
+            this.reconnectTimer = undefined;
+        }
+    }
+
+    private handleDisconnect(): void {
+        if (this.disposed || this.connectionState === 'disconnected') {
+            return;
+        }
+
+        this.sftp = undefined;
+        this.sftpReady = undefined;
+        this.client = undefined;
+        this.startReconnectCountdown();
+    }
+
+    private startReconnectCountdown(): void {
+        if (this.disposed) {
+            return;
+        }
+
+        this.clearReconnectTimers();
+        let remainingSeconds = Math.max(1, Math.floor(this.reconnectDelayMs / 1000));
+        this.updateConnectionStatus('disconnected', remainingSeconds);
+
+        this.countdownTimer = setInterval(() => {
+            remainingSeconds -= 1;
+            if (remainingSeconds <= 0) {
+                this.clearReconnectTimers();
+                void this.attemptReconnect();
+                return;
+            }
+            this.updateConnectionStatus('disconnected', remainingSeconds);
+        }, 1000);
+
+        this.reconnectTimer = setTimeout(() => {
+            this.clearReconnectTimers();
+            void this.attemptReconnect();
+        }, this.reconnectDelayMs);
+    }
+
+    private async attemptReconnect(): Promise<void> {
+        if (this.disposed) {
+            return;
+        }
+
+        this.updateConnectionStatus('reconnecting');
+        try {
+            this.sftpReady = this.createSftpConnection(true);
+            this.sftp = await this.sftpReady;
+            this.updateConnectionStatus('connected');
+            await this.refreshRemoteViewsAfterReconnect();
+        } catch (err: any) {
+            const messageText = err instanceof HostKeyMismatchError ? err.message : err?.message ?? String(err);
+            this.postMessage({ type: 'error', message: messageText });
+            vscode.window.showErrorMessage(messageText);
+            this.startReconnectCountdown();
+        }
+    }
+
+    private async refreshRemoteViewsAfterReconnect(): Promise<void> {
+        const leftPath = this.remotePaths.left ?? this.remoteHome ?? '/';
+        await this.listAndPost('remote', leftPath, 'remote', 'left');
+
+        const rightPath = this.remotePaths.right ?? this.remoteHome;
+        if (rightPath && rightPath !== leftPath) {
+            await this.listAndPost('remote', rightPath, 'rightRemote', 'right');
+        }
+    }
+
     private async getRemoteHome(): Promise<string> {
         if (this.remoteHome) {
             return this.remoteHome;
@@ -619,15 +775,17 @@ export class SftpExplorerPanel {
             return this.sftp;
         }
 
-        this.sftpReady = this.createSftpConnection();
+        this.sftpReady = this.createSftpConnection(this.hasEverConnected);
         this.sftp = await this.sftpReady;
+        this.hasEverConnected = true;
         return this.sftp;
     }
 
-    private async createSftpConnection(): Promise<SftpClient> {
+    private async createSftpConnection(isReconnect: boolean): Promise<SftpClient> {
         const auth = await this.getAuthentication();
         const expectedFingerprint = this.getExpectedFingerprint();
         this.hostKeyFailure = undefined;
+        this.updateConnectionStatus('reconnecting', undefined, isReconnect ? undefined : 'Connecting…');
 
         return await new Promise<SftpClient>((resolve, reject) => {
             const client = new Client() as ClientWithSftp;
@@ -644,10 +802,13 @@ export class SftpExplorerPanel {
                             reject(err ?? new Error('Failed to start SFTP session.'));
                             return;
                         }
+                        this.clearReconnectTimers();
+                        this.updateConnectionStatus('connected');
                         resolve(sftp);
                     });
                 })
                 .on('error', (err) => {
+                    this.handleDisconnect();
                     if (this.hostKeyFailure) {
                         const message = `Host key verification failed for ${host}:${port}. Expected ${this.hostKeyFailure.expected} but received ${this.hostKeyFailure.received}.`;
                         reject(new HostKeyMismatchError(message, this.hostKeyFailure.expected, this.hostKeyFailure.received));
@@ -656,7 +817,7 @@ export class SftpExplorerPanel {
                     reject(new Error(`SSH error: ${err.message}`));
                 })
                 .on('close', () => {
-                    this.dispose();
+                    this.handleDisconnect();
                 })
                 .connect({
                     host,
@@ -784,13 +945,13 @@ export class SftpExplorerPanel {
     <title>SFTP Explorer</title>
 </head>
 <body>
-    <div class="explorer">
+    <div class="explorer" id="explorer">
         <header class="explorer__header">
             <h2>${this.escapeHtml(this.device.name)} — SFTP Explorer</h2>
             <div id="status" class="status"></div>
         </header>
         <div class="panes">
-            <section class="pane" aria-label="Remote files">
+            <section class="pane pane--remote" id="remotePane" aria-label="Remote files">
                 <div class="pane__controls">
                     <div class="actions">
                         <button id="remoteHome" class="action">HOME</button>

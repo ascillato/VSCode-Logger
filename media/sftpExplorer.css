@@ -16,6 +16,15 @@ body {
     height: 100vh;
 }
 
+.explorer--disabled {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.explorer--disabled .status {
+    pointer-events: auto;
+}
+
 .explorer__header {
     padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--vscode-editorGroup-border);
@@ -54,6 +63,16 @@ body {
     border-right: 1px solid var(--vscode-editorGroup-border);
     min-height: 0;
     min-width: 0;
+}
+
+.pane--remote.pane--disconnected .pane__controls,
+.pane--remote.pane--disconnected .list {
+    background: color-mix(in srgb, var(--vscode-errorBackground, #5a1d1d) 70%, transparent);
+}
+
+.pane--remote.pane--reconnecting .pane__controls,
+.pane--remote.pane--reconnecting .list {
+    background: color-mix(in srgb, var(--vscode-editorWarning-foreground, #d7ba7d) 30%, transparent);
 }
 
 .pane:last-of-type {

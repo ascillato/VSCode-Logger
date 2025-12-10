@@ -14,10 +14,13 @@
         rightMode: 'local',
         rightLocal: createSnapshot(),
         rightRemote: createSnapshot(),
+        connectionState: 'connected',
     };
 
     const elements = {
         status: document.getElementById('status'),
+        explorer: document.getElementById('explorer'),
+        remotePane: document.getElementById('remotePane'),
         remotePath: document.getElementById('remotePath'),
         localPath: document.getElementById('localPath'),
         remoteList: document.getElementById('remoteList'),
@@ -96,6 +99,9 @@
     }
 
     function handleEntryClick(side, snapshot, entry) {
+        if (state.connectionState !== 'connected') {
+            return;
+        }
         if (entry.type === 'directory') {
             const nextPath = getEntryPath(snapshot, entry);
             const location = side === 'remote' ? 'remote' : getActiveRightLocation();
@@ -133,18 +139,22 @@
         const remoteSelected = Boolean(state.remote.selected);
         const rightSnapshot = getActiveRightSnapshot();
         const rightSelected = Boolean(rightSnapshot.selected);
+        const disabled = state.connectionState !== 'connected';
 
-        elements.remoteDelete.disabled = !remoteSelected;
-        elements.remoteRename.disabled = !remoteSelected;
-        elements.remoteDuplicate.disabled = !remoteSelected;
-        elements.remoteToLocal.disabled = !remoteSelected;
-        elements.remoteUp.disabled = state.remote.isRoot;
+        elements.remoteHome.disabled = disabled;
+        elements.remoteDelete.disabled = disabled || !remoteSelected;
+        elements.remoteRename.disabled = disabled || !remoteSelected;
+        elements.remoteDuplicate.disabled = disabled || !remoteSelected;
+        elements.remoteToLocal.disabled = disabled || !remoteSelected;
+        elements.remoteUp.disabled = disabled || state.remote.isRoot;
 
-        elements.localDelete.disabled = !rightSelected;
-        elements.localRename.disabled = !rightSelected;
-        elements.localDuplicate.disabled = !rightSelected;
-        elements.localToRemote.disabled = !rightSelected;
-        elements.localUp.disabled = rightSnapshot.isRoot;
+        elements.localHome.disabled = disabled;
+        elements.localDelete.disabled = disabled || !rightSelected;
+        elements.localRename.disabled = disabled || !rightSelected;
+        elements.localDuplicate.disabled = disabled || !rightSelected;
+        elements.localToRemote.disabled = disabled || !rightSelected;
+        elements.localUp.disabled = disabled || rightSnapshot.isRoot;
+        elements.rightMode.disabled = disabled;
     }
 
     function requestList(location, path, requestId) {
@@ -170,6 +180,20 @@
             state.rightRemote = snapshot;
         }
         renderLists();
+    }
+
+    function applyConnectionStatus(payload) {
+        state.connectionState = payload.state;
+        setStatus(payload.message, false);
+
+        const disconnected = payload.state === 'disconnected';
+        const reconnecting = payload.state === 'reconnecting';
+
+        elements.explorer.classList.toggle('explorer--disabled', disconnected || reconnecting);
+        elements.remotePane.classList.toggle('pane--disconnected', disconnected);
+        elements.remotePane.classList.toggle('pane--reconnecting', reconnecting);
+
+        updateButtons();
     }
 
     function getActiveRightSnapshot() {
@@ -332,6 +356,9 @@
                 break;
             case 'listResponse':
                 handleListResponse(message);
+                break;
+            case 'connectionStatus':
+                applyConnectionStatus(message);
                 break;
             case 'status':
                 setStatus(message.message, false);
