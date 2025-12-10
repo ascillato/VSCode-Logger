@@ -1,3 +1,7 @@
+:root {
+    --command-row-min-height: 32px;
+}
+
 .highlight-rows {
     display: flex;
     flex-direction: column;
@@ -121,7 +125,8 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px;
+    padding: 6px 8px;
+    min-height: var(--command-row-min-height);
 }
 
 .command-group summary::-webkit-details-marker {
@@ -155,6 +160,7 @@
     color: var(--vscode-button-secondaryForeground);
     cursor: pointer;
     text-align: left;
+    min-height: var(--command-row-min-height);
 }
 
 .command-button:hover,

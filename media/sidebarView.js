@@ -48,7 +48,7 @@
             const sshCommands = device.sshCommands || [];
             const commandsSection = document.createElement('details');
             commandsSection.className = 'command-group';
-            commandsSection.open = true;
+            commandsSection.open = false;
 
             const summary = document.createElement('summary');
             summary.className = 'command-summary';
