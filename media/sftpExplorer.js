@@ -134,6 +134,12 @@
         container.style.setProperty('--name-col-width', `${nameWidth}ch`);
 
         const frag = document.createDocumentFragment();
+        if (snapshot.entries.length === 0) {
+            const emptyRow = document.createElement('div');
+            emptyRow.className = 'list__empty';
+            emptyRow.textContent = 'Folder empty';
+            frag.appendChild(emptyRow);
+        }
         snapshot.entries.forEach((entry) => {
             const row = document.createElement('div');
             row.className = 'entry';

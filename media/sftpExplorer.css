@@ -138,6 +138,13 @@ body {
     border-color: var(--vscode-editorWarning-foreground, #d7ba7d);
 }
 
+.list__empty {
+    padding: 0.35rem 0.5rem;
+    color: var(--vscode-descriptionForeground);
+    font-style: italic;
+    min-width: 100%;
+}
+
 .entry {
     padding: 0.35rem 0.5rem;
     border-radius: 3px;
