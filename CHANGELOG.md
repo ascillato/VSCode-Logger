@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Allow devices to tunnel log streaming, terminals, and one-off SSH commands through an optional bastion host with its own credentials and host key pinning.
 
 ### Changed
-- None.
+- Migrated documentation system and publishing workflow to Sphinx + Breathe + Mermaid.
 
 ### Deprecated
 - None.
