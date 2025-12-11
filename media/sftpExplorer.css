@@ -82,6 +82,12 @@ body {
     border-bottom: 1px solid var(--vscode-editorGroup-border);
 }
 
+.path-row {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
 .actions {
     display: flex;
     gap: 0.35rem;
@@ -100,6 +106,19 @@ body {
     font-size: 0.85rem;
 }
 
+.action--icon {
+    padding: 0.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.action__icon {
+    display: block;
+    width: 1rem;
+    height: 1rem;
+}
+
 .action[disabled] {
     opacity: 0.5;
     cursor: not-allowed;
@@ -116,6 +135,7 @@ body {
     font-size: 0.85rem;
     color: var(--vscode-descriptionForeground);
     word-break: break-all;
+    flex: 1;
 }
 
 .list {

@@ -15,6 +15,7 @@ import { promisify } from 'util';
 import { EmbeddedDevice } from './deviceTree';
 import { PasswordManager } from './passwordManager';
 import { SshCommandRunner } from './sshCommandRunner';
+import { SshTerminalSession } from './sshTerminal';
 
 interface ExplorerEntry {
     name: string;
@@ -137,6 +138,7 @@ type WebviewRequest =
           requestId: string;
       }
     | { type: 'runEntry'; location: 'remote' | 'local'; path: string; requestId: string }
+    | { type: 'openTerminal'; location: 'remote' | 'local'; path: string }
     | { type: 'deleteEntries'; location: 'remote' | 'local'; paths: string[]; requestId: string }
     | { type: 'requestConfirmation'; message: string; requestId: string }
     | { type: 'requestInput'; prompt: string; value?: string; requestId: string };
@@ -362,6 +364,10 @@ export class SftpExplorerPanel {
                 }
                 case 'runEntry': {
                     await this.runEntry(message.location, message.path);
+                    break;
+                }
+                case 'openTerminal': {
+                    await this.openTerminal(message.location, message.path);
                     break;
                 }
                 case 'requestPermissionsInfo': {
@@ -765,6 +771,33 @@ export class SftpExplorerPanel {
         }
 
         return this.normalizePath(toDirectory.location, toDirectory.path);
+    }
+
+    private async openTerminal(location: 'remote' | 'local', directoryPath: string): Promise<void> {
+        const normalizedDir = this.normalizePath(
+            location,
+            directoryPath || (location === 'remote' ? this.remoteHome ?? '/' : this.localHome)
+        );
+
+        if (location === 'remote') {
+            const terminal = vscode.window.createTerminal({
+                name: `${this.device.name} SSH`,
+                pty: new SshTerminalSession(this.device, this.context, normalizedDir),
+            });
+            terminal.show(true);
+            return;
+        }
+
+        const stats = await fs.stat(normalizedDir);
+        if (!stats.isDirectory()) {
+            throw new Error(`Target path is not a directory: ${normalizedDir}`);
+        }
+
+        const terminal = vscode.window.createTerminal({
+            name: `Local: ${path.basename(normalizedDir) || normalizedDir}`,
+            cwd: normalizedDir,
+        });
+        terminal.show(true);
     }
 
     private async runEntry(location: 'remote' | 'local', targetPath: string): Promise<void> {
@@ -1713,13 +1746,16 @@ export class SftpExplorerPanel {
     private getHtml(webview: vscode.Webview): string {
         const scriptUri = webview.asWebviewUri(vscode.Uri.file(path.join(this.context.extensionPath, 'media', 'sftpExplorer.js')));
         const styleUri = webview.asWebviewUri(vscode.Uri.file(path.join(this.context.extensionPath, 'media', 'sftpExplorer.css')));
+        const terminalIconUri = webview.asWebviewUri(
+            vscode.Uri.file(path.join(this.context.extensionPath, 'resources', 'terminal.svg'))
+        );
         const nonce = getNonce();
 
         return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src 'nonce-${nonce}'; img-src ${webview.cspSource};">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="${styleUri}" rel="stylesheet" />
     <title>SFTP Explorer</title>
@@ -1741,7 +1777,17 @@ export class SftpExplorerPanel {
                         <button id="remoteNewFile" class="action">NEW FILE</button>
                         <button id="remoteToLocal" class="action" disabled title="Copy to right pane">→</button>
                     </div>
-                    <div class="path" id="remotePath"></div>
+                    <div class="path-row">
+                        <div class="path" id="remotePath"></div>
+                        <button
+                            id="remoteOpenTerminal"
+                            class="action action--icon"
+                            title="Open Terminal here"
+                            aria-label="Open Terminal here"
+                        >
+                            <img class="action__icon" src="${terminalIconUri}" alt="">
+                        </button>
+                    </div>
                 </div>
                 <div id="remoteList" class="list" role="tree"></div>
             </section>
@@ -1762,7 +1808,17 @@ export class SftpExplorerPanel {
                         <button id="localNewFile" class="action">NEW FILE</button>
                         <button id="localToRemote" class="action" disabled title="Copy to left pane">←</button>
                     </div>
-                    <div class="path" id="localPath"></div>
+                    <div class="path-row">
+                        <div class="path" id="localPath"></div>
+                        <button
+                            id="localOpenTerminal"
+                            class="action action--icon"
+                            title="Open Terminal here"
+                            aria-label="Open Terminal here"
+                        >
+                            <img class="action__icon" src="${terminalIconUri}" alt="">
+                        </button>
+                    </div>
                 </div>
                 <div id="localList" class="list" role="tree"></div>
             </section>

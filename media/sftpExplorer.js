@@ -30,6 +30,8 @@
         rightPane: document.getElementById('rightPane'),
         remotePath: document.getElementById('remotePath'),
         localPath: document.getElementById('localPath'),
+        remoteOpenTerminal: document.getElementById('remoteOpenTerminal'),
+        localOpenTerminal: document.getElementById('localOpenTerminal'),
         remoteList: document.getElementById('remoteList'),
         localList: document.getElementById('localList'),
         remoteHome: document.getElementById('remoteHome'),
@@ -563,6 +565,7 @@
         elements.remoteRefresh.disabled = disabled;
         elements.remoteNewFolder.disabled = disabled;
         elements.remoteNewFile.disabled = disabled;
+        elements.remoteOpenTerminal.disabled = disabled;
 
         elements.localHome.disabled = disabled;
         elements.localToRemote.disabled = disabled || !rightSelected;
@@ -570,6 +573,7 @@
         elements.localRefresh.disabled = disabled;
         elements.localNewFolder.disabled = disabled;
         elements.localNewFile.disabled = disabled;
+        elements.localOpenTerminal.disabled = disabled;
         elements.rightMode.disabled = disabled;
     }
 
@@ -816,6 +820,20 @@
         }
     }
 
+    function openTerminal(side) {
+        if (state.connectionState !== 'connected') {
+            return;
+        }
+        resetStatus();
+        if (side === 'remote') {
+            vscode.postMessage({ type: 'openTerminal', location: 'remote', path: state.remote.path || '/' });
+            return;
+        }
+
+        const snapshot = getActiveRightSnapshot();
+        vscode.postMessage({ type: 'openTerminal', location: getActiveRightLocation(), path: snapshot.path });
+    }
+
     elements.remoteHome.addEventListener('click', () => goHome('remote'));
     elements.localHome.addEventListener('click', () => goHome('right'));
     elements.remoteUp.addEventListener('click', () => goUp('remote'));
@@ -828,6 +846,8 @@
     elements.localNewFile.addEventListener('click', () => createEntry('right', 'file'));
     elements.remoteToLocal.addEventListener('click', () => copyBetweenPanels('remoteToRight'));
     elements.localToRemote.addEventListener('click', () => copyBetweenPanels('rightToRemote'));
+    elements.remoteOpenTerminal.addEventListener('click', () => openTerminal('remote'));
+    elements.localOpenTerminal.addEventListener('click', () => openTerminal('right'));
 
     elements.contextRun.addEventListener('click', () => {
         hideContextMenu();
