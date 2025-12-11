@@ -31,20 +31,22 @@
         remoteRefresh: document.getElementById('remoteRefresh'),
         remoteNewFolder: document.getElementById('remoteNewFolder'),
         remoteNewFile: document.getElementById('remoteNewFile'),
-        remoteDelete: document.getElementById('remoteDelete'),
-        remoteRename: document.getElementById('remoteRename'),
-        remoteDuplicate: document.getElementById('remoteDuplicate'),
         remoteToLocal: document.getElementById('remoteToLocal'),
         localHome: document.getElementById('localHome'),
         localUp: document.getElementById('localUp'),
         localRefresh: document.getElementById('localRefresh'),
         localNewFolder: document.getElementById('localNewFolder'),
         localNewFile: document.getElementById('localNewFile'),
-        localDelete: document.getElementById('localDelete'),
-        localRename: document.getElementById('localRename'),
-        localDuplicate: document.getElementById('localDuplicate'),
         localToRemote: document.getElementById('localToRemote'),
         rightMode: document.getElementById('rightMode'),
+        contextMenu: document.getElementById('contextMenu'),
+        contextRename: document.getElementById('contextRename'),
+        contextDuplicate: document.getElementById('contextDuplicate'),
+        contextDelete: document.getElementById('contextDelete'),
+    };
+
+    const contextMenuState = {
+        side: 'remote',
     };
 
     const pending = {
@@ -118,13 +120,13 @@
     }
 
     function renderLists() {
-        renderPane(elements.remoteList, state.remote, (entry) => handleEntryClick('remote', state.remote, entry));
-        renderPane(elements.localList, getActiveRightSnapshot(), (entry) => handleEntryClick('right', getActiveRightSnapshot(), entry));
+        renderPane(elements.remoteList, state.remote, 'remote');
+        renderPane(elements.localList, getActiveRightSnapshot(), 'right');
         updatePaths();
         updateButtons();
     }
 
-    function renderPane(container, snapshot, onClick) {
+    function renderPane(container, snapshot, side) {
         container.innerHTML = '';
         const maxNameLength = snapshot.entries.reduce((max, entry) => Math.max(max, entry.name.length), 0);
         const nameWidth = Math.min(Math.max(maxNameLength, 1), 32);
@@ -176,13 +178,15 @@
             row.appendChild(sizeCell);
             row.appendChild(permissionCell);
             row.appendChild(modifiedCell);
-            row.addEventListener('click', () => onClick(entry));
+            row.addEventListener('click', () => handleEntryClick(side, snapshot, entry));
+            row.addEventListener('contextmenu', (event) => handleEntryContextMenu(side, entry, event));
             frag.appendChild(row);
         });
         container.appendChild(frag);
     }
 
     function handleEntryClick(side, snapshot, entry) {
+        hideContextMenu();
         if (state.connectionState !== 'connected') {
             return;
         }
@@ -194,14 +198,7 @@
             return;
         }
 
-        if (side === 'remote') {
-            state.remote.selected = entry;
-        } else if (getActiveRightLocation() === 'local') {
-            state.rightLocal.selected = entry;
-        } else {
-            state.rightRemote.selected = entry;
-        }
-        renderLists();
+        setSelection(side, entry);
     }
 
     function clearSelection(side) {
@@ -212,6 +209,46 @@
             snapshot.selected = undefined;
         }
         updateButtons();
+    }
+
+    function setSelection(side, entry) {
+        if (side === 'remote') {
+            state.remote.selected = entry;
+        } else if (getActiveRightLocation() === 'local') {
+            state.rightLocal.selected = entry;
+        } else {
+            state.rightRemote.selected = entry;
+        }
+        renderLists();
+    }
+
+    function handleEntryContextMenu(side, entry, event) {
+        event.preventDefault();
+        if (state.connectionState !== 'connected') {
+            hideContextMenu();
+            return;
+        }
+        setSelection(side, entry);
+        contextMenuState.side = side;
+        showContextMenu(event.clientX, event.clientY);
+    }
+
+    function showContextMenu(x, y) {
+        if (!elements.contextMenu) {
+            return;
+        }
+        elements.contextMenu.style.left = `${x}px`;
+        elements.contextMenu.style.top = `${y}px`;
+        elements.contextMenu.classList.add('context-menu--visible');
+        elements.contextMenu.setAttribute('aria-hidden', 'false');
+    }
+
+    function hideContextMenu() {
+        if (!elements.contextMenu) {
+            return;
+        }
+        elements.contextMenu.classList.remove('context-menu--visible');
+        elements.contextMenu.setAttribute('aria-hidden', 'true');
     }
 
     function updatePaths() {
@@ -226,9 +263,6 @@
         const disabled = state.connectionState !== 'connected';
 
         elements.remoteHome.disabled = disabled;
-        elements.remoteDelete.disabled = disabled || !remoteSelected;
-        elements.remoteRename.disabled = disabled || !remoteSelected;
-        elements.remoteDuplicate.disabled = disabled || !remoteSelected;
         elements.remoteToLocal.disabled = disabled || !remoteSelected;
         elements.remoteUp.disabled = disabled || state.remote.isRoot;
         elements.remoteRefresh.disabled = disabled;
@@ -236,9 +270,6 @@
         elements.remoteNewFile.disabled = disabled;
 
         elements.localHome.disabled = disabled;
-        elements.localDelete.disabled = disabled || !rightSelected;
-        elements.localRename.disabled = disabled || !rightSelected;
-        elements.localDuplicate.disabled = disabled || !rightSelected;
         elements.localToRemote.disabled = disabled || !rightSelected;
         elements.localUp.disabled = disabled || rightSnapshot.isRoot;
         elements.localRefresh.disabled = disabled;
@@ -299,6 +330,7 @@
         });
 
         updateButtons();
+        hideContextMenu();
     }
 
     function getActiveRightSnapshot() {
@@ -451,20 +483,43 @@
     elements.localNewFolder.addEventListener('click', () => createEntry('right', 'directory'));
     elements.remoteNewFile.addEventListener('click', () => createEntry('remote', 'file'));
     elements.localNewFile.addEventListener('click', () => createEntry('right', 'file'));
-    elements.remoteDelete.addEventListener('click', () => deleteSelected('remote'));
-    elements.localDelete.addEventListener('click', () => deleteSelected('right'));
-    elements.remoteRename.addEventListener('click', () => renameSelected('remote'));
-    elements.localRename.addEventListener('click', () => renameSelected('right'));
-    elements.remoteDuplicate.addEventListener('click', () => duplicateSelected('remote'));
-    elements.localDuplicate.addEventListener('click', () => duplicateSelected('right'));
     elements.remoteToLocal.addEventListener('click', () => copyBetweenPanels('remoteToRight'));
     elements.localToRemote.addEventListener('click', () => copyBetweenPanels('rightToRemote'));
+
+    elements.contextRename.addEventListener('click', () => {
+        hideContextMenu();
+        renameSelected(contextMenuState.side);
+    });
+    elements.contextDuplicate.addEventListener('click', () => {
+        hideContextMenu();
+        duplicateSelected(contextMenuState.side);
+    });
+    elements.contextDelete.addEventListener('click', () => {
+        hideContextMenu();
+        deleteSelected(contextMenuState.side);
+    });
+
+    document.addEventListener('click', (event) => {
+        if (!elements.contextMenu) {
+            return;
+        }
+        if (!elements.contextMenu.contains(event.target)) {
+            hideContextMenu();
+        }
+    });
+
+    [elements.remoteList, elements.localList].forEach((list) => {
+        list?.addEventListener('scroll', hideContextMenu);
+    });
+
+    window.addEventListener('resize', hideContextMenu);
 
     elements.rightMode.addEventListener('change', (event) => {
         state.rightMode = event.target.value === 'remote' ? 'remote' : 'local';
         clearSelection('right');
         updatePaths();
         updateButtons();
+        hideContextMenu();
         renderLists();
     });
 

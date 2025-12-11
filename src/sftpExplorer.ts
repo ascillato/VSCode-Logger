@@ -1107,9 +1107,6 @@ export class SftpExplorerPanel {
                         <button id="remoteRefresh" class="action">REFRESH</button>
                         <button id="remoteNewFolder" class="action">NEW FOLDER</button>
                         <button id="remoteNewFile" class="action">NEW FILE</button>
-                        <button id="remoteDelete" class="action" disabled>DELETE</button>
-                        <button id="remoteRename" class="action" disabled>RENAME</button>
-                        <button id="remoteDuplicate" class="action" disabled>DUPLICATE</button>
                         <button id="remoteToLocal" class="action" disabled title="Copy to right pane">→</button>
                     </div>
                     <div class="path" id="remotePath"></div>
@@ -1131,15 +1128,17 @@ export class SftpExplorerPanel {
                         <button id="localRefresh" class="action">REFRESH</button>
                         <button id="localNewFolder" class="action">NEW FOLDER</button>
                         <button id="localNewFile" class="action">NEW FILE</button>
-                        <button id="localDelete" class="action" disabled>DELETE</button>
-                        <button id="localRename" class="action" disabled>RENAME</button>
-                        <button id="localDuplicate" class="action" disabled>DUPLICATE</button>
                         <button id="localToRemote" class="action" disabled title="Copy to left pane">←</button>
                     </div>
                     <div class="path" id="localPath"></div>
                 </div>
                 <div id="localList" class="list" role="tree"></div>
             </section>
+        </div>
+        <div class="context-menu" id="contextMenu" role="menu" aria-hidden="true">
+            <button class="context-menu__item" id="contextRename" role="menuitem">Rename</button>
+            <button class="context-menu__item" id="contextDuplicate" role="menuitem">Duplicate</button>
+            <button class="context-menu__item context-menu__item--danger" id="contextDelete" role="menuitem">Delete</button>
         </div>
     </div>
     <script nonce="${nonce}" src="${scriptUri}"></script>

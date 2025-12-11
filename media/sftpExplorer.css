@@ -225,3 +225,40 @@ body {
     white-space: nowrap;
     border: 0;
 }
+
+.context-menu {
+    position: fixed;
+    display: none;
+    flex-direction: column;
+    min-width: 8rem;
+    background: var(--vscode-menu-background, var(--vscode-editor-background));
+    color: var(--vscode-menu-foreground, var(--vscode-foreground));
+    border: 1px solid var(--vscode-menu-border, var(--vscode-dropdown-border));
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+    z-index: 10;
+    border-radius: 4px;
+}
+
+.context-menu--visible {
+    display: flex;
+}
+
+.context-menu__item {
+    background: none;
+    border: none;
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+}
+
+.context-menu__item:hover,
+.context-menu__item:focus {
+    background: var(--vscode-list-hoverBackground);
+    outline: none;
+}
+
+.context-menu__item--danger {
+    color: var(--vscode-errorForeground);
+}
