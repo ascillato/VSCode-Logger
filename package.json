@@ -90,7 +90,7 @@
         "embeddedLogger.devices": {
           "type": "array",
           "description": "List of embedded devices to stream logs from.",
-          "markdownDescription": "List of embedded devices to stream logs from.\n\nExample:\n```json\n[\n  {\n    \"id\": \"rpi4\",\n    \"name\": \"Raspberry Pi 4\",\n    \"host\": \"192.168.1.50\",\n    \"hostFingerprint\": \"SHA256:your-base64-fingerprint\",\n    \"port\": 22,\n    \"username\": \"pi\",\n    \"logCommand\": \"journalctl -f -u app.service\",\n    \"enableSshTerminal\": true,\n    \"enableSftpExplorer\": true,\n    \"sshCommands\": [\n      { \"name\": \"Reboot\", \"command\": \"sudo reboot\" }\n    ]\n  }\n]\n```",
+          "markdownDescription": "List of embedded devices to stream logs from.\n\nExample:\n```json\n[\n  {\n    \"id\": \"rpi4\",\n    \"name\": \"Raspberry Pi 4\",\n    \"host\": \"192.168.1.50\",\n    \"hostFingerprint\": \"SHA256:your-base64-fingerprint\",\n    \"port\": 22,\n    \"username\": \"pi\",\n    \"privateKeyPath\": \"/home/user/.ssh/id_ed25519\",\n    \"privateKeyPassphrase\": \"${env:KEY_PASSPHRASE}\",\n    \"logCommand\": \"journalctl -f -u app.service\",\n    \"enableSshTerminal\": true,\n    \"enableSftpExplorer\": true,\n    \"sshCommands\": [\n      { \"name\": \"Reboot\", \"command\": \"sudo reboot\" }\n    ]\n  }\n]\n```",
           "items": {
             "type": "object",
             "properties": {
