@@ -44,15 +44,39 @@
         contextRename: document.getElementById('contextRename'),
         contextDuplicate: document.getElementById('contextDuplicate'),
         contextDelete: document.getElementById('contextDelete'),
+        contextPermissions: document.getElementById('contextPermissions'),
+        permissionsDialog: document.getElementById('permissionsDialog'),
+        permissionsTarget: document.getElementById('permissionsTarget'),
+        permissionsOwner: document.getElementById('permissionsOwner'),
+        permissionsGroup: document.getElementById('permissionsGroup'),
+        permissionsError: document.getElementById('permissionsError'),
+        permissionsSave: document.getElementById('permissionsSave'),
+        permissionsCancel: document.getElementById('permissionsCancel'),
+        permissionsDismiss: document.getElementById('permissionsDismiss'),
+        permOwnerRead: document.getElementById('permOwnerRead'),
+        permOwnerWrite: document.getElementById('permOwnerWrite'),
+        permOwnerExec: document.getElementById('permOwnerExec'),
+        permGroupRead: document.getElementById('permGroupRead'),
+        permGroupWrite: document.getElementById('permGroupWrite'),
+        permGroupExec: document.getElementById('permGroupExec'),
+        permOtherRead: document.getElementById('permOtherRead'),
+        permOtherWrite: document.getElementById('permOtherWrite'),
+        permOtherExec: document.getElementById('permOtherExec'),
     };
 
     const contextMenuState = {
         side: 'remote',
     };
 
+    const permissionsState = {
+        side: 'remote',
+        info: undefined,
+    };
+
     const pending = {
         confirmations: new Map(),
         inputs: new Map(),
+        permissions: new Map(),
     };
 
     function createRequestId() {
@@ -256,6 +280,99 @@
         }
         elements.contextMenu.classList.remove('context-menu--visible');
         elements.contextMenu.setAttribute('aria-hidden', 'true');
+    }
+
+    function setPermissionsError(message) {
+        elements.permissionsError.textContent = message || '';
+    }
+
+    function hidePermissionsDialog() {
+        if (!elements.permissionsDialog) {
+            return;
+        }
+        elements.permissionsDialog.classList.add('dialog--hidden');
+        elements.permissionsDialog.setAttribute('aria-hidden', 'true');
+        permissionsState.info = undefined;
+        setPermissionsError('');
+    }
+
+    function showPermissionsDialog(info, side) {
+        if (!elements.permissionsDialog) {
+            return;
+        }
+        permissionsState.info = info;
+        permissionsState.side = side;
+        elements.permissionsTarget.textContent = `Change ${info.type} from ${info.location}: ${info.name}`;
+
+        const bits = info.mode & 0o777;
+        elements.permOwnerRead.checked = Boolean(bits & 0o400);
+        elements.permOwnerWrite.checked = Boolean(bits & 0o200);
+        elements.permOwnerExec.checked = Boolean(bits & 0o100);
+        elements.permGroupRead.checked = Boolean(bits & 0o40);
+        elements.permGroupWrite.checked = Boolean(bits & 0o20);
+        elements.permGroupExec.checked = Boolean(bits & 0o10);
+        elements.permOtherRead.checked = Boolean(bits & 0o4);
+        elements.permOtherWrite.checked = Boolean(bits & 0o2);
+        elements.permOtherExec.checked = Boolean(bits & 0o1);
+
+        elements.permissionsOwner.value = info.owner !== undefined ? String(info.owner) : '';
+        elements.permissionsGroup.value = info.group !== undefined ? String(info.group) : '';
+        setPermissionsError('');
+
+        elements.permissionsDialog.classList.remove('dialog--hidden');
+        elements.permissionsDialog.setAttribute('aria-hidden', 'false');
+    }
+
+    function parseIdValue(value) {
+        const trimmed = value.trim();
+        if (!trimmed) {
+            return undefined;
+        }
+        const numeric = Number(trimmed);
+        if (!Number.isInteger(numeric) || numeric < 0) {
+            return null;
+        }
+        return numeric;
+    }
+
+    function buildModeFromDialog() {
+        let mode = 0;
+        mode |= elements.permOwnerRead.checked ? 0o400 : 0;
+        mode |= elements.permOwnerWrite.checked ? 0o200 : 0;
+        mode |= elements.permOwnerExec.checked ? 0o100 : 0;
+        mode |= elements.permGroupRead.checked ? 0o40 : 0;
+        mode |= elements.permGroupWrite.checked ? 0o20 : 0;
+        mode |= elements.permGroupExec.checked ? 0o10 : 0;
+        mode |= elements.permOtherRead.checked ? 0o4 : 0;
+        mode |= elements.permOtherWrite.checked ? 0o2 : 0;
+        mode |= elements.permOtherExec.checked ? 0o1 : 0;
+        return mode;
+    }
+
+    function requestPermissions(side) {
+        if (state.connectionState !== 'connected') {
+            return;
+        }
+        const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
+        if (!snapshot.selected) {
+            return;
+        }
+
+        const requestId = createRequestId();
+        pending.permissions.set(requestId, side);
+        const location = side === 'remote' ? 'remote' : getActiveRightLocation();
+        vscode.postMessage({
+            type: 'requestPermissionsInfo',
+            location,
+            path: getEntryPath(snapshot, snapshot.selected),
+            requestId,
+        });
+    }
+
+    function handlePermissionsInfo(message) {
+        const side = pending.permissions.get(message.requestId) || 'remote';
+        pending.permissions.delete(message.requestId);
+        showPermissionsDialog(message.info, side);
     }
 
     function updatePaths() {
@@ -505,6 +622,10 @@
         hideContextMenu();
         duplicateSelected(contextMenuState.side);
     });
+    elements.contextPermissions.addEventListener('click', () => {
+        hideContextMenu();
+        requestPermissions(contextMenuState.side);
+    });
     elements.contextDelete.addEventListener('click', () => {
         hideContextMenu();
         deleteSelected(contextMenuState.side);
@@ -516,6 +637,44 @@
         if (snapshot.selected) {
             setSelection(contextMenuState.side, snapshot.selected);
         }
+    });
+
+    elements.permissionsCancel.addEventListener('click', () => {
+        hidePermissionsDialog();
+    });
+    elements.permissionsDismiss.addEventListener('click', () => {
+        hidePermissionsDialog();
+    });
+    elements.permissionsSave.addEventListener('click', () => {
+        if (!permissionsState.info) {
+            return;
+        }
+        const ownerValue = parseIdValue(elements.permissionsOwner.value);
+        if (ownerValue === null) {
+            setPermissionsError('Owner must be a non-negative integer.');
+            return;
+        }
+        const groupValue = parseIdValue(elements.permissionsGroup.value);
+        if (groupValue === null) {
+            setPermissionsError('Group must be a non-negative integer.');
+            return;
+        }
+
+        const mode = buildModeFromDialog();
+        const location = permissionsState.info.location;
+        const requestId = location === 'remote'
+            ? (permissionsState.side === 'remote' ? requestIds.remote : requestIds.rightRemote)
+            : requestIds.local;
+        vscode.postMessage({
+            type: 'updatePermissions',
+            location,
+            path: permissionsState.info.path,
+            mode,
+            owner: ownerValue === undefined ? undefined : ownerValue,
+            group: groupValue === undefined ? undefined : groupValue,
+            requestId,
+        });
+        hidePermissionsDialog();
     });
 
     document.addEventListener('click', (event) => {
@@ -592,6 +751,9 @@
                 pending.inputs.delete(message.requestId);
                 break;
             }
+            case 'permissionsInfo':
+                handlePermissionsInfo(message);
+                break;
         }
     });
 

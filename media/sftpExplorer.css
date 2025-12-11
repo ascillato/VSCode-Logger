@@ -269,3 +269,125 @@ body {
 .context-menu__item--danger {
     color: var(--vscode-errorForeground);
 }
+
+.dialog {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 11;
+}
+
+.dialog--hidden {
+    display: none;
+}
+
+.dialog__content {
+    background: var(--vscode-editor-background);
+    color: var(--vscode-foreground);
+    border: 1px solid var(--vscode-editorGroup-border);
+    border-radius: 6px;
+    min-width: 320px;
+    max-width: 480px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.dialog__header,
+.dialog__actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--vscode-editorGroup-border);
+}
+
+.dialog__actions {
+    justify-content: flex-end;
+    gap: 0.5rem;
+    border-top: 1px solid var(--vscode-editorGroup-border);
+    border-bottom: none;
+}
+
+.dialog__title {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.dialog__close {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.dialog__body {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.dialog__target {
+    font-weight: 600;
+}
+
+.permissions-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.35rem 0.5rem;
+    align-items: center;
+}
+
+.permissions-grid__heading {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.permissions-grid__label {
+    font-weight: 600;
+}
+
+.permissions-grid__cell {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dialog__fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+
+.dialog__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.dialog__field-label {
+    font-size: 0.9rem;
+    color: var(--vscode-descriptionForeground);
+}
+
+.dialog__field input {
+    background: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    border: 1px solid var(--vscode-input-border, transparent);
+    padding: 0.35rem 0.5rem;
+    border-radius: 3px;
+}
+
+.dialog__error {
+    min-height: 1.2rem;
+    color: var(--vscode-errorForeground);
+}
+
+.action--primary {
+    background: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+    border-color: var(--vscode-button-border, transparent);
+}

@@ -51,6 +51,16 @@ interface StatusMessage {
 
 type ConnectionState = 'connected' | 'disconnected' | 'reconnecting';
 
+interface PermissionsInfo {
+    path: string;
+    location: 'remote' | 'local';
+    name: string;
+    type: 'file' | 'directory';
+    mode: number;
+    owner?: number;
+    group?: number;
+}
+
 interface ConnectionStatusMessage {
     type: 'connectionStatus';
     state: ConnectionState;
@@ -63,6 +73,12 @@ interface ErrorMessage {
     message: string;
 }
 
+interface PermissionsInfoMessage {
+    type: 'permissionsInfo';
+    requestId: string;
+    info: PermissionsInfo;
+}
+
 type ConfirmationResponse = { type: 'confirmationResult'; requestId: string; confirmed: boolean };
 type InputResponse = { type: 'inputResult'; requestId: string; value?: string };
 
@@ -73,7 +89,8 @@ type WebviewResponse =
     | ErrorMessage
     | ConfirmationResponse
     | InputResponse
-    | ConnectionStatusMessage;
+    | ConnectionStatusMessage
+    | PermissionsInfoMessage;
 
 type WebviewRequest =
     | { type: 'requestInit' }
@@ -87,6 +104,16 @@ type WebviewRequest =
           type: 'copyEntry';
           from: { location: 'remote' | 'local'; path: string };
           toDirectory: { location: 'remote' | 'local'; path: string };
+          requestId: string;
+      }
+    | { type: 'requestPermissionsInfo'; location: 'remote' | 'local'; path: string; requestId: string }
+    | {
+          type: 'updatePermissions';
+          location: 'remote' | 'local';
+          path: string;
+          mode: number;
+          owner?: number;
+          group?: number;
           requestId: string;
       }
     | { type: 'requestConfirmation'; message: string; requestId: string }
@@ -104,6 +131,8 @@ type FileStat = {
     mtime?: number | Date;
     mtimeMs?: number;
     mode?: number;
+    uid?: number;
+    gid?: number;
 };
 
 interface SftpFileEntry {
@@ -124,6 +153,7 @@ interface SftpClient {
     createWriteStream(path: string): Writable;
     mkdir(path: string, callback: (err?: Error) => void): void;
     rmdir(path: string, callback: (err?: Error) => void): void;
+    setstat(path: string, attrs: { mode?: number; uid?: number; gid?: number }, callback: (err?: Error) => void): void;
 }
 
 type ClientWithSftp = Client & { sftp(callback: (err: Error | undefined, sftp?: SftpClient) => void): void };
@@ -281,6 +311,27 @@ export class SftpExplorerPanel {
                     await this.listAndPost(
                         message.toDirectory.location,
                         refreshDir,
+                        message.requestId,
+                        message.requestId === 'rightRemote' ? 'right' : message.requestId === 'remote' ? 'left' : undefined
+                    );
+                    break;
+                }
+                case 'requestPermissionsInfo': {
+                    const info = await this.getPermissionsInfo(message.location, message.path);
+                    this.postMessage({ type: 'permissionsInfo', requestId: message.requestId, info });
+                    break;
+                }
+                case 'updatePermissions': {
+                    const parent = await this.applyPermissions(
+                        message.location,
+                        message.path,
+                        message.mode,
+                        message.owner,
+                        message.group
+                    );
+                    await this.listAndPost(
+                        message.location,
+                        parent,
                         message.requestId,
                         message.requestId === 'rightRemote' ? 'right' : message.requestId === 'remote' ? 'left' : undefined
                     );
@@ -735,6 +786,79 @@ export class SftpExplorerPanel {
         }
 
         return fs.stat(targetPath);
+    }
+
+    private async getPermissionsInfo(location: 'remote' | 'local', targetPath: string): Promise<PermissionsInfo> {
+        const normalizedTarget = this.normalizePath(location, targetPath);
+        const stats = await this.getEntryStats(location, normalizedTarget);
+        if (stats.mode === undefined) {
+            throw new Error('Unable to read permissions for the selected entry.');
+        }
+
+        const isDirectory = stats.isDirectory();
+        const name = location === 'remote' ? path.posix.basename(normalizedTarget) : path.basename(normalizedTarget);
+
+        return {
+            path: normalizedTarget,
+            location,
+            name,
+            type: isDirectory ? 'directory' : 'file',
+            mode: stats.mode,
+            owner: stats.uid,
+            group: stats.gid,
+        };
+    }
+
+    private mergeMode(existingMode: number | undefined, requestedMode: number): number {
+        const base = existingMode ?? 0;
+        return (base & ~0o777) | (requestedMode & 0o777);
+    }
+
+    private async applyPermissions(
+        location: 'remote' | 'local',
+        targetPath: string,
+        mode: number,
+        owner?: number,
+        group?: number
+    ): Promise<string> {
+        const normalizedTarget = this.normalizePath(location, targetPath);
+        const stats = await this.getEntryStats(location, normalizedTarget);
+
+        const updatedMode = this.mergeMode(stats.mode, mode);
+        const parentDir = this.getParentDir(location, normalizedTarget);
+
+        if (location === 'remote') {
+            const sftp = await this.ensureSftp();
+            const attrs: { mode: number; uid?: number; gid?: number } = { mode: updatedMode };
+            if (owner !== undefined) {
+                attrs.uid = owner;
+            }
+            if (group !== undefined) {
+                attrs.gid = group;
+            }
+            await new Promise<void>((resolve, reject) => {
+                sftp.setstat(normalizedTarget, attrs, (err?: Error) => {
+                    if (err) {
+                        reject(err);
+                        return;
+                    }
+                    resolve();
+                });
+            });
+            return parentDir;
+        }
+
+        await fs.chmod(normalizedTarget, updatedMode);
+        if (owner !== undefined || group !== undefined) {
+            const uid = owner ?? stats.uid;
+            const gid = group ?? stats.gid;
+            if (uid === undefined || gid === undefined) {
+                throw new Error('Unable to change owner or group because current identifiers are unavailable.');
+            }
+            await fs.chown(normalizedTarget, uid, gid);
+        }
+
+        return parentDir;
     }
 
     private async assertDirectory(location: 'remote' | 'local', dirPath: string): Promise<void> {
@@ -1314,7 +1438,79 @@ export class SftpExplorerPanel {
             <button class="context-menu__item" id="contextSelect" role="menuitem">Select</button>
             <button class="context-menu__item" id="contextRename" role="menuitem">Rename</button>
             <button class="context-menu__item" id="contextDuplicate" role="menuitem">Duplicate</button>
+            <button class="context-menu__item" id="contextPermissions" role="menuitem">Change Permissions</button>
             <button class="context-menu__item context-menu__item--danger" id="contextDelete" role="menuitem">Delete</button>
+        </div>
+        <div class="dialog dialog--hidden" id="permissionsDialog" role="dialog" aria-modal="true" aria-labelledby="permissionsTitle" aria-hidden="true">
+            <div class="dialog__content">
+                <header class="dialog__header">
+                    <h3 class="dialog__title" id="permissionsTitle">Change permissions</h3>
+                    <button class="dialog__close" id="permissionsDismiss" aria-label="Cancel">✕</button>
+                </header>
+                <div class="dialog__body">
+                    <div class="dialog__target" id="permissionsTarget"></div>
+                    <div class="permissions-grid" role="group" aria-label="Permissions">
+                        <div class="permissions-grid__heading"></div>
+                        <div class="permissions-grid__heading">Read</div>
+                        <div class="permissions-grid__heading">Write</div>
+                        <div class="permissions-grid__heading">Execute</div>
+                        <div class="permissions-grid__label">Owner</div>
+                        <label class="permissions-grid__cell">
+                            <input type="checkbox" id="permOwnerRead" />
+                            <span class="sr-only">Owner read</span>
+                        </label>
+                        <label class="permissions-grid__cell">
+                            <input type="checkbox" id="permOwnerWrite" />
+                            <span class="sr-only">Owner write</span>
+                        </label>
+                        <label class="permissions-grid__cell">
+                            <input type="checkbox" id="permOwnerExec" />
+                            <span class="sr-only">Owner execute</span>
+                        </label>
+                        <div class="permissions-grid__label">Group</div>
+                        <label class="permissions-grid__cell">
+                            <input type="checkbox" id="permGroupRead" />
+                            <span class="sr-only">Group read</span>
+                        </label>
+                        <label class="permissions-grid__cell">
+                            <input type="checkbox" id="permGroupWrite" />
+                            <span class="sr-only">Group write</span>
+                        </label>
+                        <label class="permissions-grid__cell">
+                            <input type="checkbox" id="permGroupExec" />
+                            <span class="sr-only">Group execute</span>
+                        </label>
+                        <div class="permissions-grid__label">Others</div>
+                        <label class="permissions-grid__cell">
+                            <input type="checkbox" id="permOtherRead" />
+                            <span class="sr-only">Others read</span>
+                        </label>
+                        <label class="permissions-grid__cell">
+                            <input type="checkbox" id="permOtherWrite" />
+                            <span class="sr-only">Others write</span>
+                        </label>
+                        <label class="permissions-grid__cell">
+                            <input type="checkbox" id="permOtherExec" />
+                            <span class="sr-only">Others execute</span>
+                        </label>
+                    </div>
+                    <div class="dialog__fields">
+                        <label class="dialog__field">
+                            <span class="dialog__field-label">Owner</span>
+                            <input id="permissionsOwner" type="text" />
+                        </label>
+                        <label class="dialog__field">
+                            <span class="dialog__field-label">Group</span>
+                            <input id="permissionsGroup" type="text" />
+                        </label>
+                    </div>
+                    <div class="dialog__error" id="permissionsError" role="status" aria-live="polite"></div>
+                </div>
+                <footer class="dialog__actions">
+                    <button class="action action--primary" id="permissionsSave">Save</button>
+                    <button class="action" id="permissionsCancel">Cancel</button>
+                </footer>
+            </div>
         </div>
     </div>
     <script nonce="${nonce}" src="${scriptUri}"></script>
