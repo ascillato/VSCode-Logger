@@ -25,7 +25,11 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
     private closed = false;
     private readonly passwordManager: PasswordManager;
 
-    constructor(private readonly device: EmbeddedDevice, private readonly context: vscode.ExtensionContext) {
+    constructor(
+        private readonly device: EmbeddedDevice,
+        private readonly context: vscode.ExtensionContext,
+        private readonly initialPath?: string
+    ) {
         this.passwordManager = new PasswordManager(this.context);
     }
 
@@ -142,6 +146,10 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
                         this.shell = stream;
                         this.writeEmitter.fire(`Connected to ${this.device.name}\r\n`);
 
+                        if (this.initialPath) {
+                            stream.write(`cd -- ${this.quotePath(this.initialPath)}\n`);
+                        }
+
                         stream
                             .on('data', (data: Buffer) => {
                                 this.writeEmitter.fire(data.toString().replace(/\n/g, '\r\n'));
@@ -192,5 +200,9 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
             ? path.join(os.homedir(), envExpanded.slice(1))
             : envExpanded;
         return path.resolve(tildeExpanded);
+    }
+
+    private quotePath(value: string): string {
+        return `'${value.replace(/'/g, "'\\''")}'`;
     }
 }
