@@ -237,7 +237,7 @@
     "commands": [
       {
         "command": "embeddedLogger.addHighlightRow",
-        "title": "Highlight a Key",
+        "title": "Highlight a Key in Logs",
         "icon": "$(search)"
       },
       {
@@ -251,7 +251,7 @@
       },
       {
         "command": "embeddedLogger.editDevicesConfig",
-        "title": "Edit Device Configuration",
+        "title": "Edit Devices Configuration",
         "icon": "$(pencil)"
       },
       {
