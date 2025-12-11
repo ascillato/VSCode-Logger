@@ -291,7 +291,7 @@ export class SftpExplorerPanel {
                         message.message,
                         { modal: true },
                         'Yes',
-                        'No'
+                        'Cancel'
                     );
                     this.postMessage({
                         type: 'confirmationResult',

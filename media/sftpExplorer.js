@@ -405,7 +405,8 @@
         if (!snapshot.selected) {
             return;
         }
-        const confirmed = await requestConfirmation(`Delete ${snapshot.selected.name}?`);
+        const locationLabel = side === 'remote' ? 'remote' : getActiveRightLocation();
+        const confirmed = await requestConfirmation(`Delete from ${locationLabel}: ${snapshot.selected.name} ?`);
         if (!confirmed) {
             return;
         }
