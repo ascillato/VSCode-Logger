@@ -36,6 +36,12 @@ function applyDeviceDefaults(device: EmbeddedDevice, defaults: LoggerDefaults): 
     return {
         ...device,
         port: device.port ?? defaults.defaultPort,
+        bastion: device.bastion
+            ? {
+                  ...device.bastion,
+                  port: device.bastion.port ?? defaults.defaultPort,
+              }
+            : undefined,
         logCommand: device.logCommand ?? defaults.defaultLogCommand,
         enableSshTerminal: device.enableSshTerminal ?? defaults.defaultEnableSshTerminal,
         enableSftpExplorer: device.enableSftpExplorer ?? defaults.defaultEnableSftpExplorer,

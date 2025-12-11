@@ -12,11 +12,23 @@ import { createHash } from 'crypto';
 import { Client, ConnectConfig } from 'ssh2';
 import { Readable, Writable } from 'stream';
 import { promisify } from 'util';
-import { EmbeddedDevice } from './deviceTree';
+import { BastionConfig, EmbeddedDevice } from './deviceTree';
 import { HostEndpoint, getHostEndpoints } from './hostEndpoints';
 import { PasswordManager } from './passwordManager';
 import { SshCommandRunner } from './sshCommandRunner';
 import { SshTerminalSession } from './sshTerminal';
+
+type ForwardingClient = Client & {
+    forwardOut(
+        srcIP: string,
+        srcPort: number,
+        dstIP: string,
+        dstPort: number,
+        callback: (err: Error | undefined, stream: any) => void
+    ): void;
+};
+
+type SocketConnectConfig = ConnectConfig & { sock?: any };
 
 interface ExplorerEntry {
     name: string;
@@ -205,10 +217,12 @@ export class SftpExplorerPanel {
     private readonly onDidDisposeEmitter = new vscode.EventEmitter<void>();
 
     private client?: ClientWithSftp;
+    private bastionClient?: Client;
     private sftp?: SftpClient;
     private sftpReady?: Promise<SftpClient>;
     private remoteHome?: string;
     private hostKeyFailure?: HostKeyMismatch;
+    private bastionHostKeyFailure?: HostKeyMismatch;
     private activeEndpoint?: HostEndpoint;
     private remotePaths: { left?: string; right?: string } = {};
     private connectionState: ConnectionState = 'connected';
@@ -281,6 +295,8 @@ export class SftpExplorerPanel {
         this.sftpReady = undefined;
         this.client?.end();
         this.client = undefined;
+        this.bastionClient?.end();
+        this.bastionClient = undefined;
         this.panel.dispose();
     }
 
@@ -1703,7 +1719,14 @@ export class SftpExplorerPanel {
     }
 
     private async createSftpConnection(isReconnect: boolean): Promise<SftpClient> {
+        const validationError = this.validateDeviceConfiguration();
+        if (validationError) {
+            throw new Error(validationError);
+        }
+
         const auth = await this.getAuthentication();
+        const bastion = this.getBastionConfig();
+        const bastionAuth = bastion ? await this.getBastionAuthentication(bastion) : undefined;
         const endpoints = getHostEndpoints(this.device);
 
         if (endpoints.length === 0) {
@@ -1719,7 +1742,15 @@ export class SftpExplorerPanel {
             const endpoint = endpoints[endpointIndex];
             this.activeEndpoint = endpoint;
             const expectedFingerprint = this.getExpectedFingerprint(endpoint);
+            const bastionEndpoint =
+                bastion && bastion.host
+                    ? ({ host: bastion.host, fingerprint: bastion.hostFingerprint, label: 'bastion' } as HostEndpoint)
+                    : undefined;
+            const expectedBastionFingerprint = bastionEndpoint
+                ? this.getExpectedFingerprint(bastionEndpoint)
+                : undefined;
             this.hostKeyFailure = undefined;
+            this.bastionHostKeyFailure = undefined;
             this.updateConnectionStatus(
                 'reconnecting',
                 undefined,
@@ -1727,7 +1758,14 @@ export class SftpExplorerPanel {
             );
 
             try {
-                const sftp = await this.connectToEndpoint(endpoint, auth, expectedFingerprint);
+                const sftp = await this.connectToEndpoint(
+                    endpoint,
+                    auth,
+                    expectedFingerprint,
+                    bastion,
+                    bastionAuth,
+                    expectedBastionFingerprint
+                );
                 return sftp;
             } catch (err) {
                 if (err instanceof HostKeyMismatchError) {
@@ -1749,10 +1787,121 @@ export class SftpExplorerPanel {
         throw lastError ?? new Error('Failed to connect over SFTP.');
     }
 
+    private validateDeviceConfiguration(): string | undefined {
+        const host = this.device.host?.trim();
+        const username = this.device.username?.trim();
+        if (!host) {
+            return `Device "${this.device.name}" is missing a host.`;
+        }
+        if (!username) {
+            return `Device "${this.device.name}" is missing a username.`;
+        }
+        if (this.device.port !== undefined && (!Number.isInteger(this.device.port) || this.device.port <= 0)) {
+            return `Device "${this.device.name}" has an invalid port.`;
+        }
+
+        const bastion = this.device.bastion;
+        if (bastion) {
+            if (!bastion.host?.trim()) {
+                return `Device "${this.device.name}" is missing a bastion host.`;
+            }
+            if (!bastion.username?.trim()) {
+                return `Device "${this.device.name}" is missing a bastion username.`;
+            }
+            if (bastion.port !== undefined && (!Number.isInteger(bastion.port) || bastion.port <= 0)) {
+                return `Device "${this.device.name}" has an invalid bastion port.`;
+            }
+        }
+
+        return undefined;
+    }
+
     private async connectToEndpoint(
         endpoint: HostEndpoint,
         auth: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>,
-        expectedFingerprint?: { display: string; hex: string }
+        expectedFingerprint?: { display: string; hex: string },
+        bastion?: BastionConfig,
+        bastionAuth?: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>,
+        expectedBastionFingerprint?: { display: string; hex: string }
+    ): Promise<SftpClient> {
+        if (bastion && bastionAuth) {
+            return this.connectThroughBastion(
+                endpoint,
+                auth,
+                expectedFingerprint,
+                bastion,
+                bastionAuth,
+                expectedBastionFingerprint
+            );
+        }
+
+        return this.connectDirect(endpoint, auth, expectedFingerprint);
+    }
+
+    private async connectThroughBastion(
+        endpoint: HostEndpoint,
+        auth: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>,
+        expectedFingerprint: { display: string; hex: string } | undefined,
+        bastion: BastionConfig,
+        bastionAuth: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>,
+        expectedBastionFingerprint?: { display: string; hex: string }
+    ): Promise<SftpClient> {
+        return await new Promise<SftpClient>((resolve, reject) => {
+            const bastionClient = new Client() as ForwardingClient;
+            this.bastionClient = bastionClient;
+            const bastionPort = bastion.port ?? 22;
+
+            bastionClient
+                .on('ready', () => {
+                    bastionClient.forwardOut('127.0.0.1', 0, endpoint.host, this.device.port ?? 22, (err: Error | undefined, stream: any) => {
+                        if (err) {
+                            bastionClient.end();
+                            reject(err);
+                            return;
+                        }
+
+                        void this.connectDirect(endpoint, auth, expectedFingerprint, stream, () => bastionClient.end())
+                            .then(resolve)
+                            .catch((error) => {
+                                bastionClient.end();
+                                reject(error);
+                            });
+                    });
+                })
+                .on('error', (err) => {
+                    if (this.bastionHostKeyFailure) {
+                        const message = `Host key verification failed for bastion ${bastion.host}:${bastionPort}. Expected ${this.bastionHostKeyFailure.expected} but received ${this.bastionHostKeyFailure.received}.`;
+                        reject(
+                            new HostKeyMismatchError(
+                                message,
+                                this.bastionHostKeyFailure.expected,
+                                this.bastionHostKeyFailure.received
+                            )
+                        );
+                        return;
+                    }
+                    reject(new Error(`SSH error: ${err.message}`));
+                })
+                .on('close', () => {
+                    // handled by downstream connection close
+                })
+                .connect({
+                    host: bastion.host,
+                    port: bastionPort,
+                    username: bastion.username,
+                    ...bastionAuth,
+                    hostHash: 'sha256',
+                    hostVerifier: (key) => this.verifyBastionHostKey(key, expectedBastionFingerprint),
+                });
+        });
+    }
+
+    private async connectDirect(
+        endpoint: HostEndpoint,
+        auth: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>,
+        expectedFingerprint?: { display: string; hex: string },
+        sock?: any,
+        onComplete?: () => void
     ): Promise<SftpClient> {
         return await new Promise<SftpClient>((resolve, reject) => {
             const client = new Client() as ClientWithSftp;
@@ -1761,11 +1910,20 @@ export class SftpExplorerPanel {
             const port = this.device.port ?? 22;
             const host = endpoint.host;
             const username = this.device.username.trim();
+            let completed = false;
+
+            const finalize = () => {
+                if (!completed) {
+                    completed = true;
+                    onComplete?.();
+                }
+            };
 
             client
                 .on('ready', () => {
                     client.sftp((err: Error | undefined, sftp?: SftpClient) => {
                         if (err || !sftp) {
+                            finalize();
                             reject(err ?? new Error('Failed to start SFTP session.'));
                             return;
                         }
@@ -1776,6 +1934,7 @@ export class SftpExplorerPanel {
                 })
                 .on('error', (err) => {
                     this.handleDisconnect();
+                    finalize();
                     if (this.hostKeyFailure) {
                         const message = `Host key verification failed for ${host}:${port}. Expected ${this.hostKeyFailure.expected} but received ${this.hostKeyFailure.received}.`;
                         reject(
@@ -1787,15 +1946,17 @@ export class SftpExplorerPanel {
                 })
                 .on('close', () => {
                     this.handleDisconnect();
+                    finalize();
                 })
                 .connect({
                     host,
                     port,
                     username,
+                    sock,
                     ...auth,
                     hostHash: 'sha256',
                     hostVerifier: (key) => this.verifyHostKey(key, expectedFingerprint),
-                });
+                } as SocketConnectConfig);
         });
     }
 
@@ -1813,6 +1974,50 @@ export class SftpExplorerPanel {
         }
 
         return { password };
+    }
+
+    private getBastionConfig(): BastionConfig | undefined {
+        const bastion = this.device.bastion;
+        if (!bastion?.host?.trim() || !bastion.username?.trim()) {
+            return undefined;
+        }
+
+        return {
+            ...bastion,
+            host: bastion.host.trim(),
+            username: bastion.username.trim(),
+            port: bastion.port ?? 22,
+            hostFingerprint: bastion.hostFingerprint?.trim(),
+            privateKeyPath: bastion.privateKeyPath?.trim(),
+        };
+    }
+
+    private async getBastionAuthentication(
+        bastion: BastionConfig
+    ): Promise<Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>> {
+        if (bastion.privateKeyPath) {
+            const privateKey = await this.loadPrivateKey(bastion.privateKeyPath);
+            const bastionDevice = this.getBastionDevice(bastion);
+            const passphrase = await this.passwordManager.getPassphrase(bastionDevice);
+            return { privateKey, passphrase: passphrase || undefined };
+        }
+
+        const bastionDevice = this.getBastionDevice(bastion);
+        const password = await this.passwordManager.getPassword(bastionDevice);
+        if (!password) {
+            throw new Error('Password or private key is required to connect to the bastion host.');
+        }
+
+        return { password };
+    }
+
+    private getBastionDevice(bastion: BastionConfig): EmbeddedDevice {
+        return {
+            id: `${this.device.id}-bastion`,
+            name: `${this.device.name} bastion`,
+            host: bastion.host,
+            username: bastion.username,
+        } as EmbeddedDevice;
     }
 
     private async loadPrivateKey(filePath: string): Promise<Buffer> {
@@ -1880,6 +2085,21 @@ export class SftpExplorerPanel {
         const matches = actual.hex === expected.hex;
         if (!matches) {
             this.hostKeyFailure = { expected: expected.display, received: actual.display };
+        }
+
+        return matches;
+    }
+
+    private verifyBastionHostKey(key: string | Buffer, expected?: { display: string; hex: string }): boolean {
+        const actual = this.computeHostKeyFingerprint(key);
+
+        if (!expected) {
+            return true;
+        }
+
+        const matches = actual.hex === expected.hex;
+        if (!matches) {
+            this.bastionHostKeyFailure = { expected: expected.display, received: actual.display };
         }
 
         return matches;

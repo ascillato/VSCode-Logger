@@ -41,6 +41,12 @@ Add devices in your VS Code settings under `embeddedLogger.devices`:
     "hostFingerprint": "SHA256:your-device-fingerprint",
     "secondaryHost": "192.168.1.11",
     "secondaryHostFingerprint": "SHA256:backup-device-fingerprint",
+    "bastion": {
+      "host": "bastion.example.com",
+      "hostFingerprint": "SHA256:bastion-fingerprint",
+      "port": 22,
+      "username": "jump-user"
+    },
     "port": 22,
     "privateKeyPath": "${env:HOME}/.ssh/id_ed25519",
     "username": "root",
@@ -64,6 +70,8 @@ If no password is stored yet, the extension prompts for it when connecting and s
 - **Pin each device's host key** by setting `hostFingerprint` to the device's SSH host key fingerprint (for example, `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub -E sha256`). If no fingerprint is configured, the extension records the server's fingerprint on the first successful connection. When a server presents a different fingerprint later, you'll be prompted to accept the new value before reconnecting.
 
 - **Optionally configure a secondary host** via `secondaryHost` (and `secondaryHostFingerprint` when pinning). Connections start with the primary host and automatically fall back to the secondary host when the primary connection fails; if the secondary host also fails, the extension retries the primary host.
+
+- **Tunnel through a bastion/jump host** by supplying a `bastion` block with its `host`, `username`, optional `port`, and optional `hostFingerprint` plus password or private key authentication. Secrets and host key fingerprints for the bastion are stored independently in Secret Storage and captured on first connect when omitted.
 
 - Set `enableSshTerminal` to control visibility of the **Open SSH Terminal** button alongside any configured SSH commands for that device (the action is enabled by default; set it to `false` to hide it). The **Open SSH Terminal** action opens a dedicated VS Code terminal tab for the device and authenticates using the stored password or private key (prompting for and saving the credential securely when missing).
 
@@ -125,12 +133,12 @@ If you find this extension useful, please [rate it](https://marketplace.visualst
 
 - Requires: `npm install -g @vscode/vsce`
 - Run: `vsce package` to generate vsix file to be installed into VSCode
-- Install locally on VSCode: `code --install-extension embedded-device-logger-1.1.0.vsix`
+- Install locally on VSCode: `code --install-extension embedded-device-logger-1.2.0.vsix`
 
 ### Clean and re-compile
 
 - `clear; rm -rf node_modules; rm -rf out; rm *.vsix; npm install; npm run compile; vsce package`
-- `code --install-extension embedded-device-logger-1.1.0.vsix`
+- `code --install-extension embedded-device-logger-1.2.0.vsix`
 
 ### Generating Source Code Documentation
 
