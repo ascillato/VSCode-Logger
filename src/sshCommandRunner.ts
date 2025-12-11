@@ -8,9 +8,21 @@ import * as fs from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
 import { Client, ConnectConfig } from 'ssh2';
-import { EmbeddedDevice } from './deviceTree';
+import { BastionConfig, EmbeddedDevice } from './deviceTree';
 import { HostEndpoint, getHostEndpoints } from './hostEndpoints';
 import { PasswordManager } from './passwordManager';
+
+type ForwardingClient = Client & {
+    forwardOut(
+        srcIP: string,
+        srcPort: number,
+        dstIP: string,
+        dstPort: number,
+        callback: (err: Error | undefined, stream: any) => void
+    ): void;
+};
+
+type SocketConnectConfig = ConnectConfig & { sock?: any };
 
 export interface DeviceCommand {
     name: string;
@@ -49,6 +61,8 @@ export class SshCommandRunner {
 
         const sanitizedCommand = this.sanitizeCommand(command.command);
         const authentication = await this.getAuthentication();
+        const bastion = this.getBastionConfig();
+        const bastionAuthentication = bastion ? await this.getBastionAuthentication(bastion) : undefined;
         const endpoints = getHostEndpoints(this.device);
 
         if (endpoints.length === 0) {
@@ -63,7 +77,13 @@ export class SshCommandRunner {
         while (attempts < maxAttempts) {
             const endpoint = endpoints[endpointIndex];
             try {
-                return await this.executeCommand(endpoint, sanitizedCommand, authentication);
+                return await this.executeCommand(
+                    endpoint,
+                    sanitizedCommand,
+                    authentication,
+                    bastion,
+                    bastionAuthentication
+                );
             } catch (err) {
                 lastError = err;
                 attempts++;
@@ -91,6 +111,18 @@ export class SshCommandRunner {
         }
         if (this.device.port !== undefined && (!Number.isInteger(this.device.port) || this.device.port <= 0)) {
             return `Device "${this.device.name}" has an invalid port.`;
+        }
+        const bastion = this.device.bastion;
+        if (bastion) {
+            if (!bastion.host?.trim()) {
+                return `Device "${this.device.name}" is missing a bastion host.`;
+            }
+            if (!bastion.username?.trim()) {
+                return `Device "${this.device.name}" is missing a bastion username.`;
+            }
+            if (bastion.port !== undefined && (!Number.isInteger(bastion.port) || bastion.port <= 0)) {
+                return `Device "${this.device.name}" has an invalid bastion port.`;
+            }
         }
         return undefined;
     }
@@ -122,10 +154,122 @@ export class SshCommandRunner {
         return { password };
     }
 
+    private getBastionConfig(): BastionConfig | undefined {
+        const bastion = this.device.bastion;
+        if (!bastion?.host?.trim() || !bastion.username?.trim()) {
+            return undefined;
+        }
+
+        return {
+            ...bastion,
+            host: bastion.host.trim(),
+            username: bastion.username.trim(),
+            port: bastion.port ?? 22,
+            hostFingerprint: bastion.hostFingerprint?.trim(),
+            privateKeyPath: bastion.privateKeyPath?.trim(),
+        };
+    }
+
+    private async getBastionAuthentication(
+        bastion: BastionConfig
+    ): Promise<Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>> {
+        if (bastion.privateKeyPath) {
+            const privateKey = await this.loadPrivateKey(bastion.privateKeyPath);
+            const bastionDevice = this.getBastionDevice(bastion);
+            const passphrase = await this.passwordManager.getPassphrase(bastionDevice);
+            return { privateKey, passphrase: passphrase || undefined };
+        }
+
+        const bastionDevice = this.getBastionDevice(bastion);
+        const password = await this.passwordManager.getPassword(bastionDevice);
+        if (!password) {
+            throw new Error('Password or private key is required to connect to the bastion host.');
+        }
+
+        return { password };
+    }
+
+    private getBastionDevice(bastion: BastionConfig): EmbeddedDevice {
+        return {
+            id: `${this.device.id}-bastion`,
+            name: `${this.device.name} bastion`,
+            host: bastion.host,
+            username: bastion.username,
+        } as EmbeddedDevice;
+    }
+
     private executeCommand(
         endpoint: HostEndpoint,
         command: string,
-        authentication: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>
+        authentication: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>,
+        bastion?: BastionConfig,
+        bastionAuthentication?: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>
+    ): Promise<string> {
+        if (bastion && bastionAuthentication) {
+            return this.executeCommandThroughBastion(
+                endpoint,
+                command,
+                authentication,
+                bastion,
+                bastionAuthentication
+            );
+        }
+
+        return this.executeAgainstEndpoint(endpoint, command, authentication);
+    }
+
+    private executeCommandThroughBastion(
+        endpoint: HostEndpoint,
+        command: string,
+        authentication: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>,
+        bastion: BastionConfig,
+        bastionAuthentication: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>
+    ): Promise<string> {
+        return new Promise((resolve, reject) => {
+            const bastionClient = new Client() as ForwardingClient;
+            const bastionPort = bastion.port ?? 22;
+
+            bastionClient
+                .on('ready', () => {
+                    bastionClient.forwardOut('127.0.0.1', 0, endpoint.host, this.device.port ?? 22, (err: Error | undefined, stream: any) => {
+                        if (err) {
+                            bastionClient.end();
+                            reject(err);
+                            return;
+                        }
+
+                        void this.executeAgainstEndpoint(endpoint, command, authentication, stream, () =>
+                            bastionClient.end()
+                        )
+                            .then(resolve)
+                            .catch((error) => {
+                                bastionClient.end();
+                                reject(error);
+                            });
+                    });
+                })
+                .on('error', (err) => {
+                    bastionClient.end();
+                    reject(new Error(`SSH error: ${err.message}`));
+                })
+                .on('close', () => {
+                    // Tunnel closure handled after the command completes.
+                })
+                .connect({
+                    host: bastion.host,
+                    port: bastionPort,
+                    username: bastion.username,
+                    ...bastionAuthentication,
+                });
+        });
+    }
+
+    private executeAgainstEndpoint(
+        endpoint: HostEndpoint,
+        command: string,
+        authentication: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>,
+        sock?: any,
+        onComplete?: () => void
     ): Promise<string> {
         return new Promise((resolve, reject) => {
             const client = new Client();
@@ -136,11 +280,20 @@ export class SshCommandRunner {
             let stderr = '';
             let exitCode: number | null = null;
             let exitSignal: string | null = null;
+            let completed = false;
+
+            const finalize = () => {
+                if (!completed) {
+                    completed = true;
+                    onComplete?.();
+                }
+            };
 
             client
                 .on('ready', () => {
                     client.exec(command, (err, stream) => {
                         if (err) {
+                            finalize();
                             reject(err);
                             client.end();
                             return;
@@ -156,6 +309,7 @@ export class SshCommandRunner {
                             })
                             .on('close', () => {
                                 client.end();
+                                finalize();
                                 const terminatedBySignal = !!exitSignal;
                                 const hasErrorCode = exitCode !== null && exitCode !== 0;
                                 if (terminatedBySignal || hasErrorCode) {
@@ -182,17 +336,20 @@ export class SshCommandRunner {
                     });
                 })
                 .on('error', (err) => {
+                    finalize();
                     reject(new Error(`SSH error: ${err.message}`));
                 })
                 .on('close', () => {
+                    finalize();
                     client.end();
                 })
                 .connect({
                     host,
                     port,
                     username,
+                    sock,
                     ...authentication,
-                });
+                } as SocketConnectConfig);
         });
     }
 

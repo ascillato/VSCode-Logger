@@ -1,6 +1,6 @@
 import { EmbeddedDevice } from './deviceTree';
 
-export type HostEndpointLabel = 'primary' | 'secondary';
+export type HostEndpointLabel = 'primary' | 'secondary' | 'bastion';
 
 export interface HostEndpoint {
     host: string;

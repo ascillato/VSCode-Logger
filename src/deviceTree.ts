@@ -16,6 +16,7 @@ export interface EmbeddedDevice {
     hostFingerprint?: string;
     secondaryHost?: string;
     secondaryHostFingerprint?: string;
+    bastion?: BastionConfig;
     port?: number;
     username: string;
     password?: string; // legacy
@@ -25,6 +26,16 @@ export interface EmbeddedDevice {
     enableSshTerminal?: boolean;
     enableSftpExplorer?: boolean;
     sshCommands?: { name: string; command: string }[];
+}
+
+export interface BastionConfig {
+    host: string;
+    hostFingerprint?: string;
+    port?: number;
+    username: string;
+    password?: string; // legacy
+    privateKeyPath?: string;
+    privateKeyPassphrase?: string; // legacy
 }
 
 /**
