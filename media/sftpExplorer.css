@@ -147,6 +147,9 @@ body {
     align-items: center;
     column-gap: 0.5rem;
     width: 100%;
+    min-width: 100%;
+    position: relative;
+    isolation: isolate;
 }
 
 .entry[data-type='directory'] {
@@ -184,13 +187,26 @@ body {
     color: var(--vscode-terminal-ansiYellow, #d7ba7d);
 }
 
-.entry:hover {
+
+.entry::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    z-index: -1;
+    background: transparent;
+}
+
+.entry:hover::before {
     background: var(--vscode-list-hoverBackground);
 }
 
 .entry--selected {
-    background: var(--vscode-list-activeSelectionBackground);
     color: var(--vscode-list-activeSelectionForeground);
+}
+
+.entry--selected::before {
+    background: var(--vscode-list-activeSelectionBackground);
 }
 
 .entry--selected .entry__cell--size,
