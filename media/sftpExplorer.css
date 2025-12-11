@@ -270,6 +270,11 @@ body {
     color: var(--vscode-errorForeground);
 }
 
+.context-menu__item--disabled {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
 .dialog {
     position: fixed;
     inset: 0;

@@ -110,6 +110,12 @@ type WebviewRequest =
           toDirectory: { location: 'remote' | 'local'; path: string };
           requestId: string;
       }
+    | {
+          type: 'copyEntries';
+          items: { location: 'remote' | 'local'; path: string }[];
+          toDirectory: { location: 'remote' | 'local'; path: string };
+          requestId: string;
+      }
     | { type: 'requestPermissionsInfo'; location: 'remote' | 'local'; path: string; requestId: string }
     | {
           type: 'updatePermissions';
@@ -120,6 +126,16 @@ type WebviewRequest =
           group?: number | string;
           requestId: string;
       }
+    | {
+          type: 'updatePermissionsBatch';
+          location: 'remote' | 'local';
+          paths: string[];
+          mode: number;
+          owner?: number | string;
+          group?: number | string;
+          requestId: string;
+      }
+    | { type: 'deleteEntries'; location: 'remote' | 'local'; paths: string[]; requestId: string }
     | { type: 'requestConfirmation'; message: string; requestId: string }
     | { type: 'requestInput'; prompt: string; value?: string; requestId: string };
 
@@ -272,6 +288,16 @@ export class SftpExplorerPanel {
                     );
                     break;
                 }
+                case 'deleteEntries': {
+                    const refreshDir = await this.deleteEntries(message.location, message.paths);
+                    await this.listAndPost(
+                        message.location,
+                        refreshDir,
+                        message.requestId,
+                        message.requestId === 'rightRemote' ? 'right' : message.requestId === 'remote' ? 'left' : undefined
+                    );
+                    break;
+                }
                 case 'renameEntry': {
                     const refreshDir = await this.renameEntry(message.location, message.path, message.newName);
                     await this.listAndPost(
@@ -322,6 +348,16 @@ export class SftpExplorerPanel {
                     );
                     break;
                 }
+                case 'copyEntries': {
+                    const refreshDir = await this.copyEntries(message.items, message.toDirectory);
+                    await this.listAndPost(
+                        message.toDirectory.location,
+                        refreshDir,
+                        message.requestId,
+                        message.requestId === 'rightRemote' ? 'right' : message.requestId === 'remote' ? 'left' : undefined
+                    );
+                    break;
+                }
                 case 'requestPermissionsInfo': {
                     const info = await this.getPermissionsInfo(message.location, message.path);
                     this.postMessage({ type: 'permissionsInfo', requestId: message.requestId, info });
@@ -336,6 +372,27 @@ export class SftpExplorerPanel {
                     const parent = await this.applyPermissions(
                         message.location,
                         message.path,
+                        message.mode,
+                        owner,
+                        group
+                    );
+                    await this.listAndPost(
+                        message.location,
+                        parent,
+                        message.requestId,
+                        message.requestId === 'rightRemote' ? 'right' : message.requestId === 'remote' ? 'left' : undefined
+                    );
+                    break;
+                }
+                case 'updatePermissionsBatch': {
+                    const { owner, group } = await this.resolveOwnerGroupIds(
+                        message.location,
+                        message.owner,
+                        message.group
+                    );
+                    const parent = await this.applyPermissionsBatch(
+                        message.location,
+                        message.paths,
                         message.mode,
                         owner,
                         group
@@ -564,6 +621,19 @@ export class SftpExplorerPanel {
         return this.getParentDir(location, normalizedTarget);
     }
 
+    private async deleteEntries(location: 'remote' | 'local', paths: string[]): Promise<string> {
+        if (!paths.length) {
+            return location === 'remote' ? this.remoteHome ?? '/' : this.localHome;
+        }
+
+        const normalizedTargets = paths.map((target) => this.normalizePath(location, target));
+        for (const target of normalizedTargets) {
+            await this.deleteEntry(location, target);
+        }
+
+        return this.getParentDir(location, normalizedTargets[0]);
+    }
+
     private async renameEntry(location: 'remote' | 'local', targetPath: string, newName: string): Promise<string> {
         const normalizedTarget = this.normalizePath(location, targetPath);
         const stats = await this.getEntryStats(location, normalizedTarget);
@@ -670,6 +740,21 @@ export class SftpExplorerPanel {
             await fs.copyFile(normalizedSource, destinationPath);
         }
         return normalizedTargetDir;
+    }
+
+    private async copyEntries(
+        items: { location: 'remote' | 'local'; path: string }[],
+        toDirectory: { location: 'remote' | 'local'; path: string }
+    ): Promise<string> {
+        if (!items.length) {
+            return this.normalizePath(toDirectory.location, toDirectory.path);
+        }
+
+        for (const item of items) {
+            await this.copyEntry(item, toDirectory);
+        }
+
+        return this.normalizePath(toDirectory.location, toDirectory.path);
     }
 
     private updateConnectionStatus(state: ConnectionState, countdownSeconds?: number, overrideMessage?: string): void {
@@ -1049,6 +1134,25 @@ export class SftpExplorerPanel {
         }
 
         return parentDir;
+    }
+
+    private async applyPermissionsBatch(
+        location: 'remote' | 'local',
+        paths: string[],
+        mode: number,
+        owner?: number,
+        group?: number
+    ): Promise<string> {
+        if (!paths.length) {
+            return location === 'remote' ? this.remoteHome ?? '/' : this.localHome;
+        }
+
+        const normalizedPaths = paths.map((target) => this.normalizePath(location, target));
+        for (const target of normalizedPaths) {
+            await this.applyPermissions(location, target, mode, owner, group);
+        }
+
+        return this.getParentDir(location, normalizedPaths[0]);
     }
 
     private async assertDirectory(location: 'remote' | 'local', dirPath: string): Promise<void> {

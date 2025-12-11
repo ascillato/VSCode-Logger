@@ -76,6 +76,7 @@
     const permissionsState = {
         side: 'remote',
         info: undefined,
+        paths: [],
     };
 
     const confirmationState = {
@@ -94,7 +95,7 @@
     }
 
     function createSnapshot() {
-        return { path: '', parentPath: '', isRoot: true, entries: [], location: 'remote', selected: undefined };
+        return { path: '', parentPath: '', isRoot: true, entries: [], location: 'remote', selected: [] };
     }
 
     function setStatus(message, isError = false) {
@@ -158,6 +159,14 @@
         return `${snapshot.path}/${entry.name}`;
     }
 
+    function getSelectedEntries(snapshot) {
+        return snapshot.selected ?? [];
+    }
+
+    function isSelected(snapshot, entry) {
+        return getSelectedEntries(snapshot).some((selectedEntry) => selectedEntry.name === entry.name);
+    }
+
     function renderLists() {
         renderPane(elements.remoteList, state.remote, 'remote');
         renderPane(elements.localList, getActiveRightSnapshot(), 'right');
@@ -178,6 +187,7 @@
             emptyRow.textContent = 'Folder empty';
             frag.appendChild(emptyRow);
         }
+        const selectedEntries = getSelectedEntries(snapshot);
         snapshot.entries.forEach((entry) => {
             const row = document.createElement('div');
             row.className = 'entry';
@@ -214,7 +224,7 @@
             modifiedCell.className = 'entry__cell entry__cell--modified';
             modifiedCell.textContent = formatModified(entry);
 
-            const selected = snapshot.selected?.name === entry.name;
+            const selected = selectedEntries.some((selectedEntry) => selectedEntry.name === entry.name);
             if (selected) {
                 row.classList.add('entry--selected');
             }
@@ -223,16 +233,20 @@
             row.appendChild(sizeCell);
             row.appendChild(permissionCell);
             row.appendChild(modifiedCell);
-            row.addEventListener('click', () => handleEntryClick(side, snapshot, entry));
+            row.addEventListener('click', (event) => handleEntryClick(side, snapshot, entry, event));
             row.addEventListener('contextmenu', (event) => handleEntryContextMenu(side, entry, event));
             frag.appendChild(row);
         });
         container.appendChild(frag);
     }
 
-    function handleEntryClick(side, snapshot, entry) {
+    function handleEntryClick(side, snapshot, entry, event) {
         hideContextMenu();
         if (state.connectionState !== 'connected') {
+            return;
+        }
+        if (event?.ctrlKey || event?.metaKey) {
+            toggleEntrySelection(side, snapshot, entry);
             return;
         }
         if (entry.type === 'directory') {
@@ -243,28 +257,42 @@
             return;
         }
 
-        setSelection(side, entry);
+        setSingleSelection(side, entry);
     }
 
     function clearSelection(side) {
         if (side === 'remote') {
-            state.remote.selected = undefined;
+            state.remote.selected = [];
         } else if (side === 'right') {
             const snapshot = getActiveRightSnapshot();
-            snapshot.selected = undefined;
+            snapshot.selected = [];
         }
         updateButtons();
     }
 
-    function setSelection(side, entry) {
-        if (side === 'remote') {
-            state.remote.selected = entry;
-        } else if (getActiveRightLocation() === 'local') {
-            state.rightLocal.selected = entry;
-        } else {
-            state.rightRemote.selected = entry;
-        }
+    function setSelection(side, entries) {
+        const target = side === 'remote'
+            ? state.remote
+            : getActiveRightLocation() === 'local'
+            ? state.rightLocal
+            : state.rightRemote;
+        target.selected = entries;
         renderLists();
+    }
+
+    function toggleEntrySelection(side, snapshot, entry) {
+        const selected = getSelectedEntries(snapshot);
+        const exists = selected.findIndex((item) => item.name === entry.name);
+        if (exists >= 0) {
+            selected.splice(exists, 1);
+        } else {
+            selected.push(entry);
+        }
+        setSelection(side, [...selected]);
+    }
+
+    function setSingleSelection(side, entry) {
+        setSelection(side, [entry]);
     }
 
     function handleEntryContextMenu(side, entry, event) {
@@ -273,9 +301,27 @@
             hideContextMenu();
             return;
         }
-        setSelection(side, entry);
+        const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
+        if (!isSelected(snapshot, entry)) {
+            setSingleSelection(side, entry);
+        }
         contextMenuState.side = side;
+        updateContextMenuOptions(side);
         showContextMenu(event.clientX, event.clientY);
+    }
+
+    function updateContextMenuOptions(side) {
+        const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
+        const selectedCount = getSelectedEntries(snapshot).length;
+        const disableSingleOnly = selectedCount !== 1;
+
+        [elements.contextRename, elements.contextDuplicate].forEach((el) => {
+            if (!el) {
+                return;
+            }
+            el.disabled = disableSingleOnly;
+            el.classList.toggle('context-menu__item--disabled', disableSingleOnly);
+        });
     }
 
     function showContextMenu(x, y) {
@@ -307,6 +353,7 @@
         elements.permissionsDialog.classList.add('dialog--hidden');
         elements.permissionsDialog.setAttribute('aria-hidden', 'true');
         permissionsState.info = undefined;
+        permissionsState.paths = [];
         setPermissionsError('');
     }
 
@@ -318,10 +365,20 @@
         permissionsState.side = side;
         elements.permissionsTarget.textContent = '';
         const prefix = document.createElement('span');
-        prefix.textContent = `Change ${info.type} from ${info.location}: `;
+        const selectedCount = permissionsState.paths.length || 1;
+        prefix.textContent = selectedCount > 1
+            ? `Change ${selectedCount} items from ${info.location}: `
+            : `Change ${info.type} from ${info.location}: `;
         const target = document.createElement('strong');
-        target.textContent = info.name;
-        elements.permissionsTarget.append(prefix, target);
+        const suffix = document.createElement('span');
+        if (selectedCount > 1) {
+            target.textContent = `${info.name} (+${selectedCount - 1} more)`;
+            suffix.textContent = '';
+        } else {
+            target.textContent = info.name;
+            suffix.textContent = '';
+        }
+        elements.permissionsTarget.append(prefix, target, suffix);
 
         const bits = info.mode & 0o777;
         elements.permOwnerRead.checked = Boolean(bits & 0o400);
@@ -377,25 +434,28 @@
         }
         resetStatus();
         const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
-        if (!snapshot.selected) {
+        const selected = getSelectedEntries(snapshot);
+        if (!selected.length) {
             return;
         }
 
         const requestId = createRequestId();
-        pending.permissions.set(requestId, side);
+        const paths = selected.map((entry) => getEntryPath(snapshot, entry));
+        pending.permissions.set(requestId, { side, paths });
         const location = side === 'remote' ? 'remote' : getActiveRightLocation();
         vscode.postMessage({
             type: 'requestPermissionsInfo',
             location,
-            path: getEntryPath(snapshot, snapshot.selected),
+            path: paths[0],
             requestId,
         });
     }
 
     function handlePermissionsInfo(message) {
-        const side = pending.permissions.get(message.requestId) || 'remote';
+        const stateInfo = pending.permissions.get(message.requestId) || { side: 'remote', paths: [] };
         pending.permissions.delete(message.requestId);
-        showPermissionsDialog(message.info, side);
+        permissionsState.paths = stateInfo.paths || [];
+        showPermissionsDialog(message.info, stateInfo.side);
     }
 
     function updatePaths() {
@@ -404,9 +464,9 @@
     }
 
     function updateButtons() {
-        const remoteSelected = Boolean(state.remote.selected);
+        const remoteSelected = getSelectedEntries(state.remote).length > 0;
         const rightSnapshot = getActiveRightSnapshot();
-        const rightSelected = Boolean(rightSnapshot.selected);
+        const rightSelected = getSelectedEntries(rightSnapshot).length > 0;
         const disabled = state.connectionState !== 'connected';
 
         elements.remoteHome.disabled = disabled;
@@ -432,14 +492,14 @@
     function handleInit(payload) {
         state.remoteHome = payload.remoteHome;
         state.localHome = payload.localHome;
-        state.remote = { ...payload.remote, selected: undefined };
-        state.rightLocal = { ...payload.local, selected: undefined };
-        state.rightRemote = { ...payload.remote, selected: undefined };
+        state.remote = { ...payload.remote, selected: [] };
+        state.rightLocal = { ...payload.local, selected: [] };
+        state.rightRemote = { ...payload.remote, selected: [] };
         renderLists();
     }
 
     function handleListResponse(message) {
-        const snapshot = { ...message.snapshot, selected: undefined };
+        const snapshot = { ...message.snapshot, selected: [] };
         if (message.requestId === requestIds.remote) {
             state.remote = snapshot;
         } else if (message.requestId === requestIds.local) {
@@ -553,22 +613,26 @@
     async function deleteSelected(side) {
         resetStatus();
         const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
-        if (!snapshot.selected) {
+        const selected = getSelectedEntries(snapshot);
+        if (!selected.length) {
             return;
         }
         const locationLabel = side === 'remote' ? 'remote' : getActiveRightLocation();
-        const targetType = snapshot.selected.type === 'directory' ? 'folder' : 'file';
+        const first = selected[0];
+        const targetType = selected.length > 1 ? `${selected.length} items` : first.type === 'directory' ? 'folder' : 'file';
+        const nameLabel = selected.length > 1 ? `${first.name} (+${selected.length - 1} more)` : first.name;
         const confirmed = await requestConfirmation(
             `Delete ${targetType} from ${locationLabel}:`,
-            snapshot.selected.name
+            nameLabel
         );
         if (!confirmed) {
             return;
         }
         vscode.postMessage({
-            type: 'deleteEntry',
+            type: selected.length > 1 ? 'deleteEntries' : 'deleteEntry',
             location: side === 'remote' ? 'remote' : getActiveRightLocation(),
-            path: getEntryPath(snapshot, snapshot.selected),
+            path: selected.length === 1 ? getEntryPath(snapshot, first) : undefined,
+            paths: selected.length === 1 ? undefined : selected.map((entry) => getEntryPath(snapshot, entry)),
             requestId: side === 'remote' ? requestIds.remote : getActiveRequestId(),
         });
     }
@@ -576,17 +640,19 @@
     async function renameSelected(side) {
         resetStatus();
         const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
-        if (!snapshot.selected) {
+        const selected = getSelectedEntries(snapshot);
+        if (selected.length !== 1) {
             return;
         }
-        const newName = await requestInput('New name', snapshot.selected.name);
+        const [entry] = selected;
+        const newName = await requestInput('New name', entry.name);
         if (!newName) {
             return;
         }
         vscode.postMessage({
             type: 'renameEntry',
             location: side === 'remote' ? 'remote' : getActiveRightLocation(),
-            path: getEntryPath(snapshot, snapshot.selected),
+            path: getEntryPath(snapshot, entry),
             newName,
             requestId: side === 'remote' ? requestIds.remote : getActiveRequestId(),
         });
@@ -595,13 +661,15 @@
     function duplicateSelected(side) {
         resetStatus();
         const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
-        if (!snapshot.selected) {
+        const selected = getSelectedEntries(snapshot);
+        if (selected.length !== 1) {
             return;
         }
+        const [entry] = selected;
         vscode.postMessage({
             type: 'duplicateEntry',
             location: side === 'remote' ? 'remote' : getActiveRightLocation(),
-            path: getEntryPath(snapshot, snapshot.selected),
+            path: getEntryPath(snapshot, entry),
             requestId: side === 'remote' ? requestIds.remote : getActiveRequestId(),
         });
     }
@@ -609,24 +677,26 @@
     function copyBetweenPanels(direction) {
         resetStatus();
         if (direction === 'remoteToRight') {
-            if (!state.remote.selected) {
+            const selected = getSelectedEntries(state.remote);
+            if (!selected.length) {
                 return;
             }
             const destination = getActiveRightSnapshot();
             vscode.postMessage({
-                type: 'copyEntry',
-                from: { location: 'remote', path: getEntryPath(state.remote, state.remote.selected) },
+                type: 'copyEntries',
+                items: selected.map((entry) => ({ location: 'remote', path: getEntryPath(state.remote, entry) })),
                 toDirectory: { location: getActiveRightLocation(), path: destination.path },
                 requestId: getActiveRequestId(),
             });
         } else {
             const snapshot = getActiveRightSnapshot();
-            if (!snapshot.selected) {
+            const selected = getSelectedEntries(snapshot);
+            if (!selected.length) {
                 return;
             }
             vscode.postMessage({
-                type: 'copyEntry',
-                from: { location: getActiveRightLocation(), path: getEntryPath(snapshot, snapshot.selected) },
+                type: 'copyEntries',
+                items: selected.map((entry) => ({ location: getActiveRightLocation(), path: getEntryPath(snapshot, entry) })),
                 toDirectory: { location: 'remote', path: state.remote.path },
                 requestId: requestIds.remote,
             });
@@ -666,8 +736,9 @@
     elements.contextSelect.addEventListener('click', () => {
         hideContextMenu();
         const snapshot = contextMenuState.side === 'remote' ? state.remote : getActiveRightSnapshot();
-        if (snapshot.selected) {
-            setSelection(contextMenuState.side, snapshot.selected);
+        const selected = getSelectedEntries(snapshot);
+        if (selected.length) {
+            setSelection(contextMenuState.side, [...selected]);
         }
     });
 
@@ -712,10 +783,14 @@
         const requestId = location === 'remote'
             ? (permissionsState.side === 'remote' ? requestIds.remote : requestIds.rightRemote)
             : requestIds.local;
+        const paths = permissionsState.paths && permissionsState.paths.length > 0
+            ? permissionsState.paths
+            : [permissionsState.info.path];
         vscode.postMessage({
-            type: 'updatePermissions',
+            type: paths.length > 1 ? 'updatePermissionsBatch' : 'updatePermissions',
             location,
-            path: permissionsState.info.path,
+            path: paths.length === 1 ? paths[0] : undefined,
+            paths: paths.length === 1 ? undefined : paths,
             mode,
             owner: ownerValue.value,
             group: groupValue.value,
