@@ -403,6 +403,23 @@
         elements.contextMenu.style.top = `${y}px`;
         elements.contextMenu.classList.add('context-menu--visible');
         elements.contextMenu.setAttribute('aria-hidden', 'false');
+
+        const menuRect = elements.contextMenu.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        const padding = 8;
+        let adjustedX = x;
+        let adjustedY = y;
+
+        if (menuRect.right > viewportWidth - padding) {
+            adjustedX = Math.max(padding, viewportWidth - menuRect.width - padding);
+        }
+        if (menuRect.bottom > viewportHeight - padding) {
+            adjustedY = Math.max(padding, viewportHeight - menuRect.height - padding);
+        }
+
+        elements.contextMenu.style.left = `${adjustedX}px`;
+        elements.contextMenu.style.top = `${adjustedY}px`;
     }
 
     function hideContextMenu() {
