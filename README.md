@@ -39,6 +39,8 @@ Add devices in your VS Code settings under `embeddedLogger.devices`:
     "name": "Device A",
     "host": "192.168.1.10",
     "hostFingerprint": "SHA256:your-device-fingerprint",
+    "secondaryHost": "192.168.1.11",
+    "secondaryHostFingerprint": "SHA256:backup-device-fingerprint",
     "port": 22,
     "privateKeyPath": "${env:HOME}/.ssh/id_ed25519",
     "username": "root",
@@ -60,6 +62,8 @@ Names for commands support emojis that can be copied from: https://unicode.org/e
 If no password is stored yet, the extension prompts for it when connecting and saves it locally and securely. When using an encrypted private key, the passphrase is requested once and stored securely in VS Code Secret Storage. Private key paths may include `~` or `${env:VAR}` tokens for convenience.
 
 - **Pin each device's host key** by setting `hostFingerprint` to the device's SSH host key fingerprint (for example, `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub -E sha256`). If no fingerprint is configured, the extension records the server's fingerprint on the first successful connection. When a server presents a different fingerprint later, you'll be prompted to accept the new value before reconnecting.
+
+- **Optionally configure a secondary host** via `secondaryHost` (and `secondaryHostFingerprint` when pinning). Connections start with the primary host and automatically fall back to the secondary host when the primary connection fails; if the secondary host also fails, the extension retries the primary host.
 
 - Set `enableSshTerminal` to control visibility of the **Open SSH Terminal** button alongside any configured SSH commands for that device (the action is enabled by default; set it to `false` to hide it). The **Open SSH Terminal** action opens a dedicated VS Code terminal tab for the device and authenticates using the stored password or private key (prompting for and saving the credential securely when missing).
 

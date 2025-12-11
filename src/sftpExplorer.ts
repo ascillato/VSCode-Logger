@@ -13,6 +13,7 @@ import { Client, ConnectConfig } from 'ssh2';
 import { Readable, Writable } from 'stream';
 import { promisify } from 'util';
 import { EmbeddedDevice } from './deviceTree';
+import { HostEndpoint, getHostEndpoints } from './hostEndpoints';
 import { PasswordManager } from './passwordManager';
 import { SshCommandRunner } from './sshCommandRunner';
 import { SshTerminalSession } from './sshTerminal';
@@ -208,6 +209,7 @@ export class SftpExplorerPanel {
     private sftpReady?: Promise<SftpClient>;
     private remoteHome?: string;
     private hostKeyFailure?: HostKeyMismatch;
+    private activeEndpoint?: HostEndpoint;
     private remotePaths: { left?: string; right?: string } = {};
     private connectionState: ConnectionState = 'connected';
     private countdownTimer?: NodeJS.Timeout;
@@ -1702,16 +1704,62 @@ export class SftpExplorerPanel {
 
     private async createSftpConnection(isReconnect: boolean): Promise<SftpClient> {
         const auth = await this.getAuthentication();
-        const expectedFingerprint = this.getExpectedFingerprint();
-        this.hostKeyFailure = undefined;
-        this.updateConnectionStatus('reconnecting', undefined, isReconnect ? undefined : 'Connecting…');
+        const endpoints = getHostEndpoints(this.device);
 
+        if (endpoints.length === 0) {
+            throw new Error(`Device "${this.device.name}" is missing a host.`);
+        }
+
+        const maxAttempts = endpoints.length > 1 ? 3 : 1;
+        let endpointIndex = 0;
+        let attempts = 0;
+        let lastError: unknown;
+
+        while (attempts < maxAttempts) {
+            const endpoint = endpoints[endpointIndex];
+            this.activeEndpoint = endpoint;
+            const expectedFingerprint = this.getExpectedFingerprint(endpoint);
+            this.hostKeyFailure = undefined;
+            this.updateConnectionStatus(
+                'reconnecting',
+                undefined,
+                isReconnect ? undefined : `Connecting to ${endpoint.host}…`
+            );
+
+            try {
+                const sftp = await this.connectToEndpoint(endpoint, auth, expectedFingerprint);
+                return sftp;
+            } catch (err) {
+                if (err instanceof HostKeyMismatchError) {
+                    throw err;
+                }
+
+                lastError = err;
+                attempts++;
+
+                if (endpoints.length > 1) {
+                    endpointIndex = (endpointIndex + 1) % endpoints.length;
+                    continue;
+                }
+
+                break;
+            }
+        }
+
+        throw lastError ?? new Error('Failed to connect over SFTP.');
+    }
+
+    private async connectToEndpoint(
+        endpoint: HostEndpoint,
+        auth: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>,
+        expectedFingerprint?: { display: string; hex: string }
+    ): Promise<SftpClient> {
         return await new Promise<SftpClient>((resolve, reject) => {
             const client = new Client() as ClientWithSftp;
             this.client = client;
 
             const port = this.device.port ?? 22;
-            const host = this.device.host.trim();
+            const host = endpoint.host;
             const username = this.device.username.trim();
 
             client
@@ -1730,7 +1778,9 @@ export class SftpExplorerPanel {
                     this.handleDisconnect();
                     if (this.hostKeyFailure) {
                         const message = `Host key verification failed for ${host}:${port}. Expected ${this.hostKeyFailure.expected} but received ${this.hostKeyFailure.received}.`;
-                        reject(new HostKeyMismatchError(message, this.hostKeyFailure.expected, this.hostKeyFailure.received));
+                        reject(
+                            new HostKeyMismatchError(message, this.hostKeyFailure.expected, this.hostKeyFailure.received)
+                        );
                         return;
                     }
                     reject(new Error(`SSH error: ${err.message}`));
@@ -1780,8 +1830,8 @@ export class SftpExplorerPanel {
         return path.resolve(tildeExpanded);
     }
 
-    private getExpectedFingerprint(): { display: string; hex: string } | undefined {
-        const fingerprint = this.device.hostFingerprint?.trim();
+    private getExpectedFingerprint(endpoint: HostEndpoint): { display: string; hex: string } | undefined {
+        const fingerprint = endpoint.fingerprint;
         if (!fingerprint) {
             return undefined;
         }
