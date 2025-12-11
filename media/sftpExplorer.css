@@ -146,7 +146,7 @@ body {
     grid-template-columns: minmax(calc(var(--name-col-width) + var(--name-col-padding)), 2fr) minmax(6rem, 0.85fr) minmax(7rem, 1fr) minmax(10rem, 1.1fr);
     align-items: center;
     column-gap: 0.5rem;
-    width: 100%;
+    width: max-content;
     min-width: 100%;
     position: relative;
     isolation: isolate;
