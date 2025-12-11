@@ -1,8 +1,9 @@
 var searchData=
 [
-  ['listener_0',['listener',['../ssh2_8d_8ts.html#a96db2f2a626e4950f7cd47c1b0f3b513',1,'ssh2.d.ts']]],
-  ['locallogtarget_1',['LocalLogTarget',['../logPanel_8ts.html#a4b873a1073d60768ad5ba4bff7731a50',1,'logPanel.ts']]],
-  ['logpanel_2',['LogPanel',['../extension_8ts.html#a9ae2ee473822fd73f304dfdd84c42d20',1,'extension.ts']]],
-  ['logpaneltarget_3',['LogPanelTarget',['../logPanel_8ts.html#a9e99e6e2984f3df9d4d03b1525fd65d1',1,'logPanel.ts']]],
-  ['logsessioncallbacks_4',['LogSessionCallbacks',['../logSession_8ts.html#a0b193a330738859ca68016a2273f14ed',1,'logSession.ts']]]
+  ['haseverconnected_0',['hasEverConnected',['../classSftpExplorerPanel.html#a5a8088532c1f678aeea23e8ab00a73cc',1,'SftpExplorerPanel']]],
+  ['hexcandidate_1',['hexcandidate',['../logSession_8ts.html#a4b86dac5d683dd61e7be1b26a342c3ce',1,'hexCandidate:&#160;logSession.ts'],['../sftpExplorer_8ts.html#a4b86dac5d683dd61e7be1b26a342c3ce',1,'hexCandidate:&#160;sftpExplorer.ts']]],
+  ['highlightdefinition_2',['HighlightDefinition',['../sidebarView_8ts.html#a70c58d2bba69e40d44ba5316f17dd427',1,'sidebarView.ts']]],
+  ['highlights_3',['highlights',['../extension_8ts.html#a4cf0cbf413ae16906f3b896f2fbb29fa',1,'extension.ts']]],
+  ['hostendpoint_4',['HostEndpoint',['../hostEndpoints_8ts.html#acc853f9e648eecf5ba537161f1b0a8a2',1,'hostEndpoints.ts']]],
+  ['hostendpointlabel_5',['HostEndpointLabel',['../hostEndpoints_8ts.html#a73792396f52e7a0e786cf67d417416bb',1,'hostEndpoints.ts']]]
 ];

@@ -73,16 +73,16 @@ $(function() {
   <div class="headertitle"><div class="title">VSCode-Logger Architecture Overview</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p><a class="anchor" id="autotoc_md16"></a> This document explains how the VSCode-Logger extension streams logs from embedded Linux devices into Visual Studio Code. It covers the activation lifecycle, major components, data flows between the extension host and the Webview, and key configuration or security considerations.</p>
-<h1><a class="anchor" id="autotoc_md17"></a>
+<div class="textblock"><p><a class="anchor" id="autotoc_md13"></a> This document explains how the VSCode-Logger extension streams logs from embedded Linux devices into Visual Studio Code. It covers the activation lifecycle, major components, data flows between the extension host and the Webview, and key configuration or security considerations.</p>
+<h1><a class="anchor" id="autotoc_md14"></a>
 Activation and configuration</h1>
 <ul>
 <li><b>Activation trigger</b>: The extension activates when VS Code loads the workspace or when a contributed command or view is invoked.</li>
-<li><b>Configuration resolution</b>: Devices come from <code>embeddedLogger.devices</code> and are enriched with defaults from <code>embeddedLogger.defaultPort</code>, <code>embeddedLogger.defaultLogCommand</code>, <code>embeddedLogger.defaultEnableSshTerminal</code>, and <code>embeddedLogger.defaultSshCommands</code>. The max in-memory log history per tab comes from <code>embeddedLogger.maxLinesPerTab</code>.</li>
+<li><b>Configuration resolution</b>: Devices come from <code>embeddedLogger.devices</code> and are enriched with defaults from <code>embeddedLogger.defaultPort</code>, <code>embeddedLogger.defaultLogCommand</code>, <code>embeddedLogger.defaultEnableSshTerminal</code>, <code>embeddedLogger.defaultEnableSftpExplorer</code>, and <code>embeddedLogger.defaultSshCommands</code>. The max in-memory log history per tab comes from <code>embeddedLogger.maxLinesPerTab</code>.</li>
 <li><b>Password migration</b>: During activation, legacy plaintext passwords from settings are migrated into VS Code Secret Storage so future connections prompt the user instead of persisting raw secrets in configuration.</li>
 <li><b>View and command registration</b>: Activation registers the devices sidebar Webview, highlight-row commands, device-level SSH command/terminal handlers, and <code>embeddedLogger.openDevice</code> so selecting a device item opens its log panel or launches auxiliary actions.</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md18"></a>
+<h1><a class="anchor" id="autotoc_md15"></a>
 Major components</h1>
 <ul>
 <li>**Configuration helpers (<code><a class="el" href="configuration_8ts.html" title="Helpers for reading Embedded Device Logger configuration with defaults.">src/configuration.ts</a></code>)**: Centralizes reading extension settings and applying default SSH port, log command, terminal enablement, and shared SSH commands to each device, while surfacing the max-lines limit.</li>
@@ -93,7 +93,7 @@ Major components</h1>
 <li>**SSH helpers (<code><a class="el" href="sshCommandRunner_8ts.html" title="Executes one-off SSH commands for configured devices.">src/sshCommandRunner.ts</a></code>, <code><a class="el" href="sshTerminal_8ts.html" title="Provides a pseudoterminal that opens an interactive SSH shell for a device.">src/sshTerminal.ts</a></code>)**: Execute one-off SSH commands from the sidebar or spawn an interactive SSH terminal using stored or prompted credentials.</li>
 <li>**Webview clients (<code><a class="el" href="loggerPanel_8js.html">media/loggerPanel.js</a></code> + <code>media/loggerPanel.css</code>)**: Receive log lines, parse severity, apply filters, manage presets and bookmarks, enforce the max-lines cap, and render the terminal-like UI. They can request preset persistence, deletion, exports, bookmark toggles, and highlight updates via <code>postMessage</code> events.</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md19"></a>
+<h1><a class="anchor" id="autotoc_md16"></a>
 Data and control flow</h1>
 <div class="image">
 <img src="diagram1.png" alt=""/>
@@ -116,7 +116,7 @@ Diagram1</div></div>
 <div class="line">    L --&gt; O[Render log entries and statuses in Webview]</div>
 <div class="line">    O -- Export/preset/bookmark requests --&gt; P[Extension persists workspace state or writes file]</div>
 <div class="line">    F -- Status updates --&gt; O</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md20"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md17"></a>
 Lifecycle details</h1>
 <ol type="1">
 <li><b>Panel creation</b>: Each device or imported log opens in its own Webview panel. Existing panels re-activate instead of spawning duplicates when the same source is selected again.</li>
@@ -127,7 +127,7 @@ Lifecycle details</h1>
 <li><b>Configuration changes</b>: When any <code>embeddedLogger</code> setting changes, the sidebar refreshes device metadata (including defaults). Active panels continue streaming with their existing session until closed.</li>
 <li><b>Security</b>: Password prompts rely on VS Code’s secure input. Secrets are never written to the Webview or logs; they remain in secret storage or transient prompts. SSH sessions close on disposal to avoid leaving hanging connections.</li>
 </ol>
-<h1><a class="anchor" id="autotoc_md21"></a>
+<h1><a class="anchor" id="autotoc_md18"></a>
 How to extend safely</h1>
 <ul>
 <li>Keep UI logic inside the Webview scripts and backend logic in the extension host files.</li>
@@ -135,9 +135,9 @@ How to extend safely</h1>
 <li>If altering log parsing or styling, adjust both <code><a class="el" href="loggerPanel_8js.html">loggerPanel.js</a></code> and <code>loggerPanel.css</code> to ensure new levels or formats render correctly.</li>
 <li>Preserve default behaviours (e.g., default log command, maximum retained lines) unless there is a clear reason to change them, and document new settings.</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md22"></a>
+<h1><a class="anchor" id="autotoc_md19"></a>
 Security Overview</h1>
-<h2><a class="anchor" id="autotoc_md23"></a>
+<h2><a class="anchor" id="autotoc_md20"></a>
 Strengths</h2>
 <ul>
 <li>Workspace trust gating prevents connections in untrusted workspaces before prompting for credentials. The log command is trimmed and checked for control characters to avoid obvious injection via newlines.</li>

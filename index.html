@@ -94,6 +94,7 @@ Features</h1>
 <li>Add, edit and remove <b>Bookmarks</b> in live logs and imported logs.</li>
 <li>Run optional <b>on-demand SSH commands</b> configured per device from the Devices view.</li>
 <li>Optionally <b>launch an SSH terminal</b> directly from a device card when enabled in settings.</li>
+<li>Optionally open a dual-pane <b>SFTP explorer</b> to browse remote and local files side-by-side and transfer files.</li>
 <li>Authenticate with SSH passwords or private keys.</li>
 <li>SSH passwords and private key passphrases are <b>stored securely</b> with VS Code Secret Storage.</li>
 <li><b>Privacy focused</b>. <b>No telemetry</b>. Everything <b>runs locally</b>.</li>
@@ -113,11 +114,14 @@ Screenshot2</div></div>
 <div class="line">    &quot;name&quot;: &quot;Device A&quot;,</div>
 <div class="line">    &quot;host&quot;: &quot;192.168.1.10&quot;,</div>
 <div class="line">    &quot;hostFingerprint&quot;: &quot;SHA256:your-device-fingerprint&quot;,</div>
+<div class="line">    &quot;secondaryHost&quot;: &quot;192.168.1.11&quot;,</div>
+<div class="line">    &quot;secondaryHostFingerprint&quot;: &quot;SHA256:backup-device-fingerprint&quot;,</div>
 <div class="line">    &quot;port&quot;: 22,</div>
 <div class="line">    &quot;privateKeyPath&quot;: &quot;${env:HOME}/.ssh/id_ed25519&quot;,</div>
 <div class="line">    &quot;username&quot;: &quot;root&quot;,</div>
 <div class="line">    &quot;logCommand&quot;: &quot;tail -F /var/log/syslog&quot;,</div>
 <div class="line">    &quot;enableSshTerminal&quot;: true,</div>
+<div class="line">    &quot;enableSftpExplorer&quot;: true,</div>
 <div class="line">    &quot;sshCommands&quot;: [</div>
 <div class="line">      {</div>
 <div class="line">        &quot;name&quot;: &quot;Restart IOT&quot;,</div>
@@ -126,42 +130,36 @@ Screenshot2</div></div>
 <div class="line">    ]</div>
 <div class="line">  }</div>
 <div class="line">]</div>
-</div><!-- fragment --><p>If no password is stored yet, the extension prompts for it when connecting and saves it locally and securely. When using an encrypted private key, the passphrase is requested once and stored securely in VS Code Secret Storage. Private key paths may include <code>~</code> or <code>${env:VAR}</code> tokens for convenience.</p>
+</div><!-- fragment --><p>Names for commands support emojis that can be copied from: <a href="https://unicode.org/emoji/charts/full-emoji-list.html">https://unicode.org/emoji/charts/full-emoji-list.html</a></p>
+<p>If no password is stored yet, the extension prompts for it when connecting and saves it locally and securely. When using an encrypted private key, the passphrase is requested once and stored securely in VS Code Secret Storage. Private key paths may include <code>~</code> or <code>${env:VAR}</code> tokens for convenience.</p>
 <ul>
 <li><b>Pin each device's host key</b> by setting <code>hostFingerprint</code> to the device's SSH host key fingerprint (for example, <code>ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub -E sha256</code>). If no fingerprint is configured, the extension records the server's fingerprint on the first successful connection. When a server presents a different fingerprint later, you'll be prompted to accept the new value before reconnecting.</li>
-<li>Set <code>enableSshTerminal</code> to <code>true</code> to show an <b>Open SSH Terminal</b> button alongside any configured SSH commands for that device. The <b>Open SSH Terminal</b> action opens a dedicated VS Code terminal tab for the device and authenticates using the stored password or private key (prompting for and saving the credential securely when missing).</li>
+<li><b>Optionally configure a secondary host</b> via <code>secondaryHost</code> (and <code>secondaryHostFingerprint</code> when pinning). Connections start with the primary host and automatically fall back to the secondary host when the primary connection fails; if the secondary host also fails, the extension retries the primary host.</li>
+<li>Set <code>enableSshTerminal</code> to control visibility of the <b>Open SSH Terminal</b> button alongside any configured SSH commands for that device (the action is enabled by default; set it to <code>false</code> to hide it). The <b>Open SSH Terminal</b> action opens a dedicated VS Code terminal tab for the device and authenticates using the stored password or private key (prompting for and saving the credential securely when missing).</li>
+<li>Set <code>enableSftpExplorer</code> to control visibility of the <b>Open SFTP Explorer</b> button on the device card (enabled by default; set it to <code>false</code> to hide it). The explorer opens a dual-pane view with the remote home on the left and the local home on the right, including navigation, rename/delete/duplicate actions, and arrows to transfer selected files between panes (or between two remote panes when the right-side mode is switched to remote). If the SSH link drops, the explorer stays open, greys out, shows a reconnection countdown beside the title, and automatically retries every five seconds without losing the active remote paths.</li>
 <li>Control memory usage by capping retained lines per log tab with <code>embeddedLogger.maxLinesPerTab</code> (default: 100000). For auto-save, this limit is not applied to a file. Everything is saved.</li>
 </ul>
 <p>All options are available through the VS Code Settings UI under <b>Embedded Device Logger</b>, including defaults for omitted device values:</p>
 <ul>
 <li><code>embeddedLogger.defaultPort</code> – applied when a device does not specify a port.</li>
 <li><code>embeddedLogger.defaultLogCommand</code> – used when <code>logCommand</code> is omitted.</li>
-<li><code>embeddedLogger.defaultEnableSshTerminal</code> – toggles whether the SSH terminal action is shown by default.</li>
+<li><code>embeddedLogger.defaultEnableSshTerminal</code> – toggles whether the SSH terminal action is shown by default (default: true).</li>
+<li><code>embeddedLogger.defaultEnableSftpExplorer</code> – toggles whether the SFTP explorer action is shown by default (default: true).</li>
 <li><code>embeddedLogger.defaultSshCommands</code> – shared SSH actions applied to devices that do not define their own list.</li>
 </ul>
 <h1><a class="anchor" id="autotoc_md3"></a>
 Notes</h1>
 <ul>
-<li><b>Colorization of lines* is performed based on the loglevel (DEBUG, INFO, ERROR, etc). If these keys are not present in the log, no colorization is be applied.</b></li>
-<li><b>**Filtering presets</b> are stored per-device in the workspace state using the key <code>embeddedLogger.presets.&lt;deviceId&gt;</code>.</li>
+<li><b>Colorization of lines</b> is performed based on the loglevel (DEBUG, INFO, ERROR, etc). If these keys are not present in the log, no colorization is be applied.</li>
+<li><b>Filtering presets</b> are stored per-device in the workspace state using the key <code>embeddedLogger.presets.&lt;deviceId&gt;</code>.</li>
 <li>Exports only include log lines currently visible after applying filters.</li>
 <li>When an SSH session closes, the log view appends <code>--- SSH session closed on &lt;timestamp&gt;</code> and offers a <b>Reconnect</b> button next to the status text to restart streaming.</li>
 <li>Click the highlight icon in the Embedded Logger devices view to add up to ten highlight rows, each with its own colour and editable keyword that updates live and imported logs instantly.</li>
 <li>Use the <b>Open Local Log File</b> button in the Embedded Logger devices view (or run the command with the same name) to select a <code>.log</code> or <code>.txt</code> file from your machine. The chosen file is loaded into the log viewer so you can reuse filtering, presets, export filtered logs and highlights just like a live connection.</li>
 <li><b>Status</b> text also shows messages from the log command used in the configuration like <code>tail -F /var/log/syslog</code>. So, some messages like: &lsquo;tail: &rsquo;/var/log/syslog' has appeared; following new file<code>may appear. This message in particular happens when the log file is rotated or recreated. The</code>-F<code>flag tells</code>tail<code>to keep watching for the file to reappear, so the message is informational and indicates that log streaming will continue with the new file. If you prefer a different log source, update the</code>logCommand` in your device configuration.</li>
+<li>The Embedded Device Logger extension supports <b>sharing the VSCode Activity Bar</b> with other extensions. To merge an extension into the Activity Bar, simply select its icon from the Side Bar, then drag and drop it into your desired position within the Activity Bar.</li>
 </ul>
 <h1><a class="anchor" id="autotoc_md4"></a>
-Share Activity Bar with other extensions</h1>
-<p>The <b>Embedded Device Logger</b> extension supports sharing the VSCode Activity Bar with other extensions. To merge an extension into the Activity Bar, simply select its icon from the Side Bar, then drag and drop it into your desired position within the Activity Bar.</p>
-<div class="image">
-<img src="screenshot_example2_coop.png" alt=""/>
-<div class="caption">
-Screenshot3</div></div>
-    <p>In the example, the other extensions (from other publishers) are:</p><ul>
-<li><code>elcamilet.ssh-connect</code></li>
-<li><code>ikoamu.side-clipboard</code></li>
-</ul>
-<h1><a class="anchor" id="autotoc_md5"></a>
 Installation</h1>
 <p><b>From VSCode:</b></p><ul>
 <li>Click on Extensions in the side bar and Search for Embedded Device Logger (Publisher: Scallant, Author: A. Scillato).</li>
@@ -171,30 +169,20 @@ Installation</h1>
 <p><b>For more information visit the <a href="https://marketplace.visualstudio.com/items?itemName=Scallant.embedded-device-logger">Embedded Device Logger Extension</a> in the VSCode Marketplace.</b></p>
 <p>If you find this extension useful, please <a href="https://marketplace.visualstudio.com/items?itemName=Scallant.embedded-device-logger&amp;ssr=false#review-details">rate it</a>.</p>
 <hr  />
-<h1><a class="anchor" id="autotoc_md7"></a>
-TODO</h1>
-<ul>
-<li><b>Add to SSH connections:</b><ul>
-<li>Support going through a bastion</li>
-</ul>
-</li>
-<li><b>Support SFTP</b></li>
-</ul>
-<hr  />
-<h1><a class="anchor" id="autotoc_md9"></a>
+<h1><a class="anchor" id="autotoc_md6"></a>
 For Developers</h1>
-<h2><a class="anchor" id="autotoc_md10"></a>
+<h2><a class="anchor" id="autotoc_md7"></a>
 Source Code</h2>
 <ul>
 <li>See <a href="https://github.com/ascillato/VSCode-Logger">Source Code</a></li>
 <li><b>License:</b> MIT</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md11"></a>
+<h2><a class="anchor" id="autotoc_md8"></a>
 Source Code Documentation</h2>
 <ul>
 <li>See <a href="https://ascillato.github.io/VSCode-Logger/index.html">Documentation</a></li>
 </ul>
-<h2><a class="anchor" id="autotoc_md12"></a>
+<h2><a class="anchor" id="autotoc_md9"></a>
 Running The Extension Locally</h2>
 <ol type="1">
 <li>Clone the repository</li>
@@ -202,20 +190,20 @@ Running The Extension Locally</h2>
 <li>Run <code>npm run compile</code> to build the TypeScript.</li>
 <li>Press <code>F5</code> in VS Code to launch the extension development host and open the <b>Embedded Logger</b> view.</li>
 </ol>
-<h2><a class="anchor" id="autotoc_md13"></a>
+<h2><a class="anchor" id="autotoc_md10"></a>
 Package Generation</h2>
 <ul>
 <li>Requires: <code>npm install -g @vscode/vsce</code></li>
 <li>Run: <code>vsce package</code> to generate vsix file to be installed into VSCode</li>
-<li>Install locally on VSCode: <code>code --install-extension embedded-device-logger-1.0.0.vsix</code></li>
+<li>Install locally on VSCode: <code>code --install-extension embedded-device-logger-1.1.0.vsix</code></li>
 </ul>
-<h2><a class="anchor" id="autotoc_md14"></a>
+<h2><a class="anchor" id="autotoc_md11"></a>
 Clean and re-compile</h2>
 <ul>
 <li><code>clear; rm -rf node_modules; rm -rf out; rm *.vsix; npm install; npm run compile; vsce package</code></li>
-<li><code>code --install-extension embedded-device-logger-1.0.0.vsix</code></li>
+<li><code>code --install-extension embedded-device-logger-1.1.0.vsix</code></li>
 </ul>
-<h2><a class="anchor" id="autotoc_md15"></a>
+<h2><a class="anchor" id="autotoc_md12"></a>
 Generating Source Code Documentation</h2>
 <ol type="1">
 <li>Ensure Doxygen is available locally (<code>sudo apt-get install doxygen</code>).</li>

@@ -102,9 +102,9 @@ Classes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a28e6f5ae3590b2ebd0275b12b784ea50" id="r_a28e6f5ae3590b2ebd0275b12b784ea50"><td class="memItemLeft" align="right" valign="top">async&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="logSession_8ts.html#a28e6f5ae3590b2ebd0275b12b784ea50">connect</a> (authentication:Pick&lt; <a class="el" href="ssh2_8d_8ts.html#a0b6cfa99430ba3e65ebbd110bc30d9c2">ConnectConfig</a>, 'password'| 'privateKey'| 'passphrase'&gt;, logCommand:string)</td></tr>
-<tr class="memdesc:a28e6f5ae3590b2ebd0275b12b784ea50"><td class="mdescLeft">&#160;</td><td class="mdescRight">Opens the SSH connection and starts the remote log command.  <br /></td></tr>
-<tr class="separator:a28e6f5ae3590b2ebd0275b12b784ea50"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afe5bcaa7b9a50a404a93eaa6dccce84d" id="r_afe5bcaa7b9a50a404a93eaa6dccce84d"><td class="memItemLeft" align="right" valign="top">async&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="logSession_8ts.html#afe5bcaa7b9a50a404a93eaa6dccce84d">connect</a> (endpoint:HostEndpoint, authentication:Pick&lt; <a class="el" href="ssh2_8d_8ts.html#a0b6cfa99430ba3e65ebbd110bc30d9c2">ConnectConfig</a>, 'password'| 'privateKey'| 'passphrase'&gt;, logCommand:string)</td></tr>
+<tr class="memdesc:afe5bcaa7b9a50a404a93eaa6dccce84d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Opens the SSH connection and starts the remote log command.  <br /></td></tr>
+<tr class="separator:afe5bcaa7b9a50a404a93eaa6dccce84d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8c767c91396520222656966c70631cff" id="r_a8c767c91396520222656966c70631cff"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="logSession_8ts.html#a8c767c91396520222656966c70631cff">if</a> (!fingerprint)</td></tr>
 <tr class="separator:a8c767c91396520222656966c70631cff"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad2821cc59cae5ffe4e93738f28f654e5" id="r_ad2821cc59cae5ffe4e93738f28f654e5"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="logSession_8ts.html#ad2821cc59cae5ffe4e93738f28f654e5">parseFingerprint</a> (value:string)</td></tr>
@@ -159,8 +159,8 @@ Variables</h2></td></tr>
 <div class="textblock"><p>Manages SSH connectivity and streaming of remote log output. </p>
 <dl class="section copyright"><dt>Copyright</dt><dd>Copyright (c) 2025 A. Scillato </dd></dl>
 </div><h2 class="groupheader">Function Documentation</h2>
-<a id="a28e6f5ae3590b2ebd0275b12b784ea50" name="a28e6f5ae3590b2ebd0275b12b784ea50"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a28e6f5ae3590b2ebd0275b12b784ea50">&#9670;&#160;</a></span>connect()</h2>
+<a id="afe5bcaa7b9a50a404a93eaa6dccce84d" name="afe5bcaa7b9a50a404a93eaa6dccce84d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afe5bcaa7b9a50a404a93eaa6dccce84d">&#9670;&#160;</a></span>connect()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -171,6 +171,12 @@ Variables</h2></td></tr>
         <tr>
           <td class="memname">async connect </td>
           <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>endpoint:HostEndpoint</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
           <td class="paramtype">&#160;</td>
           <td class="paramname"><em>authentication:Pick&lt; ConnectConfig, 'password'| 'privateKey'| 'passphrase'&gt;</em>, </td>
         </tr>
@@ -591,7 +597,7 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 <b>Initial value:</b><div class="fragment"><div class="line">{</div>
-<div class="line">        <span class="keyword">const</span> fingerprint = this.device.hostFingerprint?.trim()</div>
+<div class="line">        <span class="keyword">const</span> fingerprint = endpoint.fingerprint</div>
 </div><!-- fragment -->
 </div>
 </div>
