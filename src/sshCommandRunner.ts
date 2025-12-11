@@ -9,6 +9,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { Client, ConnectConfig } from 'ssh2';
 import { EmbeddedDevice } from './deviceTree';
+import { HostEndpoint, getHostEndpoints } from './hostEndpoints';
 import { PasswordManager } from './passwordManager';
 
 export interface DeviceCommand {
@@ -48,8 +49,35 @@ export class SshCommandRunner {
 
         const sanitizedCommand = this.sanitizeCommand(command.command);
         const authentication = await this.getAuthentication();
+        const endpoints = getHostEndpoints(this.device);
 
-        return this.executeCommand(sanitizedCommand, authentication);
+        if (endpoints.length === 0) {
+            throw new Error(`Device "${this.device.name}" is missing a host.`);
+        }
+
+        const maxAttempts = endpoints.length > 1 ? 3 : 1;
+        let endpointIndex = 0;
+        let attempts = 0;
+        let lastError: unknown;
+
+        while (attempts < maxAttempts) {
+            const endpoint = endpoints[endpointIndex];
+            try {
+                return await this.executeCommand(endpoint, sanitizedCommand, authentication);
+            } catch (err) {
+                lastError = err;
+                attempts++;
+
+                if (endpoints.length > 1) {
+                    endpointIndex = (endpointIndex + 1) % endpoints.length;
+                    continue;
+                }
+
+                break;
+            }
+        }
+
+        throw lastError ?? new Error(`Failed to run command "${command.name}".`);
     }
 
     private validateDeviceConfiguration(): string | undefined {
@@ -95,13 +123,14 @@ export class SshCommandRunner {
     }
 
     private executeCommand(
+        endpoint: HostEndpoint,
         command: string,
         authentication: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>
     ): Promise<string> {
         return new Promise((resolve, reject) => {
             const client = new Client();
             const port = this.device.port ?? 22;
-            const host = this.device.host.trim();
+            const host = endpoint.host;
             const username = this.device.username.trim();
             let stdout = '';
             let stderr = '';
