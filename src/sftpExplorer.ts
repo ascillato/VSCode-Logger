@@ -7,9 +7,11 @@ import * as vscode from 'vscode';
 import * as fs from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
+import { execFile } from 'child_process';
 import { createHash } from 'crypto';
 import { Client, ConnectConfig } from 'ssh2';
 import { Readable, Writable } from 'stream';
+import { promisify } from 'util';
 import { EmbeddedDevice } from './deviceTree';
 import { PasswordManager } from './passwordManager';
 
@@ -59,6 +61,8 @@ interface PermissionsInfo {
     mode: number;
     owner?: number;
     group?: number;
+    ownerName?: string;
+    groupName?: string;
 }
 
 interface ConnectionStatusMessage {
@@ -112,8 +116,8 @@ type WebviewRequest =
           location: 'remote' | 'local';
           path: string;
           mode: number;
-          owner?: number;
-          group?: number;
+          owner?: number | string;
+          group?: number | string;
           requestId: string;
       }
     | { type: 'requestConfirmation'; message: string; requestId: string }
@@ -134,6 +138,8 @@ type FileStat = {
     uid?: number;
     gid?: number;
 };
+
+const execFileAsync = promisify(execFile);
 
 interface SftpFileEntry {
     filename: string;
@@ -322,12 +328,17 @@ export class SftpExplorerPanel {
                     break;
                 }
                 case 'updatePermissions': {
+                    const { owner, group } = await this.resolveOwnerGroupIds(
+                        message.location,
+                        message.owner,
+                        message.group
+                    );
                     const parent = await this.applyPermissions(
                         message.location,
                         message.path,
                         message.mode,
-                        message.owner,
-                        message.group
+                        owner,
+                        group
                     );
                     await this.listAndPost(
                         message.location,
@@ -798,6 +809,8 @@ export class SftpExplorerPanel {
         const isDirectory = stats.isDirectory();
         const name = location === 'remote' ? path.posix.basename(normalizedTarget) : path.basename(normalizedTarget);
 
+        const { ownerName, groupName } = await this.resolveOwnerGroupNames(location, stats.uid, stats.gid);
+
         return {
             path: normalizedTarget,
             location,
@@ -806,7 +819,184 @@ export class SftpExplorerPanel {
             mode: stats.mode,
             owner: stats.uid,
             group: stats.gid,
+            ownerName,
+            groupName,
         };
+    }
+
+    private sanitizeName(value: string | undefined): string | undefined {
+        if (!value) {
+            return undefined;
+        }
+        const trimmed = value.trim();
+        return /^[\w.-]+$/.test(trimmed) ? trimmed : undefined;
+    }
+
+    private parseGetentName(output: string): string | undefined {
+        const line = output.trim().split('\n')[0];
+        if (!line) {
+            return undefined;
+        }
+        const [name] = line.split(':');
+        return name || undefined;
+    }
+
+    private async lookupLocalName(kind: 'user' | 'group', id?: number): Promise<string | undefined> {
+        if (id === undefined) {
+            return undefined;
+        }
+        try {
+            const { stdout } = await execFileAsync('getent', [kind === 'user' ? 'passwd' : 'group', String(id)]);
+            const name = this.parseGetentName(stdout);
+            if (name) {
+                return name;
+            }
+        } catch (err) {
+            // ignore and fall back
+        }
+
+        try {
+            const args = kind === 'user' ? ['-nu', String(id)] : ['-ng', String(id)];
+            const { stdout } = await execFileAsync('id', args);
+            const name = stdout.trim();
+            return name || undefined;
+        } catch (err) {
+            return undefined;
+        }
+    }
+
+    private async lookupLocalId(kind: 'user' | 'group', name: string): Promise<number | undefined> {
+        const sanitized = this.sanitizeName(name);
+        if (!sanitized) {
+            throw new Error('Names may only include letters, numbers, underscore, dash, or dot.');
+        }
+        try {
+            const args = kind === 'user' ? ['-u', sanitized] : ['-g', sanitized];
+            const { stdout } = await execFileAsync('id', args);
+            const value = Number(stdout.trim());
+            return Number.isInteger(value) ? value : undefined;
+        } catch (err) {
+            return undefined;
+        }
+    }
+
+    private async execRemoteCommand(command: string): Promise<string> {
+        await this.ensureSftp();
+        const client = this.client;
+        if (!client) {
+            throw new Error('SSH client is not connected.');
+        }
+        return await new Promise<string>((resolve, reject) => {
+            client.exec(command, (err, stream) => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+                let output = '';
+                let errorOutput = '';
+                let exitCode: number | null = null;
+                stream.on('data', (chunk: Buffer) => {
+                    output += chunk.toString();
+                });
+                stream.stderr.on('data', (chunk: Buffer) => {
+                    errorOutput += chunk.toString();
+                });
+                stream.on('exit', (code: number | null) => {
+                    exitCode = code;
+                });
+                stream.on('close', () => {
+                    if (exitCode === 0) {
+                        resolve(output);
+                    } else {
+                        reject(new Error(errorOutput || `Command exited with code ${exitCode ?? 'unknown'}`));
+                    }
+                });
+            });
+        });
+    }
+
+    private async lookupRemoteName(kind: 'user' | 'group', id?: number): Promise<string | undefined> {
+        if (id === undefined || id < 0) {
+            return undefined;
+        }
+        const commands = [
+            `getent ${kind === 'user' ? 'passwd' : 'group'} ${id}`,
+            `id -n${kind === 'user' ? 'u' : 'g'} ${id}`,
+        ];
+        for (const command of commands) {
+            try {
+                const output = await this.execRemoteCommand(command);
+                const name = command.startsWith('getent') ? this.parseGetentName(output) : output.trim();
+                if (name) {
+                    return name;
+                }
+            } catch (err) {
+                // ignore and try next
+            }
+        }
+        return undefined;
+    }
+
+    private async lookupRemoteId(kind: 'user' | 'group', name: string): Promise<number | undefined> {
+        const sanitized = this.sanitizeName(name);
+        if (!sanitized) {
+            throw new Error('Names may only include letters, numbers, underscore, dash, or dot.');
+        }
+        const command = `id -${kind === 'user' ? 'u' : 'g'} ${sanitized}`;
+        try {
+            const output = await this.execRemoteCommand(command);
+            const value = Number(output.trim());
+            return Number.isInteger(value) ? value : undefined;
+        } catch (err) {
+            return undefined;
+        }
+    }
+
+    private async resolveOwnerGroupNames(
+        location: 'remote' | 'local',
+        owner?: number,
+        group?: number
+    ): Promise<{ ownerName?: string; groupName?: string }> {
+        if (location === 'remote') {
+            const [ownerName, groupName] = await Promise.all([
+                this.lookupRemoteName('user', owner),
+                this.lookupRemoteName('group', group),
+            ]);
+            return { ownerName, groupName };
+        }
+
+        const [ownerName, groupName] = await Promise.all([
+            this.lookupLocalName('user', owner),
+            this.lookupLocalName('group', group),
+        ]);
+        return { ownerName, groupName };
+    }
+
+    private async resolveOwnerGroupIds(
+        location: 'remote' | 'local',
+        owner?: number | string,
+        group?: number | string
+    ): Promise<{ owner?: number; group?: number }> {
+        const ownerIdPromise = typeof owner === 'string'
+            ? location === 'remote'
+                ? this.lookupRemoteId('user', owner)
+                : this.lookupLocalId('user', owner)
+            : Promise.resolve(owner);
+        const groupIdPromise = typeof group === 'string'
+            ? location === 'remote'
+                ? this.lookupRemoteId('group', group)
+                : this.lookupLocalId('group', group)
+            : Promise.resolve(group);
+
+        const [ownerId, groupId] = await Promise.all([ownerIdPromise, groupIdPromise]);
+
+        if (typeof owner === 'string' && ownerId === undefined) {
+            throw new Error(`Unable to resolve owner name "${owner}".`);
+        }
+        if (typeof group === 'string' && groupId === undefined) {
+            throw new Error(`Unable to resolve group name "${group}".`);
+        }
+        return { owner: ownerId, group: groupId };
     }
 
     private mergeMode(existingMode: number | undefined, requestedMode: number): number {

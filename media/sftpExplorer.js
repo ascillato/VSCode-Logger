@@ -315,8 +315,8 @@
         elements.permOtherWrite.checked = Boolean(bits & 0o2);
         elements.permOtherExec.checked = Boolean(bits & 0o1);
 
-        elements.permissionsOwner.value = info.owner !== undefined ? String(info.owner) : '';
-        elements.permissionsGroup.value = info.group !== undefined ? String(info.group) : '';
+        elements.permissionsOwner.value = info.ownerName || (info.owner !== undefined ? String(info.owner) : '');
+        elements.permissionsGroup.value = info.groupName || (info.group !== undefined ? String(info.group) : '');
         setPermissionsError('');
 
         elements.permissionsDialog.classList.remove('dialog--hidden');
@@ -326,13 +326,16 @@
     function parseIdValue(value) {
         const trimmed = value.trim();
         if (!trimmed) {
-            return undefined;
+            return { valid: true, value: undefined };
         }
         const numeric = Number(trimmed);
-        if (!Number.isInteger(numeric) || numeric < 0) {
-            return null;
+        if (Number.isInteger(numeric) && numeric >= 0) {
+            return { valid: true, value: numeric };
         }
-        return numeric;
+        if (/^[\w.-]+$/.test(trimmed)) {
+            return { valid: true, value: trimmed };
+        }
+        return { valid: false };
     }
 
     function buildModeFromDialog() {
@@ -650,13 +653,13 @@
             return;
         }
         const ownerValue = parseIdValue(elements.permissionsOwner.value);
-        if (ownerValue === null) {
-            setPermissionsError('Owner must be a non-negative integer.');
+        if (!ownerValue.valid) {
+            setPermissionsError('Owner must be a name or non-negative integer.');
             return;
         }
         const groupValue = parseIdValue(elements.permissionsGroup.value);
-        if (groupValue === null) {
-            setPermissionsError('Group must be a non-negative integer.');
+        if (!groupValue.valid) {
+            setPermissionsError('Group must be a name or non-negative integer.');
             return;
         }
 
@@ -670,8 +673,8 @@
             location,
             path: permissionsState.info.path,
             mode,
-            owner: ownerValue === undefined ? undefined : ownerValue,
-            group: groupValue === undefined ? undefined : groupValue,
+            owner: ownerValue.value,
+            group: groupValue.value,
             requestId,
         });
         hidePermissionsDialog();
