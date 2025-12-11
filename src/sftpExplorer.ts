@@ -123,6 +123,7 @@ interface SftpClient {
     createReadStream(path: string): Readable;
     createWriteStream(path: string): Writable;
     mkdir(path: string, callback: (err?: Error) => void): void;
+    rmdir(path: string, callback: (err?: Error) => void): void;
 }
 
 type ClientWithSftp = Client & { sftp(callback: (err: Error | undefined, sftp?: SftpClient) => void): void };
@@ -483,8 +484,9 @@ export class SftpExplorerPanel {
     private async deleteEntry(location: 'remote' | 'local', targetPath: string): Promise<string> {
         const normalizedTarget = this.normalizePath(location, targetPath);
         const stats = await this.getEntryStats(location, normalizedTarget);
-        if (!stats.isFile()) {
-            throw new Error('Only file deletions are supported from the explorer.');
+        if (stats.isDirectory()) {
+            await this.deleteDirectory(location, normalizedTarget);
+            return this.getParentDir(location, normalizedTarget);
         }
 
         if (location === 'remote') {
@@ -508,9 +510,6 @@ export class SftpExplorerPanel {
     private async renameEntry(location: 'remote' | 'local', targetPath: string, newName: string): Promise<string> {
         const normalizedTarget = this.normalizePath(location, targetPath);
         const stats = await this.getEntryStats(location, normalizedTarget);
-        if (!stats.isFile()) {
-            throw new Error('Only file renames are supported from the explorer.');
-        }
 
         const parent = this.getParentDir(location, normalizedTarget);
         const destination = location === 'remote' ? path.posix.join(parent, newName) : path.join(parent, newName);
@@ -536,14 +535,20 @@ export class SftpExplorerPanel {
     private async duplicateEntry(location: 'remote' | 'local', targetPath: string): Promise<string> {
         const normalizedTarget = this.normalizePath(location, targetPath);
         const stats = await this.getEntryStats(location, normalizedTarget);
-        if (!stats.isFile()) {
-            throw new Error('Only file duplication is supported.');
-        }
 
         const parent = this.getParentDir(location, normalizedTarget);
         const baseName = path.basename(normalizedTarget);
         const duplicateName = await this.generateCopyName(location, parent, baseName);
         const destination = location === 'remote' ? path.posix.join(parent, duplicateName) : path.join(parent, duplicateName);
+
+        if (stats.isDirectory()) {
+            if (location === 'remote') {
+                await this.copyRemoteDirectory(normalizedTarget, destination);
+            } else {
+                await this.copyLocalDirectory(normalizedTarget, destination);
+            }
+            return parent;
+        }
 
         if (location === 'remote') {
             await this.copyRemoteFile(normalizedTarget, destination);
@@ -730,6 +735,16 @@ export class SftpExplorerPanel {
         }
     }
 
+    private async deleteDirectory(location: 'remote' | 'local', dirPath: string): Promise<void> {
+        if (location === 'remote') {
+            const sftp = await this.ensureSftp();
+            await this.deleteRemoteDirectoryRecursive(sftp, dirPath);
+            return;
+        }
+
+        await fs.rm(dirPath, { recursive: true, force: false });
+    }
+
     private async pathExists(location: 'remote' | 'local', targetPath: string): Promise<boolean> {
         if (location === 'remote') {
             const sftp = await this.ensureSftp();
@@ -880,6 +895,102 @@ export class SftpExplorerPanel {
             });
 
             readStream.pipe(writeStream);
+        });
+    }
+
+    private async copyRemoteDirectory(source: string, destination: string): Promise<void> {
+        const sftp = await this.ensureSftp();
+        await new Promise<void>((resolve, reject) => {
+            sftp.mkdir(destination, (err?: Error) => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+                resolve();
+            });
+        });
+
+        const entries = await new Promise<SftpFileEntry[]>((resolve, reject) => {
+            sftp.readdir(source, (err: Error | undefined, items?: SftpFileEntry[]) => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+                resolve(items || []);
+            });
+        });
+
+        for (const entry of entries) {
+            if (entry.filename === '.' || entry.filename === '..') {
+                continue;
+            }
+            const childSource = path.posix.join(source, entry.filename);
+            const childDestination = path.posix.join(destination, entry.filename);
+            if (entry.attrs.isDirectory()) {
+                await this.copyRemoteDirectory(childSource, childDestination);
+            } else {
+                await this.copyRemoteFile(childSource, childDestination);
+            }
+        }
+    }
+
+    private async copyLocalDirectory(source: string, destination: string): Promise<void> {
+        await fs.mkdir(destination);
+        const entries = await fs.readdir(source, { withFileTypes: true });
+
+        for (const entry of entries) {
+            if (entry.name === '.' || entry.name === '..') {
+                continue;
+            }
+            const childSource = path.join(source, entry.name);
+            const childDestination = path.join(destination, entry.name);
+            if (entry.isDirectory()) {
+                await this.copyLocalDirectory(childSource, childDestination);
+            } else {
+                await fs.copyFile(childSource, childDestination);
+            }
+        }
+    }
+
+    private async deleteRemoteDirectoryRecursive(sftp: SftpClient, dirPath: string): Promise<void> {
+        const entries = await new Promise<SftpFileEntry[]>((resolve, reject) => {
+            sftp.readdir(dirPath, (err: Error | undefined, items?: SftpFileEntry[]) => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+                resolve(items || []);
+            });
+        });
+
+        for (const entry of entries) {
+            if (entry.filename === '.' || entry.filename === '..') {
+                continue;
+            }
+            const childPath = path.posix.join(dirPath, entry.filename);
+            if (entry.attrs.isDirectory()) {
+                await this.deleteRemoteDirectoryRecursive(sftp, childPath);
+            } else {
+                await new Promise<void>((resolve, reject) => {
+                    sftp.unlink(childPath, (err?: Error) => {
+                        if (err) {
+                            reject(err);
+                            return;
+                        }
+                        resolve();
+                    });
+                });
+            }
+        }
+
+        await new Promise<void>((resolve, reject) => {
+            sftp.rmdir(dirPath, (err?: Error) => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+                resolve();
+            });
         });
     }
 
