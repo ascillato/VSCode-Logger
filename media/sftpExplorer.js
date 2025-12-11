@@ -17,6 +17,12 @@
         connectionState: 'connected',
     };
 
+    const selectionAnchors = {
+        remote: undefined,
+        rightLocal: undefined,
+        rightRemote: undefined,
+    };
+
     const elements = {
         status: document.getElementById('status'),
         explorer: document.getElementById('explorer'),
@@ -163,6 +169,37 @@
         return snapshot.selected ?? [];
     }
 
+    function getSelectionAnchorKey(side) {
+        if (side === 'remote') {
+            return 'remote';
+        }
+        return getActiveRightLocation() === 'local' ? 'rightLocal' : 'rightRemote';
+    }
+
+    function getSelectionAnchor(side) {
+        return selectionAnchors[getSelectionAnchorKey(side)];
+    }
+
+    function setSelectionAnchor(side, entry) {
+        selectionAnchors[getSelectionAnchorKey(side)] = entry ? entry.name : undefined;
+    }
+
+    function resetSelectionAnchors() {
+        selectionAnchors.remote = undefined;
+        selectionAnchors.rightLocal = undefined;
+        selectionAnchors.rightRemote = undefined;
+    }
+
+    function clearSelectionAnchorByRequestId(requestId) {
+        if (requestId === requestIds.remote) {
+            selectionAnchors.remote = undefined;
+        } else if (requestId === requestIds.local) {
+            selectionAnchors.rightLocal = undefined;
+        } else if (requestId === requestIds.rightRemote) {
+            selectionAnchors.rightRemote = undefined;
+        }
+    }
+
     function isSelected(snapshot, entry) {
         return getSelectedEntries(snapshot).some((selectedEntry) => selectedEntry.name === entry.name);
     }
@@ -245,6 +282,22 @@
         if (state.connectionState !== 'connected') {
             return;
         }
+        const anchorName = getSelectionAnchor(side) || getSelectedEntries(snapshot)[0]?.name;
+        if (event?.shiftKey) {
+            const targetIndex = snapshot.entries.findIndex((item) => item.name === entry.name);
+            const anchorIndex = anchorName
+                ? snapshot.entries.findIndex((item) => item.name === anchorName)
+                : -1;
+            if (anchorIndex >= 0 && targetIndex >= 0) {
+                const start = Math.min(anchorIndex, targetIndex);
+                const end = Math.max(anchorIndex, targetIndex);
+                const range = snapshot.entries.slice(start, end + 1);
+                setSelection(side, range, entry);
+                return;
+            }
+            setSingleSelection(side, entry);
+            return;
+        }
         if (event?.ctrlKey || event?.metaKey) {
             toggleEntrySelection(side, snapshot, entry);
             return;
@@ -267,16 +320,18 @@
             const snapshot = getActiveRightSnapshot();
             snapshot.selected = [];
         }
+        setSelectionAnchor(side, undefined);
         updateButtons();
     }
 
-    function setSelection(side, entries) {
+    function setSelection(side, entries, anchorEntry) {
         const target = side === 'remote'
             ? state.remote
             : getActiveRightLocation() === 'local'
             ? state.rightLocal
             : state.rightRemote;
         target.selected = entries;
+        setSelectionAnchor(side, anchorEntry ?? entries[entries.length - 1]);
         renderLists();
     }
 
@@ -288,11 +343,11 @@
         } else {
             selected.push(entry);
         }
-        setSelection(side, [...selected]);
+        setSelection(side, [...selected], entry);
     }
 
     function setSingleSelection(side, entry) {
-        setSelection(side, [entry]);
+        setSelection(side, [entry], entry);
     }
 
     function handleEntryContextMenu(side, entry, event) {
@@ -495,6 +550,7 @@
         state.remote = { ...payload.remote, selected: [] };
         state.rightLocal = { ...payload.local, selected: [] };
         state.rightRemote = { ...payload.remote, selected: [] };
+        resetSelectionAnchors();
         renderLists();
     }
 
@@ -507,6 +563,7 @@
         } else if (message.requestId === requestIds.rightRemote) {
             state.rightRemote = snapshot;
         }
+        clearSelectionAnchorByRequestId(message.requestId);
         renderLists();
     }
 
@@ -738,7 +795,7 @@
         const snapshot = contextMenuState.side === 'remote' ? state.remote : getActiveRightSnapshot();
         const selected = getSelectedEntries(snapshot);
         if (selected.length) {
-            setSelection(contextMenuState.side, [...selected]);
+            setSelection(contextMenuState.side, [...selected], selected[selected.length - 1]);
         }
     });
 
