@@ -9,6 +9,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { Client, ClientChannel, ConnectConfig } from 'ssh2';
 import { EmbeddedDevice } from './deviceTree';
+import { HostEndpoint, getHostEndpoints } from './hostEndpoints';
 import { PasswordManager } from './passwordManager';
 
 /**
@@ -77,7 +78,36 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
                 return;
             }
 
-            await this.connect(authentication, initialDimensions);
+            const endpoints = getHostEndpoints(this.device);
+
+            if (endpoints.length === 0) {
+                throw new Error(`Device "${this.device.name}" is missing a host.`);
+            }
+
+            const maxAttempts = endpoints.length > 1 ? 3 : 1;
+            let endpointIndex = 0;
+            let attempts = 0;
+            let lastError: unknown;
+
+            while (attempts < maxAttempts && !this.closed) {
+                const endpoint = endpoints[endpointIndex];
+                try {
+                    await this.connect(endpoint, authentication, initialDimensions);
+                    return;
+                } catch (err) {
+                    lastError = err;
+                    attempts++;
+
+                    if (endpoints.length > 1) {
+                        endpointIndex = (endpointIndex + 1) % endpoints.length;
+                        continue;
+                    }
+
+                    break;
+                }
+            }
+
+            throw lastError ?? new Error('Failed to open SSH terminal.');
         } catch (err: any) {
             const message = err?.message ?? String(err);
             this.writeEmitter.fire(`Connection error: ${message}\r\n`);
@@ -118,6 +148,7 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
     }
 
     private connect(
+        endpoint: HostEndpoint,
         authentication: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>,
         initialDimensions?: vscode.TerminalDimensions
     ): Promise<void> {
@@ -125,7 +156,7 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
             const client = new Client();
             this.client = client;
             const port = this.device.port ?? 22;
-            const host = this.device.host.trim();
+            const host = endpoint.host;
             const username = this.device.username.trim();
 
             client

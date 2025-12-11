@@ -14,6 +14,8 @@ export interface EmbeddedDevice {
     name: string;
     host: string;
     hostFingerprint?: string;
+    secondaryHost?: string;
+    secondaryHostFingerprint?: string;
     port?: number;
     username: string;
     password?: string; // legacy

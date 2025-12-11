@@ -11,6 +11,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { Client, ConnectConfig } from 'ssh2';
 import { EmbeddedDevice } from './deviceTree';
+import { HostEndpoint, getHostEndpoints } from './hostEndpoints';
 import { PasswordManager } from './passwordManager';
 
 /**
@@ -46,6 +47,7 @@ export class LogSession {
     private closedNotified = false;
     private hostKeyFailure: { expected: string; received: string } | undefined;
     private lastSeenHostFingerprint: { display: string; hex: string } | undefined;
+    private activeEndpoint: HostEndpoint | undefined;
     private readonly passwordManager: PasswordManager;
 
     /**
@@ -78,25 +80,48 @@ export class LogSession {
 
             const logCommand = this.getLogCommand();
             const authentication = await this.getAuthentication();
+            const endpoints = getHostEndpoints(this.device);
 
-            while (!this.disposed) {
+            if (endpoints.length === 0) {
+                throw new Error(`Device "${this.device.name}" is missing a host.`);
+            }
+
+            const maxAttempts = endpoints.length > 1 ? 3 : 1;
+            let endpointIndex = 0;
+            let attempts = 0;
+            let lastError: any;
+
+            while (!this.disposed && attempts < maxAttempts) {
+                const endpoint = endpoints[endpointIndex];
+                this.activeEndpoint = endpoint;
+
                 try {
-                    await this.connect(authentication, logCommand);
+                    await this.connect(endpoint, authentication, logCommand);
                     return;
                 } catch (err: any) {
                     if (err instanceof HostKeyMismatchError) {
                         const retry = await this.promptToUpdateFingerprint(err.expected, err.received);
                         if (retry) {
-                            await this.updateDeviceHostFingerprint(err.received);
+                            await this.updateDeviceHostFingerprint(err.received, endpoint);
                             this.hostKeyFailure = undefined;
                             this.lastSeenHostFingerprint = undefined;
                             continue;
                         }
                     }
 
-                    throw err;
+                    lastError = err;
+                    attempts++;
+
+                    if (endpoints.length > 1) {
+                        endpointIndex = (endpointIndex + 1) % endpoints.length;
+                        continue;
+                    }
+
+                    break;
                 }
             }
+
+            throw lastError ?? new Error('Failed to connect to the device.');
         } catch (err: any) {
             this.callbacks.onError(err?.message ?? String(err));
             this.dispose();
@@ -180,16 +205,17 @@ export class LogSession {
      * @returns Promise that resolves once streaming begins.
      */
     private async connect(
+        endpoint: HostEndpoint,
         authentication: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>,
         logCommand: string
     ): Promise<void> {
-        const expectedFingerprint = this.getExpectedFingerprint();
+        const expectedFingerprint = this.getExpectedFingerprint(endpoint);
         this.hostKeyFailure = undefined;
         this.lastSeenHostFingerprint = undefined;
         return new Promise((resolve, reject) => {
             this.client = new Client();
             const port = this.device.port ?? 22;
-            const host = this.device.host.trim();
+            const host = endpoint.host;
             const username = this.device.username.trim();
 
             this.callbacks.onStatus(`Connecting to ${host}:${port} ...`);
@@ -239,8 +265,8 @@ export class LogSession {
         });
     }
 
-    private getExpectedFingerprint(): { display: string; hex: string } | undefined {
-        const fingerprint = this.device.hostFingerprint?.trim();
+    private getExpectedFingerprint(endpoint: HostEndpoint): { display: string; hex: string } | undefined {
+        const fingerprint = endpoint.fingerprint;
         if (!fingerprint) {
             return undefined;
         }
@@ -313,15 +339,15 @@ export class LogSession {
     }
 
     private async persistFingerprintIfMissing(): Promise<void> {
-        if (this.device.hostFingerprint || !this.lastSeenHostFingerprint) {
+        if (!this.activeEndpoint || this.activeEndpoint.fingerprint || !this.lastSeenHostFingerprint) {
             return;
         }
 
-        await this.updateDeviceHostFingerprint(this.lastSeenHostFingerprint.display);
+        await this.updateDeviceHostFingerprint(this.lastSeenHostFingerprint.display, this.activeEndpoint);
         this.callbacks.onStatus(`Captured SSH host fingerprint for ${this.device.name}.`);
     }
 
-    private async updateDeviceHostFingerprint(fingerprint: string): Promise<void> {
+    private async updateDeviceHostFingerprint(fingerprint: string, endpoint: HostEndpoint): Promise<void> {
         const config = vscode.workspace.getConfiguration('embeddedLogger');
         const inspected = config.inspect<EmbeddedDevice[]>('devices');
         const target = this.getConfigurationTarget(inspected);
@@ -337,17 +363,31 @@ export class LogSession {
         const updatedDevices = devices.map((device) => {
             if (device.id === this.device.id) {
                 found = true;
-                return { ...device, hostFingerprint: fingerprint } as EmbeddedDevice;
+                return {
+                    ...device,
+                    hostFingerprint: endpoint.label === 'primary' ? fingerprint : device.hostFingerprint,
+                    secondaryHostFingerprint:
+                        endpoint.label === 'secondary' ? fingerprint : device.secondaryHostFingerprint,
+                } as EmbeddedDevice;
             }
             return device;
         });
 
         if (!found) {
-            updatedDevices.push({ ...this.device, hostFingerprint: fingerprint });
+            updatedDevices.push({
+                ...this.device,
+                hostFingerprint: endpoint.label === 'primary' ? fingerprint : this.device.hostFingerprint,
+                secondaryHostFingerprint:
+                    endpoint.label === 'secondary' ? fingerprint : this.device.secondaryHostFingerprint,
+            });
         }
 
         await config.update('devices', updatedDevices, target);
-        this.device.hostFingerprint = fingerprint;
+        if (endpoint.label === 'primary') {
+            this.device.hostFingerprint = fingerprint;
+        } else {
+            this.device.secondaryHostFingerprint = fingerprint;
+        }
     }
 
     private getConfigurationTarget(
