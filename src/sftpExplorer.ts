@@ -138,6 +138,7 @@ type WebviewRequest =
           requestId: string;
       }
     | { type: 'runEntry'; location: 'remote' | 'local'; path: string; requestId: string }
+    | { type: 'viewContent'; location: 'remote' | 'local'; path: string }
     | { type: 'openTerminal'; location: 'remote' | 'local'; path: string }
     | { type: 'deleteEntries'; location: 'remote' | 'local'; paths: string[]; requestId: string }
     | { type: 'requestConfirmation'; message: string; requestId: string }
@@ -214,6 +215,8 @@ export class SftpExplorerPanel {
     private readonly reconnectDelayMs = 5000;
     private hasEverConnected = false;
     private disposed = false;
+    private viewContentDirectory?: string;
+    private readonly viewedTempFiles = new Map<string, { remotePath: string }>();
 
     readonly onDidDispose = this.onDidDisposeEmitter.event;
 
@@ -239,6 +242,15 @@ export class SftpExplorerPanel {
         this.panel.webview.onDidReceiveMessage((message: WebviewRequest) => {
             void this.handleMessage(message);
         });
+
+        this.disposables.push(
+            vscode.workspace.onDidSaveTextDocument((doc) => {
+                void this.handleTempFileSave(doc);
+            }),
+            vscode.workspace.onDidCloseTextDocument((doc) => {
+                void this.handleTempFileClose(doc);
+            })
+        );
     }
 
     async start(): Promise<void> {
@@ -254,6 +266,7 @@ export class SftpExplorerPanel {
             return;
         }
         this.disposed = true;
+        void this.cleanupTempFiles();
         while (this.disposables.length) {
             const item = this.disposables.pop();
             item?.dispose();
@@ -360,6 +373,10 @@ export class SftpExplorerPanel {
                         message.requestId,
                         message.requestId === 'rightRemote' ? 'right' : message.requestId === 'remote' ? 'left' : undefined
                     );
+                    break;
+                }
+                case 'viewContent': {
+                    await this.viewContent(message.location, message.path);
                     break;
                 }
                 case 'runEntry': {
@@ -799,6 +816,33 @@ export class SftpExplorerPanel {
             cwd: normalizedDir,
         });
         terminal.show(true);
+    }
+
+    private async viewContent(location: 'remote' | 'local', targetPath: string): Promise<void> {
+        if (location !== 'remote') {
+            throw new Error('Viewing content is only supported for remote files.');
+        }
+
+        const normalizedTarget = this.normalizePath('remote', targetPath);
+        const stats = await this.getEntryStats('remote', normalizedTarget);
+        if (!stats.isFile()) {
+            throw new Error('Only files can be opened for viewing.');
+        }
+
+        const tempDir = await this.ensureViewContentDirectory();
+        const baseName = path.posix.basename(normalizedTarget);
+        const extension = path.posix.extname(baseName);
+        const stem = extension ? baseName.slice(0, -extension.length) : baseName;
+        const uniqueSuffix = createHash('sha256').update(normalizedTarget).digest('hex').slice(0, 8);
+        const tempFileName = `${stem}-${uniqueSuffix}${extension}`;
+        const localPath = path.join(tempDir, tempFileName);
+
+        await this.downloadFile(normalizedTarget, localPath);
+        this.viewedTempFiles.set(localPath, { remotePath: normalizedTarget });
+
+        const document = await vscode.workspace.openTextDocument(vscode.Uri.file(localPath));
+        await vscode.window.showTextDocument(document, { preview: false });
+        this.postMessage({ type: 'status', message: `Opened ${baseName} from remote.` });
     }
 
     private async runEntry(location: 'remote' | 'local', targetPath: string): Promise<void> {
@@ -1570,6 +1614,58 @@ export class SftpExplorerPanel {
         });
     }
 
+    private async ensureViewContentDirectory(): Promise<string> {
+        if (!this.viewContentDirectory) {
+            const dir = path.join(os.tmpdir(), 'vscode-logger-view');
+            await fs.mkdir(dir, { recursive: true });
+            this.viewContentDirectory = dir;
+        }
+        return this.viewContentDirectory;
+    }
+
+    private async handleTempFileSave(doc: vscode.TextDocument): Promise<void> {
+        const mapping = this.viewedTempFiles.get(doc.uri.fsPath);
+        if (!mapping) {
+            return;
+        }
+
+        try {
+            await this.uploadFile(doc.uri.fsPath, mapping.remotePath);
+            this.postMessage({ type: 'status', message: `Saved to remote: ${path.posix.basename(mapping.remotePath)}` });
+        } catch (err: any) {
+            const message = err?.message ?? 'Unable to save file back to remote.';
+            this.postMessage({ type: 'error', message });
+            vscode.window.showErrorMessage(message);
+        }
+    }
+
+    private async handleTempFileClose(doc: vscode.TextDocument): Promise<void> {
+        const mapping = this.viewedTempFiles.get(doc.uri.fsPath);
+        if (!mapping) {
+            return;
+        }
+        this.viewedTempFiles.delete(doc.uri.fsPath);
+        try {
+            await fs.unlink(doc.uri.fsPath);
+        } catch (err) {
+            // Ignore cleanup errors
+        }
+    }
+
+    private async cleanupTempFiles(): Promise<void> {
+        const entries = [...this.viewedTempFiles.keys()];
+        this.viewedTempFiles.clear();
+        await Promise.all(
+            entries.map(async (filePath) => {
+                try {
+                    await fs.unlink(filePath);
+                } catch (err) {
+                    // Ignore cleanup errors
+                }
+            })
+        );
+    }
+
     private async uploadFile(localPath: string, remotePath: string): Promise<void> {
         const sftp = await this.ensureSftp();
         await new Promise<void>((resolve, reject) => {
@@ -1847,6 +1943,7 @@ export class SftpExplorerPanel {
         <div class="context-menu" id="contextMenu" role="menu" aria-hidden="true">
             <button class="context-menu__item" id="contextSelect" role="menuitem">Select</button>
             <button class="context-menu__item" id="contextRun" role="menuitem">Run</button>
+            <button class="context-menu__item" id="contextViewContent" role="menuitem">View Content</button>
             <button class="context-menu__item" id="contextRename" role="menuitem">Rename</button>
             <button class="context-menu__item" id="contextDuplicate" role="menuitem">Duplicate</button>
             <button class="context-menu__item" id="contextPermissions" role="menuitem">Change Permissions</button>

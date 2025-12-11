@@ -50,6 +50,7 @@
         contextMenu: document.getElementById('contextMenu'),
         contextSelect: document.getElementById('contextSelect'),
         contextRun: document.getElementById('contextRun'),
+        contextViewContent: document.getElementById('contextViewContent'),
         contextRename: document.getElementById('contextRename'),
         contextDuplicate: document.getElementById('contextDuplicate'),
         contextDelete: document.getElementById('contextDelete'),
@@ -386,6 +387,13 @@
             elements.contextRun.disabled = !canRun;
             elements.contextRun.classList.toggle('context-menu__item--disabled', !canRun);
             elements.contextRun.classList.toggle('context-menu__item--hidden', !canRun);
+        }
+
+        if (elements.contextViewContent) {
+            const canView = Boolean(selectedEntry && selectedEntry.type === 'file' && isRemoteLocation);
+            elements.contextViewContent.disabled = !canView;
+            elements.contextViewContent.classList.toggle('context-menu__item--disabled', !canView);
+            elements.contextViewContent.classList.toggle('context-menu__item--hidden', !canView);
         }
 
         [elements.contextRename, elements.contextDuplicate].forEach((el) => {
@@ -748,6 +756,25 @@
         });
     }
 
+    function viewContent(side) {
+        resetStatus();
+        const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
+        const location = side === 'remote' ? 'remote' : getActiveRightLocation();
+        if (location !== 'remote') {
+            return;
+        }
+        const selected = getSelectedEntries(snapshot);
+        if (selected.length !== 1) {
+            return;
+        }
+        const [entry] = selected;
+        if (entry.type !== 'file') {
+            return;
+        }
+
+        vscode.postMessage({ type: 'viewContent', location, path: getEntryPath(snapshot, entry) });
+    }
+
     async function deleteSelected(side) {
         resetStatus();
         const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
@@ -885,6 +912,10 @@
     elements.contextRun.addEventListener('click', () => {
         hideContextMenu();
         runSelected(contextMenuState.side);
+    });
+    elements.contextViewContent.addEventListener('click', () => {
+        hideContextMenu();
+        viewContent(contextMenuState.side);
     });
     elements.contextRename.addEventListener('click', () => {
         hideContextMenu();
