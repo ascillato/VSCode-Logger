@@ -21,6 +21,7 @@ export interface EmbeddedDevice {
     privateKeyPassphrase?: string; // legacy
     logCommand?: string;
     enableSshTerminal?: boolean;
+    enableSftpExplorer?: boolean;
     sshCommands?: { name: string; command: string }[];
 }
 

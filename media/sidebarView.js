@@ -25,6 +25,14 @@
     const status = document.getElementById('sidebarStatus');
     let colorCursor = 0;
 
+    function createIconSpan(symbol) {
+        const span = document.createElement('span');
+        span.className = 'command-icon';
+        span.textContent = symbol;
+        span.setAttribute('aria-hidden', 'true');
+        return span;
+    }
+
     function nextHighlightColor() {
         const pair = highlightPalette[colorCursor % highlightPalette.length];
         colorCursor = (colorCursor + 1) % highlightPalette.length;
@@ -45,11 +53,14 @@
             const card = document.createElement('div');
             card.className = 'device-card';
 
-            const header = document.createElement('button');
-            header.className = 'device-card__header';
-            header.addEventListener('click', () => {
-                vscode.postMessage({ type: 'openDevice', deviceId: device.id });
-            });
+            const sshCommands = device.sshCommands || [];
+            const commandsSection = document.createElement('details');
+            commandsSection.className = 'command-group';
+            commandsSection.open = false;
+
+            const summary = document.createElement('summary');
+            summary.className = 'command-summary';
+            summary.addEventListener('click', (event) => event.stopPropagation());
 
             const info = document.createElement('div');
             info.className = 'device-info';
@@ -64,58 +75,74 @@
             subtitle.textContent = device.host;
             info.appendChild(subtitle);
 
-            header.appendChild(info);
-            card.appendChild(header);
+            summary.appendChild(info);
+            commandsSection.appendChild(summary);
 
-            const sshCommands = device.sshCommands || [];
-            const totalSshActions = sshCommands.length + (device.enableSshTerminal ? 1 : 0);
-            if (totalSshActions) {
-                const commandsSection = document.createElement('details');
-                commandsSection.className = 'command-group';
+            const list = document.createElement('div');
+            list.className = 'command-list';
 
-                const summary = document.createElement('summary');
-                summary.textContent = `SSH Commands (${totalSshActions})`;
-                summary.addEventListener('click', (event) => event.stopPropagation());
-                commandsSection.appendChild(summary);
+            const openLogsButton = document.createElement('button');
+            openLogsButton.className = 'command-button';
+            openLogsButton.appendChild(createIconSpan('📄'));
+            openLogsButton.appendChild(document.createTextNode('Open Logs'));
+            openLogsButton.title = `Open logs for ${device.name}`;
+            openLogsButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                vscode.postMessage({ type: 'openDevice', deviceId: device.id });
+            });
+            list.appendChild(openLogsButton);
 
-                const list = document.createElement('div');
-                list.className = 'command-list';
-
-                if (device.enableSshTerminal) {
-                    const terminalButton = document.createElement('button');
-                    terminalButton.className = 'command-button';
-                    terminalButton.textContent = 'Open SSH Terminal';
-                    terminalButton.title = `Open an SSH terminal session for ${device.name}`;
-                    terminalButton.addEventListener('click', (event) => {
-                        event.stopPropagation();
-                        vscode.postMessage({
-                            type: 'openSshTerminal',
-                            deviceId: device.id,
-                        });
+            if (device.enableSshTerminal) {
+                const terminalButton = document.createElement('button');
+                terminalButton.className = 'command-button';
+                terminalButton.appendChild(createIconSpan('🖥️'));
+                terminalButton.appendChild(document.createTextNode('Open SSH Terminal'));
+                terminalButton.title = `Open an SSH terminal session for ${device.name}`;
+                terminalButton.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    vscode.postMessage({
+                        type: 'openSshTerminal',
+                        deviceId: device.id,
                     });
-                    list.appendChild(terminalButton);
-                }
-
-                sshCommands.forEach((cmd) => {
-                    const commandButton = document.createElement('button');
-                    commandButton.className = 'command-button';
-                    commandButton.textContent = cmd.name;
-                    commandButton.title = cmd.command;
-                    commandButton.addEventListener('click', (event) => {
-                        event.stopPropagation();
-                        vscode.postMessage({
-                            type: 'runDeviceCommand',
-                            deviceId: device.id,
-                            commandName: cmd.name,
-                            command: cmd.command,
-                        });
-                    });
-                    list.appendChild(commandButton);
                 });
-
-                commandsSection.appendChild(list);
-                card.appendChild(commandsSection);
+                list.appendChild(terminalButton);
             }
+
+            if (device.enableSftpExplorer) {
+                const sftpButton = document.createElement('button');
+                sftpButton.className = 'command-button';
+                sftpButton.appendChild(createIconSpan('📁'));
+                sftpButton.appendChild(document.createTextNode('Open SFTP Explorer'));
+                sftpButton.title = `Browse and transfer files for ${device.name}`;
+                sftpButton.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    vscode.postMessage({
+                        type: 'openSftpExplorer',
+                        deviceId: device.id,
+                    });
+                });
+                list.appendChild(sftpButton);
+            }
+
+            sshCommands.forEach((cmd) => {
+                const commandButton = document.createElement('button');
+                commandButton.className = 'command-button';
+                commandButton.textContent = cmd.name;
+                commandButton.title = cmd.command;
+                commandButton.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    vscode.postMessage({
+                        type: 'runDeviceCommand',
+                        deviceId: device.id,
+                        commandName: cmd.name,
+                        command: cmd.command,
+                    });
+                });
+                list.appendChild(commandButton);
+            });
+
+            commandsSection.appendChild(list);
+            card.appendChild(commandsSection);
 
             fragment.appendChild(card);
         });

@@ -11,11 +11,13 @@ import { HighlightDefinition, SidebarViewProvider } from './sidebarView';
 import { LogPanel } from './logPanel';
 import { SshCommandRunner } from './sshCommandRunner';
 import { SshTerminalSession } from './sshTerminal';
+import { SftpExplorerPanel } from './sftpExplorer';
 import { getEmbeddedLoggerConfiguration } from './configuration';
 import { PasswordManager } from './passwordManager';
 
 // Map of deviceId to existing log panels so multiple clicks reuse tabs.
 const panelMap: Map<string, LogPanel> = new Map();
+const sftpPanelMap: Map<string, SftpExplorerPanel> = new Map();
 let activePanel: LogPanel | undefined;
 let sidebarProvider: SidebarViewProvider | undefined;
 let highlights: HighlightDefinition[] = [];
@@ -154,6 +156,40 @@ export async function activate(context: vscode.ExtensionContext) {
 
     const getDevices = () => getEmbeddedLoggerConfiguration().devices;
 
+    const openSftpExplorer = async (device: EmbeddedDevice | undefined) => {
+        if (!device) {
+            vscode.window.showErrorMessage('Device not found. Check embeddedLogger.devices.');
+            return;
+        }
+
+        if (!vscode.workspace.isTrusted) {
+            vscode.window.showErrorMessage('Workspace trust is required before connecting to devices.');
+            return;
+        }
+
+        const validationError = validateSshDevice(device);
+        if (validationError) {
+            vscode.window.showErrorMessage(validationError);
+            return;
+        }
+
+        const existing = sftpPanelMap.get(device.id);
+        if (existing) {
+            existing.reveal();
+            return;
+        }
+
+        try {
+            const panel = new SftpExplorerPanel(context, device);
+            sftpPanelMap.set(device.id, panel);
+            panel.onDidDispose(() => sftpPanelMap.delete(device.id));
+            await panel.start();
+        } catch (err: any) {
+            sftpPanelMap.delete(device.id);
+            vscode.window.showErrorMessage(err?.message ?? String(err));
+        }
+    };
+
     sidebarProvider = new SidebarViewProvider(
         context,
         getDevices,
@@ -223,7 +259,8 @@ export async function activate(context: vscode.ExtensionContext) {
                 pty: new SshTerminalSession(device, context),
             });
             terminal.show(true);
-        }
+        },
+        (deviceId) => openSftpExplorer(getDevices().find((item) => item.id === deviceId))
     );
 
     context.subscriptions.push(vscode.window.registerWebviewViewProvider('embeddedLogger.devicesView', sidebarProvider));
@@ -237,6 +274,30 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('embeddedLogger.editDevicesConfig', async () => {
             await vscode.commands.executeCommand('workbench.action.openSettings', 'embeddedLogger');
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('embeddedLogger.openSftpExplorer', async (device?: EmbeddedDevice) => {
+            if (device) {
+                await openSftpExplorer(device);
+                return;
+            }
+
+            const devices = getDevices();
+            if (!devices.length) {
+                vscode.window.showErrorMessage('No devices configured. Check embeddedLogger.devices.');
+                return;
+            }
+
+            const selection = await vscode.window.showQuickPick(
+                devices.map((item) => ({ label: item.name, description: item.host, device: item })),
+                { placeHolder: 'Select a device to open the SFTP explorer' }
+            );
+
+            if (selection?.device) {
+                await openSftpExplorer(selection.device);
+            }
         })
     );
 
@@ -373,4 +434,9 @@ export function deactivate() {
         panel.dispose();
     }
     panelMap.clear();
+
+    for (const explorer of sftpPanelMap.values()) {
+        explorer.dispose();
+    }
+    sftpPanelMap.clear();
 }
