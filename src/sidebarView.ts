@@ -49,6 +49,11 @@ interface OpenSshTerminalMessage {
     deviceId: string;
 }
 
+interface OpenSftpExplorerMessage {
+    type: 'openSftpExplorer';
+    deviceId: string;
+}
+
 type IncomingMessage =
     | SidebarMessage
     | HighlightUpdateMessage
@@ -56,7 +61,8 @@ type IncomingMessage =
     | RequestFocus
     | RequestInitPayload
     | RunDeviceCommandMessage
-    | OpenSshTerminalMessage;
+    | OpenSshTerminalMessage
+    | OpenSftpExplorerMessage;
 
 export class SidebarViewProvider implements vscode.WebviewViewProvider {
     private view?: vscode.WebviewView;
@@ -69,7 +75,8 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
         private readonly onHighlightsChanged: (highlights: HighlightDefinition[]) => void,
         private readonly getHighlights: () => HighlightDefinition[],
         private readonly onRunDeviceCommand: (deviceId: string, commandName: string, command: string) => void,
-        private readonly onOpenSshTerminal: (deviceId: string) => void
+        private readonly onOpenSshTerminal: (deviceId: string) => void,
+        private readonly onOpenSftpExplorer: (deviceId: string) => void
     ) {}
 
     resolveWebviewView(webviewView: vscode.WebviewView): void | Thenable<void> {
@@ -106,6 +113,9 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
                     break;
                 case 'openSshTerminal':
                     this.onOpenSshTerminal(message.deviceId);
+                    break;
+                case 'openSftpExplorer':
+                    this.onOpenSftpExplorer(message.deviceId);
                     break;
             }
         });
@@ -157,6 +167,7 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
         return this.getDevices().map((device) => ({
             ...device,
             enableSshTerminal: Boolean(device.enableSshTerminal),
+            enableSftpExplorer: Boolean(device.enableSftpExplorer),
             sshCommands: Array.isArray(device.sshCommands) ? device.sshCommands : [],
         }));
     }

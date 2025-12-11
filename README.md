@@ -19,6 +19,7 @@ A Visual Studio Code extension that connects to embedded Linux devices over SSH,
 - Add, edit and remove **Bookmarks** in live logs and imported logs.
 - Run optional **on-demand SSH commands** configured per device from the Devices view.
 - Optionally **launch an SSH terminal** directly from a device card when enabled in settings.
+- Optionally open a dual-pane **SFTP explorer** to browse remote and local files side-by-side and transfer files.
 - Authenticate with SSH passwords or private keys.
 - SSH passwords and private key passphrases are **stored securely** with VS Code Secret Storage.
 - **Privacy focused**. **No telemetry**. Everything **runs locally**.
@@ -43,6 +44,7 @@ Add devices in your VS Code settings under `embeddedLogger.devices`:
     "username": "root",
     "logCommand": "tail -F /var/log/syslog",
     "enableSshTerminal": true,
+    "enableSftpExplorer": true,
     "sshCommands": [
       {
         "name": "Restart IOT",
@@ -53,11 +55,15 @@ Add devices in your VS Code settings under `embeddedLogger.devices`:
 ]
 ```
 
+Names for commands support emojis that can be copied from: https://unicode.org/emoji/charts/full-emoji-list.html
+
 If no password is stored yet, the extension prompts for it when connecting and saves it locally and securely. When using an encrypted private key, the passphrase is requested once and stored securely in VS Code Secret Storage. Private key paths may include `~` or `${env:VAR}` tokens for convenience.
 
 - **Pin each device's host key** by setting `hostFingerprint` to the device's SSH host key fingerprint (for example, `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub -E sha256`). If no fingerprint is configured, the extension records the server's fingerprint on the first successful connection. When a server presents a different fingerprint later, you'll be prompted to accept the new value before reconnecting.
 
-- Set `enableSshTerminal` to `true` to show an **Open SSH Terminal** button alongside any configured SSH commands for that device. The **Open SSH Terminal** action opens a dedicated VS Code terminal tab for the device and authenticates using the stored password or private key (prompting for and saving the credential securely when missing).
+- Set `enableSshTerminal` to control visibility of the **Open SSH Terminal** button alongside any configured SSH commands for that device (the action is enabled by default; set it to `false` to hide it). The **Open SSH Terminal** action opens a dedicated VS Code terminal tab for the device and authenticates using the stored password or private key (prompting for and saving the credential securely when missing).
+
+- Set `enableSftpExplorer` to control visibility of the **Open SFTP Explorer** button on the device card (enabled by default; set it to `false` to hide it). The explorer opens a dual-pane view with the remote home on the left and the local home on the right, including navigation, rename/delete/duplicate actions, and arrows to transfer selected files between panes (or between two remote panes when the right-side mode is switched to remote). If the SSH link drops, the explorer stays open, greys out, shows a reconnection countdown beside the title, and automatically retries every five seconds without losing the active remote paths.
 
 - Control memory usage by capping retained lines per log tab with `embeddedLogger.maxLinesPerTab` (default: 100000). For auto-save, this limit is not applied to a file. Everything is saved.
 
@@ -65,28 +71,20 @@ All options are available through the VS Code Settings UI under **Embedded Devic
 
 - `embeddedLogger.defaultPort` – applied when a device does not specify a port.
 - `embeddedLogger.defaultLogCommand` – used when `logCommand` is omitted.
-- `embeddedLogger.defaultEnableSshTerminal` – toggles whether the SSH terminal action is shown by default.
+- `embeddedLogger.defaultEnableSshTerminal` – toggles whether the SSH terminal action is shown by default (default: true).
+- `embeddedLogger.defaultEnableSftpExplorer` – toggles whether the SFTP explorer action is shown by default (default: true).
 - `embeddedLogger.defaultSshCommands` – shared SSH actions applied to devices that do not define their own list.
 
 ## Notes
 
-- **Colorization of lines* is performed based on the loglevel (DEBUG, INFO, ERROR, etc). If these keys are not present in the log, no colorization is be applied.
+- **Colorization of lines** is performed based on the loglevel (DEBUG, INFO, ERROR, etc). If these keys are not present in the log, no colorization is be applied.
 - **Filtering presets** are stored per-device in the workspace state using the key `embeddedLogger.presets.<deviceId>`.
 - Exports only include log lines currently visible after applying filters.
 - When an SSH session closes, the log view appends `--- SSH session closed on <timestamp>` and offers a **Reconnect** button next to the status text to restart streaming.
 - Click the highlight icon in the Embedded Logger devices view to add up to ten highlight rows, each with its own colour and editable keyword that updates live and imported logs instantly.
 - Use the **Open Local Log File** button in the Embedded Logger devices view (or run the command with the same name) to select a `.log` or `.txt` file from your machine. The chosen file is loaded into the log viewer so you can reuse filtering, presets, export filtered logs and highlights just like a live connection.
 - **Status** text also shows messages from the log command used in the configuration like `tail -F /var/log/syslog`. So, some messages like: `tail: '/var/log/syslog' has appeared; following new file` may appear. This message in particular happens when the log file is rotated or recreated. The `-F` flag tells `tail` to keep watching for the file to reappear, so the message is informational and indicates that log streaming will continue with the new file. If you prefer a different log source, update the `logCommand` in your device configuration.
-
-## Share Activity Bar with other extensions
-
-The **Embedded Device Logger** extension supports sharing the VSCode Activity Bar with other extensions. To merge an extension into the Activity Bar, simply select its icon from the Side Bar, then drag and drop it into your desired position within the Activity Bar.
-
-![Screenshot3](docs/images/screenshot_example2_coop.png)
-
-In the example, the other extensions (from other publishers) are:
-- `elcamilet.ssh-connect`
-- `ikoamu.side-clipboard`
+- The Embedded Device Logger extension supports **sharing the VSCode Activity Bar** with other extensions. To merge an extension into the Activity Bar, simply select its icon from the Side Bar, then drag and drop it into your desired position within the Activity Bar.
 
 ## Installation
 
@@ -98,16 +96,6 @@ In the example, the other extensions (from other publishers) are:
 **For more information visit the [Embedded Device Logger Extension](https://marketplace.visualstudio.com/items?itemName=Scallant.embedded-device-logger) in the VSCode Marketplace.**
 
 If you find this extension useful, please [rate it](https://marketplace.visualstudio.com/items?itemName=Scallant.embedded-device-logger&ssr=false#review-details).
-
-----
-
-## TODO
-
-* **Add to SSH connections:**
-
-  - Support going through a bastion
-
-* **Support SFTP**
 
 ----
 
@@ -133,12 +121,12 @@ If you find this extension useful, please [rate it](https://marketplace.visualst
 
 - Requires: `npm install -g @vscode/vsce`
 - Run: `vsce package` to generate vsix file to be installed into VSCode
-- Install locally on VSCode: `code --install-extension embedded-device-logger-1.0.0.vsix`
+- Install locally on VSCode: `code --install-extension embedded-device-logger-1.1.0.vsix`
 
 ### Clean and re-compile
 
 - `clear; rm -rf node_modules; rm -rf out; rm *.vsix; npm install; npm run compile; vsce package`
-- `code --install-extension embedded-device-logger-1.0.0.vsix`
+- `code --install-extension embedded-device-logger-1.1.0.vsix`
 
 ### Generating Source Code Documentation
 
