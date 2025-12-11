@@ -120,6 +120,10 @@
 
     function renderPane(container, snapshot, onClick) {
         container.innerHTML = '';
+        const maxNameLength = snapshot.entries.reduce((max, entry) => Math.max(max, entry.name.length), 0);
+        const nameWidth = Math.min(Math.max(maxNameLength, 1), 32);
+        container.style.setProperty('--name-col-width', `${nameWidth}ch`);
+
         const frag = document.createDocumentFragment();
         snapshot.entries.forEach((entry) => {
             const row = document.createElement('div');
@@ -137,7 +141,11 @@
             icon.textContent = getEntryIcon(entry);
             const name = document.createElement('span');
             name.className = 'entry__name';
-            name.textContent = entry.name;
+            const needsTruncate = entry.name.length > 32;
+            name.textContent = needsTruncate ? `${entry.name.slice(0, 29)}...` : entry.name;
+            if (needsTruncate) {
+                name.title = entry.name;
+            }
             nameCell.appendChild(icon);
             nameCell.appendChild(name);
 
