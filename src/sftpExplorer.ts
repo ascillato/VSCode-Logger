@@ -1778,7 +1778,6 @@ export class SftpExplorerPanel {
                         <button id="remoteToLocal" class="action" disabled title="Copy to right pane">→</button>
                     </div>
                     <div class="path-row">
-                        <div class="path" id="remotePath"></div>
                         <button
                             id="remoteOpenTerminal"
                             class="action action--icon"
@@ -1787,6 +1786,7 @@ export class SftpExplorerPanel {
                         >
                             <img class="action__icon" src="${terminalIconUri}" alt="">
                         </button>
+                        <div class="path" id="remotePath"></div>
                     </div>
                 </div>
                 <div id="remoteList" class="list" role="tree"></div>
@@ -1809,7 +1809,6 @@ export class SftpExplorerPanel {
                         <button id="localToRemote" class="action" disabled title="Copy to left pane">←</button>
                     </div>
                     <div class="path-row">
-                        <div class="path" id="localPath"></div>
                         <button
                             id="localOpenTerminal"
                             class="action action--icon"
@@ -1818,6 +1817,7 @@ export class SftpExplorerPanel {
                         >
                             <img class="action__icon" src="${terminalIconUri}" alt="">
                         </button>
+                        <div class="path" id="localPath"></div>
                     </div>
                 </div>
                 <div id="localList" class="list" role="tree"></div>

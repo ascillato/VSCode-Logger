@@ -131,7 +131,7 @@ body {
 }
 
 .path {
-    margin-top: 0.4rem;
+    margin-top: 0;
     font-size: 0.85rem;
     color: var(--vscode-descriptionForeground);
     word-break: break-all;
