@@ -8,9 +8,21 @@ import * as fs from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
 import { Client, ClientChannel, ConnectConfig } from 'ssh2';
-import { EmbeddedDevice } from './deviceTree';
+import { BastionConfig, EmbeddedDevice } from './deviceTree';
 import { HostEndpoint, getHostEndpoints } from './hostEndpoints';
 import { PasswordManager } from './passwordManager';
+
+type ForwardingClient = Client & {
+    forwardOut(
+        srcIP: string,
+        srcPort: number,
+        dstIP: string,
+        dstPort: number,
+        callback: (err: Error | undefined, stream: any) => void
+    ): void;
+};
+
+type SocketConnectConfig = ConnectConfig & { sock?: any };
 
 /**
  * @brief Pseudoterminal that proxies input/output to an SSH shell session.
@@ -22,6 +34,7 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
     readonly onDidClose = this.closeEmitter.event;
 
     private client: Client | undefined;
+    private bastionClient: Client | undefined;
     private shell: ClientChannel | undefined;
     private closed = false;
     private readonly passwordManager: PasswordManager;
@@ -45,6 +58,7 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
         }
         this.shell?.end();
         this.client?.end();
+        this.bastionClient?.end();
     }
 
     handleInput(data: string): void {
@@ -78,6 +92,13 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
                 return;
             }
 
+            const bastion = this.getBastionConfig();
+            const bastionAuthentication = bastion ? await this.getBastionAuthentication(bastion) : undefined;
+
+            if (this.closed) {
+                return;
+            }
+
             const endpoints = getHostEndpoints(this.device);
 
             if (endpoints.length === 0) {
@@ -92,7 +113,7 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
             while (attempts < maxAttempts && !this.closed) {
                 const endpoint = endpoints[endpointIndex];
                 try {
-                    await this.connect(endpoint, authentication, initialDimensions);
+                    await this.connect(endpoint, authentication, bastion, bastionAuthentication, initialDimensions);
                     return;
                 } catch (err) {
                     lastError = err;
@@ -128,6 +149,18 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
         if (this.device.port !== undefined && (!Number.isInteger(this.device.port) || this.device.port <= 0)) {
             return `Device "${this.device.name}" has an invalid port.`;
         }
+        const bastion = this.device.bastion;
+        if (bastion) {
+            if (!bastion.host?.trim()) {
+                return `Device "${this.device.name}" is missing a bastion host.`;
+            }
+            if (!bastion.username?.trim()) {
+                return `Device "${this.device.name}" is missing a bastion username.`;
+            }
+            if (bastion.port !== undefined && (!Number.isInteger(bastion.port) || bastion.port <= 0)) {
+                return `Device "${this.device.name}" has an invalid bastion port.`;
+            }
+        }
         return undefined;
     }
 
@@ -147,10 +180,116 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
         return { password };
     }
 
+    private getBastionConfig(): BastionConfig | undefined {
+        const bastion = this.device.bastion;
+        if (!bastion?.host?.trim() || !bastion.username?.trim()) {
+            return undefined;
+        }
+
+        return {
+            ...bastion,
+            host: bastion.host.trim(),
+            username: bastion.username.trim(),
+            port: bastion.port ?? 22,
+            hostFingerprint: bastion.hostFingerprint?.trim(),
+            privateKeyPath: bastion.privateKeyPath?.trim(),
+        };
+    }
+
+    private async getBastionAuthentication(
+        bastion: BastionConfig
+    ): Promise<Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>> {
+        if (bastion.privateKeyPath) {
+            const privateKey = await this.loadPrivateKey(bastion.privateKeyPath);
+            const bastionDevice = this.getBastionDevice(bastion);
+            const passphrase = await this.passwordManager.getPassphrase(bastionDevice);
+            return { privateKey, passphrase: passphrase || undefined };
+        }
+
+        const bastionDevice = this.getBastionDevice(bastion);
+        const password = await this.passwordManager.getPassword(bastionDevice);
+        if (!password) {
+            throw new Error('Password or private key is required to connect to the bastion host.');
+        }
+
+        return { password };
+    }
+
+    private getBastionDevice(bastion: BastionConfig): EmbeddedDevice {
+        return {
+            id: `${this.device.id}-bastion`,
+            name: `${this.device.name} bastion`,
+            host: bastion.host,
+            username: bastion.username,
+        } as EmbeddedDevice;
+    }
+
     private connect(
         endpoint: HostEndpoint,
         authentication: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>,
+        bastion?: BastionConfig,
+        bastionAuthentication?: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>,
         initialDimensions?: vscode.TerminalDimensions
+    ): Promise<void> {
+        if (bastion && bastionAuthentication) {
+            return this.connectThroughBastion(endpoint, authentication, bastion, bastionAuthentication, initialDimensions);
+        }
+
+        return this.connectDirect(endpoint, authentication, initialDimensions);
+    }
+
+    private connectThroughBastion(
+        endpoint: HostEndpoint,
+        authentication: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>,
+        bastion: BastionConfig,
+        bastionAuthentication: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>,
+        initialDimensions?: vscode.TerminalDimensions
+    ): Promise<void> {
+        return new Promise((resolve, reject) => {
+            const bastionClient = new Client() as ForwardingClient;
+            this.bastionClient = bastionClient;
+            const bastionPort = bastion.port ?? 22;
+
+            bastionClient
+                .on('ready', () => {
+                    bastionClient.forwardOut('127.0.0.1', 0, endpoint.host, this.device.port ?? 22, (err: Error | undefined, stream: any) => {
+                        if (err) {
+                            bastionClient.end();
+                            reject(err);
+                            return;
+                        }
+
+                        void this.connectDirect(endpoint, authentication, initialDimensions, stream)
+                            .then(resolve)
+                            .catch((error) => {
+                                bastionClient.end();
+                                reject(error);
+                            });
+                    });
+                })
+                .on('error', (err) => {
+                    bastionClient.end();
+                    reject(new Error(`SSH error: ${err.message}`));
+                })
+                .on('close', () => {
+                    if (!this.closed) {
+                        this.writeEmitter.fire('Bastion connection closed.\r\n');
+                    }
+                })
+                .connect({
+                    host: bastion.host,
+                    port: bastionPort,
+                    username: bastion.username,
+                    ...bastionAuthentication,
+                });
+        });
+    }
+
+    private connectDirect(
+        endpoint: HostEndpoint,
+        authentication: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>,
+        initialDimensions?: vscode.TerminalDimensions,
+        sock?: any
     ): Promise<void> {
         return new Promise((resolve, reject) => {
             const client = new Client();
@@ -206,8 +345,9 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
                     host,
                     port,
                     username,
+                    sock,
                     ...authentication,
-                });
+                } as SocketConnectConfig);
         });
     }
 

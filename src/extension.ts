@@ -53,13 +53,26 @@ async function migrateLegacyPasswords(
     passwordManager: PasswordManager
 ) {
     const secrets = context.secrets;
-    const hasLegacyPasswords = devices.some((device) => device.password !== undefined);
-    const hasLegacyPassphrases = devices.some((device) => device.privateKeyPassphrase !== undefined);
+    const hasLegacyPasswords = devices.some(
+        (device) => device.password !== undefined || device.bastion?.password !== undefined
+    );
+    const hasLegacyPassphrases = devices.some(
+        (device) => device.privateKeyPassphrase !== undefined || device.bastion?.privateKeyPassphrase !== undefined
+    );
 
     const sanitizeDevices = (entries: EmbeddedDevice[]) =>
         entries.map((device) => {
-            const { password: _password, privateKeyPassphrase: _passphrase, ...rest } = device;
-            return rest;
+            const { password: _password, privateKeyPassphrase: _passphrase, bastion, ...rest } = device;
+            return {
+                ...rest,
+                bastion: bastion
+                    ? (() => {
+                          const { password: _bastionPassword, privateKeyPassphrase: _bastionPassphrase, ...bastionRest } =
+                              bastion;
+                          return bastionRest;
+                      })()
+                    : undefined,
+            };
         });
 
     for (const device of devices) {
@@ -73,6 +86,34 @@ async function migrateLegacyPasswords(
             await passwordManager.storePassphrase(device, device.privateKeyPassphrase);
             await secrets.delete(`embeddedLogger.passphrase.${device.id}`);
             console.log(`Migrated private key passphrase for device ${device.id} into secret storage.`);
+        }
+
+        if (device.bastion?.password !== undefined && device.bastion.host && device.bastion.username) {
+            const bastionDevice: EmbeddedDevice = {
+                id: `${device.id}-bastion`,
+                name: `${device.name} bastion`,
+                host: device.bastion.host,
+                username: device.bastion.username,
+            };
+            await passwordManager.storePassword(bastionDevice, device.bastion.password);
+            await secrets.delete(`embeddedLogger.password.${bastionDevice.id}`);
+            console.log(`Migrated bastion password for device ${device.id} into secret storage.`);
+        }
+
+        if (
+            device.bastion?.privateKeyPassphrase !== undefined &&
+            device.bastion.host &&
+            device.bastion.username
+        ) {
+            const bastionDevice: EmbeddedDevice = {
+                id: `${device.id}-bastion`,
+                name: `${device.name} bastion`,
+                host: device.bastion.host,
+                username: device.bastion.username,
+            };
+            await passwordManager.storePassphrase(bastionDevice, device.bastion.privateKeyPassphrase);
+            await secrets.delete(`embeddedLogger.passphrase.${bastionDevice.id}`);
+            console.log(`Migrated bastion private key passphrase for device ${device.id} into secret storage.`);
         }
     }
 

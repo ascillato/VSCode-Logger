@@ -3,7 +3,7 @@
   "displayName": "Embedded Device Logger",
   "description": "Stream and filter embedded Linux device logs over SSH inside VS Code.",
   "icon": "media/icon.png",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "publisher": "Scallant",
   "author": "A. Scillato",
   "engines": {
@@ -118,6 +118,48 @@
                 "type": "string",
                 "description": "SHA256 fingerprint of the fallback host's SSH key."
               },
+              "bastion": {
+                "type": "object",
+                "description": "Optional bastion/jump host to reach the device through.",
+                "properties": {
+                  "host": {
+                    "type": "string",
+                    "description": "Hostname or IP address of the bastion host."
+                  },
+                  "hostFingerprint": {
+                    "type": "string",
+                    "description": "SHA256 fingerprint of the bastion host's SSH key."
+                  },
+                  "port": {
+                    "type": "number",
+                    "default": 22,
+                    "description": "SSH port for the bastion host."
+                  },
+                  "username": {
+                    "type": "string",
+                    "description": "SSH username for the bastion host."
+                  },
+                  "password": {
+                    "type": "string",
+                    "description": "Legacy password field for the bastion; stored to secret storage on first use.",
+                    "default": ""
+                  },
+                  "privateKeyPath": {
+                    "type": "string",
+                    "description": "Path to an SSH private key for the bastion host.",
+                    "default": ""
+                  },
+                  "privateKeyPassphrase": {
+                    "type": "string",
+                    "description": "Legacy passphrase field for bastion keys; stored to secret storage on first use.",
+                    "default": ""
+                  }
+                },
+                "required": [
+                  "host",
+                  "username"
+                ]
+              },
               "port": {
                 "type": "number",
                 "default": 22,
@@ -193,6 +235,12 @@
               "name": "Device A",
               "host": "192.168.1.10",
               "hostFingerprint": "SHA256:replace-with-device-fingerprint",
+              "bastion": {
+                "host": "bastion.example.com",
+                "hostFingerprint": "SHA256:replace-with-bastion-fingerprint",
+                "port": 22,
+                "username": "jump"
+              },
               "port": 22,
               "privateKeyPath": "${env:HOME}/.ssh/id_ed25519",
               "username": "root",

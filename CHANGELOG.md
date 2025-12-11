@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [1.2.0] - 2025-12-15 [BASTION]
+
+### Added
+- Allow devices to tunnel log streaming, terminals, and one-off SSH commands through an optional bastion host with its own credentials and host key pinning.
+
+### Changed
+- None.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- None.
+
+### Security
+- None.
+
+----------------------------------------
+
 ## [1.1.0] - 2025-12-11 [SFTP]
 
 ### Added

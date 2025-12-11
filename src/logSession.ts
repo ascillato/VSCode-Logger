@@ -10,9 +10,21 @@ import * as fs from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
 import { Client, ConnectConfig } from 'ssh2';
-import { EmbeddedDevice } from './deviceTree';
+import { BastionConfig, EmbeddedDevice } from './deviceTree';
 import { HostEndpoint, getHostEndpoints } from './hostEndpoints';
 import { PasswordManager } from './passwordManager';
+
+type ForwardingClient = Client & {
+    forwardOut(
+        srcIP: string,
+        srcPort: number,
+        dstIP: string,
+        dstPort: number,
+        callback: (err: Error | undefined, stream: any) => void
+    ): void;
+};
+
+type SocketConnectConfig = ConnectConfig & { sock?: any };
 
 /**
  * @brief Callback contract used to surface session events to the UI.
@@ -29,7 +41,8 @@ class HostKeyMismatchError extends Error {
     constructor(
         message: string,
         public readonly expected: string,
-        public readonly received: string
+        public readonly received: string,
+        public readonly endpoint: HostEndpoint
     ) {
         super(message);
         this.name = 'HostKeyMismatchError';
@@ -41,13 +54,17 @@ class HostKeyMismatchError extends Error {
  */
 export class LogSession {
     private client: Client | undefined;
+    private bastionClient: Client | undefined;
     private stream: any;
     private buffer = '';
     private disposed = false;
     private closedNotified = false;
     private hostKeyFailure: { expected: string; received: string } | undefined;
+    private bastionHostKeyFailure: { expected: string; received: string } | undefined;
     private lastSeenHostFingerprint: { display: string; hex: string } | undefined;
+    private lastSeenBastionFingerprint: { display: string; hex: string } | undefined;
     private activeEndpoint: HostEndpoint | undefined;
+    private activeBastionEndpoint: HostEndpoint | undefined;
     private readonly passwordManager: PasswordManager;
 
     /**
@@ -100,11 +117,16 @@ export class LogSession {
                     return;
                 } catch (err: any) {
                     if (err instanceof HostKeyMismatchError) {
-                        const retry = await this.promptToUpdateFingerprint(err.expected, err.received);
+                        const retry = await this.promptToUpdateFingerprint(err.expected, err.received, err.endpoint);
                         if (retry) {
-                            await this.updateDeviceHostFingerprint(err.received, endpoint);
-                            this.hostKeyFailure = undefined;
-                            this.lastSeenHostFingerprint = undefined;
+                            await this.updateDeviceHostFingerprint(err.received, err.endpoint);
+                            if (err.endpoint.label === 'bastion') {
+                                this.bastionHostKeyFailure = undefined;
+                                this.lastSeenBastionFingerprint = undefined;
+                            } else {
+                                this.hostKeyFailure = undefined;
+                                this.lastSeenHostFingerprint = undefined;
+                            }
                             continue;
                         }
                     }
@@ -144,6 +166,18 @@ export class LogSession {
         if (this.device.port !== undefined && (!Number.isInteger(this.device.port) || this.device.port <= 0)) {
             return `Device "${this.device.name}" has an invalid port.`;
         }
+        const bastion = this.device.bastion;
+        if (bastion) {
+            if (!bastion.host?.trim()) {
+                return `Device "${this.device.name}" is missing a bastion host.`;
+            }
+            if (!bastion.username?.trim()) {
+                return `Device "${this.device.name}" is missing a bastion username.`;
+            }
+            if (bastion.port !== undefined && (!Number.isInteger(bastion.port) || bastion.port <= 0)) {
+                return `Device "${this.device.name}" has an invalid bastion port.`;
+            }
+        }
         return undefined;
     }
 
@@ -174,6 +208,50 @@ export class LogSession {
         }
 
         return { password };
+    }
+
+    private getBastionConfig(): BastionConfig | undefined {
+        const bastion = this.device.bastion;
+        if (!bastion?.host?.trim() || !bastion.username?.trim()) {
+            return undefined;
+        }
+
+        return {
+            ...bastion,
+            host: bastion.host.trim(),
+            username: bastion.username.trim(),
+            port: bastion.port ?? 22,
+            hostFingerprint: bastion.hostFingerprint?.trim(),
+            privateKeyPath: bastion.privateKeyPath?.trim(),
+        };
+    }
+
+    private async getBastionAuthentication(
+        bastion: BastionConfig
+    ): Promise<Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>> {
+        if (bastion.privateKeyPath) {
+            const privateKey = await this.loadPrivateKey(bastion.privateKeyPath);
+            const bastionDevice = this.getBastionDevice(bastion);
+            const passphrase = await this.passwordManager.getPassphrase(bastionDevice);
+            return { privateKey, passphrase: passphrase || undefined };
+        }
+
+        const bastionDevice = this.getBastionDevice(bastion);
+        const password = await this.passwordManager.getPassword(bastionDevice);
+        if (!password) {
+            throw new Error('Password or private key is required to connect to the bastion host.');
+        }
+
+        return { password };
+    }
+
+    private getBastionDevice(bastion: BastionConfig): EmbeddedDevice {
+        return {
+            id: `${this.device.id}-bastion`,
+            name: `${this.device.name} bastion`,
+            host: bastion.host,
+            username: bastion.username,
+        } as EmbeddedDevice;
     }
 
     private async loadPrivateKey(filePath: string): Promise<Buffer> {
@@ -209,9 +287,104 @@ export class LogSession {
         authentication: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>,
         logCommand: string
     ): Promise<void> {
+        const bastion = this.getBastionConfig();
+        if (!bastion) {
+            return this.connectToEndpoint(endpoint, authentication, logCommand);
+        }
+
+        const bastionAuthentication = await this.getBastionAuthentication(bastion);
+        return this.connectThroughBastion(bastion, bastionAuthentication, endpoint, authentication, logCommand);
+    }
+
+    private connectThroughBastion(
+        bastion: BastionConfig,
+        bastionAuthentication: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>,
+        endpoint: HostEndpoint,
+        authentication: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>,
+        logCommand: string
+    ): Promise<void> {
+        const bastionEndpoint: HostEndpoint = {
+            host: bastion.host,
+            fingerprint: bastion.hostFingerprint,
+            label: 'bastion',
+        };
+        const expectedBastionFingerprint = this.getExpectedFingerprint(bastionEndpoint);
+        this.bastionHostKeyFailure = undefined;
+        this.lastSeenBastionFingerprint = undefined;
+        this.activeBastionEndpoint = bastionEndpoint;
+
+        return new Promise((resolve, reject) => {
+            const bastionClient = new Client() as ForwardingClient;
+            this.bastionClient = bastionClient;
+            const bastionPort = bastion.port ?? 22;
+
+            this.callbacks.onStatus(`Connecting to bastion ${bastion.host}:${bastionPort} ...`);
+
+            bastionClient
+                .on('ready', () => {
+                    void this.persistBastionFingerprintIfMissing().catch((err) => {
+                        this.callbacks.onError(err?.message ?? String(err));
+                    });
+                    this.callbacks.onStatus(
+                        `Connected to bastion. Tunneling to ${endpoint.host}:${this.device.port ?? 22} ...`
+                    );
+                    bastionClient.forwardOut('127.0.0.1', 0, endpoint.host, this.device.port ?? 22, (err: Error | undefined, stream: any) => {
+                        if (err) {
+                            reject(err);
+                            return;
+                        }
+
+                        void this.connectToEndpoint(endpoint, authentication, logCommand, stream)
+                            .then(resolve)
+                            .catch((connectionError) => {
+                                bastionClient.end();
+                                reject(connectionError);
+                            });
+                    });
+                })
+                .on('error', (err) => {
+                    if (this.bastionHostKeyFailure) {
+                        const message =
+                            `Host key verification failed for bastion ${bastion.host}:${bastionPort}. Expected ${this.bastionHostKeyFailure.expected} but received ${this.bastionHostKeyFailure.received}.`;
+                        reject(
+                            new HostKeyMismatchError(
+                                message,
+                                this.bastionHostKeyFailure.expected,
+                                this.bastionHostKeyFailure.received,
+                                bastionEndpoint
+                            )
+                        );
+                        return;
+                    }
+                    this.callbacks.onError(`SSH error: ${err.message}`);
+                    reject(err);
+                })
+                .on('close', () => {
+                    if (!this.closedNotified && !this.disposed) {
+                        this.callbacks.onStatus('Bastion connection closed.');
+                    }
+                })
+                .connect({
+                    host: bastion.host,
+                    port: bastionPort,
+                    username: bastion.username,
+                    ...bastionAuthentication,
+                    hostHash: 'sha256',
+                    hostVerifier: (key) => this.verifyBastionHostKey(key, expectedBastionFingerprint),
+                });
+        });
+    }
+
+    private connectToEndpoint(
+        endpoint: HostEndpoint,
+        authentication: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>,
+        logCommand: string,
+        sock?: any
+    ): Promise<void> {
         const expectedFingerprint = this.getExpectedFingerprint(endpoint);
         this.hostKeyFailure = undefined;
         this.lastSeenHostFingerprint = undefined;
+        this.activeEndpoint = endpoint;
         return new Promise((resolve, reject) => {
             this.client = new Client();
             const port = this.device.port ?? 22;
@@ -244,7 +417,14 @@ export class LogSession {
                 .on('error', (err) => {
                     if (this.hostKeyFailure) {
                         const message = `Host key verification failed for ${host}:${port}. Expected ${this.hostKeyFailure.expected} but received ${this.hostKeyFailure.received}.`;
-                        reject(new HostKeyMismatchError(message, this.hostKeyFailure.expected, this.hostKeyFailure.received));
+                        reject(
+                            new HostKeyMismatchError(
+                                message,
+                                this.hostKeyFailure.expected,
+                                this.hostKeyFailure.received,
+                                endpoint
+                            )
+                        );
                         return;
                     }
                     this.callbacks.onError(`SSH error: ${err.message}`);
@@ -258,10 +438,11 @@ export class LogSession {
                     host,
                     port,
                     username,
+                    sock,
                     ...authentication,
                     hostHash: 'sha256',
                     hostVerifier: (key) => this.verifyHostKey(key, expectedFingerprint),
-                });
+                } as SocketConnectConfig);
         });
     }
 
@@ -324,6 +505,24 @@ export class LogSession {
         return matches;
     }
 
+    private verifyBastionHostKey(key: string | Buffer, expected?: { display: string; hex: string }): boolean {
+        const actual = this.computeHostKeyFingerprints(key);
+        this.lastSeenBastionFingerprint = actual;
+
+        if (!expected) {
+            return true;
+        }
+
+        const matches = actual.hex === expected.hex;
+
+        if (!matches) {
+            this.bastionHostKeyFailure = { expected: expected.display, received: actual.display };
+            this.callbacks.onHostKeyMismatch?.(this.bastionHostKeyFailure);
+        }
+
+        return matches;
+    }
+
     private computeHostKeyFingerprints(key: string | Buffer): { display: string; hex: string } {
         if (typeof key === 'string') {
             const normalized = key.replace(/:/g, '').toLowerCase();
@@ -347,6 +546,19 @@ export class LogSession {
         this.callbacks.onStatus(`Captured SSH host fingerprint for ${this.device.name}.`);
     }
 
+    private async persistBastionFingerprintIfMissing(): Promise<void> {
+        if (
+            !this.activeBastionEndpoint ||
+            this.activeBastionEndpoint.fingerprint ||
+            !this.lastSeenBastionFingerprint
+        ) {
+            return;
+        }
+
+        await this.updateDeviceHostFingerprint(this.lastSeenBastionFingerprint.display, this.activeBastionEndpoint);
+        this.callbacks.onStatus(`Captured SSH host fingerprint for ${this.device.name} bastion.`);
+    }
+
     private async updateDeviceHostFingerprint(fingerprint: string, endpoint: HostEndpoint): Promise<void> {
         const config = vscode.workspace.getConfiguration('embeddedLogger');
         const inspected = config.inspect<EmbeddedDevice[]>('devices');
@@ -358,6 +570,7 @@ export class LogSession {
             inspected?.defaultValue ??
             config.get<EmbeddedDevice[]>('devices', []);
         const devices = Array.isArray(baseDevices) ? [...baseDevices] : [];
+        const bastionConfig = this.getBastionConfig();
 
         let found = false;
         const updatedDevices = devices.map((device) => {
@@ -368,6 +581,12 @@ export class LogSession {
                     hostFingerprint: endpoint.label === 'primary' ? fingerprint : device.hostFingerprint,
                     secondaryHostFingerprint:
                         endpoint.label === 'secondary' ? fingerprint : device.secondaryHostFingerprint,
+                    bastion:
+                        endpoint.label === 'bastion'
+                            ? bastionConfig
+                                ? { ...bastionConfig, hostFingerprint: fingerprint }
+                                : device.bastion
+                            : device.bastion,
                 } as EmbeddedDevice;
             }
             return device;
@@ -379,14 +598,24 @@ export class LogSession {
                 hostFingerprint: endpoint.label === 'primary' ? fingerprint : this.device.hostFingerprint,
                 secondaryHostFingerprint:
                     endpoint.label === 'secondary' ? fingerprint : this.device.secondaryHostFingerprint,
+                bastion:
+                    endpoint.label === 'bastion'
+                        ? bastionConfig
+                            ? { ...bastionConfig, hostFingerprint: fingerprint }
+                            : this.device.bastion
+                        : this.device.bastion,
             });
         }
 
         await config.update('devices', updatedDevices, target);
         if (endpoint.label === 'primary') {
             this.device.hostFingerprint = fingerprint;
-        } else {
+        } else if (endpoint.label === 'secondary') {
             this.device.secondaryHostFingerprint = fingerprint;
+        } else if (endpoint.label === 'bastion') {
+            this.device.bastion = bastionConfig
+                ? { ...bastionConfig, hostFingerprint: fingerprint }
+                : this.device.bastion;
         }
     }
 
@@ -411,11 +640,17 @@ export class LogSession {
         return vscode.ConfigurationTarget.Workspace;
     }
 
-    private async promptToUpdateFingerprint(expected: string, received: string): Promise<boolean> {
+    private async promptToUpdateFingerprint(
+        expected: string,
+        received: string,
+        endpoint: HostEndpoint
+    ): Promise<boolean> {
         const updateOption = 'Update fingerprint and connect';
         const cancelOption = 'Stop connection';
+        const label = endpoint.label === 'bastion' ? `${this.device.name} bastion` : this.device.name;
+        const hostDescription = endpoint.label === 'bastion' ? 'bastion host' : 'device';
         const choice = await vscode.window.showWarningMessage(
-            `The SSH host fingerprint for ${this.device.name} does not match. Expected ${expected} but received ${received}.`,
+            `The SSH host fingerprint for ${label} (${hostDescription}) does not match. Expected ${expected} but received ${received}.`,
             { modal: true },
             updateOption,
             cancelOption
@@ -457,6 +692,7 @@ export class LogSession {
         try {
             this.stream?.close?.();
             this.client?.end();
+            this.bastionClient?.end();
         } catch (err) {
             console.error(err);
         }
