@@ -230,6 +230,7 @@ export class SftpExplorerPanel {
             vscode.ViewColumn.Active,
             {
                 enableScripts: true,
+                retainContextWhenHidden: true,
                 localResourceRoots: [
                     vscode.Uri.file(path.join(this.context.extensionPath, 'media')),
                     vscode.Uri.file(path.join(this.context.extensionPath, 'resources')),
