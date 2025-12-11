@@ -102,6 +102,12 @@
         elements.status.classList.toggle('status--error', Boolean(isError));
     }
 
+    function resetStatus() {
+        if (state.connectionState === 'connected') {
+            setStatus('Connected', false);
+        }
+    }
+
     function formatSize(entry) {
         if (entry.type === 'directory') {
             return '—';
@@ -310,7 +316,12 @@
         }
         permissionsState.info = info;
         permissionsState.side = side;
-        elements.permissionsTarget.textContent = `Change ${info.type} from ${info.location}: ${info.name}`;
+        elements.permissionsTarget.textContent = '';
+        const prefix = document.createElement('span');
+        prefix.textContent = `Change ${info.type} from ${info.location}: `;
+        const target = document.createElement('strong');
+        target.textContent = info.name;
+        elements.permissionsTarget.append(prefix, target);
 
         const bits = info.mode & 0o777;
         elements.permOwnerRead.checked = Boolean(bits & 0o400);
@@ -364,6 +375,7 @@
         if (state.connectionState !== 'connected') {
             return;
         }
+        resetStatus();
         const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
         if (!snapshot.selected) {
             return;
@@ -481,6 +493,7 @@
     }
 
     function goHome(side) {
+        resetStatus();
         if (side === 'remote') {
             requestList('remote', state.remoteHome, requestIds.remote);
             clearSelection('remote');
@@ -493,6 +506,7 @@
     }
 
     function goUp(side) {
+        resetStatus();
         if (side === 'remote') {
             if (state.remote.isRoot) {
                 return;
@@ -510,6 +524,7 @@
     }
 
     function refresh(side) {
+        resetStatus();
         const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
         const location = side === 'remote' ? 'remote' : getActiveRightLocation();
         requestList(location, snapshot.path, side === 'remote' ? requestIds.remote : getActiveRequestId());
@@ -517,6 +532,7 @@
     }
 
     async function createEntry(side, kind) {
+        resetStatus();
         const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
         const location = side === 'remote' ? 'remote' : getActiveRightLocation();
         const requestId = side === 'remote' ? requestIds.remote : getActiveRequestId();
@@ -535,6 +551,7 @@
     }
 
     async function deleteSelected(side) {
+        resetStatus();
         const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
         if (!snapshot.selected) {
             return;
@@ -557,6 +574,7 @@
     }
 
     async function renameSelected(side) {
+        resetStatus();
         const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
         if (!snapshot.selected) {
             return;
@@ -575,6 +593,7 @@
     }
 
     function duplicateSelected(side) {
+        resetStatus();
         const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
         if (!snapshot.selected) {
             return;
@@ -588,6 +607,7 @@
     }
 
     function copyBetweenPanels(direction) {
+        resetStatus();
         if (direction === 'remoteToRight') {
             if (!state.remote.selected) {
                 return;
