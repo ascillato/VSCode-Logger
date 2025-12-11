@@ -473,6 +473,7 @@ export class SftpExplorerPanel {
         context: 'left' | 'right' | undefined = undefined
     ): Promise<DirectorySnapshot> {
         const normalizedPath = this.normalizePath(location, dirPath || (location === 'remote' ? this.remoteHome ?? '/' : this.localHome));
+        await this.ensureDirectoryExists(location, normalizedPath);
         const entries = location === 'remote' ? await this.listRemote(normalizedPath) : await this.listLocal(normalizedPath);
         if (location === 'remote') {
             if (context === 'right') {
@@ -1234,6 +1235,14 @@ export class SftpExplorerPanel {
         }
     }
 
+    private async ensureDirectoryExists(location: 'remote' | 'local', dirPath: string): Promise<void> {
+        const exists = await this.pathExists(location, dirPath);
+        if (!exists) {
+            throw new Error(`${location === 'remote' ? 'Remote' : 'Local'} path not found: ${dirPath}`);
+        }
+        await this.assertDirectory(location, dirPath);
+    }
+
     private async deleteDirectory(location: 'remote' | 'local', dirPath: string): Promise<void> {
         if (location === 'remote') {
             const sftp = await this.ensureSftp();
@@ -1786,7 +1795,13 @@ export class SftpExplorerPanel {
                         >
                             <img class="action__icon" src="${terminalIconUri}" alt="">
                         </button>
-                        <div class="path" id="remotePath"></div>
+                        <input
+                            class="path-input"
+                            id="remotePath"
+                            type="text"
+                            spellcheck="false"
+                            aria-label="Remote path"
+                        />
                     </div>
                 </div>
                 <div id="remoteList" class="list" role="tree"></div>
@@ -1817,7 +1832,13 @@ export class SftpExplorerPanel {
                         >
                             <img class="action__icon" src="${terminalIconUri}" alt="">
                         </button>
-                        <div class="path" id="localPath"></div>
+                        <input
+                            class="path-input"
+                            id="localPath"
+                            type="text"
+                            spellcheck="false"
+                            aria-label="Local path"
+                        />
                     </div>
                 </div>
                 <div id="localList" class="list" role="tree"></div>

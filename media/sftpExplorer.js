@@ -549,8 +549,8 @@
     }
 
     function updatePaths() {
-        elements.remotePath.textContent = state.remote.path;
-        elements.localPath.textContent = getActiveRightSnapshot().path;
+        elements.remotePath.value = state.remote.path;
+        elements.localPath.value = getActiveRightSnapshot().path;
     }
 
     function updateButtons() {
@@ -566,6 +566,7 @@
         elements.remoteNewFolder.disabled = disabled;
         elements.remoteNewFile.disabled = disabled;
         elements.remoteOpenTerminal.disabled = disabled;
+        elements.remotePath.disabled = disabled;
 
         elements.localHome.disabled = disabled;
         elements.localToRemote.disabled = disabled || !rightSelected;
@@ -574,11 +575,31 @@
         elements.localNewFolder.disabled = disabled;
         elements.localNewFile.disabled = disabled;
         elements.localOpenTerminal.disabled = disabled;
+        elements.localPath.disabled = disabled;
         elements.rightMode.disabled = disabled;
     }
 
     function requestList(location, path, requestId) {
         vscode.postMessage({ type: 'listEntries', location, path, requestId });
+    }
+
+    function submitPath(side) {
+        if (state.connectionState !== 'connected') {
+            return;
+        }
+
+        resetStatus();
+        const input = side === 'remote' ? elements.remotePath : elements.localPath;
+        const targetPath = input.value.trim();
+        if (!targetPath) {
+            updatePaths();
+            return;
+        }
+
+        const location = side === 'remote' ? 'remote' : getActiveRightLocation();
+        const requestId = side === 'remote' ? requestIds.remote : getActiveRequestId();
+        requestList(location, targetPath, requestId);
+        clearSelection(side === 'remote' ? 'remote' : 'right');
     }
 
     function handleInit(payload) {
@@ -848,6 +869,18 @@
     elements.localToRemote.addEventListener('click', () => copyBetweenPanels('rightToRemote'));
     elements.remoteOpenTerminal.addEventListener('click', () => openTerminal('remote'));
     elements.localOpenTerminal.addEventListener('click', () => openTerminal('right'));
+    elements.remotePath.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            submitPath('remote');
+        }
+    });
+    elements.localPath.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            submitPath('right');
+        }
+    });
 
     elements.contextRun.addEventListener('click', () => {
         hideContextMenu();
