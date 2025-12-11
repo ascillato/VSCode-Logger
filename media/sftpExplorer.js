@@ -47,6 +47,7 @@
         rightMode: document.getElementById('rightMode'),
         contextMenu: document.getElementById('contextMenu'),
         contextSelect: document.getElementById('contextSelect'),
+        contextRun: document.getElementById('contextRun'),
         contextRename: document.getElementById('contextRename'),
         contextDuplicate: document.getElementById('contextDuplicate'),
         contextDelete: document.getElementById('contextDelete'),
@@ -367,8 +368,23 @@
 
     function updateContextMenuOptions(side) {
         const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
-        const selectedCount = getSelectedEntries(snapshot).length;
+        const selected = getSelectedEntries(snapshot);
+        const selectedCount = selected.length;
         const disableSingleOnly = selectedCount !== 1;
+        const selectedEntry = selectedCount === 1 ? selected[0] : undefined;
+        const isRemoteLocation = side === 'remote' || getActiveRightLocation() === 'remote';
+
+        if (elements.contextRun) {
+            const canRun = Boolean(
+                selectedEntry &&
+                    selectedEntry.type === 'file' &&
+                    selectedEntry.isExecutable &&
+                    isRemoteLocation
+            );
+            elements.contextRun.disabled = !canRun;
+            elements.contextRun.classList.toggle('context-menu__item--disabled', !canRun);
+            elements.contextRun.classList.toggle('context-menu__item--hidden', !canRun);
+        }
 
         [elements.contextRename, elements.contextDuplicate].forEach((el) => {
             if (!el) {
@@ -667,6 +683,29 @@
         });
     }
 
+    function runSelected(side) {
+        resetStatus();
+        const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
+        const location = side === 'remote' ? 'remote' : getActiveRightLocation();
+        if (location !== 'remote') {
+            return;
+        }
+        const selected = getSelectedEntries(snapshot);
+        if (selected.length !== 1) {
+            return;
+        }
+        const [entry] = selected;
+        if (entry.type !== 'file' || !entry.isExecutable) {
+            return;
+        }
+        vscode.postMessage({
+            type: 'runEntry',
+            location,
+            path: getEntryPath(snapshot, entry),
+            requestId: side === 'remote' ? requestIds.remote : getActiveRequestId(),
+        });
+    }
+
     async function deleteSelected(side) {
         resetStatus();
         const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
@@ -773,6 +812,10 @@
     elements.remoteToLocal.addEventListener('click', () => copyBetweenPanels('remoteToRight'));
     elements.localToRemote.addEventListener('click', () => copyBetweenPanels('rightToRemote'));
 
+    elements.contextRun.addEventListener('click', () => {
+        hideContextMenu();
+        runSelected(contextMenuState.side);
+    });
     elements.contextRename.addEventListener('click', () => {
         hideContextMenu();
         renameSelected(contextMenuState.side);

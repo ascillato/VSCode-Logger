@@ -275,6 +275,10 @@ body {
     pointer-events: none;
 }
 
+.context-menu__item--hidden {
+    display: none;
+}
+
 .dialog {
     position: fixed;
     inset: 0;

@@ -14,6 +14,7 @@ import { Readable, Writable } from 'stream';
 import { promisify } from 'util';
 import { EmbeddedDevice } from './deviceTree';
 import { PasswordManager } from './passwordManager';
+import { SshCommandRunner } from './sshCommandRunner';
 
 interface ExplorerEntry {
     name: string;
@@ -135,6 +136,7 @@ type WebviewRequest =
           group?: number | string;
           requestId: string;
       }
+    | { type: 'runEntry'; location: 'remote' | 'local'; path: string; requestId: string }
     | { type: 'deleteEntries'; location: 'remote' | 'local'; paths: string[]; requestId: string }
     | { type: 'requestConfirmation'; message: string; requestId: string }
     | { type: 'requestInput'; prompt: string; value?: string; requestId: string };
@@ -358,6 +360,10 @@ export class SftpExplorerPanel {
                     );
                     break;
                 }
+                case 'runEntry': {
+                    await this.runEntry(message.location, message.path);
+                    break;
+                }
                 case 'requestPermissionsInfo': {
                     const info = await this.getPermissionsInfo(message.location, message.path);
                     this.postMessage({ type: 'permissionsInfo', requestId: message.requestId, info });
@@ -524,6 +530,10 @@ export class SftpExplorerPanel {
 
     private isExecutable(mode: number | undefined): boolean {
         return mode !== undefined && (mode & 0o111) !== 0;
+    }
+
+    private quoteRemotePath(value: string): string {
+        return `'${value.replace(/'/g, "'\\''")}'`;
     }
 
     private async listLocal(dirPath: string): Promise<ExplorerEntry[]> {
@@ -755,6 +765,35 @@ export class SftpExplorerPanel {
         }
 
         return this.normalizePath(toDirectory.location, toDirectory.path);
+    }
+
+    private async runEntry(location: 'remote' | 'local', targetPath: string): Promise<void> {
+        if (location !== 'remote') {
+            throw new Error('Running files is only supported for remote entries.');
+        }
+
+        const normalizedTarget = this.normalizePath('remote', targetPath);
+        const stats = await this.getEntryStats('remote', normalizedTarget);
+        if (stats.isDirectory()) {
+            throw new Error('Cannot run a directory.');
+        }
+        if (!this.isExecutable(stats.mode)) {
+            throw new Error('The selected file is not executable.');
+        }
+
+        const runner = new SshCommandRunner(this.device, this.context);
+        const command = this.quoteRemotePath(normalizedTarget);
+        const title = `Running ${path.posix.basename(normalizedTarget)} on ${this.device.name}`;
+
+        await vscode.window.withProgress(
+            { title, location: vscode.ProgressLocation.Notification },
+            async () => {
+                const output = await runner.run({ name: normalizedTarget, command });
+                const trimmed = output.trim();
+                const message = trimmed || `Command "${normalizedTarget}" finished on ${this.device.name}.`;
+                vscode.window.showInformationMessage(message);
+            }
+        );
     }
 
     private updateConnectionStatus(state: ConnectionState, countdownSeconds?: number, overrideMessage?: string): void {
@@ -1730,6 +1769,7 @@ export class SftpExplorerPanel {
         </div>
         <div class="context-menu" id="contextMenu" role="menu" aria-hidden="true">
             <button class="context-menu__item" id="contextSelect" role="menuitem">Select</button>
+            <button class="context-menu__item" id="contextRun" role="menuitem">Run</button>
             <button class="context-menu__item" id="contextRename" role="menuitem">Rename</button>
             <button class="context-menu__item" id="contextDuplicate" role="menuitem">Duplicate</button>
             <button class="context-menu__item" id="contextPermissions" role="menuitem">Change Permissions</button>
