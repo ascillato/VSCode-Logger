@@ -99,14 +99,6 @@ If you find this extension useful, please [rate it](https://marketplace.visualst
 
 ----
 
-## TODO
-
-* **Add to SSH connections:**
-
-  - Support going through a bastion
-
-----
-
 ## For Developers
 
 ### Source Code
