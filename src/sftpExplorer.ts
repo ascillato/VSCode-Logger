@@ -1631,6 +1631,21 @@ export class SftpExplorerPanel {
             <button class="context-menu__item" id="contextPermissions" role="menuitem">Change Permissions</button>
             <button class="context-menu__item context-menu__item--danger" id="contextDelete" role="menuitem">Delete</button>
         </div>
+        <div class="dialog dialog--hidden" id="confirmDialog" role="dialog" aria-modal="true" aria-labelledby="confirmTitle" aria-hidden="true">
+            <div class="dialog__content">
+                <header class="dialog__header">
+                    <h3 class="dialog__title" id="confirmTitle">Confirm delete</h3>
+                    <button class="dialog__close" id="confirmDismiss" aria-label="Cancel">✕</button>
+                </header>
+                <div class="dialog__body">
+                    <div class="dialog__message" id="confirmMessage"></div>
+                </div>
+                <div class="dialog__actions">
+                    <button class="action action--secondary" id="confirmCancel">Cancel</button>
+                    <button class="action action--danger" id="confirmYes">Yes</button>
+                </div>
+            </div>
+        </div>
         <div class="dialog dialog--hidden" id="permissionsDialog" role="dialog" aria-modal="true" aria-labelledby="permissionsTitle" aria-hidden="true">
             <div class="dialog__content">
                 <header class="dialog__header">

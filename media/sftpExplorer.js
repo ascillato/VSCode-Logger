@@ -45,6 +45,11 @@
         contextDuplicate: document.getElementById('contextDuplicate'),
         contextDelete: document.getElementById('contextDelete'),
         contextPermissions: document.getElementById('contextPermissions'),
+        confirmDialog: document.getElementById('confirmDialog'),
+        confirmMessage: document.getElementById('confirmMessage'),
+        confirmYes: document.getElementById('confirmYes'),
+        confirmCancel: document.getElementById('confirmCancel'),
+        confirmDismiss: document.getElementById('confirmDismiss'),
         permissionsDialog: document.getElementById('permissionsDialog'),
         permissionsTarget: document.getElementById('permissionsTarget'),
         permissionsOwner: document.getElementById('permissionsOwner'),
@@ -73,8 +78,11 @@
         info: undefined,
     };
 
+    const confirmationState = {
+        resolver: undefined,
+    };
+
     const pending = {
-        confirmations: new Map(),
         inputs: new Map(),
         permissions: new Map(),
     };
@@ -534,7 +542,8 @@
         const locationLabel = side === 'remote' ? 'remote' : getActiveRightLocation();
         const targetType = snapshot.selected.type === 'directory' ? 'folder' : 'file';
         const confirmed = await requestConfirmation(
-            `Delete ${targetType} from ${locationLabel}: **${snapshot.selected.name}** ?`
+            `Delete ${targetType} from ${locationLabel}:`,
+            snapshot.selected.name
         );
         if (!confirmed) {
             return;
@@ -642,6 +651,21 @@
         }
     });
 
+    window.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !elements.confirmDialog.classList.contains('dialog--hidden')) {
+            hideConfirmation(false);
+        }
+    });
+
+    elements.confirmYes.addEventListener('click', () => hideConfirmation(true));
+    elements.confirmCancel.addEventListener('click', () => hideConfirmation(false));
+    elements.confirmDismiss.addEventListener('click', () => hideConfirmation(false));
+    elements.confirmDialog.addEventListener('click', (event) => {
+        if (event.target === elements.confirmDialog) {
+            hideConfirmation(false);
+        }
+    });
+
     elements.permissionsCancel.addEventListener('click', () => {
         hidePermissionsDialog();
     });
@@ -704,12 +728,32 @@
         renderLists();
     });
 
-    function requestConfirmation(message) {
+    function requestConfirmation(message, strongText) {
         return new Promise((resolve) => {
-            const requestId = createRequestId();
-            pending.confirmations.set(requestId, resolve);
-            vscode.postMessage({ type: 'requestConfirmation', message, requestId });
+            confirmationState.resolver = resolve;
+            elements.confirmMessage.textContent = '';
+            const messageWrapper = document.createElement('div');
+            const prefix = document.createElement('span');
+            prefix.textContent = `${message} `;
+            const target = document.createElement('strong');
+            target.textContent = strongText || '';
+            const suffix = document.createElement('span');
+            suffix.textContent = ' ?';
+            messageWrapper.append(prefix, target, suffix);
+            elements.confirmMessage.appendChild(messageWrapper);
+            elements.confirmDialog.classList.remove('dialog--hidden');
+            elements.confirmDialog.setAttribute('aria-hidden', 'false');
+            elements.confirmYes.focus();
         });
+    }
+
+    function hideConfirmation(result = false) {
+        elements.confirmDialog.classList.add('dialog--hidden');
+        elements.confirmDialog.setAttribute('aria-hidden', 'true');
+        if (confirmationState.resolver) {
+            confirmationState.resolver(Boolean(result));
+            confirmationState.resolver = undefined;
+        }
     }
 
     function requestInput(promptText, value = '') {
@@ -738,14 +782,6 @@
             case 'error':
                 setStatus(message.message, true);
                 break;
-            case 'confirmationResult': {
-                const resolver = pending.confirmations.get(message.requestId);
-                if (typeof resolver === 'function') {
-                    resolver(Boolean(message.confirmed));
-                }
-                pending.confirmations.delete(message.requestId);
-                break;
-            }
             case 'inputResult': {
                 const resolver = pending.inputs.get(message.requestId);
                 if (typeof resolver === 'function') {

@@ -330,6 +330,10 @@ body {
     gap: 0.75rem;
 }
 
+.dialog__message {
+    line-height: 1.4;
+}
+
 .dialog__target {
     font-weight: 600;
 }
