@@ -61,6 +61,46 @@
         elements.status.classList.toggle('status--error', Boolean(isError));
     }
 
+    function formatSize(entry) {
+        if (entry.type === 'directory') {
+            return '—';
+        }
+        const size = typeof entry.size === 'number' ? entry.size : 0;
+        if (size < 1024) {
+            return `${size} B`;
+        }
+        const units = ['KB', 'MB', 'GB', 'TB'];
+        let value = size / 1024;
+        let unitIndex = 0;
+        while (value >= 1024 && unitIndex < units.length - 1) {
+            value /= 1024;
+            unitIndex += 1;
+        }
+        return `${value.toFixed(1)} ${units[unitIndex]}`;
+    }
+
+    function formatPermissions(entry) {
+        return entry.permissions || '—';
+    }
+
+    function formatModified(entry) {
+        if (!entry.modified) {
+            return '—';
+        }
+        const value = typeof entry.modified === 'number' ? entry.modified : Number(entry.modified);
+        if (!Number.isFinite(value)) {
+            return '—';
+        }
+        return new Date(value).toLocaleString();
+    }
+
+    function getEntryIcon(entry) {
+        if (entry.type === 'directory') {
+            return '📁';
+        }
+        return entry.isExecutable ? '📜' : '📄';
+    }
+
     function getEntryPath(snapshot, entry) {
         if (!snapshot.path || snapshot.path === '/') {
             return `/${entry.name}`;
@@ -86,13 +126,42 @@
             row.className = 'entry';
             row.setAttribute('role', 'treeitem');
             row.dataset.type = entry.type;
-            row.textContent = entry.name;
+            if (entry.type === 'file' && entry.isExecutable) {
+                row.classList.add('entry--executable');
+            }
+
+            const nameCell = document.createElement('div');
+            nameCell.className = 'entry__cell entry__cell--name';
+            const icon = document.createElement('span');
+            icon.className = 'entry__icon';
+            icon.textContent = getEntryIcon(entry);
+            const name = document.createElement('span');
+            name.className = 'entry__name';
+            name.textContent = entry.name;
+            nameCell.appendChild(icon);
+            nameCell.appendChild(name);
+
+            const sizeCell = document.createElement('div');
+            sizeCell.className = 'entry__cell entry__cell--size';
+            sizeCell.textContent = formatSize(entry);
+
+            const permissionCell = document.createElement('div');
+            permissionCell.className = 'entry__cell entry__cell--permissions';
+            permissionCell.textContent = formatPermissions(entry);
+
+            const modifiedCell = document.createElement('div');
+            modifiedCell.className = 'entry__cell entry__cell--modified';
+            modifiedCell.textContent = formatModified(entry);
 
             const selected = snapshot.selected?.name === entry.name;
             if (selected) {
                 row.classList.add('entry--selected');
             }
 
+            row.appendChild(nameCell);
+            row.appendChild(sizeCell);
+            row.appendChild(permissionCell);
+            row.appendChild(modifiedCell);
             row.addEventListener('click', () => onClick(entry));
             frag.appendChild(row);
         });

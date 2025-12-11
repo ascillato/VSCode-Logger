@@ -18,6 +18,8 @@ interface ExplorerEntry {
     type: 'file' | 'directory';
     size: number;
     modified?: number;
+    permissions?: string;
+    isExecutable?: boolean;
 }
 
 interface DirectorySnapshot {
@@ -93,7 +95,14 @@ interface HostKeyMismatch {
     received: string;
 }
 
-type FileStat = { isFile(): boolean; isDirectory(): boolean; size: number; mtime?: number | Date; mtimeMs?: number };
+type FileStat = {
+    isFile(): boolean;
+    isDirectory(): boolean;
+    size: number;
+    mtime?: number | Date;
+    mtimeMs?: number;
+    mode?: number;
+};
 
 interface SftpFileEntry {
     filename: string;
@@ -362,6 +371,23 @@ export class SftpExplorerPanel {
         return parent || normalized;
     }
 
+    private formatPermissions(mode: number | undefined): string {
+        if (mode === undefined) {
+            return '---------';
+        }
+
+        const flags = [0o400, 0o200, 0o100, 0o40, 0o20, 0o10, 0o4, 0o2, 0o1];
+        const symbols = ['r', 'w', 'x', 'r', 'w', 'x', 'r', 'w', 'x'];
+
+        return symbols
+            .map((symbol, index) => ((mode & flags[index]) !== 0 ? symbol : '-'))
+            .join('');
+    }
+
+    private isExecutable(mode: number | undefined): boolean {
+        return mode !== undefined && (mode & 0o111) !== 0;
+    }
+
     private async listLocal(dirPath: string): Promise<ExplorerEntry[]> {
         const directory = this.normalizePath('local', dirPath);
         const entries = await fs.readdir(directory, { withFileTypes: true });
@@ -372,11 +398,15 @@ export class SftpExplorerPanel {
             }
             const fullPath = path.join(directory, entry.name);
             const stats = await fs.stat(fullPath);
+            const mode = stats.mode;
+            const type: ExplorerEntry['type'] = stats.isDirectory() ? 'directory' : 'file';
             mapped.push({
                 name: entry.name,
-                type: stats.isDirectory() ? 'directory' : 'file',
+                type,
                 size: stats.size,
                 modified: stats.mtimeMs,
+                permissions: this.formatPermissions(mode),
+                isExecutable: type === 'file' && this.isExecutable(mode),
             });
         }
 
@@ -394,17 +424,23 @@ export class SftpExplorerPanel {
                 }
                 const mapped: ExplorerEntry[] = (items || [])
                     .filter((item) => item.filename !== '.' && item.filename !== '..')
-                    .map((item) => ({
-                        name: item.filename,
-                        type: item.attrs.isDirectory() ? 'directory' : 'file',
-                        size: Number(item.attrs.size),
-                        modified:
-                            item.attrs.mtime instanceof Date
-                                ? item.attrs.mtime.getTime()
-                                : item.attrs.mtime !== undefined
-                                ? Number(item.attrs.mtime) * 1000
-                                : undefined,
-                    }));
+                    .map((item) => {
+                        const mode = item.attrs.mode;
+                        const type: ExplorerEntry['type'] = item.attrs.isDirectory() ? 'directory' : 'file';
+                        return {
+                            name: item.filename,
+                            type,
+                            size: Number(item.attrs.size),
+                            modified:
+                                item.attrs.mtime instanceof Date
+                                    ? item.attrs.mtime.getTime()
+                                    : item.attrs.mtime !== undefined
+                                    ? Number(item.attrs.mtime) * 1000
+                                    : undefined,
+                            permissions: this.formatPermissions(mode),
+                            isExecutable: type === 'file' && this.isExecutable(mode),
+                        };
+                    });
                 resolve(this.sortEntries(mapped));
             });
         });
