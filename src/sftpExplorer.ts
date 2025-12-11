@@ -566,9 +566,7 @@ export class SftpExplorerPanel {
         const normalizedSource = this.normalizePath(from.location, from.path);
         const normalizedTargetDir = this.normalizePath(toDirectory.location, toDirectory.path);
         const sourceStats = await this.getEntryStats(from.location, normalizedSource);
-        if (!sourceStats.isFile()) {
-            throw new Error('Select a file to copy. Folder transfers are not supported.');
-        }
+        const isDirectory = sourceStats.isDirectory();
 
         await this.assertDirectory(toDirectory.location, normalizedTargetDir);
 
@@ -583,21 +581,37 @@ export class SftpExplorerPanel {
         }
 
         if (from.location === 'remote' && toDirectory.location === 'remote') {
-            await this.copyRemoteFile(normalizedSource, destinationPath);
+            if (isDirectory) {
+                await this.copyRemoteDirectory(normalizedSource, destinationPath);
+            } else {
+                await this.copyRemoteFile(normalizedSource, destinationPath);
+            }
             return normalizedTargetDir;
         }
 
         if (from.location === 'remote' && toDirectory.location === 'local') {
-            await this.downloadFile(normalizedSource, destinationPath);
+            if (isDirectory) {
+                await this.downloadDirectory(normalizedSource, destinationPath);
+            } else {
+                await this.downloadFile(normalizedSource, destinationPath);
+            }
             return normalizedTargetDir;
         }
 
         if (from.location === 'local' && toDirectory.location === 'remote') {
-            await this.uploadFile(normalizedSource, destinationPath);
+            if (isDirectory) {
+                await this.uploadDirectory(normalizedSource, destinationPath);
+            } else {
+                await this.uploadFile(normalizedSource, destinationPath);
+            }
             return normalizedTargetDir;
         }
 
-        await fs.copyFile(normalizedSource, destinationPath);
+        if (isDirectory) {
+            await this.copyLocalDirectory(normalizedSource, destinationPath);
+        } else {
+            await fs.copyFile(normalizedSource, destinationPath);
+        }
         return normalizedTargetDir;
     }
 
@@ -952,6 +966,61 @@ export class SftpExplorerPanel {
         }
     }
 
+    private async downloadDirectory(remoteSource: string, localDestination: string): Promise<void> {
+        const sftp = await this.ensureSftp();
+        await fs.mkdir(localDestination);
+
+        const entries = await new Promise<SftpFileEntry[]>((resolve, reject) => {
+            sftp.readdir(remoteSource, (err: Error | undefined, items?: SftpFileEntry[]) => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+                resolve(items || []);
+            });
+        });
+
+        for (const entry of entries) {
+            if (entry.filename === '.' || entry.filename === '..') {
+                continue;
+            }
+            const childSource = path.posix.join(remoteSource, entry.filename);
+            const childDestination = path.join(localDestination, entry.filename);
+            if (entry.attrs.isDirectory()) {
+                await this.downloadDirectory(childSource, childDestination);
+            } else {
+                await this.downloadFile(childSource, childDestination);
+            }
+        }
+    }
+
+    private async uploadDirectory(localSource: string, remoteDestination: string): Promise<void> {
+        const sftp = await this.ensureSftp();
+        await new Promise<void>((resolve, reject) => {
+            sftp.mkdir(remoteDestination, (err?: Error) => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+                resolve();
+            });
+        });
+
+        const entries = await fs.readdir(localSource, { withFileTypes: true });
+        for (const entry of entries) {
+            if (entry.name === '.' || entry.name === '..') {
+                continue;
+            }
+            const childSource = path.join(localSource, entry.name);
+            const childDestination = path.posix.join(remoteDestination, entry.name);
+            if (entry.isDirectory()) {
+                await this.uploadDirectory(childSource, childDestination);
+            } else {
+                await this.uploadFile(childSource, childDestination);
+            }
+        }
+    }
+
     private async deleteRemoteDirectoryRecursive(sftp: SftpClient, dirPath: string): Promise<void> {
         const entries = await new Promise<SftpFileEntry[]>((resolve, reject) => {
             sftp.readdir(dirPath, (err: Error | undefined, items?: SftpFileEntry[]) => {
@@ -1247,6 +1316,7 @@ export class SftpExplorerPanel {
             </section>
         </div>
         <div class="context-menu" id="contextMenu" role="menu" aria-hidden="true">
+            <button class="context-menu__item" id="contextSelect" role="menuitem">Select</button>
             <button class="context-menu__item" id="contextRename" role="menuitem">Rename</button>
             <button class="context-menu__item" id="contextDuplicate" role="menuitem">Duplicate</button>
             <button class="context-menu__item context-menu__item--danger" id="contextDelete" role="menuitem">Delete</button>

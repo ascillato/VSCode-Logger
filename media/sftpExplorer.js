@@ -40,6 +40,7 @@
         localToRemote: document.getElementById('localToRemote'),
         rightMode: document.getElementById('rightMode'),
         contextMenu: document.getElementById('contextMenu'),
+        contextSelect: document.getElementById('contextSelect'),
         contextRename: document.getElementById('contextRename'),
         contextDuplicate: document.getElementById('contextDuplicate'),
         contextDelete: document.getElementById('contextDelete'),
@@ -497,6 +498,14 @@
     elements.contextDelete.addEventListener('click', () => {
         hideContextMenu();
         deleteSelected(contextMenuState.side);
+    });
+
+    elements.contextSelect.addEventListener('click', () => {
+        hideContextMenu();
+        const snapshot = contextMenuState.side === 'remote' ? state.remote : getActiveRightSnapshot();
+        if (snapshot.selected) {
+            setSelection(contextMenuState.side, snapshot.selected);
+        }
     });
 
     document.addEventListener('click', (event) => {
