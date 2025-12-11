@@ -28,12 +28,18 @@
         localList: document.getElementById('localList'),
         remoteHome: document.getElementById('remoteHome'),
         remoteUp: document.getElementById('remoteUp'),
+        remoteRefresh: document.getElementById('remoteRefresh'),
+        remoteNewFolder: document.getElementById('remoteNewFolder'),
+        remoteNewFile: document.getElementById('remoteNewFile'),
         remoteDelete: document.getElementById('remoteDelete'),
         remoteRename: document.getElementById('remoteRename'),
         remoteDuplicate: document.getElementById('remoteDuplicate'),
         remoteToLocal: document.getElementById('remoteToLocal'),
         localHome: document.getElementById('localHome'),
         localUp: document.getElementById('localUp'),
+        localRefresh: document.getElementById('localRefresh'),
+        localNewFolder: document.getElementById('localNewFolder'),
+        localNewFile: document.getElementById('localNewFile'),
         localDelete: document.getElementById('localDelete'),
         localRename: document.getElementById('localRename'),
         localDuplicate: document.getElementById('localDuplicate'),
@@ -225,6 +231,9 @@
         elements.remoteDuplicate.disabled = disabled || !remoteSelected;
         elements.remoteToLocal.disabled = disabled || !remoteSelected;
         elements.remoteUp.disabled = disabled || state.remote.isRoot;
+        elements.remoteRefresh.disabled = disabled;
+        elements.remoteNewFolder.disabled = disabled;
+        elements.remoteNewFile.disabled = disabled;
 
         elements.localHome.disabled = disabled;
         elements.localDelete.disabled = disabled || !rightSelected;
@@ -232,6 +241,9 @@
         elements.localDuplicate.disabled = disabled || !rightSelected;
         elements.localToRemote.disabled = disabled || !rightSelected;
         elements.localUp.disabled = disabled || rightSnapshot.isRoot;
+        elements.localRefresh.disabled = disabled;
+        elements.localNewFolder.disabled = disabled;
+        elements.localNewFile.disabled = disabled;
         elements.rightMode.disabled = disabled;
     }
 
@@ -330,6 +342,31 @@
         }
     }
 
+    function refresh(side) {
+        const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
+        const location = side === 'remote' ? 'remote' : getActiveRightLocation();
+        requestList(location, snapshot.path, side === 'remote' ? requestIds.remote : getActiveRequestId());
+        clearSelection(side === 'remote' ? 'remote' : 'right');
+    }
+
+    async function createEntry(side, kind) {
+        const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
+        const location = side === 'remote' ? 'remote' : getActiveRightLocation();
+        const requestId = side === 'remote' ? requestIds.remote : getActiveRequestId();
+        const label = kind === 'directory' ? 'folder' : 'file';
+        const name = await requestInput(`New ${label} name`);
+        if (!name) {
+            return;
+        }
+        vscode.postMessage({
+            type: kind === 'directory' ? 'createDirectory' : 'createFile',
+            location,
+            path: snapshot.path,
+            name,
+            requestId,
+        });
+    }
+
     async function deleteSelected(side) {
         const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
         if (!snapshot.selected) {
@@ -408,6 +445,12 @@
     elements.localHome.addEventListener('click', () => goHome('right'));
     elements.remoteUp.addEventListener('click', () => goUp('remote'));
     elements.localUp.addEventListener('click', () => goUp('right'));
+    elements.remoteRefresh.addEventListener('click', () => refresh('remote'));
+    elements.localRefresh.addEventListener('click', () => refresh('right'));
+    elements.remoteNewFolder.addEventListener('click', () => createEntry('remote', 'directory'));
+    elements.localNewFolder.addEventListener('click', () => createEntry('right', 'directory'));
+    elements.remoteNewFile.addEventListener('click', () => createEntry('remote', 'file'));
+    elements.localNewFile.addEventListener('click', () => createEntry('right', 'file'));
     elements.remoteDelete.addEventListener('click', () => deleteSelected('remote'));
     elements.localDelete.addEventListener('click', () => deleteSelected('right'));
     elements.remoteRename.addEventListener('click', () => renameSelected('remote'));

@@ -81,6 +81,8 @@ type WebviewRequest =
     | { type: 'deleteEntry'; location: 'remote' | 'local'; path: string; requestId: string }
     | { type: 'renameEntry'; location: 'remote' | 'local'; path: string; newName: string; requestId: string }
     | { type: 'duplicateEntry'; location: 'remote' | 'local'; path: string; requestId: string }
+    | { type: 'createDirectory'; location: 'remote' | 'local'; path: string; name: string; requestId: string }
+    | { type: 'createFile'; location: 'remote' | 'local'; path: string; name: string; requestId: string }
     | {
           type: 'copyEntry';
           from: { location: 'remote' | 'local'; path: string };
@@ -120,6 +122,7 @@ interface SftpClient {
     fastPut(src: string, dest: string, callback: (err?: Error) => void): void;
     createReadStream(path: string): Readable;
     createWriteStream(path: string): Writable;
+    mkdir(path: string, callback: (err?: Error) => void): void;
 }
 
 type ClientWithSftp = Client & { sftp(callback: (err: Error | undefined, sftp?: SftpClient) => void): void };
@@ -244,6 +247,26 @@ export class SftpExplorerPanel {
                 }
                 case 'duplicateEntry': {
                     const refreshDir = await this.duplicateEntry(message.location, message.path);
+                    await this.listAndPost(
+                        message.location,
+                        refreshDir,
+                        message.requestId,
+                        message.requestId === 'rightRemote' ? 'right' : message.requestId === 'remote' ? 'left' : undefined
+                    );
+                    break;
+                }
+                case 'createDirectory': {
+                    const refreshDir = await this.createDirectory(message.location, message.path, message.name);
+                    await this.listAndPost(
+                        message.location,
+                        refreshDir,
+                        message.requestId,
+                        message.requestId === 'rightRemote' ? 'right' : message.requestId === 'remote' ? 'left' : undefined
+                    );
+                    break;
+                }
+                case 'createFile': {
+                    const refreshDir = await this.createFile(message.location, message.path, message.name);
                     await this.listAndPost(
                         message.location,
                         refreshDir,
@@ -725,6 +748,95 @@ export class SftpExplorerPanel {
         }
     }
 
+    private validateEntryName(name: string): string {
+        const trimmed = name.trim();
+        if (!trimmed) {
+            throw new Error('A name is required.');
+        }
+        if (/[\\/]/.test(trimmed)) {
+            throw new Error('Names must not include path separators.');
+        }
+        return trimmed;
+    }
+
+    private async createDirectory(location: 'remote' | 'local', directoryPath: string, name: string): Promise<string> {
+        const trimmed = this.validateEntryName(name);
+        const normalizedDir = this.normalizePath(location, directoryPath);
+        await this.assertDirectory(location, normalizedDir);
+
+        const destination = location === 'remote'
+            ? path.posix.join(normalizedDir, trimmed)
+            : path.join(normalizedDir, trimmed);
+
+        const exists = await this.pathExists(location, destination);
+        if (exists) {
+            throw new Error('An entry with that name already exists.');
+        }
+
+        if (location === 'remote') {
+            const sftp = await this.ensureSftp();
+            await new Promise<void>((resolve, reject) => {
+                sftp.mkdir(destination, (err?: Error) => {
+                    if (err) {
+                        reject(err);
+                        return;
+                    }
+                    resolve();
+                });
+            });
+            return normalizedDir;
+        }
+
+        await fs.mkdir(destination);
+        return normalizedDir;
+    }
+
+    private async createFile(location: 'remote' | 'local', directoryPath: string, name: string): Promise<string> {
+        const trimmed = this.validateEntryName(name);
+        const normalizedDir = this.normalizePath(location, directoryPath);
+        await this.assertDirectory(location, normalizedDir);
+
+        const destination = location === 'remote'
+            ? path.posix.join(normalizedDir, trimmed)
+            : path.join(normalizedDir, trimmed);
+
+        const exists = await this.pathExists(location, destination);
+        if (exists) {
+            throw new Error('An entry with that name already exists.');
+        }
+
+        if (location === 'remote') {
+            const sftp = await this.ensureSftp();
+            await new Promise<void>((resolve, reject) => {
+                const writeStream = sftp.createWriteStream(destination);
+                let finished = false;
+
+                const fail = (err: Error) => {
+                    if (finished) {
+                        return;
+                    }
+                    finished = true;
+                    writeStream.destroy();
+                    reject(err);
+                };
+
+                writeStream.on('error', fail);
+                writeStream.on('close', () => {
+                    if (!finished) {
+                        finished = true;
+                        resolve();
+                    }
+                });
+
+                writeStream.end();
+            });
+            return normalizedDir;
+        }
+
+        await fs.writeFile(destination, '', { flag: 'wx' });
+        return normalizedDir;
+    }
+
     private async generateCopyName(location: 'remote' | 'local', directory: string, baseName: string): Promise<string> {
         const ext = path.extname(baseName);
         const nameWithoutExt = path.basename(baseName, ext);
@@ -992,6 +1104,9 @@ export class SftpExplorerPanel {
                     <div class="actions">
                         <button id="remoteHome" class="action">HOME</button>
                         <button id="remoteUp" class="action">UP</button>
+                        <button id="remoteRefresh" class="action">REFRESH</button>
+                        <button id="remoteNewFolder" class="action">NEW FOLDER</button>
+                        <button id="remoteNewFile" class="action">NEW FILE</button>
                         <button id="remoteDelete" class="action" disabled>DELETE</button>
                         <button id="remoteRename" class="action" disabled>RENAME</button>
                         <button id="remoteDuplicate" class="action" disabled>DUPLICATE</button>
@@ -1013,6 +1128,9 @@ export class SftpExplorerPanel {
                         </label>
                         <button id="localHome" class="action">HOME</button>
                         <button id="localUp" class="action">UP</button>
+                        <button id="localRefresh" class="action">REFRESH</button>
+                        <button id="localNewFolder" class="action">NEW FOLDER</button>
+                        <button id="localNewFile" class="action">NEW FILE</button>
                         <button id="localDelete" class="action" disabled>DELETE</button>
                         <button id="localRename" class="action" disabled>RENAME</button>
                         <button id="localDuplicate" class="action" disabled>DUPLICATE</button>
