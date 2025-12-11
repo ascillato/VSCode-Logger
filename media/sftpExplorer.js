@@ -406,7 +406,10 @@
             return;
         }
         const locationLabel = side === 'remote' ? 'remote' : getActiveRightLocation();
-        const confirmed = await requestConfirmation(`Delete from ${locationLabel}: ${snapshot.selected.name} ?`);
+        const targetType = snapshot.selected.type === 'directory' ? 'folder' : 'file';
+        const confirmed = await requestConfirmation(
+            `Delete ${targetType} from ${locationLabel}: **${snapshot.selected.name}** ?`
+        );
         if (!confirmed) {
             return;
         }

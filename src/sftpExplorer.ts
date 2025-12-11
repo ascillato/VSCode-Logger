@@ -287,12 +287,7 @@ export class SftpExplorerPanel {
                     break;
                 }
                 case 'requestConfirmation': {
-                    const result = await vscode.window.showWarningMessage(
-                        message.message,
-                        { modal: true },
-                        'Yes',
-                        'Cancel'
-                    );
+                    const result = await vscode.window.showWarningMessage(message.message, { modal: true }, 'Yes');
                     this.postMessage({
                         type: 'confirmationResult',
                         requestId: message.requestId,
