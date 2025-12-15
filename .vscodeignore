@@ -10,4 +10,8 @@ coverage/**
 **/tsconfig*.json
 .gitignore
 AGENTS.md
-.github/
+.github/**
+Doxyfile
+docs/build/**
+docs/html/**
+docs/xml/**
