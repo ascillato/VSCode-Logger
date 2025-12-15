@@ -124,6 +124,22 @@
                 list.appendChild(sftpButton);
             }
 
+            if (device.enableWebBrowser) {
+                const webButton = document.createElement('button');
+                webButton.className = 'command-button';
+                webButton.appendChild(createIconSpan('🌐'));
+                webButton.appendChild(document.createTextNode('Open WEB Browser'));
+                webButton.title = `Open the configured web URL for ${device.name}`;
+                webButton.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    vscode.postMessage({
+                        type: 'openWebBrowser',
+                        deviceId: device.id,
+                    });
+                });
+                list.appendChild(webButton);
+            }
+
             sshCommands.forEach((cmd) => {
                 const commandButton = document.createElement('button');
                 commandButton.className = 'command-button';

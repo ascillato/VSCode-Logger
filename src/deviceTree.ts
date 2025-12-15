@@ -25,6 +25,8 @@ export interface EmbeddedDevice {
     logCommand?: string;
     enableSshTerminal?: boolean;
     enableSftpExplorer?: boolean;
+    enableWebBrowser?: boolean;
+    webBrowserUrl?: string;
     sshCommands?: { name: string; command: string }[];
 }
 

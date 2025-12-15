@@ -54,6 +54,11 @@ interface OpenSftpExplorerMessage {
     deviceId: string;
 }
 
+interface OpenWebBrowserMessage {
+    type: 'openWebBrowser';
+    deviceId: string;
+}
+
 type IncomingMessage =
     | SidebarMessage
     | HighlightUpdateMessage
@@ -62,7 +67,8 @@ type IncomingMessage =
     | RequestInitPayload
     | RunDeviceCommandMessage
     | OpenSshTerminalMessage
-    | OpenSftpExplorerMessage;
+    | OpenSftpExplorerMessage
+    | OpenWebBrowserMessage;
 
 export class SidebarViewProvider implements vscode.WebviewViewProvider {
     private view?: vscode.WebviewView;
@@ -76,7 +82,8 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
         private readonly getHighlights: () => HighlightDefinition[],
         private readonly onRunDeviceCommand: (deviceId: string, commandName: string, command: string) => void,
         private readonly onOpenSshTerminal: (deviceId: string) => void,
-        private readonly onOpenSftpExplorer: (deviceId: string) => void
+        private readonly onOpenSftpExplorer: (deviceId: string) => void,
+        private readonly onOpenWebBrowser: (deviceId: string) => void
     ) {}
 
     resolveWebviewView(webviewView: vscode.WebviewView): void | Thenable<void> {
@@ -116,6 +123,9 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
                     break;
                 case 'openSftpExplorer':
                     this.onOpenSftpExplorer(message.deviceId);
+                    break;
+                case 'openWebBrowser':
+                    this.onOpenWebBrowser(message.deviceId);
                     break;
             }
         });
@@ -168,6 +178,7 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
             ...device,
             enableSshTerminal: Boolean(device.enableSshTerminal),
             enableSftpExplorer: Boolean(device.enableSftpExplorer),
+            enableWebBrowser: Boolean(device.enableWebBrowser),
             sshCommands: Array.isArray(device.sshCommands) ? device.sshCommands : [],
         }));
     }
