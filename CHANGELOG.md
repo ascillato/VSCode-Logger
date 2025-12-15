@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [UNRELEASED]
+
+### Added
+- None.
+
+### Changed
+- Migrated documentation system and publishing workflow to Sphinx + Breathe + Mermaid.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- None.
+
+### Security
+- None.
+
+----------------------------------------
+
 ## [1.2.0] - 2025-12-15 [BASTION]
 
 ### Added
