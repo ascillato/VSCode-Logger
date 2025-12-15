@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [1.3.0] - 2025-12-18 [TERMINAL-RECONNECT]
+
+### Added
+- Keep SSH terminals open when connections drop and automatically retry every five seconds with an in-terminal reconnect notice.
+
+### Changed
+- None.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- None.
+
+### Security
+- None.
+
+----------------------------------------
+
 ## [1.2.0] - 2025-12-15 [BASTION]
 
 ### Added
