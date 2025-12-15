@@ -11,6 +11,7 @@ interface LoggerDefaults {
     defaultLogCommand: string;
     defaultEnableSshTerminal: boolean;
     defaultEnableSftpExplorer: boolean;
+    defaultEnableWebBrowser: boolean;
     defaultSshCommands: { name: string; command: string }[];
 }
 
@@ -19,6 +20,7 @@ function getLoggerDefaults(config: vscode.WorkspaceConfiguration): LoggerDefault
     const defaultLogCommand = config.get<string>('defaultLogCommand', 'tail -F /var/log/syslog') || 'tail -F /var/log/syslog';
     const defaultEnableSshTerminal = config.get<boolean>('defaultEnableSshTerminal', true) ?? true;
     const defaultEnableSftpExplorer = config.get<boolean>('defaultEnableSftpExplorer', true) ?? true;
+    const defaultEnableWebBrowser = false;
     const defaultSshCommands = config.get<{ name: string; command: string }[]>('defaultSshCommands', []) || [];
 
     return {
@@ -26,6 +28,7 @@ function getLoggerDefaults(config: vscode.WorkspaceConfiguration): LoggerDefault
         defaultLogCommand,
         defaultEnableSshTerminal,
         defaultEnableSftpExplorer,
+        defaultEnableWebBrowser,
         defaultSshCommands: Array.isArray(defaultSshCommands)
             ? defaultSshCommands.map((command) => ({ ...command }))
             : [],
@@ -45,6 +48,8 @@ function applyDeviceDefaults(device: EmbeddedDevice, defaults: LoggerDefaults): 
         logCommand: device.logCommand ?? defaults.defaultLogCommand,
         enableSshTerminal: device.enableSshTerminal ?? defaults.defaultEnableSshTerminal,
         enableSftpExplorer: device.enableSftpExplorer ?? defaults.defaultEnableSftpExplorer,
+        enableWebBrowser: device.enableWebBrowser ?? defaults.defaultEnableWebBrowser,
+        webBrowserUrl: device.webBrowserUrl?.trim() || undefined,
         sshCommands:
             device.sshCommands !== undefined
                 ? device.sshCommands
