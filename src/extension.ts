@@ -197,6 +197,44 @@ export async function activate(context: vscode.ExtensionContext) {
 
     const getDevices = () => getEmbeddedLoggerConfiguration().devices;
 
+    const openWebBrowser = async (device: EmbeddedDevice | undefined) => {
+        if (!device) {
+            vscode.window.showErrorMessage('Device not found. Check embeddedLogger.devices.');
+            return;
+        }
+
+        if (!vscode.workspace.isTrusted) {
+            vscode.window.showErrorMessage('Workspace trust is required before opening device resources.');
+            return;
+        }
+
+        const target = device.webBrowserUrl?.trim() || device.host?.trim();
+        if (!target) {
+            vscode.window.showErrorMessage('No host found for the selected device.');
+            return;
+        }
+
+        const normalizedUrl = /^https?:\/\//i.test(target) ? target : `http://${target}`;
+        let uri: vscode.Uri;
+        try {
+            uri = vscode.Uri.parse(normalizedUrl, true);
+        } catch (err: any) {
+            vscode.window.showErrorMessage(`Invalid web URL for ${device.name}: ${err?.message ?? String(err)}`);
+            return;
+        }
+
+        if (uri.scheme !== 'http' && uri.scheme !== 'https') {
+            vscode.window.showErrorMessage('Web browser URLs must start with http:// or https://.');
+            return;
+        }
+
+        try {
+            await vscode.env.openExternal(uri);
+        } catch (err: any) {
+            vscode.window.showErrorMessage(`Failed to open ${uri.toString(true)}: ${err?.message ?? String(err)}`);
+        }
+    };
+
     const openSftpExplorer = async (device: EmbeddedDevice | undefined) => {
         if (!device) {
             vscode.window.showErrorMessage('Device not found. Check embeddedLogger.devices.');
@@ -301,7 +339,8 @@ export async function activate(context: vscode.ExtensionContext) {
             });
             terminal.show(true);
         },
-        (deviceId) => openSftpExplorer(getDevices().find((item) => item.id === deviceId))
+        (deviceId) => openSftpExplorer(getDevices().find((item) => item.id === deviceId)),
+        (deviceId) => openWebBrowser(getDevices().find((item) => item.id === deviceId))
     );
 
     context.subscriptions.push(vscode.window.registerWebviewViewProvider('embeddedLogger.devicesView', sidebarProvider));
@@ -338,6 +377,30 @@ export async function activate(context: vscode.ExtensionContext) {
 
             if (selection?.device) {
                 await openSftpExplorer(selection.device);
+            }
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('embeddedLogger.openWebBrowser', async (device?: EmbeddedDevice) => {
+            if (device) {
+                await openWebBrowser(device);
+                return;
+            }
+
+            const devices = getDevices();
+            if (!devices.length) {
+                vscode.window.showErrorMessage('No devices configured. Check embeddedLogger.devices.');
+                return;
+            }
+
+            const selection = await vscode.window.showQuickPick(
+                devices.map((item) => ({ label: item.name, description: item.host, device: item })),
+                { placeHolder: 'Select a device to open in the web browser' }
+            );
+
+            if (selection?.device) {
+                await openWebBrowser(selection.device);
             }
         })
     );
