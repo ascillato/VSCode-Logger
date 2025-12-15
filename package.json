@@ -90,7 +90,7 @@
         "embeddedLogger.devices": {
           "type": "array",
           "description": "List of embedded devices to stream logs from.",
-          "markdownDescription": "List of embedded devices to stream logs from.\n\nExample:\n```json\n[\n  {\n    \"id\": \"rpi4\",\n    \"name\": \"Raspberry Pi 4\",\n    \"host\": \"192.168.1.50\",\n    \"hostFingerprint\": \"SHA256:your-base64-fingerprint\",\n    \"secondaryHost\": \"192.168.1.51\",\n    \"secondaryHostFingerprint\": \"SHA256:secondary-base64-fingerprint\",\n    \"port\": 22,\n    \"username\": \"pi\",\n    \"privateKeyPath\": \"/home/user/.ssh/id_ed25519\",\n    \"privateKeyPassphrase\": \"${env:KEY_PASSPHRASE}\",\n    \"logCommand\": \"journalctl -f -u app.service\",\n    \"enableSshTerminal\": true,\n    \"enableSftpExplorer\": true,\n    \"sshCommands\": [\n      { \"name\": \"Reboot\", \"command\": \"sudo reboot\" }\n    ]\n  }\n]\n```",
+          "markdownDescription": "List of embedded devices to stream logs from.\n\nExample:\n```json\n[\n  {\n    \"id\": \"rpi4\",\n    \"name\": \"Raspberry Pi 4\",\n    \"host\": \"192.168.1.50\",\n    \"hostFingerprint\": \"SHA256:your-base64-fingerprint\",\n    \"secondaryHost\": \"192.168.1.51\",\n    \"secondaryHostFingerprint\": \"SHA256:secondary-base64-fingerprint\",\n    \"port\": 22,\n    \"username\": \"pi\",\n    \"privateKeyPath\": \"/home/user/.ssh/id_ed25519\",\n    \"privateKeyPassphrase\": \"${env:KEY_PASSPHRASE}\",\n    \"logCommand\": \"journalctl -f -u app.service\",\n    \"enableSshTerminal\": true,\n    \"enableSftpExplorer\": true,\n    \"enableWebBrowser\": false,\n    \"webBrowserUrl\": \"http://192.168.1.50\",\n    \"sshCommands\": [\n      { \"name\": \"Reboot\", \"command\": \"sudo reboot\" }\n    ]\n  }\n]\n```",
           "items": {
             "type": "object",
             "properties": {
@@ -200,6 +200,16 @@
                 "default": false,
                 "description": "Whether to show an Open SFTP Explorer action for this device."
               },
+              "enableWebBrowser": {
+                "type": "boolean",
+                "default": false,
+                "description": "Whether to show an Open WEB Browser action for this device."
+              },
+              "webBrowserUrl": {
+                "type": "string",
+                "description": "Optional URL to open for the device; defaults to http://<host> when omitted.",
+                "default": ""
+              },
               "sshCommands": {
                 "type": "array",
                 "description": "Optional list of on-demand SSH commands available from the Devices view.",
@@ -247,6 +257,8 @@
               "logCommand": "tail -F /var/log/syslog",
               "enableSshTerminal": true,
               "enableSftpExplorer": true,
+              "enableWebBrowser": false,
+              "webBrowserUrl": "http://192.168.1.10",
               "sshCommands": [
                 {
                   "name": "Restart Service",
@@ -288,7 +300,8 @@
       "onCommand:embeddedLogger.openLocalLogFile",
       "onCommand:embeddedLogger.editDevicesConfig",
       "onCommand:embeddedLogger.clearStoredPasswords",
-      "onCommand:embeddedLogger.openSftpExplorer"
+      "onCommand:embeddedLogger.openSftpExplorer",
+      "onCommand:embeddedLogger.openWebBrowser"
     ],
     "commands": [
       {
@@ -318,6 +331,10 @@
       {
         "command": "embeddedLogger.openSftpExplorer",
         "title": "Open SFTP Explorer"
+      },
+      {
+        "command": "embeddedLogger.openWebBrowser",
+        "title": "Open WEB Browser"
       }
     ],
     "menus": {

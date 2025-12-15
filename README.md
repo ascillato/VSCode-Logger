@@ -20,6 +20,7 @@ A Visual Studio Code extension that connects to embedded Linux devices over SSH,
 - Run optional **on-demand SSH commands** configured per device from the Devices view.
 - Optionally **launch an SSH terminal** directly from a device card when enabled in settings.
 - Optionally open a dual-pane **SFTP explorer** to browse remote and local files side-by-side and transfer files.
+- Optionally open the configured device URL in your default **web browser** from the device card when enabled.
 - Authenticate with SSH passwords or private keys.
 - SSH passwords and private key passphrases are **stored securely** with VS Code Secret Storage.
 - **Privacy focused**. **No telemetry**. Everything **runs locally**.
@@ -53,6 +54,8 @@ Add devices in your VS Code settings under `embeddedLogger.devices`:
     "logCommand": "tail -F /var/log/syslog",
     "enableSshTerminal": true,
     "enableSftpExplorer": true,
+    "enableWebBrowser": false,
+    "webBrowserUrl": "http://192.168.1.10",
     "sshCommands": [
       {
         "name": "Restart IOT",
@@ -77,6 +80,8 @@ If no password is stored yet, the extension prompts for it when connecting and s
 
 - Set `enableSftpExplorer` to control visibility of the **Open SFTP Explorer** button on the device card (enabled by default; set it to `false` to hide it). The explorer opens a dual-pane view with the remote home on the left and the local home on the right, including navigation, rename/delete/duplicate actions, and arrows to transfer selected files between panes (or between two remote panes when the right-side mode is switched to remote). If the SSH link drops, the explorer stays open, greys out, shows a reconnection countdown beside the title, and automatically retries every five seconds without losing the active remote paths.
 
+- Set `enableWebBrowser` to surface the **Open WEB Browser** button beneath each device. The button is disabled by default; when enabled, clicking it opens the configured `webBrowserUrl` if provided, otherwise the extension opens `http://<host>` derived from the device host (including any port in the custom URL when supplied). Both `http://` and `https://` URLs are supported.
+
 - Control memory usage by capping retained lines per log tab with `embeddedLogger.maxLinesPerTab` (default: 100000). For auto-save, this limit is not applied to a file. Everything is saved.
 
 All options are available through the VS Code Settings UI under **Embedded Device Logger**, including defaults for omitted device values:
@@ -85,6 +90,7 @@ All options are available through the VS Code Settings UI under **Embedded Devic
 - `embeddedLogger.defaultLogCommand` – used when `logCommand` is omitted.
 - `embeddedLogger.defaultEnableSshTerminal` – toggles whether the SSH terminal action is shown by default (default: true).
 - `embeddedLogger.defaultEnableSftpExplorer` – toggles whether the SFTP explorer action is shown by default (default: true).
+- `enableWebBrowser` – disabled by default; when set to true per device, the **Open WEB Browser** button opens `webBrowserUrl` if configured or `http://<host>` otherwise.
 - `embeddedLogger.defaultSshCommands` – shared SSH actions applied to devices that do not define their own list.
 
 ## Notes

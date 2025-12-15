@@ -7,9 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [Unreleased]
+
+### Added
+- None.
+
+### Changed
+- None.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- None.
+
+### Security
+- None.
+
+----------------------------------------
+
 ## [1.2.0] - 2025-12-15 [BASTION]
 
 ### Added
+- Optional **Open WEB Browser** button on device cards that launches the configured URL in the system browser, defaulting to `http://<host>` when no `webBrowserUrl` is set.
+- New per-device settings `enableWebBrowser` and `webBrowserUrl` to control and customize the browser action.
 - Allow devices to tunnel log streaming, terminals, and one-off SSH commands through an optional bastion host with its own credentials and host key pinning.
 
 ### Changed
