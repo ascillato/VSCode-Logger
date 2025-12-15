@@ -74,7 +74,7 @@ If no password is stored yet, the extension prompts for it when connecting and s
 
 - **Optionally configure a secondary host** via `secondaryHost` (and `secondaryHostFingerprint` when pinning). Connections start with the primary host and automatically fall back to the secondary host when the primary connection fails; if the secondary host also fails, the extension retries the primary host.
 
-- **Tunnel through a bastion/jump host** by supplying a `bastion` block with its `host`, `username`, optional `port`, and optional `hostFingerprint` plus password or private key authentication. Secrets and host key fingerprints for the bastion are stored independently in Secret Storage and captured on first connect when omitted.
+- **[EXPERIMENTAL] Tunnel through a bastion/jump host** by supplying a `bastion` block with its `host`, `username`, optional `port`, and optional `hostFingerprint` plus password or private key authentication. Secrets and host key fingerprints for the bastion are stored independently in Secret Storage and captured on first connect when omitted.
 
 - Set `enableSshTerminal` to control visibility of the **Open SSH Terminal** button alongside any configured SSH commands for that device (the action is enabled by default; set it to `false` to hide it). The **Open SSH Terminal** action opens a dedicated VS Code terminal tab for the device and authenticates using the stored password or private key (prompting for and saving the credential securely when missing).
 
@@ -103,6 +103,7 @@ All options are available through the VS Code Settings UI under **Embedded Devic
 - Use the **Open Local Log File** button in the Embedded Logger devices view (or run the command with the same name) to select a `.log` or `.txt` file from your machine. The chosen file is loaded into the log viewer so you can reuse filtering, presets, export filtered logs and highlights just like a live connection.
 - **Status** text also shows messages from the log command used in the configuration like `tail -F /var/log/syslog`. So, some messages like: `tail: '/var/log/syslog' has appeared; following new file` may appear. This message in particular happens when the log file is rotated or recreated. The `-F` flag tells `tail` to keep watching for the file to reappear, so the message is informational and indicates that log streaming will continue with the new file. If you prefer a different log source, update the `logCommand` in your device configuration.
 - The Embedded Device Logger extension supports **sharing the VSCode Activity Bar** with other extensions. To merge an extension into the Activity Bar, simply select its icon from the Side Bar, then drag and drop it into your desired position within the Activity Bar.
+- This extension also supports connecting to devices through a VPN (already running on the machine with VSCode).
 
 ## Installation
 
