@@ -25,6 +25,68 @@
     const status = document.getElementById('sidebarStatus');
     let colorCursor = 0;
 
+    const contextMenu = document.createElement('div');
+    contextMenu.className = 'context-menu hidden';
+    const contextMenuList = document.createElement('div');
+    contextMenuList.className = 'context-menu__list';
+    contextMenu.appendChild(contextMenuList);
+    contextMenu.addEventListener('contextmenu', (event) => event.preventDefault());
+    document.addEventListener('click', (event) => {
+        if (!contextMenu.contains(event.target)) {
+            hideContextMenu();
+        }
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            hideContextMenu();
+        }
+    });
+    window.addEventListener('blur', hideContextMenu);
+    window.addEventListener('scroll', hideContextMenu, true);
+    document.body.appendChild(contextMenu);
+
+    function hideContextMenu() {
+        contextMenu.classList.add('hidden');
+    }
+
+    function createContextMenuItem(label, onClick) {
+        const item = document.createElement('button');
+        item.className = 'context-menu__item';
+        item.type = 'button';
+        item.textContent = label;
+        item.addEventListener('click', (event) => {
+            event.stopPropagation();
+            hideContextMenu();
+            onClick();
+        });
+        return item;
+    }
+
+    function openDeviceContextMenu(device, clientX, clientY) {
+        const urlToCopy = device.webBrowserUrl || device.host;
+        contextMenuList.innerHTML = '';
+        contextMenuList.appendChild(
+            createContextMenuItem('Copy URL', () =>
+                vscode.postMessage({ type: 'copyDeviceUrl', deviceId: device.id, url: urlToCopy })
+            )
+        );
+        contextMenuList.appendChild(
+            createContextMenuItem('Copy Name', () =>
+                vscode.postMessage({ type: 'copyDeviceName', deviceId: device.id, name: device.name })
+            )
+        );
+
+        contextMenu.style.left = `${clientX}px`;
+        contextMenu.style.top = `${clientY}px`;
+        contextMenu.classList.remove('hidden');
+
+        const menuRect = contextMenu.getBoundingClientRect();
+        const maxLeft = Math.max(0, window.innerWidth - menuRect.width - 4);
+        const maxTop = Math.max(0, window.innerHeight - menuRect.height - 4);
+        contextMenu.style.left = `${Math.min(clientX, maxLeft)}px`;
+        contextMenu.style.top = `${Math.min(clientY, maxTop)}px`;
+    }
+
     function createIconSpan(symbol) {
         const span = document.createElement('span');
         span.className = 'command-icon';
@@ -68,6 +130,11 @@
             const title = document.createElement('span');
             title.className = 'title';
             title.textContent = device.name;
+            title.addEventListener('contextmenu', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                openDeviceContextMenu(device, event.clientX, event.clientY);
+            });
             info.appendChild(title);
 
             const subtitle = document.createElement('span');
