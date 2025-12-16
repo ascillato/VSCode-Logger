@@ -66,7 +66,7 @@ Add devices in your VS Code settings under `embeddedLogger.devices`:
 ]
 ```
 
-Names for commands support emojis that can be copied from: https://unicode.org/emoji/charts/full-emoji-list.html
+Names for commands support emojis that can be copied from: https://emojidb.org
 
 If no password is stored yet, the extension prompts for it when connecting and saves it locally and securely. When using an encrypted private key, the passphrase is requested once and stored securely in VS Code Secret Storage. Private key paths may include `~` or `${env:VAR}` tokens for convenience.
 
