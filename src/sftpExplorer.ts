@@ -723,20 +723,33 @@ export class SftpExplorerPanel {
 
         if (stats.isDirectory()) {
             if (location === 'remote') {
-                await this.copyRemoteDirectory(normalizedTarget, destination);
+                await this.copyRemoteDirectory(normalizedTarget, destination, stats.mode);
             } else {
-                await this.copyLocalDirectory(normalizedTarget, destination);
+                await this.copyLocalDirectory(normalizedTarget, destination, stats.mode);
             }
             return parent;
         }
 
         if (location === 'remote') {
-            await this.copyRemoteFile(normalizedTarget, destination);
+            await this.copyRemoteFile(normalizedTarget, destination, stats.mode);
             return parent;
         }
 
         await fs.copyFile(normalizedTarget, destination);
+        await this.applyMode('local', destination, stats.mode);
         return parent;
+    }
+
+    private async confirmOverwrite(location: 'remote' | 'local', destinationPath: string): Promise<boolean> {
+        const baseName = location === 'remote' ? path.posix.basename(destinationPath) : path.basename(destinationPath);
+        const locationLabel = location === 'remote' ? 'remote' : 'local';
+        const result = await vscode.window.showWarningMessage(
+            `A file named "${baseName}" already exists in the ${locationLabel} destination. Overwrite it?`,
+            { modal: true },
+            'Overwrite'
+        );
+
+        return result === 'Overwrite';
     }
 
     private async copyEntry(
@@ -757,40 +770,49 @@ export class SftpExplorerPanel {
 
         const exists = await this.pathExists(toDirectory.location, destinationPath);
         if (exists) {
-            throw new Error('A file with the same name already exists in the destination.');
+            const destinationStats = await this.getEntryStats(toDirectory.location, destinationPath);
+            if (isDirectory || destinationStats.isDirectory()) {
+                throw new Error('An entry with the same name already exists in the destination.');
+            }
+
+            const confirmed = await this.confirmOverwrite(toDirectory.location, destinationPath);
+            if (!confirmed) {
+                return normalizedTargetDir;
+            }
         }
 
         if (from.location === 'remote' && toDirectory.location === 'remote') {
             if (isDirectory) {
-                await this.copyRemoteDirectory(normalizedSource, destinationPath);
+                await this.copyRemoteDirectory(normalizedSource, destinationPath, sourceStats.mode);
             } else {
-                await this.copyRemoteFile(normalizedSource, destinationPath);
+                await this.copyRemoteFile(normalizedSource, destinationPath, sourceStats.mode);
             }
             return normalizedTargetDir;
         }
 
         if (from.location === 'remote' && toDirectory.location === 'local') {
             if (isDirectory) {
-                await this.downloadDirectory(normalizedSource, destinationPath);
+                await this.downloadDirectory(normalizedSource, destinationPath, sourceStats.mode);
             } else {
-                await this.downloadFile(normalizedSource, destinationPath);
+                await this.downloadFile(normalizedSource, destinationPath, sourceStats.mode);
             }
             return normalizedTargetDir;
         }
 
         if (from.location === 'local' && toDirectory.location === 'remote') {
             if (isDirectory) {
-                await this.uploadDirectory(normalizedSource, destinationPath);
+                await this.uploadDirectory(normalizedSource, destinationPath, sourceStats.mode);
             } else {
-                await this.uploadFile(normalizedSource, destinationPath);
+                await this.uploadFile(normalizedSource, destinationPath, sourceStats.mode);
             }
             return normalizedTargetDir;
         }
 
         if (isDirectory) {
-            await this.copyLocalDirectory(normalizedSource, destinationPath);
+            await this.copyLocalDirectory(normalizedSource, destinationPath, sourceStats.mode);
         } else {
             await fs.copyFile(normalizedSource, destinationPath);
+            await this.applyMode('local', destinationPath, sourceStats.mode);
         }
         return normalizedTargetDir;
     }
@@ -1225,6 +1247,31 @@ export class SftpExplorerPanel {
         return (base & ~0o777) | (requestedMode & 0o777);
     }
 
+    private async applyMode(location: 'remote' | 'local', targetPath: string, mode?: number): Promise<void> {
+        if (mode === undefined) {
+            return;
+        }
+
+        const normalizedTarget = this.normalizePath(location, targetPath);
+        const normalizedMode = this.mergeMode(mode, mode);
+
+        if (location === 'remote') {
+            const sftp = await this.ensureSftp();
+            await new Promise<void>((resolve, reject) => {
+                sftp.setstat(normalizedTarget, { mode: normalizedMode }, (err?: Error) => {
+                    if (err) {
+                        reject(err);
+                        return;
+                    }
+                    resolve();
+                });
+            });
+            return;
+        }
+
+        await fs.chmod(normalizedTarget, normalizedMode & 0o7777);
+    }
+
     private async applyPermissions(
         location: 'remote' | 'local',
         targetPath: string,
@@ -1439,7 +1486,7 @@ export class SftpExplorerPanel {
         }
     }
 
-    private async copyRemoteFile(source: string, destination: string): Promise<void> {
+    private async copyRemoteFile(source: string, destination: string, mode?: number): Promise<void> {
         const sftp = await this.ensureSftp();
         await new Promise<void>((resolve, reject) => {
             const readStream = sftp.createReadStream(source);
@@ -1467,9 +1514,11 @@ export class SftpExplorerPanel {
 
             readStream.pipe(writeStream);
         });
+
+        await this.applyMode('remote', destination, mode);
     }
 
-    private async copyRemoteDirectory(source: string, destination: string): Promise<void> {
+    private async copyRemoteDirectory(source: string, destination: string, mode?: number): Promise<void> {
         const sftp = await this.ensureSftp();
         await new Promise<void>((resolve, reject) => {
             sftp.mkdir(destination, (err?: Error) => {
@@ -1480,6 +1529,8 @@ export class SftpExplorerPanel {
                 resolve();
             });
         });
+
+        await this.applyMode('remote', destination, mode);
 
         const entries = await new Promise<SftpFileEntry[]>((resolve, reject) => {
             sftp.readdir(source, (err: Error | undefined, items?: SftpFileEntry[]) => {
@@ -1498,15 +1549,16 @@ export class SftpExplorerPanel {
             const childSource = path.posix.join(source, entry.filename);
             const childDestination = path.posix.join(destination, entry.filename);
             if (entry.attrs.isDirectory()) {
-                await this.copyRemoteDirectory(childSource, childDestination);
+                await this.copyRemoteDirectory(childSource, childDestination, entry.attrs.mode);
             } else {
-                await this.copyRemoteFile(childSource, childDestination);
+                await this.copyRemoteFile(childSource, childDestination, entry.attrs.mode);
             }
         }
     }
 
-    private async copyLocalDirectory(source: string, destination: string): Promise<void> {
+    private async copyLocalDirectory(source: string, destination: string, mode?: number): Promise<void> {
         await fs.mkdir(destination);
+        await this.applyMode('local', destination, mode);
         const entries = await fs.readdir(source, { withFileTypes: true });
 
         for (const entry of entries) {
@@ -1515,17 +1567,20 @@ export class SftpExplorerPanel {
             }
             const childSource = path.join(source, entry.name);
             const childDestination = path.join(destination, entry.name);
+            const childStats = await fs.stat(childSource);
             if (entry.isDirectory()) {
-                await this.copyLocalDirectory(childSource, childDestination);
+                await this.copyLocalDirectory(childSource, childDestination, childStats.mode);
             } else {
                 await fs.copyFile(childSource, childDestination);
+                await this.applyMode('local', childDestination, childStats.mode);
             }
         }
     }
 
-    private async downloadDirectory(remoteSource: string, localDestination: string): Promise<void> {
+    private async downloadDirectory(remoteSource: string, localDestination: string, mode?: number): Promise<void> {
         const sftp = await this.ensureSftp();
         await fs.mkdir(localDestination);
+        await this.applyMode('local', localDestination, mode);
 
         const entries = await new Promise<SftpFileEntry[]>((resolve, reject) => {
             sftp.readdir(remoteSource, (err: Error | undefined, items?: SftpFileEntry[]) => {
@@ -1544,14 +1599,14 @@ export class SftpExplorerPanel {
             const childSource = path.posix.join(remoteSource, entry.filename);
             const childDestination = path.join(localDestination, entry.filename);
             if (entry.attrs.isDirectory()) {
-                await this.downloadDirectory(childSource, childDestination);
+                await this.downloadDirectory(childSource, childDestination, entry.attrs.mode);
             } else {
-                await this.downloadFile(childSource, childDestination);
+                await this.downloadFile(childSource, childDestination, entry.attrs.mode);
             }
         }
     }
 
-    private async uploadDirectory(localSource: string, remoteDestination: string): Promise<void> {
+    private async uploadDirectory(localSource: string, remoteDestination: string, mode?: number): Promise<void> {
         const sftp = await this.ensureSftp();
         await new Promise<void>((resolve, reject) => {
             sftp.mkdir(remoteDestination, (err?: Error) => {
@@ -1563,6 +1618,8 @@ export class SftpExplorerPanel {
             });
         });
 
+        await this.applyMode('remote', remoteDestination, mode);
+
         const entries = await fs.readdir(localSource, { withFileTypes: true });
         for (const entry of entries) {
             if (entry.name === '.' || entry.name === '..') {
@@ -1570,10 +1627,11 @@ export class SftpExplorerPanel {
             }
             const childSource = path.join(localSource, entry.name);
             const childDestination = path.posix.join(remoteDestination, entry.name);
+            const childStats = await fs.stat(childSource);
             if (entry.isDirectory()) {
-                await this.uploadDirectory(childSource, childDestination);
+                await this.uploadDirectory(childSource, childDestination, childStats.mode);
             } else {
-                await this.uploadFile(childSource, childDestination);
+                await this.uploadFile(childSource, childDestination, childStats.mode);
             }
         }
     }
@@ -1620,7 +1678,7 @@ export class SftpExplorerPanel {
         });
     }
 
-    private async downloadFile(remotePath: string, localPath: string): Promise<void> {
+    private async downloadFile(remotePath: string, localPath: string, mode?: number): Promise<void> {
         const sftp = await this.ensureSftp();
         await new Promise<void>((resolve, reject) => {
             sftp.fastGet(remotePath, localPath, (err?: Error) => {
@@ -1631,6 +1689,8 @@ export class SftpExplorerPanel {
                 }
             });
         });
+
+        await this.applyMode('local', localPath, mode);
     }
 
     private async ensureViewContentDirectory(): Promise<string> {
@@ -1685,7 +1745,7 @@ export class SftpExplorerPanel {
         );
     }
 
-    private async uploadFile(localPath: string, remotePath: string): Promise<void> {
+    private async uploadFile(localPath: string, remotePath: string, mode?: number): Promise<void> {
         const sftp = await this.ensureSftp();
         await new Promise<void>((resolve, reject) => {
             sftp.fastPut(localPath, remotePath, (err?: Error) => {
@@ -1696,6 +1756,8 @@ export class SftpExplorerPanel {
                 }
             });
         });
+
+        await this.applyMode('remote', remotePath, mode);
     }
 
     private postMessage(message: WebviewResponse): void {
