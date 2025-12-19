@@ -7,8 +7,7 @@
 :caption: Contents
 
 Embedded Device Logger <self>
-User Guide <user-guide>
-Extension Architecture Overview <extension-overview>
+Architecture Overview <extension-overview>
 Code Development <code-development>
 API <api/index>
 Documentation Generation <docgen>
