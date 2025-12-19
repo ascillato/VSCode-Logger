@@ -19,9 +19,8 @@ This document explains how the VSCode-Logger extension streams logs from embedde
 
 ## Data and control flow
 
-![Diagram1](images/diagram1.png)
-
 ```mermaid
+:zoom: 100%
 graph TD
     A[Extension activation] --> B[getEmbeddedLoggerConfiguration]
     B --> C[Register sidebar view & commands]

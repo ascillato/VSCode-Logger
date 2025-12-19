@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `embeddedLogger.defaultEnableWebBrowser` default setting for the per-device web browser action.
 
 ### Changed
-- None.
+- Migrated documentation system and publishing workflow to Sphinx + Breathe + Mermaid.
 
 ### Deprecated
 - None.
