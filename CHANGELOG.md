@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [UNRELEASED]
+
+### Added
+- Add context menu to copy device details.
+
+### Changed
+- None.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- None.
+
+### Security
+- None.
+
+----------------------------------------
+
 ## [1.2.0] - 2025-12-15 [BASTION]
 
 ### Added
