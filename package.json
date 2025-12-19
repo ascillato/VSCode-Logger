@@ -3,7 +3,7 @@
   "displayName": "Embedded Device Logger",
   "description": "Stream and filter embedded Linux device logs over SSH inside VS Code.",
   "icon": "media/icon.png",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "publisher": "Scallant",
   "author": "A. Scillato",
   "engines": {
@@ -63,6 +63,11 @@
           "type": "boolean",
           "default": true,
           "description": "Whether devices without an explicit enableSftpExplorer flag should show the SFTP explorer action."
+        },
+        "embeddedLogger.defaultEnableWebBrowser": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether devices without an explicit enableWebBrowser flag should show the web browser action."
         },
         "embeddedLogger.defaultSshCommands": {
           "type": "array",
