@@ -5,49 +5,49 @@ The API documentation is generated from Doxygen XML. Ensure ``doxygen Doxyfile``
 
 .. ifconfig:: have_doxygen
 
-   .. doxygenfile:: src/configuration.ts
+   .. doxygenfile:: configuration.ts
       :project: VSCode-Logger
 
-   .. doxygenfile:: src/deviceTree.ts
+   .. doxygenfile:: deviceTree.ts
       :project: VSCode-Logger
 
-   .. doxygenfile:: src/extension.ts
+   .. doxygenfile:: extension.ts
       :project: VSCode-Logger
 
-   .. doxygenfile:: src/hostEndpoints.ts
+   .. doxygenfile:: hostEndpoints.ts
       :project: VSCode-Logger
 
-   .. doxygenfile:: src/logPanel.ts
+   .. doxygenfile:: logPanel.ts
       :project: VSCode-Logger
 
-   .. doxygenfile:: src/logSession.ts
+   .. doxygenfile:: logSession.ts
       :project: VSCode-Logger
 
-   .. doxygenfile:: src/passwordManager.ts
+   .. doxygenfile:: passwordManager.ts
       :project: VSCode-Logger
 
-   .. doxygenfile:: src/sshCommandRunner.ts
+   .. doxygenfile:: sshCommandRunner.ts
       :project: VSCode-Logger
 
-   .. doxygenfile:: src/sshTerminal.ts
+   .. doxygenfile:: sshTerminal.ts
       :project: VSCode-Logger
 
-   .. doxygenfile:: src/ssh2.d.ts
+   .. doxygenfile:: ssh2.d.ts
       :project: VSCode-Logger
 
-   .. doxygenfile:: media/loggerPanel.js
+   .. doxygenfile:: loggerPanel.js
       :project: VSCode-Logger
 
-   .. doxygenfile:: media/sidebarView.js
+   .. doxygenfile:: sidebarView.js
       :project: VSCode-Logger
 
-   .. doxygenfile:: media/sftpExplorer.js
+   .. doxygenfile:: sftpExplorer.js
       :project: VSCode-Logger
 
-   .. doxygenfile:: src/sftpExplorer.ts
+   .. doxygenfile:: sftpExplorer.ts
       :project: VSCode-Logger
 
-   .. doxygenfile:: src/sidebarView.ts
+   .. doxygenfile:: sidebarView.ts
       :project: VSCode-Logger
 
 .. ifconfig:: not have_doxygen
