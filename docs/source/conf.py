@@ -26,6 +26,10 @@ extensions = [
     "sphinx.ext.ifconfig",  # Conditional content blocks
 ]
 
+# generate slug anchors for headings up to this depth
+# (2 is enough for ## headings; use 3 if you also want ###, etc.)
+myst_heading_anchors = 2
+
 # Recognize both Markdown and reStructuredText sources
 source_suffix = {
     ".rst": "restructuredtext",
