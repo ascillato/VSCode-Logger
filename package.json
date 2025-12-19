@@ -64,6 +64,11 @@
           "default": true,
           "description": "Whether devices without an explicit enableSftpExplorer flag should show the SFTP explorer action."
         },
+        "embeddedLogger.defaultEnableWebBrowser": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether devices without an explicit enableWebBrowser flag should show the web browser action."
+        },
         "embeddedLogger.defaultSshCommands": {
           "type": "array",
           "description": "Reusable SSH commands automatically applied to devices that do not define their own list.",
