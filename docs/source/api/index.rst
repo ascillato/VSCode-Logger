@@ -5,65 +5,65 @@ The API documentation is generated from Doxygen XML. Ensure ``doxygen Doxyfile``
 
 .. ifconfig:: have_doxygen
 
-   .. doxygenfile:: configuration.ts
+   .. autodoxygenfile:: configuration.ts
       :project: VSCode-Logger
-      :sections: func, var, define, enum, typedef, class
+      :members:
 
-   .. doxygenfile:: deviceTree.ts
+   .. autodoxygenfile:: deviceTree.ts
       :project: VSCode-Logger
-      :sections: func, var, define, enum, typedef, class
+      :members:
 
-   .. doxygenfile:: extension.ts
+   .. autodoxygenfile:: extension.ts
       :project: VSCode-Logger
-      :sections: func, var, define, enum, typedef, class
+      :members:
 
-   .. doxygenfile:: hostEndpoints.ts
+   .. autodoxygenfile:: hostEndpoints.ts
       :project: VSCode-Logger
-      :sections: func, var, define, enum, typedef, class
+      :members:
 
-   .. doxygenfile:: logPanel.ts
+   .. autodoxygenfile:: logPanel.ts
       :project: VSCode-Logger
-      :sections: func, var, define, enum, typedef, class
+      :members:
 
-   .. doxygenfile:: logSession.ts
+   .. autodoxygenfile:: logSession.ts
       :project: VSCode-Logger
-      :sections: func, var, define, enum, typedef, class
+      :members:
 
-   .. doxygenfile:: passwordManager.ts
+   .. autodoxygenfile:: passwordManager.ts
       :project: VSCode-Logger
-      :sections: func, var, define, enum, typedef, class
+      :members:
 
-   .. doxygenfile:: sshCommandRunner.ts
+   .. autodoxygenfile:: sshCommandRunner.ts
       :project: VSCode-Logger
-      :sections: func, var, define, enum, typedef, class
+      :members:
 
-   .. doxygenfile:: sshTerminal.ts
+   .. autodoxygenfile:: sshTerminal.ts
       :project: VSCode-Logger
-      :sections: func, var, define, enum, typedef, class
+      :members:
 
-   .. doxygenfile:: ssh2.d.ts
+   .. autodoxygenfile:: ssh2.d.ts
       :project: VSCode-Logger
-      :sections: func, var, define, enum, typedef, class
+      :members:
 
-   .. doxygenfile:: loggerPanel.js
+   .. autodoxygenfile:: loggerPanel.js
       :project: VSCode-Logger
-      :sections: func, var, define, enum, typedef, class
+      :members:
 
-   .. doxygenfile:: sidebarView.js
+   .. autodoxygenfile:: sidebarView.js
       :project: VSCode-Logger
-      :sections: func, var, define, enum, typedef, class
+      :members:
 
-   .. doxygenfile:: sftpExplorer.js
+   .. autodoxygenfile:: sftpExplorer.js
       :project: VSCode-Logger
-      :sections: func, var, define, enum, typedef, class
+      :members:
 
-   .. doxygenfile:: sftpExplorer.ts
+   .. autodoxygenfile:: sftpExplorer.ts
       :project: VSCode-Logger
-      :sections: func, var, define, enum, typedef, class
+      :members:
 
-   .. doxygenfile:: sidebarView.ts
+   .. autodoxygenfile:: sidebarView.ts
       :project: VSCode-Logger
-      :sections: func, var, define, enum, typedef, class
+      :members:
 
 .. ifconfig:: not have_doxygen
 
