@@ -96,12 +96,22 @@ def setup(app):
     app.config.have_doxygen = have_doxygen
 
 # -- Options for HTML output -------------------------------------------------
-html_theme = "furo"
+html_theme = "sphinx_book_theme"
 html_static_path = ["_static"]
 html_title = "VSCode-Logger Documentation"
 
-# Provide a basic sidebar structure for readability
+# Theme configuration: expanded sidebar navigation and dark theme support.
 html_theme_options = {
-    "light_logo": "",
-    "dark_logo": "",
+    "collapse_navigation": False,
+    "navigation_depth": 4,
+    "show_navbar_depth": 3,
+    "show_toc_level": 2,
+    "use_download_button": False,
+    "use_edit_page_button": False,
+    "use_issues_button": False,
+    "use_repository_button": False,
 }
+
+# Ensure syntax highlighting adapts to the user's theme.
+pygments_style = "sphinx"
+pygments_dark_style = "native"
