@@ -10,7 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [UNRELEASED]
 
 ### Added
-- None.
+- Add context menu to copy device details.
+- Add `embeddedLogger.defaultEnableWebBrowser` default setting for the per-device web browser action.
 
 ### Changed
 - Migrated documentation system and publishing workflow to Sphinx + Breathe + Mermaid.

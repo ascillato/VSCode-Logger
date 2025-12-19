@@ -66,7 +66,7 @@ Add devices in your VS Code settings under `embeddedLogger.devices`:
 ]
 ```
 
-Names for commands support emojis that can be copied from: https://unicode.org/emoji/charts/full-emoji-list.html
+Names for commands support emojis that can be copied from: https://emojidb.org
 
 If no password is stored yet, the extension prompts for it when connecting and saves it locally and securely. When using an encrypted private key, the passphrase is requested once and stored securely in VS Code Secret Storage. Private key paths may include `~` or `${env:VAR}` tokens for convenience.
 
@@ -90,7 +90,8 @@ All options are available through the VS Code Settings UI under **Embedded Devic
 - `embeddedLogger.defaultLogCommand` – used when `logCommand` is omitted.
 - `embeddedLogger.defaultEnableSshTerminal` – toggles whether the SSH terminal action is shown by default (default: true).
 - `embeddedLogger.defaultEnableSftpExplorer` – toggles whether the SFTP explorer action is shown by default (default: true).
-- `enableWebBrowser` – disabled by default; when set to true per device, the **Open WEB Browser** button opens `webBrowserUrl` if configured or `http://<host>` otherwise.
+- `embeddedLogger.defaultEnableWebBrowser` – toggles whether the web browser action is shown by default (default: false).
+- `enableWebBrowser` – when set to true per device, the **Open WEB Browser** button opens `webBrowserUrl` if configured or `http://<host>` otherwise.
 - `embeddedLogger.defaultSshCommands` – shared SSH actions applied to devices that do not define their own list.
 
 ## Notes

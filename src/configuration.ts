@@ -20,7 +20,7 @@ function getLoggerDefaults(config: vscode.WorkspaceConfiguration): LoggerDefault
     const defaultLogCommand = config.get<string>('defaultLogCommand', 'tail -F /var/log/syslog') || 'tail -F /var/log/syslog';
     const defaultEnableSshTerminal = config.get<boolean>('defaultEnableSshTerminal', true) ?? true;
     const defaultEnableSftpExplorer = config.get<boolean>('defaultEnableSftpExplorer', true) ?? true;
-    const defaultEnableWebBrowser = false;
+    const defaultEnableWebBrowser = config.get<boolean>('defaultEnableWebBrowser', false) ?? false;
     const defaultSshCommands = config.get<{ name: string; command: string }[]>('defaultSshCommands', []) || [];
 
     return {
