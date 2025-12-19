@@ -20,7 +20,7 @@ FILE_PATTERNS          = *.ts *.js *.d.ts *.md
 FILTER_PATTERNS        = *.ts=python3\ docs/scripts/ts_doxygen_filter.py
 # Strip TypeScript-specific syntax before parsing to avoid confusing the
 # C++ parser that Breathe uses for XML.
-INPUT                  = README.md docs/extension-overview.md CHANGELOG.md CONTRIBUTING.md CODE_OF_CONDUCT.md SECURITY.md src media
+INPUT                  = README.md CHANGELOG.md CONTRIBUTING.md CODE_OF_CONDUCT.md SECURITY.md src media
 EXCLUDE_PATTERNS       = docs/html/* docs/latex/*
 IMAGE_PATH             = docs/images
 RECURSIVE              = YES

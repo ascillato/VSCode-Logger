@@ -14,7 +14,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 # -- Project information -----------------------------------------------------
 project = "VSCode-Logger"
-author = "VSCode-Logger Contributors"
+author = "A. Scillato"
 # Use the current year in the copyright
 copyright = f"{datetime.now().year}, {author}"
 
