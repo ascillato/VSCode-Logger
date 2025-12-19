@@ -5,65 +5,65 @@ The API documentation is generated from Doxygen XML. Ensure ``doxygen Doxyfile``
 
 .. ifconfig:: have_doxygen
 
-   .. autodoxygenfile:: configuration.ts
+   .. doxygenfile:: configuration.ts
       :project: VSCode-Logger
-      :members:
+      :sections: all
 
-   .. autodoxygenfile:: deviceTree.ts
+   .. doxygenfile:: deviceTree.ts
       :project: VSCode-Logger
-      :members:
+      :sections: all
 
-   .. autodoxygenfile:: extension.ts
+   .. doxygenfile:: extension.ts
       :project: VSCode-Logger
-      :members:
+      :sections: all
 
-   .. autodoxygenfile:: hostEndpoints.ts
+   .. doxygenfile:: hostEndpoints.ts
       :project: VSCode-Logger
-      :members:
+      :sections: all
 
-   .. autodoxygenfile:: logPanel.ts
+   .. doxygenfile:: logPanel.ts
       :project: VSCode-Logger
-      :members:
+      :sections: all
 
-   .. autodoxygenfile:: logSession.ts
+   .. doxygenfile:: logSession.ts
       :project: VSCode-Logger
-      :members:
+      :sections: all
 
-   .. autodoxygenfile:: passwordManager.ts
+   .. doxygenfile:: passwordManager.ts
       :project: VSCode-Logger
-      :members:
+      :sections: all
 
-   .. autodoxygenfile:: sshCommandRunner.ts
+   .. doxygenfile:: sshCommandRunner.ts
       :project: VSCode-Logger
-      :members:
+      :sections: all
 
-   .. autodoxygenfile:: sshTerminal.ts
+   .. doxygenfile:: sshTerminal.ts
       :project: VSCode-Logger
-      :members:
+      :sections: all
 
-   .. autodoxygenfile:: ssh2.d.ts
+   .. doxygenfile:: ssh2.d.ts
       :project: VSCode-Logger
-      :members:
+      :sections: all
 
-   .. autodoxygenfile:: loggerPanel.js
+   .. doxygenfile:: loggerPanel.js
       :project: VSCode-Logger
-      :members:
+      :sections: all
 
-   .. autodoxygenfile:: sidebarView.js
+   .. doxygenfile:: sidebarView.js
       :project: VSCode-Logger
-      :members:
+      :sections: all
 
-   .. autodoxygenfile:: sftpExplorer.js
+   .. doxygenfile:: sftpExplorer.js
       :project: VSCode-Logger
-      :members:
+      :sections: all
 
-   .. autodoxygenfile:: sftpExplorer.ts
+   .. doxygenfile:: sftpExplorer.ts
       :project: VSCode-Logger
-      :members:
+      :sections: all
 
-   .. autodoxygenfile:: sidebarView.ts
+   .. doxygenfile:: sidebarView.ts
       :project: VSCode-Logger
-      :members:
+      :sections: all
 
 .. ifconfig:: not have_doxygen
 
