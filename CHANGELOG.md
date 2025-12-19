@@ -38,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New per-device settings `enableWebBrowser` and `webBrowserUrl` to control and customize the browser action.
 
 ### Changed
-- Migrated documentation system and publishing workflow to Sphinx + Breathe + Mermaid.
+- None.
 
 ### Deprecated
 - None.
