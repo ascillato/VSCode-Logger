@@ -59,6 +59,18 @@ interface OpenWebBrowserMessage {
     deviceId: string;
 }
 
+interface CopyDeviceNameMessage {
+    type: 'copyDeviceName';
+    deviceId: string;
+    name: string;
+}
+
+interface CopyDeviceUrlMessage {
+    type: 'copyDeviceUrl';
+    deviceId: string;
+    url: string;
+}
+
 type IncomingMessage =
     | SidebarMessage
     | HighlightUpdateMessage
@@ -68,7 +80,9 @@ type IncomingMessage =
     | RunDeviceCommandMessage
     | OpenSshTerminalMessage
     | OpenSftpExplorerMessage
-    | OpenWebBrowserMessage;
+    | OpenWebBrowserMessage
+    | CopyDeviceNameMessage
+    | CopyDeviceUrlMessage;
 
 export class SidebarViewProvider implements vscode.WebviewViewProvider {
     private view?: vscode.WebviewView;
@@ -127,6 +141,12 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
                 case 'openWebBrowser':
                     this.onOpenWebBrowser(message.deviceId);
                     break;
+                case 'copyDeviceName':
+                    void this.copyToClipboard(message.name, 'Device name');
+                    break;
+                case 'copyDeviceUrl':
+                    void this.copyToClipboard(message.url, 'Device URL');
+                    break;
             }
         });
 
@@ -181,6 +201,11 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
             enableWebBrowser: Boolean(device.enableWebBrowser),
             sshCommands: Array.isArray(device.sshCommands) ? device.sshCommands : [],
         }));
+    }
+
+    private async copyToClipboard(value: string, label: string) {
+        await vscode.env.clipboard.writeText(value);
+        await vscode.window.showInformationMessage(`${label} copied to clipboard.`);
     }
 
     private getHtml(webview: vscode.Webview): string {

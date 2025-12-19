@@ -171,3 +171,39 @@
     color: var(--vscode-descriptionForeground);
     font-size: 12px;
 }
+
+.context-menu {
+    position: fixed;
+    background: var(--vscode-editorWidget-background);
+    color: var(--vscode-editorWidget-foreground);
+    border: 1px solid var(--vscode-widget-border, var(--vscode-panel-border));
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    padding: 4px 0;
+    z-index: 1000;
+    min-width: 140px;
+}
+
+.context-menu.hidden {
+    display: none;
+}
+
+.context-menu__list {
+    display: flex;
+    flex-direction: column;
+}
+
+.context-menu__item {
+    background: transparent;
+    color: inherit;
+    border: none;
+    padding: 6px 12px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.context-menu__item:hover,
+.context-menu__item:focus-visible {
+    background: var(--vscode-list-hoverBackground);
+    outline: none;
+}
