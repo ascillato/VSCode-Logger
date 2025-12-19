@@ -143,7 +143,7 @@ If you find this extension useful, please [rate it](https://marketplace.visualst
 - Run: `vsce package` to generate vsix file to be installed into VSCode
 - Install locally on VSCode: `code --install-extension embedded-device-logger-1.2.0.vsix`
 
-### Clean and re-compile
+#### Clean and Re-generate Package
 
 - `clear; rm -rf node_modules; rm -rf out; rm *.vsix; npm install; npm run compile; vsce package`
 - `code --install-extension embedded-device-logger-1.2.0.vsix`
@@ -154,6 +154,11 @@ If you find this extension useful, please [rate it](https://marketplace.visualst
 2. Install Python documentation dependencies: `pip install -r docs/requirements.txt`.
 3. From the repository root, run `doxygen Doxyfile` to build the XML output into `docs/xml`.
 4. Build the full site with Sphinx: `sphinx-build -b html docs/source docs/build/html`.
-5. Open `docs/build/html/index.html` locally or visit the published docs at https://ascillato.github.io/VSCode-Logger/.
+5. Open `docs/build/html/index.html` locally.
 
-> GitHub Actions automatically runs this pipeline on pushes to `main` with tag and publishes to the `gh-pages` branch.
+> GitHub Actions automatically runs this pipeline on pushes to `main` with tag and publishes to the `gh-pages` branch.<br>
+> Visit the published docs at https://ascillato.github.io/VSCode-Logger/.
+
+#### Clean and Re-generate Documentation
+
+- `clear; rm -rf docs/build; rm -rf docs/html; rm -rf docs/xml; doxygen Doxyfile; sphinx-build -b html docs/source docs/build/html`
