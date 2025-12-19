@@ -1,11 +1,19 @@
-# VSCode-Logger Documentation
-
-Welcome to the VSCode-Logger documentation site. This extension streams logs from embedded Linux devices over SSH into Visual Studio Code, providing filtering, highlighting, presets, and exporting. These pages collect architecture notes, user guidance, and generated API references.
+```{include} ../../README.md
+:relative-images:
+```
 
 ```{toctree}
 :maxdepth: 2
 :caption: Contents
 
-user-guide
-api/index
+Embedded Device Logger <self>
+User Guide <user-guide>
+Extension Architecture Overview <extension-overview>
+Code Development <code-development>
+API <api/index>
+Documentation Generation <docgen>
+Changelog <changelog>
+Security Issues Report and Management <security-issues>
+License <license>
+Code of Conduct <code-of-conduct>
 ```
