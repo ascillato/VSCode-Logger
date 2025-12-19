@@ -130,16 +130,21 @@
             const title = document.createElement('span');
             title.className = 'title';
             title.textContent = device.name;
-            title.addEventListener('contextmenu', (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                openDeviceContextMenu(device, event.clientX, event.clientY);
-            });
+            const attachDeviceContextMenu = (element) => {
+                element.addEventListener('contextmenu', (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    openDeviceContextMenu(device, event.clientX, event.clientY);
+                });
+            };
+
+            attachDeviceContextMenu(title);
             info.appendChild(title);
 
             const subtitle = document.createElement('span');
             subtitle.className = 'subtitle';
             subtitle.textContent = device.host;
+            attachDeviceContextMenu(subtitle);
             info.appendChild(subtitle);
 
             summary.appendChild(info);
