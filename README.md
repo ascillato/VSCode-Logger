@@ -34,7 +34,8 @@ If you find this extension useful, please [rate it](https://marketplace.visualst
 - Open it by clicking on the terminal icon of the side bar.
 - Configure your devices by clicking on the pencil icon. Add them under the `embeddedLogger.devices` setting as explained in [Configuration](#configuration), then open the **Embedded Logger** view from the activity bar.
 
-## Installation {#installation}
+(installation)=
+## Installation
 
 **From VSCode:**
 - Click on Extensions in the side bar and Search for Embedded Device Logger (Publisher: Scallant, Author: A. Scillato).
@@ -43,7 +44,8 @@ If you find this extension useful, please [rate it](https://marketplace.visualst
 
 **For more information visit the [Embedded Device Logger Extension](https://marketplace.visualstudio.com/items?itemName=Scallant.embedded-device-logger) in the VSCode Marketplace.**
 
-## Configuration {#configuration}
+(configuration)=
+## Configuration
 
 ![Screenshot2](docs/images/screenshot_example_setup.png)
 
