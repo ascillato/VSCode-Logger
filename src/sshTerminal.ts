@@ -39,6 +39,7 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
     private closed = false;
     private reconnectTimer: NodeJS.Timeout | undefined;
     private isReconnecting = false;
+    private reconnectNoticeShown = false;
     private lastDimensions: vscode.TerminalDimensions | undefined;
     private readonly passwordManager: PasswordManager;
 
@@ -119,6 +120,7 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
                 try {
                     await this.connect(endpoint, authentication, bastion, bastionAuthentication, initialDimensions);
                     this.isReconnecting = false;
+                    this.reconnectNoticeShown = false;
                     return;
                 } catch (err) {
                     lastError = err;
@@ -136,16 +138,16 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
             throw lastError ?? new Error('Failed to open SSH terminal.');
         } catch (err: any) {
             const message = err?.message ?? String(err);
-            this.writeEmitter.fire(`Connection error: ${message}\r\n`);
-            if (this.closed) {
-                return;
-            }
-
             if (this.isReconnecting) {
                 this.scheduleReconnect();
                 return;
             }
 
+            if (this.closed) {
+                return;
+            }
+
+            this.writeEmitter.fire(`Connection error: ${message}\r\n`);
             vscode.window.showErrorMessage(message);
             this.close();
         }
@@ -368,8 +370,13 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
             return;
         }
 
+        if (this.isReconnecting) {
+            return;
+        }
+
         this.disposeClients();
         this.isReconnecting = true;
+        this.reconnectNoticeShown = false;
         this.scheduleReconnect();
     }
 
@@ -378,9 +385,12 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
             return;
         }
 
-        const timestamp = new Date().toLocaleString();
-        const message = `\r\n\u001b[1m\u001b[41mSSH Connection lost at ${timestamp}. Retrying in 5 seconds...\u001b[0m\r\n\r\n`;
-        this.writeEmitter.fire(message);
+        if (!this.reconnectNoticeShown) {
+            const timestamp = new Date().toLocaleString();
+            const message = `\r\n\r\n\u001b[1m\u001b[41mSSH Connection lost at ${timestamp}. Retrying in 5 seconds...\u001b[0m\r\n\r\n`;
+            this.writeEmitter.fire(message);
+            this.reconnectNoticeShown = true;
+        }
 
         this.reconnectTimer = setTimeout(() => {
             this.reconnectTimer = undefined;
