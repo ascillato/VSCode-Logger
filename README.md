@@ -147,12 +147,12 @@ All options are available through the VS Code Settings UI under **Embedded Devic
 
 - Requires: `npm install -g @vscode/vsce`
 - Run: `vsce package` to generate vsix file to be installed into VSCode
-- Install locally on VSCode: `code --install-extension embedded-device-logger-1.2.0.vsix`
+- Install locally on VSCode: `code --install-extension embedded-device-logger-1.3.0.vsix`
 
 #### Clean and Re-generate Package
 
 - `clear; rm -rf node_modules; rm -rf out; rm *.vsix; npm install; npm run compile; vsce package`
-- `code --install-extension embedded-device-logger-1.2.0.vsix`
+- `code --install-extension embedded-device-logger-1.3.0.vsix`
 
 ### Generating Source Code Documentation
 
