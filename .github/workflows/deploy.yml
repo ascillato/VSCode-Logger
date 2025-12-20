@@ -6,8 +6,12 @@ permissions:
 on:
   push:
     branches: [main]
+    tags:
+      - '*'
+
   pull_request:
     branches: [main]
+
   workflow_dispatch:
 
 jobs:
