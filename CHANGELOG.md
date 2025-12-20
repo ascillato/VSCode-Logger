@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Migrated documentation system and publishing workflow to Sphinx + Breathe + Mermaid.
+- Prompt user before overwriting existing files during SFTP copy operations instead of failing immediately.
+- Carry source permissions through copies, uploads, downloads, and duplicates for files and directories during SFTP.
 
 ### Deprecated
 - None.
