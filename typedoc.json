@@ -3,6 +3,7 @@
   "entryPointStrategy": "expand",
   "tsconfig": "tsconfig.json",
   "out": "docs/typedoc",
+  "readme": "none",
   "name": "VSCode-Logger API",
   "includeVersion": true,
   "excludePrivate": true,
