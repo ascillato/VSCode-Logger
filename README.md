@@ -207,6 +207,26 @@ make all
 
 ---
 
+### Linter and formatting checks
+
+Install dependencies:
+
+```bash
+npm install --save-dev eslint prettier \
+  @typescript-eslint/parser \
+  @typescript-eslint/eslint-plugin \
+  eslint-config-prettier \
+  eslint-plugin-prettier
+```
+
+Run Checks:
+
+```bash
+make check
+```
+
+---
+
 ## Generating Source Code Documentation
 
 ### Requirements

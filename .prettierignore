@@ -1,0 +1,12 @@
+node_modules/
+out/
+dist/
+.vscode-test/
+.github/
+.vscode/
+docs/
+*.vsix
+*.md
+*.css
+*.json
+*.mjs

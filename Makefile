@@ -1,10 +1,15 @@
 # Makefile for packaging the Extension and building the docs
 
-.PHONY: all clean install help package package-clean docs docs-clean
+.PHONY: all clean install help check package package-clean docs docs-clean
 
 all: clean package docs ## Clean, then build VSIX package and docs
 
 clean: package-clean docs-clean ## Remove all generated files (package + docs)
+
+check: ## Linting and type checking
+	npm install
+	npm run lint
+	npm run format:check
 
 package: ## Install deps, compile, and create the .vsix package
 	npm install
