@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Keep SSH terminals open when connections drop and automatically retry every five seconds with an in-terminal reconnect notice.
 - Add context menu to copy device details.
 - Add `embeddedLogger.defaultEnableWebBrowser` default setting for the per-device web browser action.
+- Add Makefile for packaging and docs generation.
 
 ### Changed
 - Migrated documentation system and publishing workflow to Sphinx + Breathe + Mermaid.

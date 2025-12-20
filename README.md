@@ -132,40 +132,121 @@ All options are available through the VS Code Settings UI under **Embedded Devic
 - See [Source Code](https://github.com/ascillato/VSCode-Logger)
 - **License:** MIT
 
-### Source Code Documentation with Architecture, Diagrams, etc.
+### Source Code Documentation (Architecture, Diagrams, etc.)
 
 - See [Documentation](https://ascillato.github.io/VSCode-Logger/index.html)
 
-### Running The Extension Locally
+---
+
+## Development Workflow
+
+This repository provides a `Makefile` to standardize common developer tasks such as packaging, installation, cleaning, and documentation generation.
+
+Run `make help` to see all available targets.
+
+---
+
+### Running the Extension Locally (Development Mode)
 
 1. Clone the repository
-2. Run `npm install` to install dependencies.
-3. Run `npm run compile` to build the TypeScript.
-4. Press `F5` in VS Code to launch the extension development host and open the **Embedded Logger** view.
+2. Install dependencies and build:
+   ```bash
+   npm install
+   npm run compile
+   ```
+3. Press `F5` in VS Code to launch the Extension Development Host and open the **Embedded Logger** view.
 
-### Package Generation
+---
 
-- Requires: `npm install -g @vscode/vsce`
-- Run: `vsce package` to generate vsix file to be installed into VSCode
-- Install locally on VSCode: `code --install-extension embedded-device-logger-1.3.0.vsix`
+### Package Generation (VSIX)
 
-#### Clean and Re-generate Package
+- Requires:
+  ```bash
+  npm install -g @vscode/vsce
+  ```
 
-- `clear; rm -rf node_modules; rm -rf out; rm *.vsix; npm install; npm run compile; vsce package`
-- `code --install-extension embedded-device-logger-1.3.0.vsix`
+- Generate the VSIX package:
+  ```bash
+  make package
+  ```
 
-### Generating Source Code Documentation
+This will:
+- Install dependencies
+- Compile the extension
+- Generate a `.vsix` file in the repository root
 
-1. Ensure Doxygen is available locally (`sudo apt-get install doxygen`).
-2. Install Python documentation dependencies: `pip install -r docs/requirements.txt`.
-3. From the repository root, run `doxygen Doxyfile` to build the XML output into `docs/xml`.
-4. Build the full site with Sphinx: `sphinx-build -b html docs/source docs/build/html`.
-5. Open `docs/build/html/index.html` locally.
+---
 
-> GitHub Actions automatically runs this pipeline on pushes to `main` with tag and publishes to the `gh-pages` branch.
-> 
-> Visit the published docs at https://ascillato.github.io/VSCode-Logger/.
+### Install Extension Locally in VS Code
 
-#### Clean and Re-generate Documentation
+```bash
+make install
+```
 
-- `clear; rm -rf docs/build; rm -rf docs/html; rm -rf docs/xml; doxygen Doxyfile; sphinx-build -b html docs/source docs/build/html`
+The `install` target automatically:
+- Searches the current directory for the first `.vsix` file
+- Installs it into VS Code using `code --install-extension`
+
+No hard-coded version is required.
+
+---
+
+### Clean and Re-Generate Package
+
+```bash
+make clean
+make package
+make install
+```
+
+Or in one step:
+
+```bash
+make all
+```
+
+---
+
+## Generating Source Code Documentation
+
+### Requirements
+
+- Doxygen
+  ```bash
+  sudo apt-get install doxygen
+  ```
+- Python dependencies
+  ```bash
+  pip install -r docs/requirements.txt
+  ```
+
+### Build Documentation
+
+```bash
+make docs
+```
+
+This will:
+- Run Doxygen to generate XML output
+- Build the full HTML site using Sphinx
+
+Open locally:
+```bash
+docs/build/html/index.html
+```
+
+---
+
+### Clean and Re-Generate Documentation
+
+```bash
+make docs-clean
+make docs
+```
+
+---
+
+> GitHub Actions automatically runs the documentation pipeline on pushes to `main` and publishes the site to the `gh-pages` branch.
+>
+> Published documentation:
+> https://ascillato.github.io/VSCode-Logger/

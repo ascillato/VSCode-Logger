@@ -44,13 +44,11 @@ jobs:
         if: steps.verify.outputs.on_main == 'true'
         run: sudo apt-get update && sudo apt-get install -y doxygen graphviz
 
-      - name: Generate Doxygen XML
+      - name: Build docs via Makefile
         if: steps.verify.outputs.on_main == 'true'
-        run: doxygen Doxyfile
-
-      - name: Build Sphinx HTML
-        if: steps.verify.outputs.on_main == 'true'
-        run: sphinx-build -b html docs/source docs/build/html
+        run: |
+          make docs-clean
+          make docs
 
       - name: Prepare GitHub Pages content
         if: steps.verify.outputs.on_main == 'true'
