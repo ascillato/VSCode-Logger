@@ -40,6 +40,7 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
     private reconnectTimer: NodeJS.Timeout | undefined;
     private isReconnecting = false;
     private reconnectNoticeShown = false;
+    private userRequestedClose = false;
     private lastDimensions: vscode.TerminalDimensions | undefined;
     private readonly passwordManager: PasswordManager;
 
@@ -66,6 +67,9 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
     }
 
     handleInput(data: string): void {
+        if (data === 'exit\r' || data === 'exit\n') {
+            this.userRequestedClose = true;
+        }
         this.shell?.write(data);
     }
 
@@ -121,6 +125,7 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
                     await this.connect(endpoint, authentication, bastion, bastionAuthentication, initialDimensions);
                     this.isReconnecting = false;
                     this.reconnectNoticeShown = false;
+                    this.userRequestedClose = false;
                     return;
                 } catch (err) {
                     lastError = err;
@@ -367,6 +372,11 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
 
     private handleConnectionLost(): void {
         if (this.closed) {
+            return;
+        }
+
+        if (this.userRequestedClose) {
+            this.close();
             return;
         }
 
