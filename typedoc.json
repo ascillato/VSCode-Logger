@@ -1,0 +1,20 @@
+{
+  "entryPoints": ["src/**/*.ts"],
+  "entryPointStrategy": "expand",
+  "tsconfig": "tsconfig.json",
+  "out": "docs/typedoc",
+  "readme": "none",
+  "name": "VSCode-Logger API",
+  "includeVersion": true,
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeInternal": true,
+  "disableSources": false,
+  "skipErrorChecking": true,
+  "blockTags": ["@file", "@brief", "@param", "@returns", "@throws", "@copyright"],
+  "validation": {
+    "invalidLink": false,
+    "notExported": false,
+    "notDocumented": false
+  }
+}

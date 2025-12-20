@@ -20,3 +20,15 @@ table.align-default th {
 .wy-nav-content {
   max-width: 100%;
 }
+
+.typedoc-embed {
+  height: 85vh;
+  min-height: 600px;
+  width: 100%;
+}
+
+.typedoc-embed iframe {
+  border: none;
+  height: 100%;
+  width: 100%;
+}

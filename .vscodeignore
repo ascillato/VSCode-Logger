@@ -11,7 +11,6 @@ coverage/**
 .gitignore
 AGENTS.md
 .github/**
-Doxyfile
 docs/build/**
 docs/html/**
 docs/xml/**

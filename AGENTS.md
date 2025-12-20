@@ -39,7 +39,7 @@ This document provides guidelines for AI agents to make informed, safe and high�
 3. **Launch the extension**: open the repository in VS Code and press `F5` to start a development host.  The **Embedded Logger** and **Embedded Devices** views should appear in the activity bar.
 4. **Configure devices**: in VS Code settings (or via `settings.json`), add entries under `embeddedLogger.devices` as shown in the README.  Each entry can include `id`, `name`, `host`, `port`, `username`, `privateKeyPath`, `password` (only for migrating to secret storage), `logCommand` and `sshCommands` (an array of `{name, command}`).  Do not hard‑code devices in the source.
 5. **Testing**: manually verify that log panels open, logs stream correctly, filtering, search, bookmarks, highlights and presets behave as expected, commands run properly, terminals open and export works.  When adding new features, test with multiple devices and both default and custom `logCommand` values.
-6. **Documentation**: run Doxygen (`doxygen Doxyfile`) from the repository root.  The generated HTML lives at `docs/html/index.html`.  Keep `README.md`, `CONTRIBUTING.md` and this `AGENTS.md` up to date when introducing new behaviour.
+6. **Documentation**: run TypeDoc (`npm run docs:typedoc`) from the repository root.  The generated HTML lives at `docs/typedoc/index.html`.  Keep `README.md`, `CONTRIBUTING.md` and this `AGENTS.md` up to date when introducing new behaviour.
 
 ## Contribution guidelines for AI agents
 

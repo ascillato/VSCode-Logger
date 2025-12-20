@@ -231,9 +231,9 @@ make check
 
 ### Requirements
 
-- Doxygen
+- Node dependencies (for TypeDoc)
   ```bash
-  sudo apt-get install doxygen
+  npm install
   ```
 - Python dependencies
   ```bash
@@ -247,7 +247,7 @@ make docs
 ```
 
 This will:
-- Run Doxygen to generate XML output
+- Run TypeDoc to generate HTML output (triggered by Sphinx during the build)
 - Build the full HTML site using Sphinx
 
 Open locally:

@@ -19,12 +19,12 @@ package: ## Install deps, compile, and create the .vsix package
 package-clean: ## Remove node_modules, build outputs, and generated .vsix
 	rm -rf node_modules out *.vsix
 
-docs: ## Build documentation (Doxygen + Sphinx HTML)
-	doxygen Doxyfile
+docs: ## Build documentation (TypeDoc + Sphinx HTML)
+	npm install
 	sphinx-build -b html docs/source docs/build/html
 
 docs-clean: ## Remove generated documentation outputs
-	rm -rf docs/build docs/html docs/xml
+	rm -rf docs/build docs/html docs/typedoc
 
 install: ## Install the first .vsix found in the current directory
 	@set -e; \

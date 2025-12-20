@@ -1,7 +1,10 @@
 import importlib.util
 import os
+import shutil
+import subprocess
 import sys
 import warnings
+from typing import List, Optional
 from datetime import datetime
 from pathlib import Path
 from sphinx.highlighting import lexers
@@ -21,7 +24,6 @@ copyright = f"{datetime.now().year}, {author}"
 # -- General configuration ---------------------------------------------------
 extensions = [
     "myst_parser",          # Markdown support
-    "breathe",              # Doxygen + Breathe integration
     "sphinxcontrib.mermaid",  # Mermaid diagrams
     "sphinx.ext.ifconfig",  # Conditional content blocks
     'sphinx_rtd_dark_mode'
@@ -60,27 +62,52 @@ myst_fence_as_directive = ["mermaid"]
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
-# -- Options for Breathe/Doxygen --------------------------------------------
-# Doxygen XML is expected under docs/xml (relative to repo root)
-_doxygen_xml = PROJECT_ROOT / "docs" / "xml"
-breathe_projects = {
-    "VSCode-Logger": str(_doxygen_xml),
-}
-breathe_default_project = "VSCode-Logger"
-# Default to the JavaScript domain so TypeScript/JS symbols from Doxygen are
-# not parsed as C++ declarations by Sphinx.
-breathe_default_domain = "js"
-# Route TypeScript and JavaScript entities to the JS domain so Breathe does not
-# try to interpret them as C++ declarations.
-breathe_domain_by_extension = {
-    "ts": "js",
-    "js": "js",
-}
+# -- Options for TypeDoc -----------------------------------------------------
+_typedoc_output = PROJECT_ROOT / "docs" / "typedoc"
+_typedoc_index = _typedoc_output / "index.html"
+_typedoc_config = PROJECT_ROOT / "typedoc.json"
 
-# Expose a flag for the ifconfig directive to avoid hard build failures when
-# Doxygen has not been run locally. The CI workflow generates the XML before
-# building docs, so this mainly helps local preview builds.
-have_doxygen = (_doxygen_xml / "index.xml").exists()
+
+def _typedoc_command() -> Optional[List[str]]:
+    """Return the TypeDoc command to run, or None if not available."""
+
+    local_typedoc = PROJECT_ROOT / "node_modules" / ".bin" / "typedoc"
+    if local_typedoc.exists():
+        return [str(local_typedoc)]
+    if shutil.which("typedoc"):
+        return ["typedoc"]
+    if shutil.which("npx"):
+        return ["npx", "typedoc"]
+    return None
+
+
+def _generate_typedoc() -> bool:
+    """Generate TypeDoc output when possible."""
+
+    if os.environ.get("TYPEDOC_SKIP"):
+        return False
+    if not _typedoc_config.exists():
+        return False
+
+    command = _typedoc_command()
+    if not command:
+        return False
+
+    _typedoc_output.mkdir(parents=True, exist_ok=True)
+    try:
+        subprocess.run(
+            command + ["--options", str(_typedoc_config)],
+            cwd=PROJECT_ROOT,
+            check=False,
+        )
+    except OSError:
+        return False
+    return _typedoc_index.exists()
+
+
+_generate_typedoc()
+have_typedoc = _typedoc_index.exists()
+_typedoc_output.mkdir(parents=True, exist_ok=True)
 
 # Map Mermaid fenced blocks to a no-op lexer to silence warnings about the
 # language not being known to Pygments when rendering code fences.
@@ -93,8 +120,22 @@ def setup(app):
     # ``ifconfig`` directives rely on config values registered with Sphinx.
     # Provide a default and then set the computed value so cached environments
     # from previous builds reload cleanly even when the value is new.
-    app.add_config_value("have_doxygen", False, "env", types=[bool])
-    app.config.have_doxygen = have_doxygen
+    app.add_config_value("have_typedoc", False, "env", types=[bool])
+    app.config.have_typedoc = have_typedoc
+    app.connect("build-finished", _copy_typedoc_output)
+
+
+def _copy_typedoc_output(app, exception):
+    """Copy TypeDoc output into the built HTML tree."""
+
+    if exception or not _typedoc_index.exists():
+        return
+
+    output_dir = Path(app.builder.outdir) / "typedoc"
+    try:
+        shutil.copytree(_typedoc_output, output_dir, dirs_exist_ok=True)
+    except OSError:
+        warnings.warn("Failed to copy TypeDoc output into the Sphinx build.")
 
 # -- Options for HTML output -------------------------------------------------
 html_theme = "sphinx_rtd_theme"

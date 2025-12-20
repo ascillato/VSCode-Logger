@@ -56,12 +56,13 @@ export class LogPanel {
     private resolveWebviewReady?: () => void;
     private disposed = false;
 
-    /**
+     /**
      * @brief Builds a log panel for the given device and prepares event wiring.
      *
      * @param context VS Code extension context used for resources and state.
-     * @param device Device configuration associated with this panel.
+     * @param target Log panel target describing the remote device or local file.
      * @param onDispose Callback invoked when the panel is disposed.
+     * @param initialHighlights Highlight definitions to seed the panel state.
      */
     constructor(
         private readonly context: vscode.ExtensionContext,

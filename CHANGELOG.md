@@ -15,11 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `embeddedLogger.defaultEnableWebBrowser` default setting for the per-device web browser action.
 - Add Makefile for packaging and docs generation.
 - Show waiting status during password prompts.
-- Add PR Build checks.
+- Add CI checks.
 - Add Local Linter checks.
 
 ### Changed
-- Migrated documentation system and publishing workflow to Sphinx + Breathe + Mermaid.
+- Migrated documentation system and publishing workflow to Sphinx + TypeDoc + Mermaid.
 - Prompt user before overwriting existing files during SFTP copy operations instead of failing immediately.
 - Carry source permissions through copies, uploads, downloads, and duplicates for files and directories during SFTP.
 
