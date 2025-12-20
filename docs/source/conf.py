@@ -150,6 +150,11 @@ html_sidebars = {
         "relations.html",
         "searchbox.html",
     ],
+    "api/index.html": [
+        "globaltoc.html",
+        "relations.html",
+        "searchbox.html",
+    ],
 }
 
 # Theme configuration: expanded sidebar navigation and dark theme support.
