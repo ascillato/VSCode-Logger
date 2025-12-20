@@ -7,9 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
-## [UNRELEASED]
+## [1.3.0] - 2025-12-18 [TERMINAL-RECONNECT]
 
 ### Added
+- Keep SSH terminals open when connections drop and automatically retry every five seconds with an in-terminal reconnect notice.
 - Add context menu to copy device details.
 - Add `embeddedLogger.defaultEnableWebBrowser` default setting for the per-device web browser action.
 
@@ -17,28 +18,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Migrated documentation system and publishing workflow to Sphinx + Breathe + Mermaid.
 - Prompt user before overwriting existing files during SFTP copy operations instead of failing immediately.
 - Carry source permissions through copies, uploads, downloads, and duplicates for files and directories during SFTP.
-
-### Deprecated
-- None.
-
-### Removed
-- None.
-
-### Fixed
-- None.
-
-### Security
-- None.
-
-----------------------------------------
-
-## [1.3.0] - 2025-12-18 [TERMINAL-RECONNECT]
-
-### Added
-- Keep SSH terminals open when connections drop and automatically retry every five seconds with an in-terminal reconnect notice.
-
-### Changed
-- None.
 
 ### Deprecated
 - None.
