@@ -144,6 +144,13 @@ html_css_files = ['css/custom.css']
 html_title = "VSCode-Logger Documentation"
 
 html_show_sourcelink = False
+html_sidebars = {
+    "api/index": [
+        "globaltoc.html",
+        "relations.html",
+        "searchbox.html",
+    ],
+}
 
 # Theme configuration: expanded sidebar navigation and dark theme support.
 html_theme_options = {
