@@ -255,8 +255,9 @@ export async function activate(context: vscode.ExtensionContext) {
         let panel: SftpExplorerPanel | undefined;
         try {
             panel = new SftpExplorerPanel(context, device);
-            sftpPanels.add(panel);
-            panel.onDidDispose(() => sftpPanels.delete(panel));
+            const createdPanel = panel;
+            sftpPanels.add(createdPanel);
+            createdPanel.onDidDispose(() => sftpPanels.delete(createdPanel));
             await panel.start();
         } catch (err: any) {
             if (panel) {
