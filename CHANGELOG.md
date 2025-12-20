@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `embeddedLogger.defaultEnableWebBrowser` default setting for the per-device web browser action.
 - Add Makefile for packaging and docs generation.
 - Show waiting status during password prompts.
-- Add PR Build checks.
+- Add CI checks.
 - Add Local Linter checks.
 
 ### Changed
