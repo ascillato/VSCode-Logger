@@ -122,13 +122,26 @@ def setup(app):
     # from previous builds reload cleanly even when the value is new.
     app.add_config_value("have_typedoc", False, "env", types=[bool])
     app.config.have_typedoc = have_typedoc
+    app.connect("build-finished", _copy_typedoc_output)
+
+
+def _copy_typedoc_output(app, exception):
+    """Copy TypeDoc output into the built HTML tree."""
+
+    if exception or not _typedoc_index.exists():
+        return
+
+    output_dir = Path(app.builder.outdir) / "typedoc"
+    try:
+        shutil.copytree(_typedoc_output, output_dir, dirs_exist_ok=True)
+    except OSError:
+        warnings.warn("Failed to copy TypeDoc output into the Sphinx build.")
 
 # -- Options for HTML output -------------------------------------------------
 html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
 html_css_files = ['css/custom.css']
 html_title = "VSCode-Logger Documentation"
-html_extra_path = [str(_typedoc_output)]
 
 html_show_sourcelink = False
 

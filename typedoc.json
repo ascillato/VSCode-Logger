@@ -9,5 +9,11 @@
   "excludeProtected": true,
   "excludeInternal": true,
   "disableSources": false,
-  "skipErrorChecking": true
+  "skipErrorChecking": true,
+  "blockTags": ["@file", "@brief"],
+  "validation": {
+    "invalidLink": false,
+    "notExported": false,
+    "notDocumented": false
+  }
 }
