@@ -16,17 +16,21 @@ MULTILINE_CPP_IS_BRIEF = YES
 CASE_SENSE_NAMES       = YES
 EXTENSION_MAPPING      = ts=JavaScript
 FILE_PATTERNS          = *.ts *.js *.d.ts *.md
-INPUT                  = README.md docs/extension-overview.md CHANGELOG.md CONTRIBUTING.md CODE_OF_CONDUCT.md SECURITY.md src media
+FILTER_PATTERNS        = *.ts=python3\ docs/scripts/ts_doxygen_filter.py
+# Strip TypeScript-specific syntax before parsing to avoid confusing the
+# C++ parser that Breathe uses for XML.
+INPUT                  = src media
 EXCLUDE_PATTERNS       = docs/html/* docs/latex/*
 IMAGE_PATH             = docs/images
 RECURSIVE              = YES
 FULL_PATH_NAMES        = NO
-STRIP_FROM_PATH        = src media README.md CHANGELOG.md CONTRIBUTING.md CODE_OF_CONDUCT.md SECURITY.md
+STRIP_FROM_PATH        = src media
 WARN_IF_UNDOCUMENTED   = YES
 WARN_IF_DOC_ERROR      = YES
 GENERATE_HTML          = YES
 HTML_OUTPUT            = html
 GENERATE_LATEX         = NO
-GENERATE_XML           = NO
+GENERATE_XML           = YES
+XML_OUTPUT             = xml
 USE_MDFILE_AS_MAINPAGE = README.md
 ALIASES                = copyright="@copyright"
