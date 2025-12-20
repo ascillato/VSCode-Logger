@@ -162,7 +162,8 @@ All options are available through the VS Code Settings UI under **Embedded Devic
 4. Build the full site with Sphinx: `sphinx-build -b html docs/source docs/build/html`.
 5. Open `docs/build/html/index.html` locally.
 
-> GitHub Actions automatically runs this pipeline on pushes to `main` with tag and publishes to the `gh-pages` branch.<br>
+> GitHub Actions automatically runs this pipeline on pushes to `main` with tag and publishes to the `gh-pages` branch.
+> 
 > Visit the published docs at https://ascillato.github.io/VSCode-Logger/.
 
 #### Clean and Re-generate Documentation
