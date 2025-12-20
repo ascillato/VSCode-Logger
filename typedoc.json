@@ -1,5 +1,5 @@
 {
-  "entryPoints": ["src/**/*.ts", "media/**/*.js"],
+  "entryPoints": ["src/**/*.ts"],
   "entryPointStrategy": "expand",
   "tsconfig": "tsconfig.json",
   "out": "docs/typedoc",
@@ -9,6 +9,5 @@
   "excludeProtected": true,
   "excludeInternal": true,
   "disableSources": false,
-  "skipErrorChecking": true,
-  "allowJs": true
+  "skipErrorChecking": true
 }
