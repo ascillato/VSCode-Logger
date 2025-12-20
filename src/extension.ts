@@ -17,7 +17,7 @@ import { PasswordManager } from './passwordManager';
 
 // Map of deviceId to existing log panels so multiple clicks reuse tabs.
 const panelMap: Map<string, LogPanel> = new Map();
-const sftpPanelMap: Map<string, SftpExplorerPanel> = new Map();
+const sftpPanels: Set<SftpExplorerPanel> = new Set();
 let activePanel: LogPanel | undefined;
 let sidebarProvider: SidebarViewProvider | undefined;
 let highlights: HighlightDefinition[] = [];
@@ -252,19 +252,16 @@ export async function activate(context: vscode.ExtensionContext) {
             return;
         }
 
-        const existing = sftpPanelMap.get(device.id);
-        if (existing) {
-            existing.reveal();
-            return;
-        }
-
+        let panel: SftpExplorerPanel | undefined;
         try {
-            const panel = new SftpExplorerPanel(context, device);
-            sftpPanelMap.set(device.id, panel);
-            panel.onDidDispose(() => sftpPanelMap.delete(device.id));
+            panel = new SftpExplorerPanel(context, device);
+            sftpPanels.add(panel);
+            panel.onDidDispose(() => sftpPanels.delete(panel));
             await panel.start();
         } catch (err: any) {
-            sftpPanelMap.delete(device.id);
+            if (panel) {
+                sftpPanels.delete(panel);
+            }
             vscode.window.showErrorMessage(err?.message ?? String(err));
         }
     };
@@ -539,8 +536,8 @@ export function deactivate() {
     }
     panelMap.clear();
 
-    for (const explorer of sftpPanelMap.values()) {
+    for (const explorer of sftpPanels.values()) {
         explorer.dispose();
     }
-    sftpPanelMap.clear();
+    sftpPanels.clear();
 }
