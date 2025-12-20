@@ -10,7 +10,7 @@
   "excludeInternal": true,
   "disableSources": false,
   "skipErrorChecking": true,
-  "blockTags": ["@file", "@brief"],
+  "blockTags": ["@file", "@brief", "@param", "@returns", "@copyright"],
   "validation": {
     "invalidLink": false,
     "notExported": false,
