@@ -848,13 +848,32 @@
      */
     function showBookmarkContextMenu(event, entryId) {
         contextMenuEntryId = entryId;
-        bookmarkContextMenu.style.top = `${event.clientY}px`;
-        bookmarkContextMenu.style.left = `${event.clientX}px`;
+        const initialX = event.clientX;
+        const initialY = event.clientY;
+        bookmarkContextMenu.style.top = `${initialY}px`;
+        bookmarkContextMenu.style.left = `${initialX}px`;
         const selection = window.getSelection();
         const selectedText = selection && !selection.isCollapsed ? selection.toString() : '';
         updateBookmarkContextMenuOptions(selectedText);
         updateBookmarkMenuState(entryId);
         bookmarkContextMenu.classList.remove('hidden');
+
+        const menuRect = bookmarkContextMenu.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        const padding = 8;
+        let adjustedX = initialX;
+        let adjustedY = initialY;
+
+        if (menuRect.right > viewportWidth - padding) {
+            adjustedX = Math.max(padding, viewportWidth - menuRect.width - padding);
+        }
+        if (menuRect.bottom > viewportHeight - padding) {
+            adjustedY = Math.max(padding, viewportHeight - menuRect.height - padding);
+        }
+
+        bookmarkContextMenu.style.left = `${adjustedX}px`;
+        bookmarkContextMenu.style.top = `${adjustedY}px`;
     }
 
     /**
