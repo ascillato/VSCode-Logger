@@ -37,6 +37,12 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
     private bastionClient: Client | undefined;
     private shell: ClientChannel | undefined;
     private closed = false;
+    private reconnectTimer: NodeJS.Timeout | undefined;
+    private isReconnecting = false;
+    private reconnectNoticeShown = false;
+    private userRequestedClose = false;
+    private inputBuffer = '';
+    private lastDimensions: vscode.TerminalDimensions | undefined;
     private readonly passwordManager: PasswordManager;
 
     constructor(
@@ -48,20 +54,28 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
     }
 
     open(initialDimensions?: vscode.TerminalDimensions): void {
+        this.lastDimensions = initialDimensions ?? this.lastDimensions;
         void this.start(initialDimensions);
     }
 
     close(): void {
         if (!this.closed) {
             this.closed = true;
+            this.clearReconnectTimer();
+            this.disposeClients();
             this.closeEmitter.fire();
         }
-        this.shell?.end();
-        this.client?.end();
-        this.bastionClient?.end();
     }
 
     handleInput(data: string): void {
+        this.inputBuffer += data;
+        if (data.includes('\r') || data.includes('\n')) {
+            const trimmed = this.inputBuffer.trim();
+            if (trimmed === 'exit') {
+                this.userRequestedClose = true;
+            }
+            this.inputBuffer = '';
+        }
         this.shell?.write(data);
     }
 
@@ -69,6 +83,7 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
         if (this.shell) {
             this.shell.setWindow(dimensions.rows, dimensions.columns, dimensions.rows, dimensions.columns);
         }
+        this.lastDimensions = dimensions;
     }
 
     private async start(initialDimensions?: vscode.TerminalDimensions): Promise<void> {
@@ -114,6 +129,9 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
                 const endpoint = endpoints[endpointIndex];
                 try {
                     await this.connect(endpoint, authentication, bastion, bastionAuthentication, initialDimensions);
+                    this.isReconnecting = false;
+                    this.reconnectNoticeShown = false;
+                    this.userRequestedClose = false;
                     return;
                 } catch (err) {
                     lastError = err;
@@ -131,6 +149,15 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
             throw lastError ?? new Error('Failed to open SSH terminal.');
         } catch (err: any) {
             const message = err?.message ?? String(err);
+            if (this.isReconnecting) {
+                this.scheduleReconnect();
+                return;
+            }
+
+            if (this.closed) {
+                return;
+            }
+
             this.writeEmitter.fire(`Connection error: ${message}\r\n`);
             vscode.window.showErrorMessage(message);
             this.close();
@@ -272,9 +299,7 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
                     reject(new Error(`SSH error: ${err.message}`));
                 })
                 .on('close', () => {
-                    if (!this.closed) {
-                        this.writeEmitter.fire('Bastion connection closed.\r\n');
-                    }
+                    this.handleConnectionLost();
                 })
                 .connect({
                     host: bastion.host,
@@ -325,7 +350,7 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
                                 this.writeEmitter.fire(data.toString().replace(/\n/g, '\r\n'));
                             })
                             .on('close', () => {
-                                this.close();
+                                this.handleConnectionLost();
                             });
 
                         stream.stderr.on('data', (data: Buffer) => {
@@ -339,7 +364,7 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
                     reject(new Error(`SSH error: ${err.message}`));
                 })
                 .on('close', () => {
-                    this.close();
+                    this.handleConnectionLost();
                 })
                 .connect({
                     host,
@@ -349,6 +374,70 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
                     ...authentication,
                 } as SocketConnectConfig);
         });
+    }
+
+    private handleConnectionLost(): void {
+        if (this.closed) {
+            return;
+        }
+
+        if (this.userRequestedClose) {
+            this.close();
+            return;
+        }
+
+        if (this.isReconnecting) {
+            return;
+        }
+
+        this.disposeClients();
+        this.isReconnecting = true;
+        this.reconnectNoticeShown = false;
+        this.scheduleReconnect();
+    }
+
+    private scheduleReconnect(): void {
+        if (this.closed || this.reconnectTimer) {
+            return;
+        }
+
+        if (!this.reconnectNoticeShown) {
+            const timestamp = new Date().toLocaleString();
+            const message = `\r\n\r\n\u001b[1m\u001b[41mSSH Connection lost at ${timestamp}. Retrying in 5 seconds...\u001b[0m\r\n\r\n`;
+            this.writeEmitter.fire(message);
+            this.reconnectNoticeShown = true;
+        }
+
+        this.reconnectTimer = setTimeout(() => {
+            this.reconnectTimer = undefined;
+            if (this.closed) {
+                return;
+            }
+            void this.start(this.lastDimensions);
+        }, 5000);
+    }
+
+    private disposeClients(): void {
+        this.shell?.removeAllListeners();
+        this.shell?.end();
+        this.shell = undefined;
+
+        this.client?.removeAllListeners();
+        this.client?.end();
+        this.client = undefined;
+
+        this.bastionClient?.removeAllListeners();
+        this.bastionClient?.end();
+        this.bastionClient = undefined;
+
+        this.clearReconnectTimer();
+    }
+
+    private clearReconnectTimer(): void {
+        if (this.reconnectTimer) {
+            clearTimeout(this.reconnectTimer);
+            this.reconnectTimer = undefined;
+        }
     }
 
     private async loadPrivateKey(filePath: string): Promise<Buffer> {

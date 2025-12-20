@@ -7,9 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
-## [UNRELEASED]
+## [1.3.0] - 2025-12-18 [TERMINAL-RECONNECT]
 
 ### Added
+- Keep SSH terminals open when connections drop and automatically retry every five seconds with an in-terminal reconnect notice.
 - Add context menu to copy device details.
 - Add `embeddedLogger.defaultEnableWebBrowser` default setting for the per-device web browser action.
 
