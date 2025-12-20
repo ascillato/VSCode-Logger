@@ -11,13 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Keep SSH terminals open when connections drop and automatically retry every five seconds with an in-terminal reconnect notice.
-- Add context menu to copy device details.
+- Allow multiple SFTP instances.
+- Add context menu to copy device details on devices view.
 - Add `embeddedLogger.defaultEnableWebBrowser` default setting for the per-device web browser action.
 - Add Makefile for packaging and docs generation.
 - Show waiting status during password prompts.
 - Add CI checks.
 - Add Local Linter checks.
-- Allow multiple SFTP instances.
 
 ### Changed
 - Migrated documentation system and publishing workflow to Sphinx + TypeDoc + Mermaid.
