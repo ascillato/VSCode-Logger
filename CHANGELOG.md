@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Show waiting status during password prompts.
 - Add CI checks.
 - Add Local Linter checks.
+- Allow multiple SFTP instances.
 
 ### Changed
 - Migrated documentation system and publishing workflow to Sphinx + TypeDoc + Mermaid.
