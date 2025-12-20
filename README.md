@@ -1,6 +1,6 @@
 # Embedded Device Logger
 
-A Visual Studio Code extension that connects to embedded Linux devices over SSH, tails their logs, and displays them with loglevel colorization, filtering presets, custom keywords highlighting and filtered export.
+Embedded Device Logger is a Visual Studio Code extension that connects to embedded Linux devices over SSH, tails their logs, and displays them with loglevel colorization, filtering presets, custom keywords highlighting and filtered export.
 
 ![Screenshot1](docs/images/screenshot_example1.png)
 
