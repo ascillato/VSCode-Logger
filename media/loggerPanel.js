@@ -1005,6 +1005,22 @@
             return;
         }
 
+        const isWaitingForPassword = (text) => text === 'Waiting for the user to enter the password…';
+
+        const appendStatusText = (container, text) => {
+            if (!text) {
+                return;
+            }
+            if (isWaitingForPassword(text)) {
+                const span = document.createElement('span');
+                span.classList.add('status-waiting');
+                span.textContent = text;
+                container.appendChild(span);
+            } else {
+                container.appendChild(document.createTextNode(text));
+            }
+        };
+
         const lines = [];
         if (state.statusText) {
             lines.push({ text: state.statusText });
@@ -1028,17 +1044,17 @@
 
             if (line.fileName) {
                 if (trimmedText) {
-                    const textNode = document.createTextNode(trimmedText.endsWith(' ')
+                    const textValue = trimmedText.endsWith(' ')
                         ? trimmedText
-                        : `${trimmedText} `);
-                    statusEl.appendChild(textNode);
+                        : `${trimmedText} `;
+                    appendStatusText(statusEl, textValue);
                 }
 
                 const strong = document.createElement('strong');
                 strong.textContent = line.fileName;
                 statusEl.appendChild(strong);
             } else if (trimmedText) {
-                statusEl.appendChild(document.createTextNode(trimmedText));
+                appendStatusText(statusEl, trimmedText);
             }
         }
     }

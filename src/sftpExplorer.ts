@@ -2026,11 +2026,15 @@ export class SftpExplorerPanel {
         const privateKeyPath = this.device.privateKeyPath?.trim();
         if (privateKeyPath) {
             const privateKey = await this.loadPrivateKey(privateKeyPath);
-            const passphrase = await this.passwordManager.getPassphrase(this.device);
+            const passphrase = await this.passwordManager.getPassphrase(this.device, {
+                onPrompt: () => this.updateConnectionStatus('reconnecting', undefined, 'Waiting for the user to enter the password…'),
+            });
             return { privateKey, passphrase: passphrase || undefined };
         }
 
-        const password = await this.passwordManager.getPassword(this.device);
+        const password = await this.passwordManager.getPassword(this.device, {
+            onPrompt: () => this.updateConnectionStatus('reconnecting', undefined, 'Waiting for the user to enter the password…'),
+        });
         if (!password) {
             throw new Error('Password or private key is required to connect to the device.');
         }
@@ -2060,12 +2064,16 @@ export class SftpExplorerPanel {
         if (bastion.privateKeyPath) {
             const privateKey = await this.loadPrivateKey(bastion.privateKeyPath);
             const bastionDevice = this.getBastionDevice(bastion);
-            const passphrase = await this.passwordManager.getPassphrase(bastionDevice);
+            const passphrase = await this.passwordManager.getPassphrase(bastionDevice, {
+                onPrompt: () => this.updateConnectionStatus('reconnecting', undefined, 'Waiting for the user to enter the password…'),
+            });
             return { privateKey, passphrase: passphrase || undefined };
         }
 
         const bastionDevice = this.getBastionDevice(bastion);
-        const password = await this.passwordManager.getPassword(bastionDevice);
+        const password = await this.passwordManager.getPassword(bastionDevice, {
+            onPrompt: () => this.updateConnectionStatus('reconnecting', undefined, 'Waiting for the user to enter the password…'),
+        });
         if (!password) {
             throw new Error('Password or private key is required to connect to the bastion host.');
         }
