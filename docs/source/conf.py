@@ -24,6 +24,7 @@ extensions = [
     "breathe",              # Doxygen + Breathe integration
     "sphinxcontrib.mermaid",  # Mermaid diagrams
     "sphinx.ext.ifconfig",  # Conditional content blocks
+    'sphinx_rtd_dark_mode'
 ]
 
 # generate slug anchors for headings up to this depth
@@ -96,21 +97,22 @@ def setup(app):
     app.config.have_doxygen = have_doxygen
 
 # -- Options for HTML output -------------------------------------------------
-html_theme = "sphinx_book_theme"
+html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
+html_css_files = ['css/custom.css']
 html_title = "VSCode-Logger Documentation"
+
+html_show_sourcelink = False
 
 # Theme configuration: expanded sidebar navigation and dark theme support.
 html_theme_options = {
     "collapse_navigation": False,
     "navigation_depth": 4,
-    "show_navbar_depth": 3,
-    "show_toc_level": 2,
-    "use_download_button": False,
-    "use_edit_page_button": False,
-    "use_issues_button": False,
-    "use_repository_button": False,
+    "body_max_width": "100%",
 }
+
+# user starts in dark mode
+default_dark_mode = True
 
 # Ensure syntax highlighting adapts to the user's theme.
 pygments_style = "sphinx"
