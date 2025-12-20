@@ -215,6 +215,8 @@ export class SftpExplorerPanel {
     private readonly localHome: string;
     private readonly disposables: vscode.Disposable[] = [];
     private readonly onDidDisposeEmitter = new vscode.EventEmitter<void>();
+    private readonly webviewReady: Promise<void>;
+    private resolveWebviewReady?: () => void;
 
     private client?: ClientWithSftp;
     private bastionClient?: Client;
@@ -260,6 +262,10 @@ export class SftpExplorerPanel {
             void this.handleMessage(message);
         });
 
+        this.webviewReady = new Promise((resolve) => {
+            this.resolveWebviewReady = resolve;
+        });
+
         this.disposables.push(
             vscode.workspace.onDidSaveTextDocument((doc) => {
                 void this.handleTempFileSave(doc);
@@ -271,6 +277,7 @@ export class SftpExplorerPanel {
     }
 
     async start(): Promise<void> {
+        await this.webviewReady;
         await this.postInitialState();
     }
 
@@ -304,7 +311,10 @@ export class SftpExplorerPanel {
         try {
             switch (message.type) {
                 case 'requestInit':
-                    await this.postInitialState();
+                    if (this.resolveWebviewReady) {
+                        this.resolveWebviewReady();
+                        this.resolveWebviewReady = undefined;
+                    }
                     break;
                 case 'listEntries':
                     await this.listAndPost(

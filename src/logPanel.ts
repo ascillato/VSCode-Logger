@@ -52,6 +52,8 @@ export class LogPanel {
     private readonly maxLogEntries: number;
     private autoSaveStream?: fs.WriteStream;
     private autoSavePath?: string;
+    private readonly webviewReady: Promise<void>;
+    private resolveWebviewReady?: () => void;
     private disposed = false;
 
     /**
@@ -108,12 +110,20 @@ export class LogPanel {
             this.session = this.createSession();
         }
 
+        this.webviewReady = new Promise((resolve) => {
+            this.resolveWebviewReady = resolve;
+        });
+
         this.panel.webview.onDidReceiveMessage(async (message) => {
             if (!message || typeof message.type !== 'string') {
                 return;
             }
             switch (message.type) {
                 case 'ready': {
+                    if (this.resolveWebviewReady) {
+                        this.resolveWebviewReady();
+                        this.resolveWebviewReady = undefined;
+                    }
                     await this.sendInitialData();
                     break;
                 }
@@ -186,6 +196,7 @@ export class LogPanel {
      * @brief Starts the underlying log session.
      */
     async start() {
+        await this.webviewReady;
         if (this.session) {
             await this.session.start();
             return;
