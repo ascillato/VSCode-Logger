@@ -1,0 +1,14 @@
+{
+  "entryPoints": ["src/**/*.ts", "media/**/*.js"],
+  "entryPointStrategy": "expand",
+  "tsconfig": "tsconfig.json",
+  "out": "docs/typedoc",
+  "name": "VSCode-Logger API",
+  "includeVersion": true,
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeInternal": true,
+  "disableSources": false,
+  "skipErrorChecking": true,
+  "allowJs": true
+}

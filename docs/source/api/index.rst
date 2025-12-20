@@ -1,71 +1,20 @@
 API Reference
 =============
 
-.. ifconfig:: have_doxygen
+.. ifconfig:: have_typedoc
 
-   .. doxygenfile:: configuration.ts
-      :project: VSCode-Logger
-      :sections: all
+   .. raw:: html
 
-   .. doxygenfile:: deviceTree.ts
-      :project: VSCode-Logger
-      :sections: all
+      <div class="typedoc-embed">
+        <iframe src="../typedoc/index.html" title="VSCode-Logger API reference"></iframe>
+      </div>
 
-   .. doxygenfile:: extension.ts
-      :project: VSCode-Logger
-      :sections: all
+   `Open the TypeDoc API reference in a new tab <../typedoc/index.html>`_.
 
-   .. doxygenfile:: hostEndpoints.ts
-      :project: VSCode-Logger
-      :sections: all
-
-   .. doxygenfile:: logPanel.ts
-      :project: VSCode-Logger
-      :sections: all
-
-   .. doxygenfile:: logSession.ts
-      :project: VSCode-Logger
-      :sections: all
-
-   .. doxygenfile:: passwordManager.ts
-      :project: VSCode-Logger
-      :sections: all
-
-   .. doxygenfile:: sshCommandRunner.ts
-      :project: VSCode-Logger
-      :sections: all
-
-   .. doxygenfile:: sshTerminal.ts
-      :project: VSCode-Logger
-      :sections: all
-
-   .. doxygenfile:: ssh2.d.ts
-      :project: VSCode-Logger
-      :sections: all
-
-   .. doxygenfile:: loggerPanel.js
-      :project: VSCode-Logger
-      :sections: all
-
-   .. doxygenfile:: sidebarView.js
-      :project: VSCode-Logger
-      :sections: all
-
-   .. doxygenfile:: sftpExplorer.js
-      :project: VSCode-Logger
-      :sections: all
-
-   .. doxygenfile:: sftpExplorer.ts
-      :project: VSCode-Logger
-      :sections: all
-
-   .. doxygenfile:: sidebarView.ts
-      :project: VSCode-Logger
-      :sections: all
-
-.. ifconfig:: not have_doxygen
+.. ifconfig:: not have_typedoc
 
    .. note::
 
-      Doxygen XML was not found at ``docs/xml``. Run ``doxygen Doxyfile``
-      before building the docs to generate the API reference.
+      TypeDoc output was not found at ``docs/typedoc``. Run
+      ``npm run docs:typedoc`` (or ensure Sphinx can run TypeDoc) before
+      building the docs to generate the API reference.
