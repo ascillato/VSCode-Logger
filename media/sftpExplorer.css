@@ -46,6 +46,10 @@ body {
     text-align: right;
 }
 
+.status--waiting {
+    color: var(--vscode-notificationsWarningIcon-foreground, #cca700);
+}
+
 .status--error {
     color: var(--vscode-errorForeground);
 }

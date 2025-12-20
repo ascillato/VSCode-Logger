@@ -51,12 +51,12 @@ const SECRET_CONFIG: Record<SecretKind, SecretConfig> = {
 export class PasswordManager {
     constructor(private readonly context: vscode.ExtensionContext) {}
 
-    async getPassword(device: EmbeddedDevice): Promise<string | undefined> {
-        return this.getSecret('password', device);
+    async getPassword(device: EmbeddedDevice, options?: { onPrompt?: () => void }): Promise<string | undefined> {
+        return this.getSecret('password', device, options);
     }
 
-    async getPassphrase(device: EmbeddedDevice): Promise<string | undefined> {
-        return this.getSecret('passphrase', device);
+    async getPassphrase(device: EmbeddedDevice, options?: { onPrompt?: () => void }): Promise<string | undefined> {
+        return this.getSecret('passphrase', device, options);
     }
 
     async storePassword(device: EmbeddedDevice, password: string): Promise<void> {
@@ -67,7 +67,11 @@ export class PasswordManager {
         await this.storeSecret('passphrase', device, passphrase);
     }
 
-    private async getSecret(kind: SecretKind, device: EmbeddedDevice): Promise<string | undefined> {
+    private async getSecret(
+        kind: SecretKind,
+        device: EmbeddedDevice,
+        options?: { onPrompt?: () => void }
+    ): Promise<string | undefined> {
         const host = device.host.trim();
         const username = device.username.trim();
         const workspaceScope = this.getWorkspaceScope();
@@ -91,6 +95,7 @@ export class PasswordManager {
             return migrated;
         }
 
+        options?.onPrompt?.();
         const input = await vscode.window.showInputBox({
             prompt: config.promptLabel(device),
             password: true,

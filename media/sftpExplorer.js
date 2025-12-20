@@ -111,6 +111,10 @@
     function setStatus(message, isError = false) {
         elements.status.textContent = message || '';
         elements.status.classList.toggle('status--error', Boolean(isError));
+        elements.status.classList.toggle(
+            'status--waiting',
+            message === 'Waiting for the user to enter the password…' && !isError
+        );
     }
 
     function resetStatus() {

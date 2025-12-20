@@ -215,6 +215,8 @@ export class SftpExplorerPanel {
     private readonly localHome: string;
     private readonly disposables: vscode.Disposable[] = [];
     private readonly onDidDisposeEmitter = new vscode.EventEmitter<void>();
+    private readonly webviewReady: Promise<void>;
+    private resolveWebviewReady?: () => void;
 
     private client?: ClientWithSftp;
     private bastionClient?: Client;
@@ -260,6 +262,10 @@ export class SftpExplorerPanel {
             void this.handleMessage(message);
         });
 
+        this.webviewReady = new Promise((resolve) => {
+            this.resolveWebviewReady = resolve;
+        });
+
         this.disposables.push(
             vscode.workspace.onDidSaveTextDocument((doc) => {
                 void this.handleTempFileSave(doc);
@@ -271,6 +277,7 @@ export class SftpExplorerPanel {
     }
 
     async start(): Promise<void> {
+        await this.webviewReady;
         await this.postInitialState();
     }
 
@@ -304,7 +311,10 @@ export class SftpExplorerPanel {
         try {
             switch (message.type) {
                 case 'requestInit':
-                    await this.postInitialState();
+                    if (this.resolveWebviewReady) {
+                        this.resolveWebviewReady();
+                        this.resolveWebviewReady = undefined;
+                    }
                     break;
                 case 'listEntries':
                     await this.listAndPost(
@@ -2026,11 +2036,15 @@ export class SftpExplorerPanel {
         const privateKeyPath = this.device.privateKeyPath?.trim();
         if (privateKeyPath) {
             const privateKey = await this.loadPrivateKey(privateKeyPath);
-            const passphrase = await this.passwordManager.getPassphrase(this.device);
+            const passphrase = await this.passwordManager.getPassphrase(this.device, {
+                onPrompt: () => this.updateConnectionStatus('reconnecting', undefined, 'Waiting for the user to enter the password…'),
+            });
             return { privateKey, passphrase: passphrase || undefined };
         }
 
-        const password = await this.passwordManager.getPassword(this.device);
+        const password = await this.passwordManager.getPassword(this.device, {
+            onPrompt: () => this.updateConnectionStatus('reconnecting', undefined, 'Waiting for the user to enter the password…'),
+        });
         if (!password) {
             throw new Error('Password or private key is required to connect to the device.');
         }
@@ -2060,12 +2074,16 @@ export class SftpExplorerPanel {
         if (bastion.privateKeyPath) {
             const privateKey = await this.loadPrivateKey(bastion.privateKeyPath);
             const bastionDevice = this.getBastionDevice(bastion);
-            const passphrase = await this.passwordManager.getPassphrase(bastionDevice);
+            const passphrase = await this.passwordManager.getPassphrase(bastionDevice, {
+                onPrompt: () => this.updateConnectionStatus('reconnecting', undefined, 'Waiting for the user to enter the password…'),
+            });
             return { privateKey, passphrase: passphrase || undefined };
         }
 
         const bastionDevice = this.getBastionDevice(bastion);
-        const password = await this.passwordManager.getPassword(bastionDevice);
+        const password = await this.passwordManager.getPassword(bastionDevice, {
+            onPrompt: () => this.updateConnectionStatus('reconnecting', undefined, 'Waiting for the user to enter the password…'),
+        });
         if (!password) {
             throw new Error('Password or private key is required to connect to the bastion host.');
         }
