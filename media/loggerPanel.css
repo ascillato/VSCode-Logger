@@ -72,6 +72,116 @@ body {
     min-width: 220px;
 }
 
+.highlight-popover {
+    position: fixed;
+    top: 72px;
+    right: 16px;
+    background: var(--vscode-editorWidget-background);
+    color: var(--vscode-editorWidget-foreground);
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 6px;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3);
+    padding: 8px;
+    width: min(360px, calc(100vw - 32px));
+    max-height: 320px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 20;
+}
+
+.highlight-popover.hidden {
+    display: none;
+}
+
+.highlight-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+}
+
+.highlight-backdrop.hidden {
+    display: none;
+}
+
+.highlight-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.highlight-title {
+    font-weight: 600;
+}
+
+.highlight-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.highlight-actions button {
+    padding: 4px 8px;
+}
+
+.highlight-status {
+    font-size: 12px;
+    color: var(--vscode-descriptionForeground);
+    min-height: 14px;
+}
+
+.highlight-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.highlight-row {
+    display: grid;
+    grid-template-columns: 16px 1fr 28px;
+    gap: 6px;
+    align-items: center;
+}
+
+.color-swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    border: 1px solid transparent;
+}
+
+.highlight-input {
+    width: 100%;
+    padding: 4px 6px;
+    border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
+    border-radius: 3px;
+    background: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+}
+
+.highlight-input:focus {
+    outline: 1px solid var(--vscode-focusBorder);
+    border-color: var(--vscode-focusBorder);
+}
+
+.highlight-remove {
+    height: 24px;
+    width: 24px;
+    border-radius: 4px;
+    border: 1px solid var(--vscode-button-border, transparent);
+    background: var(--vscode-button-secondaryBackground);
+    color: var(--vscode-button-secondaryForeground);
+    cursor: pointer;
+}
+
+.highlight-remove:hover {
+    background: var(--vscode-button-secondaryHoverBackground);
+}
+
 #logContainer {
     border: 1px solid var(--vscode-editorWidget-border);
     overflow-y: auto;

@@ -1,36 +1,15 @@
 /**
  * @file sidebarView.ts
- * @brief Provides the activity view that lists devices and manages highlight keys.
+ * @brief Provides the activity view that lists devices.
  */
 
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { EmbeddedDevice } from './deviceTree';
 
-export interface HighlightDefinition {
-    id: number;
-    key: string;
-    baseColor: string;
-    color: string;
-    backgroundColor: string;
-}
-
 interface SidebarMessage {
     type: 'openDevice';
     deviceId: string;
-}
-
-interface HighlightUpdateMessage {
-    type: 'highlightsChanged';
-    highlights: HighlightDefinition[];
-}
-
-interface AddRowRequest {
-    type: 'addRow';
-}
-
-interface RequestFocus {
-    type: 'requestFocus';
 }
 
 interface RequestInitPayload {
@@ -73,9 +52,6 @@ interface CopyDeviceUrlMessage {
 
 type IncomingMessage =
     | SidebarMessage
-    | HighlightUpdateMessage
-    | AddRowRequest
-    | RequestFocus
     | RequestInitPayload
     | RunDeviceCommandMessage
     | OpenSshTerminalMessage
@@ -86,14 +62,11 @@ type IncomingMessage =
 
 export class SidebarViewProvider implements vscode.WebviewViewProvider {
     private view?: vscode.WebviewView;
-    private pendingAdd = false;
 
     constructor(
         private readonly context: vscode.ExtensionContext,
         private readonly getDevices: () => EmbeddedDevice[],
         private readonly onOpenDevice: (deviceId: string) => void,
-        private readonly onHighlightsChanged: (highlights: HighlightDefinition[]) => void,
-        private readonly getHighlights: () => HighlightDefinition[],
         private readonly onRunDeviceCommand: (deviceId: string, commandName: string, command: string) => void,
         private readonly onOpenSshTerminal: (deviceId: string) => void,
         private readonly onOpenSftpExplorer: (deviceId: string) => void,
@@ -117,17 +90,8 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
                 case 'openDevice':
                     this.onOpenDevice(message.deviceId);
                     break;
-                case 'highlightsChanged':
-                    this.onHighlightsChanged(message.highlights || []);
-                    break;
-                case 'requestFocus':
-                    vscode.commands.executeCommand('embeddedLogger.devicesView.focus');
-                    break;
                 case 'requestInit':
                     this.postInitialPayload();
-                    break;
-                case 'addRow':
-                    this.addHighlightRow();
                     break;
                 case 'runDeviceCommand':
                     this.onRunDeviceCommand(message.deviceId, message.commandName, message.command);
@@ -153,21 +117,6 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
         this.postInitialPayload();
     }
 
-    addHighlightRow() {
-        if (!this.view) {
-            this.pendingAdd = true;
-            vscode.commands.executeCommand('embeddedLogger.devicesView.focus');
-            return;
-        }
-
-        if (this.pendingAdd) {
-            this.pendingAdd = false;
-        }
-
-        this.view.show?.(true);
-        this.view.webview.postMessage({ type: 'addHighlightRow' });
-    }
-
     refreshDevices() {
         if (!this.view) {
             return;
@@ -175,22 +124,11 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
         this.view.webview.postMessage({ type: 'devicesUpdated', devices: this.getDevicesForWebview() });
     }
 
-    syncHighlights() {
-        if (!this.view) {
-            return;
-        }
-        this.view.webview.postMessage({ type: 'applyHighlights', highlights: this.getHighlights() });
-    }
-
     private postInitialPayload() {
         if (!this.view) {
             return;
         }
         this.view.webview.postMessage({ type: 'initDevices', devices: this.getDevicesForWebview() });
-        this.view.webview.postMessage({ type: 'applyHighlights', highlights: this.getHighlights() });
-        if (this.pendingAdd) {
-            this.addHighlightRow();
-        }
     }
 
     private getDevicesForWebview(): EmbeddedDevice[] {
@@ -223,7 +161,6 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
     <title>Embedded Logger Devices</title>
 </head>
 <body>
-    <div id="highlightRows" class="highlight-rows"></div>
     <div class="device-list" id="deviceList"></div>
     <div id="sidebarStatus" class="sidebar-status"></div>
     <script nonce="${nonce}" src="${scriptUri}"></script>

@@ -3,7 +3,7 @@
   "displayName": "Embedded Device Logger",
   "description": "Stream and filter embedded Linux device logs over SSH inside VS Code.",
   "icon": "media/icon.png",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "publisher": "Scallant",
   "author": "A. Scillato",
   "engines": {
@@ -310,11 +310,6 @@
     ],
     "commands": [
       {
-        "command": "embeddedLogger.addHighlightRow",
-        "title": "Highlight a Key in Logs",
-        "icon": "$(search)"
-      },
-      {
         "command": "embeddedLogger.openLocalLogFile",
         "title": "Open Local Log File",
         "icon": "$(file-text)"
@@ -344,11 +339,6 @@
     ],
     "menus": {
       "view/title": [
-        {
-          "command": "embeddedLogger.addHighlightRow",
-          "when": "view == embeddedLogger.devicesView",
-          "group": "navigation@0"
-        },
         {
           "command": "embeddedLogger.openLocalLogFile",
           "when": "view == embeddedLogger.devicesView",

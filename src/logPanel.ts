@@ -9,7 +9,7 @@ import { EmbeddedDevice } from './deviceTree';
 import { LogSession } from './logSession';
 import * as fs from 'fs';
 import * as path from 'path';
-import { HighlightDefinition } from './sidebarView';
+import { HighlightDefinition } from './highlights';
 import { getEmbeddedLoggerConfiguration } from './configuration';
 
 /**
@@ -43,6 +43,7 @@ export class LogPanel {
     private readonly panel: vscode.WebviewPanel;
     private session?: LogSession;
     private readonly presetsKey: string;
+    private readonly highlightsKey: string;
     private readonly targetName: string;
     private readonly targetId: string;
     private readonly initialLines: string[] = [];
@@ -56,19 +57,17 @@ export class LogPanel {
     private resolveWebviewReady?: () => void;
     private disposed = false;
 
-     /**
+    /**
      * @brief Builds a log panel for the given device and prepares event wiring.
      *
      * @param context VS Code extension context used for resources and state.
      * @param target Log panel target describing the remote device or local file.
      * @param onDispose Callback invoked when the panel is disposed.
-     * @param initialHighlights Highlight definitions to seed the panel state.
      */
     constructor(
         private readonly context: vscode.ExtensionContext,
         target: LogPanelTarget,
-        private readonly onDispose: () => void,
-        initialHighlights: HighlightDefinition[] = []
+        private readonly onDispose: () => void
     ) {
         if (target.type === 'remote') {
             this.device = target.device;
@@ -82,7 +81,8 @@ export class LogPanel {
         }
 
         this.presetsKey = `embeddedLogger.presets.${this.targetId}`;
-        this.highlights = initialHighlights;
+        this.highlightsKey = `embeddedLogger.highlights.${this.targetId}`;
+        this.highlights = this.getStoredHighlights();
         this.maxLogEntries = getEmbeddedLoggerConfiguration().maxLinesPerTab;
 
         this.panel = vscode.window.createWebviewPanel(
@@ -161,6 +161,14 @@ export class LogPanel {
                         return;
                     }
                     await this.exportLogs(message.lines);
+                    break;
+                }
+                case 'highlightsChanged': {
+                    if (!this.isValidHighlightPayload(message.highlights)) {
+                        vscode.window.showErrorMessage('Invalid highlight payload received from webview.');
+                        return;
+                    }
+                    await this.saveHighlights(message.highlights);
                     break;
                 }
                 case 'openSourceFile': {
@@ -321,15 +329,6 @@ export class LogPanel {
             message: 'Disconnected.',
             closedAt,
         });
-    }
-
-    /**
-     * @brief Pushes highlight definitions to the webview for rendering.
-     * @param values Highlight entries sourced from the sidebar view.
-     */
-    updateHighlights(values: HighlightDefinition[]) {
-        this.highlights = values;
-        this.panel.webview.postMessage({ type: 'highlightsUpdated', highlights: this.highlights });
     }
 
     /**
@@ -561,6 +560,9 @@ export class LogPanel {
             <span>Auto-Reconnect</span>
             <input type="checkbox" id="autoReconnectToggle" checked />
         </label>
+        <label>&nbsp;
+            <button id="highlightToggle">Highlight</button>
+        </label>
         <div class="search-bar">
             <label>Find
                 <input type="text" id="searchInput" placeholder="Find in logs (Ctrl/Cmd+F)" />
@@ -578,6 +580,18 @@ export class LogPanel {
             <button id="reconnectButton" class="status-action" hidden>Reconnect</button>
         </div>
     </div>
+    <div id="highlightPopover" class="highlight-popover hidden" role="dialog" aria-label="Highlight keywords">
+        <div class="highlight-header">
+            <span class="highlight-title">Highlights</span>
+            <div class="highlight-actions">
+                <button id="highlightAdd">add</button>
+                <button id="highlightClear">remove all</button>
+            </div>
+        </div>
+        <div id="highlightStatus" class="highlight-status"></div>
+        <div id="highlightRows" class="highlight-rows"></div>
+    </div>
+    <div id="highlightBackdrop" class="highlight-backdrop hidden" aria-hidden="true"></div>
     <div id="logContainer">
         <div id="lineLimitNotice" class="line-limit-notice hidden">Configured display line limit reached. Older lines are being replaced with newer entries.</div>
         <div id="logContent"></div>
@@ -608,6 +622,26 @@ export class LogPanel {
             isLive: !!this.session,
             maxEntries: this.maxLogEntries,
         });
+    }
+
+    private getStoredHighlights(): HighlightDefinition[] {
+        return this.context.workspaceState.get<HighlightDefinition[]>(this.highlightsKey, []);
+    }
+
+    private async saveHighlights(values: HighlightDefinition[]) {
+        const sanitized = values
+            .filter((highlight) => typeof highlight?.key === 'string')
+            .slice(0, 10)
+            .map((highlight, index) => ({
+                id: highlight.id || index + 1,
+                key: highlight.key,
+                baseColor: highlight.baseColor,
+                color: highlight.color,
+                backgroundColor: highlight.backgroundColor,
+            }));
+
+        this.highlights = sanitized;
+        await this.context.workspaceState.update(this.highlightsKey, sanitized);
     }
 
     /**
@@ -709,6 +743,19 @@ export class LogPanel {
      */
     private isValidPresetPayload(message: any): message is { minLevel: string; textFilter: string } {
         return typeof message?.minLevel === 'string' && typeof message?.textFilter === 'string';
+    }
+
+    private isValidHighlightPayload(value: unknown): value is HighlightDefinition[] {
+        return (
+            Array.isArray(value) &&
+            value.every(
+                (highlight) =>
+                    typeof highlight?.key === 'string' &&
+                    typeof highlight?.baseColor === 'string' &&
+                    typeof highlight?.color === 'string' &&
+                    typeof highlight?.backgroundColor === 'string'
+            )
+        );
     }
 
     /**
