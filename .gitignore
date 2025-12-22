@@ -146,3 +146,9 @@ docs/typedoc/
 
 #compiled
 *.vsix
+
+#vscode counter
+.VSCodeCounter/**
+
+#temp files
+temp_*.*

@@ -22,3 +22,5 @@ docs/xml/**
 docs/requirements.txt
 docs/source/**
 docs/typedoc/**
+.VSCodeCounter/**
+temp_*.*
