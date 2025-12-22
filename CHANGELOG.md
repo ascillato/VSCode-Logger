@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Add a Highlight popup to both live and imported log panels for managing keyword highlights directly in the viewer.
+- Add SFTP path presets UI and per-device persistence.
 
 ### Changed
 - Store highlight keywords per log panel instead of sharing them across the Devices view.
