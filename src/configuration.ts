@@ -1,6 +1,7 @@
 /**
- * @file configuration.ts
- * @brief Helpers for reading Embedded Device Logger configuration with defaults.
+ * Helpers for reading Embedded Device Logger configuration with defaults.
+ *
+ * @packageDocumentation
  */
 
 import * as vscode from 'vscode';
@@ -15,6 +16,12 @@ interface LoggerDefaults {
     defaultSshCommands: { name: string; command: string }[];
 }
 
+/**
+ * Reads the default logger settings from workspace configuration.
+ *
+ * @param config The Embedded Logger workspace configuration.
+ * @returns The normalized default settings.
+ */
 function getLoggerDefaults(config: vscode.WorkspaceConfiguration): LoggerDefaults {
     const defaultPort = config.get<number>('defaultPort', 22) || 22;
     const defaultLogCommand = config.get<string>('defaultLogCommand', 'tail -F /var/log/syslog') || 'tail -F /var/log/syslog';
@@ -35,6 +42,13 @@ function getLoggerDefaults(config: vscode.WorkspaceConfiguration): LoggerDefault
     };
 }
 
+/**
+ * Applies global defaults to a device definition.
+ *
+ * @param device The device configuration to normalize.
+ * @param defaults The default settings to apply.
+ * @returns The device configuration with defaults applied.
+ */
 function applyDeviceDefaults(device: EmbeddedDevice, defaults: LoggerDefaults): EmbeddedDevice {
     return {
         ...device,
@@ -57,6 +71,11 @@ function applyDeviceDefaults(device: EmbeddedDevice, defaults: LoggerDefaults): 
     };
 }
 
+/**
+ * Returns the full Embedded Logger configuration with defaults applied.
+ *
+ * @returns The resolved devices list and tab line limit.
+ */
 export function getEmbeddedLoggerConfiguration() {
     const config = vscode.workspace.getConfiguration('embeddedLogger');
     const defaults = getLoggerDefaults(config);

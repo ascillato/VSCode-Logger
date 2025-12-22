@@ -1,7 +1,8 @@
 /**
- * @file logSession.ts
- * @brief Manages SSH connectivity and streaming of remote log output.
+ * Manages SSH connectivity and streaming of remote log output.
+ *
  * @copyright Copyright (c) 2025 A. Scillato
+ * @packageDocumentation
  */
 
 import * as vscode from 'vscode';
@@ -27,7 +28,7 @@ type ForwardingClient = Client & {
 type SocketConnectConfig = ConnectConfig & { sock?: any };
 
 /**
- * @brief Callback contract used to surface session events to the UI.
+ * Callback contract used to surface session events to the UI.
  */
 export interface LogSessionCallbacks {
     onLine: (line: string) => void;
@@ -50,7 +51,7 @@ class HostKeyMismatchError extends Error {
 }
 
 /**
- * @brief Handles the SSH connection and streaming of logs from a device.
+ * Handles the SSH connection and streaming of logs from a device.
  */
 export class LogSession {
     private client: Client | undefined;
@@ -68,7 +69,7 @@ export class LogSession {
     private readonly passwordManager: PasswordManager;
 
     /**
-     * @brief Creates a new log session.
+     * Creates a new log session.
      * @param device Device configuration providing connection details.
      * @param context Extension context used to access secret storage.
      * @param callbacks Hooks used to emit updates back to the UI.
@@ -82,7 +83,7 @@ export class LogSession {
     }
 
     /**
-     * @brief Starts the SSH session and begins streaming logs.
+     * Starts the SSH session and begins streaming logs.
      */
     async start(): Promise<void> {
         try {
@@ -151,7 +152,7 @@ export class LogSession {
     }
 
     /**
-     * @brief Validates the device configuration for required fields.
+     * Validates the device configuration for required fields.
      * @returns A user-facing error message when invalid, otherwise undefined.
      */
     private validateDeviceConfiguration(): string | undefined {
@@ -182,7 +183,7 @@ export class LogSession {
     }
 
     /**
-     * @brief Determines the log command to execute on the remote device.
+     * Determines the log command to execute on the remote device.
      * @returns Sanitized log command string.
      * @throws Error when the command contains invalid characters.
      */
@@ -285,7 +286,7 @@ export class LogSession {
     }
 
     /**
-     * @brief Opens the SSH connection and starts the remote log command.
+     * Opens the SSH connection and starts the remote log command.
      * @param authentication Authentication configuration for the SSH connection.
      * @param logCommand Remote command to execute.
      * @returns Promise that resolves once streaming begins.
@@ -668,7 +669,7 @@ export class LogSession {
     }
 
     /**
-     * @brief Processes data buffers from the SSH stream and emits complete lines.
+     * Processes data buffers from the SSH stream and emits complete lines.
      * @param data Chunk of data received from the remote stream.
      */
     private handleData(data: Buffer) {
@@ -682,7 +683,7 @@ export class LogSession {
     }
 
     /**
-     * @brief Handles stream closures and notifies callbacks if not disposed.
+     * Handles stream closures and notifies callbacks if not disposed.
      */
     private handleClose() {
         if (this.disposed || this.closedNotified) {
@@ -693,7 +694,7 @@ export class LogSession {
     }
 
     /**
-     * @brief Disposes SSH resources and prevents further callbacks.
+     * Disposes SSH resources and prevents further callbacks.
      */
     dispose() {
         this.disposed = true;

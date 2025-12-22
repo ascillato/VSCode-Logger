@@ -1,7 +1,8 @@
 /**
- * @file extension.ts
- * @brief Activates the VSCode-Logger extension and manages device log panels.
+ * Activates the VSCode-Logger extension and manages device log panels.
+ *
  * @copyright Copyright (c) 2025 A. Scillato
+ * @packageDocumentation
  */
 
 import * as vscode from 'vscode';
@@ -21,6 +22,12 @@ const sftpPanels: Set<SftpExplorerPanel> = new Set();
 let activePanel: LogPanel | undefined;
 let sidebarProvider: SidebarViewProvider | undefined;
 
+/**
+ * Validates the SSH-related fields for a configured device.
+ *
+ * @param device The device configuration to validate.
+ * @returns A user-facing error message when invalid, otherwise undefined.
+ */
 function validateSshDevice(device: EmbeddedDevice): string | undefined {
     const host = device.host?.trim();
     const username = device.username?.trim();
@@ -37,7 +44,7 @@ function validateSshDevice(device: EmbeddedDevice): string | undefined {
 }
 
 /**
- * @brief Migrates legacy passwords into VS Code SecretStorage.
+ * Migrates legacy passwords into VS Code SecretStorage.
  *
  * Users might still have passwords stored in their settings for convenience. This
  * function copies those values into SecretStorage so future connections can
@@ -45,6 +52,7 @@ function validateSshDevice(device: EmbeddedDevice): string | undefined {
  *
  * @param context The extension context used to access SecretStorage.
  * @param devices The list of configured devices whose passwords need migration.
+ * @param passwordManager The password manager used to store secrets.
  */
 async function migrateLegacyPasswords(
     context: vscode.ExtensionContext,
@@ -181,7 +189,7 @@ async function migrateLegacyPasswords(
 }
 
 /**
- * @brief Activates the extension and registers UI components.
+ * Activates the extension and registers UI components.
  *
  * The activation routine migrates legacy passwords, registers the device tree
  * view, and handles configuration changes that affect the device list.
@@ -510,7 +518,7 @@ export async function activate(context: vscode.ExtensionContext) {
 }
 
 /**
- * @brief Disposes all active log panels when the extension deactivates.
+ * Disposes all active log panels when the extension deactivates.
  */
 export function deactivate() {
     for (const panel of panelMap.values()) {

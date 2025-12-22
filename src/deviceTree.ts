@@ -1,13 +1,14 @@
 /**
- * @file deviceTree.ts
- * @brief Provides the device tree view for selecting embedded targets.
+ * Provides the device tree view for selecting embedded targets.
+ *
  * @copyright Copyright (c) 2025 A. Scillato
+ * @packageDocumentation
  */
 
 import * as vscode from 'vscode';
 
 /**
- * @brief Representation of a configured embedded device.
+ * Representation of a configured embedded device.
  */
 export interface EmbeddedDevice {
     id: string;
@@ -41,7 +42,7 @@ export interface BastionConfig {
 }
 
 /**
- * @brief Tree provider that lists configured devices.
+ * Tree provider that lists configured devices.
  *
  * Users configure the array in `embeddedLogger.devices` in settings.json and
  * each entry is presented as a selectable item that opens a log panel.
@@ -51,20 +52,22 @@ export class DeviceTreeDataProvider implements vscode.TreeDataProvider<DeviceIte
     readonly onDidChangeTreeData: vscode.Event<DeviceItem | undefined | void> = this._onDidChangeTreeData.event;
 
     /**
-     * @brief Creates a new provider bound to the extension context.
+     * Creates a new provider bound to the extension context.
+     *
      * @param context VS Code extension context for storing provider state.
      */
     constructor(private readonly context: vscode.ExtensionContext) {}
 
     /**
-     * @brief Signals VS Code to refresh the tree view.
+     * Signals VS Code to refresh the tree view.
      */
     refresh(): void {
         this._onDidChangeTreeData.fire();
     }
 
     /**
-     * @brief Returns the tree item used for rendering.
+     * Returns the tree item used for rendering.
+     *
      * @param element Device tree item to render.
      * @returns The same tree item instance.
      */
@@ -73,7 +76,8 @@ export class DeviceTreeDataProvider implements vscode.TreeDataProvider<DeviceIte
     }
 
     /**
-     * @brief Retrieves the list of configured devices as tree items.
+     * Retrieves the list of configured devices as tree items.
+     *
      * @returns A promise containing the device items or a placeholder when none exist.
      */
     getChildren(): Thenable<DeviceItem[]> {
@@ -98,7 +102,8 @@ export class DeviceTreeDataProvider implements vscode.TreeDataProvider<DeviceIte
 
 class DeviceItem extends vscode.TreeItem {
     /**
-     * @brief Builds a leaf tree item for a device.
+     * Builds a leaf tree item for a device.
+     *
      * @param device Device configuration backing the item.
      */
     constructor(public readonly device: EmbeddedDevice) {

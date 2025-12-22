@@ -1,7 +1,8 @@
 /**
- * @file logPanel.ts
- * @brief Creates and manages the Webview panel used to stream device logs.
+ * Creates and manages the Webview panel used to stream device logs.
+ *
  * @copyright Copyright (c) 2025 A. Scillato
+ * @packageDocumentation
  */
 
 import * as vscode from 'vscode';
@@ -13,7 +14,7 @@ import { HighlightDefinition } from './highlights';
 import { getEmbeddedLoggerConfiguration } from './configuration';
 
 /**
- * @brief Saved filtering preferences for a device.
+ * Saved filtering preferences for a device.
  */
 interface FilterPreset {
     name: string;
@@ -37,7 +38,7 @@ type LocalLogTarget = {
 type LogPanelTarget = RemoteLogTarget | LocalLogTarget;
 
 /**
- * @brief Hosts the WebviewPanel for a device and wires it to the SSH log session.
+ * Hosts the WebviewPanel for a device and wires it to the SSH log session.
  */
 export class LogPanel {
     private readonly panel: vscode.WebviewPanel;
@@ -58,7 +59,7 @@ export class LogPanel {
     private disposed = false;
 
     /**
-     * @brief Builds a log panel for the given device and prepares event wiring.
+     * Builds a log panel for the given device and prepares event wiring.
      *
      * @param context VS Code extension context used for resources and state.
      * @param target Log panel target describing the remote device or local file.
@@ -202,7 +203,7 @@ export class LogPanel {
     }
 
     /**
-     * @brief Starts the underlying log session.
+     * Starts the underlying log session.
      */
     async start() {
         await this.webviewReady;
@@ -214,7 +215,7 @@ export class LogPanel {
     }
 
     /**
-     * @brief Creates a new log session wired to the current panel callbacks.
+     * Creates a new log session wired to the current panel callbacks.
      */
     private createSession(): LogSession {
         if (!this.device) {
@@ -238,7 +239,7 @@ export class LogPanel {
     }
 
     /**
-     * @brief Forwards an incoming log line to the Webview and any active auto-save stream.
+     * Forwards an incoming log line to the Webview and any active auto-save stream.
      * @param line Raw log line emitted by the SSH session.
      */
     private handleIncomingLine(line: string) {
@@ -247,7 +248,7 @@ export class LogPanel {
     }
 
     /**
-     * @brief Attempts to write a log line to the active auto-save stream.
+     * Attempts to write a log line to the active auto-save stream.
      * @param line Log line to persist.
      */
     private writeAutoSaveLine(line: string) {
@@ -267,7 +268,7 @@ export class LogPanel {
     }
 
     /**
-     * @brief Emits preloaded log lines for local files into the Webview.
+     * Emits preloaded log lines for local files into the Webview.
      */
     private sendInitialLines() {
         this.panel.webview.postMessage({ type: 'initialLines', lines: this.initialLines });
@@ -278,14 +279,14 @@ export class LogPanel {
     }
 
     /**
-     * @brief Reveals the panel if it is hidden or behind other tabs.
+     * Reveals the panel if it is hidden or behind other tabs.
      */
     reveal() {
         this.panel.reveal();
     }
 
     /**
-     * @brief Cleans up the panel and SSH session resources.
+     * Cleans up the panel and SSH session resources.
      */
     dispose() {
         if (this.disposed) {
@@ -298,7 +299,7 @@ export class LogPanel {
     }
 
     /**
-     * @brief Posts the session closed status and marker line to the Webview.
+     * Posts the session closed status and marker line to the Webview.
      */
     private handleSessionClose() {
         const closedAt = Date.now();
@@ -312,7 +313,7 @@ export class LogPanel {
     }
 
     /**
-     * @brief Disposes the active session and notifies the Webview of the closure.
+     * Disposes the active session and notifies the Webview of the closure.
      */
     private disconnect() {
         if (!this.session) {
@@ -332,7 +333,7 @@ export class LogPanel {
     }
 
     /**
-     * @brief Registers a listener for panel view state changes.
+     * Registers a listener for panel view state changes.
      * @param listener Callback invoked when the panel visibility changes.
      * @returns Disposable subscription handle.
      */
@@ -341,7 +342,7 @@ export class LogPanel {
     }
 
     /**
-     * @brief Attempts to reconnect the SSH session when requested by the Webview.
+     * Attempts to reconnect the SSH session when requested by the Webview.
      */
     private async reconnect() {
         if (!this.device || this.disposed) {
@@ -363,7 +364,7 @@ export class LogPanel {
     }
 
     /**
-     * @brief Prompts the user for an auto-save destination and starts persisting incoming lines.
+     * Prompts the user for an auto-save destination and starts persisting incoming lines.
      */
     private async startAutoSave() {
         if (!this.session) {
@@ -419,7 +420,7 @@ export class LogPanel {
     }
 
     /**
-     * @brief Stops any active auto-save stream and notifies the Webview unless silenced.
+     * Stops any active auto-save stream and notifies the Webview unless silenced.
      * @param options Optional flags to silence notifications or override the status message.
      */
     private async stopAutoSave(options: { silent?: boolean; message?: string } = {}) {
@@ -472,7 +473,7 @@ export class LogPanel {
     }
 
     /**
-     * @brief Builds a default URI for the auto-save dialog using the workspace folder when available.
+     * Builds a default URI for the auto-save dialog using the workspace folder when available.
      * @returns VS Code URI pointing to a suggested log file path.
      */
     private getDefaultAutoSaveUri() {
@@ -486,7 +487,7 @@ export class LogPanel {
     }
 
     /**
-     * @brief Builds the HTML string loaded into the Webview.
+     * Builds the HTML string loaded into the Webview.
      * @returns HTML markup with scripts, styles, and initial data payload.
      */
     private getHtml(): string {
@@ -602,7 +603,7 @@ export class LogPanel {
     }
 
     /**
-     * @brief Retrieves saved presets from workspace state.
+     * Retrieves saved presets from workspace state.
      * @returns The array of stored presets, or an empty array when none exist.
      */
     private getStoredPresets(): FilterPreset[] {
@@ -610,7 +611,7 @@ export class LogPanel {
     }
 
     /**
-     * @brief Sends device metadata and stored presets to the Webview.
+     * Sends device metadata and stored presets to the Webview.
      */
     private async sendInitialData() {
         const presets = this.getStoredPresets();
@@ -645,7 +646,7 @@ export class LogPanel {
     }
 
     /**
-     * @brief Saves or replaces a filter preset for the current device.
+     * Saves or replaces a filter preset for the current device.
      * @param preset Preset data to persist.
      */
     private async savePreset(preset: FilterPreset) {
@@ -658,7 +659,7 @@ export class LogPanel {
     }
 
     /**
-     * @brief Deletes a saved preset by name and notifies the Webview.
+     * Deletes a saved preset by name and notifies the Webview.
      * @param name Name of the preset to remove.
      */
     private async deletePreset(name: string) {
@@ -670,7 +671,7 @@ export class LogPanel {
     }
 
     /**
-     * @brief Exports the provided log lines to a user-specified file.
+     * Exports the provided log lines to a user-specified file.
      * @param lines Collection of log lines to write.
      */
     private async exportLogs(lines: string[]) {
@@ -691,7 +692,7 @@ export class LogPanel {
     }
 
     /**
-     * @brief Opens the source log file in a standard VS Code editor tab.
+     * Opens the source log file in a standard VS Code editor tab.
      */
     private async openSourceFile() {
         if (!this.sourcePath) {
@@ -708,7 +709,7 @@ export class LogPanel {
     }
 
     /**
-     * @brief Reloads the source log file and replaces the Webview contents.
+     * Reloads the source log file and replaces the Webview contents.
      */
     private async refreshFromSource() {
         if (!this.sourcePath) {
@@ -737,7 +738,7 @@ export class LogPanel {
     }
 
     /**
-     * @brief Type guard verifying preset payloads from the Webview.
+     * Type guard verifying preset payloads from the Webview.
      * @param message Arbitrary message payload.
      * @returns True when the payload has the expected shape.
      */
@@ -759,7 +760,7 @@ export class LogPanel {
     }
 
     /**
-     * @brief Determines whether a value is an array of strings.
+     * Determines whether a value is an array of strings.
      * @param value Unknown value to check.
      * @returns True when every element is a string.
      */
@@ -769,7 +770,7 @@ export class LogPanel {
 }
 
 /**
- * @brief Generates a random nonce for script tags in the Webview.
+ * Generates a random nonce for script tags in the Webview.
  * @returns A 32-character nonce comprised of letters and numbers.
  */
 function getNonce() {

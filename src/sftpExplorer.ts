@@ -1,6 +1,7 @@
 /**
- * @file sftpExplorer.ts
- * @brief Provides a Webview panel to browse and transfer files over SFTP.
+ * Provides a Webview panel to browse and transfer files over SFTP.
+ *
+ * @packageDocumentation
  */
 
 import * as vscode from 'vscode';
@@ -208,6 +209,9 @@ interface SftpClient {
 
 type ClientWithSftp = Client & { sftp(callback: (err: Error | undefined, sftp?: SftpClient) => void): void };
 
+/**
+ * Error describing a host key fingerprint mismatch.
+ */
 class HostKeyMismatchError extends Error {
     constructor(
         message: string,
@@ -219,6 +223,9 @@ class HostKeyMismatchError extends Error {
     }
 }
 
+/**
+ * Webview panel that hosts the SFTP explorer UI.
+ */
 export class SftpExplorerPanel {
     private readonly panel: vscode.WebviewPanel;
     private readonly passwordManager: PasswordManager;
@@ -250,6 +257,12 @@ export class SftpExplorerPanel {
 
     readonly onDidDispose = this.onDidDisposeEmitter.event;
 
+    /**
+     * Creates the SFTP explorer panel for a device.
+     *
+     * @param context The extension context for resources and secrets.
+     * @param device The device configuration to connect to.
+     */
     constructor(private readonly context: vscode.ExtensionContext, private readonly device: EmbeddedDevice) {
         this.passwordManager = new PasswordManager(context);
         this.localHome = os.homedir();
@@ -290,15 +303,24 @@ export class SftpExplorerPanel {
         );
     }
 
+    /**
+     * Waits for the webview to be ready and posts initial state.
+     */
     async start(): Promise<void> {
         await this.webviewReady;
         await this.postInitialState();
     }
 
+    /**
+     * Brings the SFTP panel to the foreground.
+     */
     reveal(): void {
         this.panel.reveal(vscode.ViewColumn.Active, true);
     }
 
+    /**
+     * Disposes the panel and releases resources.
+     */
     dispose(): void {
         if (this.disposed) {
             return;
@@ -2469,6 +2491,11 @@ export class SftpExplorerPanel {
     }
 }
 
+/**
+ * Generates a nonce for Content Security Policy use.
+ *
+ * @returns A random nonce string.
+ */
 function getNonce(): string {
     const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     return Array.from({ length: 32 })
