@@ -2279,7 +2279,6 @@ export class SftpExplorerPanel {
                         <select class="path-select" id="remotePresetSelect" aria-label="SFTP preset paths">
                             <option value="">Select preset…</option>
                         </select>
-                        <button id="remotePresetGo" class="action" type="button">GO</button>
                         <button id="remotePresetManage" class="action" type="button">PRESETS</button>
                     </div>
                 </div>

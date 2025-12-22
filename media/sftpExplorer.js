@@ -31,7 +31,6 @@
         rightPane: document.getElementById('rightPane'),
         remotePath: document.getElementById('remotePath'),
         remotePresetSelect: document.getElementById('remotePresetSelect'),
-        remotePresetGo: document.getElementById('remotePresetGo'),
         remotePresetManage: document.getElementById('remotePresetManage'),
         localPath: document.getElementById('localPath'),
         remoteOpenTerminal: document.getElementById('remoteOpenTerminal'),
@@ -616,38 +615,14 @@
             input.value = value;
             input.spellcheck = false;
             input.placeholder = '/var/log';
-            const error = document.createElement('div');
-            error.className = 'preset-row__error';
-            error.textContent = 'enter a path for presets';
             row.appendChild(input);
-            row.appendChild(error);
             elements.sftpPresetsList.appendChild(row);
-            presetInputs.push({ input, error });
-            input.addEventListener('input', () => {
-                if (input.value.trim()) {
-                    error.classList.remove('preset-row__error--visible');
-                }
-            });
+            presetInputs.push({ input });
         });
-    }
-
-    function validatePresetRows(showErrors) {
-        let hasEmpty = false;
-        presetInputs.forEach(({ input, error }) => {
-            const empty = !input.value.trim();
-            if (empty) {
-                hasEmpty = true;
-            }
-            if (showErrors) {
-                error.classList.toggle('preset-row__error--visible', empty);
-            }
-        });
-        return !hasEmpty;
     }
 
     function openPresetsDialog() {
         buildPresetRows(state.sftpPresets);
-        presetInputs.forEach(({ error }) => error.classList.remove('preset-row__error--visible'));
         elements.sftpPresetsDialog.classList.remove('dialog--hidden');
         elements.sftpPresetsDialog.setAttribute('aria-hidden', 'false');
         presetInputs[0]?.input?.focus();
@@ -659,9 +634,6 @@
     }
 
     function savePresets() {
-        if (!validatePresetRows(true)) {
-            return;
-        }
         const values = presetInputs.map(({ input }) => input.value.trim());
         vscode.postMessage({ type: 'saveSftpPresets', presets: values });
         hidePresetsDialog();
@@ -682,7 +654,6 @@
         elements.remoteOpenTerminal.disabled = disabled;
         elements.remotePath.disabled = disabled;
         elements.remotePresetSelect.disabled = disabled;
-        elements.remotePresetGo.disabled = disabled;
         elements.remotePresetManage.disabled = disabled;
 
         elements.localHome.disabled = disabled;
@@ -1016,14 +987,8 @@
     elements.remotePresetSelect.addEventListener('change', () => {
         if (elements.remotePresetSelect.value) {
             elements.remotePath.value = elements.remotePresetSelect.value;
+            submitPath('remote');
         }
-    });
-    elements.remotePresetGo.addEventListener('click', () => {
-        if (!elements.remotePresetSelect.value) {
-            return;
-        }
-        elements.remotePath.value = elements.remotePresetSelect.value;
-        submitPath('remote');
     });
     elements.remotePresetManage.addEventListener('click', () => openPresetsDialog());
     elements.localPath.addEventListener('keydown', (event) => {

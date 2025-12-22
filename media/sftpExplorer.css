@@ -465,16 +465,6 @@ body {
     border-radius: 3px;
 }
 
-.preset-row__error {
-    font-size: 0.75rem;
-    color: var(--vscode-errorForeground);
-    display: none;
-}
-
-.preset-row__error--visible {
-    display: block;
-}
-
 .action--primary {
     background: var(--vscode-button-background);
     color: var(--vscode-button-foreground);
