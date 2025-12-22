@@ -1,6 +1,7 @@
 /**
- * @file sidebarView.ts
- * @brief Provides the activity view that lists devices.
+ * Provides the activity view that lists devices.
+ *
+ * @packageDocumentation
  */
 
 import * as vscode from 'vscode';
@@ -60,9 +61,23 @@ type IncomingMessage =
     | CopyDeviceNameMessage
     | CopyDeviceUrlMessage;
 
+/**
+ * Webview provider for the Embedded Devices side panel.
+ */
 export class SidebarViewProvider implements vscode.WebviewViewProvider {
     private view?: vscode.WebviewView;
 
+    /**
+     * Creates the sidebar view provider.
+     *
+     * @param context The extension context for resolving resources.
+     * @param getDevices Function to retrieve configured devices.
+     * @param onOpenDevice Handler for opening a device log panel.
+     * @param onRunDeviceCommand Handler for running a device command.
+     * @param onOpenSshTerminal Handler for opening an SSH terminal.
+     * @param onOpenSftpExplorer Handler for opening the SFTP explorer.
+     * @param onOpenWebBrowser Handler for opening the device web URL.
+     */
     constructor(
         private readonly context: vscode.ExtensionContext,
         private readonly getDevices: () => EmbeddedDevice[],
@@ -73,6 +88,11 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
         private readonly onOpenWebBrowser: (deviceId: string) => void
     ) {}
 
+    /**
+     * Resolves the sidebar webview and wires up message handlers.
+     *
+     * @param webviewView The webview view instance to populate.
+     */
     resolveWebviewView(webviewView: vscode.WebviewView): void | Thenable<void> {
         this.view = webviewView;
         webviewView.webview.options = {
@@ -117,6 +137,9 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
         this.postInitialPayload();
     }
 
+    /**
+     * Pushes updated device data to the webview.
+     */
     refreshDevices() {
         if (!this.view) {
             return;
@@ -124,6 +147,9 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
         this.view.webview.postMessage({ type: 'devicesUpdated', devices: this.getDevicesForWebview() });
     }
 
+    /**
+     * Sends the initial device payload to the webview.
+     */
     private postInitialPayload() {
         if (!this.view) {
             return;
@@ -131,6 +157,11 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
         this.view.webview.postMessage({ type: 'initDevices', devices: this.getDevicesForWebview() });
     }
 
+    /**
+     * Normalizes device data for webview consumption.
+     *
+     * @returns The device list with required defaults.
+     */
     private getDevicesForWebview(): EmbeddedDevice[] {
         return this.getDevices().map((device) => ({
             ...device,
@@ -141,11 +172,23 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
         }));
     }
 
+    /**
+     * Copies the given value to the clipboard and notifies the user.
+     *
+     * @param value The text to copy.
+     * @param label The label shown in the confirmation message.
+     */
     private async copyToClipboard(value: string, label: string) {
         await vscode.env.clipboard.writeText(value);
         await vscode.window.showInformationMessage(`${label} copied to clipboard.`);
     }
 
+    /**
+     * Builds the sidebar webview HTML.
+     *
+     * @param webview The webview used to resolve resource URIs.
+     * @returns The HTML markup for the sidebar.
+     */
     private getHtml(webview: vscode.Webview): string {
         const scriptUri = webview.asWebviewUri(vscode.Uri.file(path.join(this.context.extensionPath, 'media', 'sidebarView.js')));
         const styleUri = webview.asWebviewUri(vscode.Uri.file(path.join(this.context.extensionPath, 'media', 'sidebarView.css')));
@@ -169,6 +212,11 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
     }
 }
 
+/**
+ * Generates a nonce for Content Security Policy use.
+ *
+ * @returns A random nonce string.
+ */
 function getNonce() {
     let text = '';
     const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';

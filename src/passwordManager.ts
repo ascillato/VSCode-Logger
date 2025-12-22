@@ -1,6 +1,7 @@
 /**
- * @file passwordManager.ts
- * @brief Provides helpers for storing and retrieving device passwords with workspace-aware keys.
+ * Provides helpers for storing and retrieving device passwords with workspace-aware keys.
+ *
+ * @packageDocumentation
  */
 
 import { createHash } from 'crypto';
@@ -48,21 +49,55 @@ const SECRET_CONFIG: Record<SecretKind, SecretConfig> = {
     },
 };
 
+/**
+ * Manages password and passphrase secrets for devices.
+ */
 export class PasswordManager {
+    /**
+     * Creates a password manager for the extension context.
+     *
+     * @param context The extension context with access to secrets.
+     */
     constructor(private readonly context: vscode.ExtensionContext) {}
 
+    /**
+     * Retrieves a stored password or prompts the user for one.
+     *
+     * @param device The device to authenticate.
+     * @param options Optional prompt hooks for UI updates.
+     * @returns The password, if available.
+     */
     async getPassword(device: EmbeddedDevice, options?: { onPrompt?: () => void }): Promise<string | undefined> {
         return this.getSecret('password', device, options);
     }
 
+    /**
+     * Retrieves a stored private key passphrase or prompts the user for one.
+     *
+     * @param device The device to authenticate.
+     * @param options Optional prompt hooks for UI updates.
+     * @returns The passphrase, if available.
+     */
     async getPassphrase(device: EmbeddedDevice, options?: { onPrompt?: () => void }): Promise<string | undefined> {
         return this.getSecret('passphrase', device, options);
     }
 
+    /**
+     * Stores a password in secret storage for the device.
+     *
+     * @param device The device to associate with the secret.
+     * @param password The password to store.
+     */
     async storePassword(device: EmbeddedDevice, password: string): Promise<void> {
         await this.storeSecret('password', device, password);
     }
 
+    /**
+     * Stores a private key passphrase in secret storage for the device.
+     *
+     * @param device The device to associate with the secret.
+     * @param passphrase The passphrase to store.
+     */
     async storePassphrase(device: EmbeddedDevice, passphrase: string): Promise<void> {
         await this.storeSecret('passphrase', device, passphrase);
     }

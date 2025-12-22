@@ -1,6 +1,7 @@
 /**
- * @file sshCommandRunner.ts
- * @brief Executes one-off SSH commands for configured devices.
+ * Executes one-off SSH commands for configured devices.
+ *
+ * @packageDocumentation
  */
 
 import * as vscode from 'vscode';
@@ -24,11 +25,17 @@ type ForwardingClient = Client & {
 
 type SocketConnectConfig = ConnectConfig & { sock?: any };
 
+/**
+ * Represents a named SSH command configured for a device.
+ */
 export interface DeviceCommand {
     name: string;
     command: string;
 }
 
+/**
+ * Error describing a failed SSH command execution.
+ */
 export class SshCommandError extends Error {
     constructor(
         message: string,
@@ -42,13 +49,28 @@ export class SshCommandError extends Error {
     }
 }
 
+/**
+ * Runs sanitized SSH commands for a configured device.
+ */
 export class SshCommandRunner {
     private readonly passwordManager: PasswordManager;
 
+    /**
+     * Creates a runner bound to a device and extension context.
+     *
+     * @param device The device configuration for the command.
+     * @param context The extension context for secret storage access.
+     */
     constructor(private readonly device: EmbeddedDevice, private readonly context: vscode.ExtensionContext) {
         this.passwordManager = new PasswordManager(this.context);
     }
 
+    /**
+     * Executes a configured command over SSH.
+     *
+     * @param command The command definition to run.
+     * @returns The command output as a string.
+     */
     async run(command: DeviceCommand): Promise<string> {
         if (!vscode.workspace.isTrusted) {
             throw new Error('Workspace trust is required before connecting to devices.');

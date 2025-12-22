@@ -1,6 +1,7 @@
 /**
- * @file highlights.ts
- * @brief Shared interface for highlight entries stored per log panel.
+ * Shared interface for highlight entries stored per log panel.
+ *
+ * @packageDocumentation
  */
 
 export interface HighlightDefinition {

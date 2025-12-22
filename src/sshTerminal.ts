@@ -1,6 +1,7 @@
 /**
- * @file sshTerminal.ts
- * @brief Provides a pseudoterminal that opens an interactive SSH shell for a device.
+ * Provides a pseudoterminal that opens an interactive SSH shell for a device.
+ *
+ * @packageDocumentation
  */
 
 import * as vscode from 'vscode';
@@ -25,7 +26,7 @@ type ForwardingClient = Client & {
 type SocketConnectConfig = ConnectConfig & { sock?: any };
 
 /**
- * @brief Pseudoterminal that proxies input/output to an SSH shell session.
+ * Pseudoterminal that proxies input/output to an SSH shell session.
  */
 export class SshTerminalSession implements vscode.Pseudoterminal {
     private readonly writeEmitter = new vscode.EventEmitter<string>();
@@ -45,6 +46,13 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
     private lastDimensions: vscode.TerminalDimensions | undefined;
     private readonly passwordManager: PasswordManager;
 
+    /**
+     * Creates a new SSH terminal session for the given device.
+     *
+     * @param device The device configuration to connect to.
+     * @param context The extension context for secret storage access.
+     * @param initialPath Optional working directory to open on connect.
+     */
     constructor(
         private readonly device: EmbeddedDevice,
         private readonly context: vscode.ExtensionContext,
@@ -53,11 +61,19 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
         this.passwordManager = new PasswordManager(this.context);
     }
 
+    /**
+     * Opens the pseudoterminal and initiates the SSH connection.
+     *
+     * @param initialDimensions Terminal dimensions supplied by VS Code.
+     */
     open(initialDimensions?: vscode.TerminalDimensions): void {
         this.lastDimensions = initialDimensions ?? this.lastDimensions;
         void this.start(initialDimensions);
     }
 
+    /**
+     * Closes the terminal session and releases resources.
+     */
     close(): void {
         if (!this.closed) {
             this.closed = true;
@@ -67,6 +83,11 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
         }
     }
 
+    /**
+     * Handles user input by forwarding it to the remote shell.
+     *
+     * @param data Input text entered by the user.
+     */
     handleInput(data: string): void {
         this.inputBuffer += data;
         if (data.includes('\r') || data.includes('\n')) {
@@ -79,6 +100,11 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
         this.shell?.write(data);
     }
 
+    /**
+     * Updates the remote shell when the terminal dimensions change.
+     *
+     * @param dimensions The new terminal dimensions.
+     */
     setDimensions(dimensions: vscode.TerminalDimensions): void {
         if (this.shell) {
             this.shell.setWindow(dimensions.rows, dimensions.columns, dimensions.rows, dimensions.columns);
