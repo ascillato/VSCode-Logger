@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [1.4.0] - 2025-12-27 [INDEPENDENT-HIGHLIGHTING]
+
+### Added
+- Add a Highlight popup to both live and imported log panels for managing keyword highlights directly in the viewer.
+
+### Changed
+- Store highlight keywords per log panel instead of sharing them across the Devices view.
+
+### Deprecated
+- None.
+
+### Removed
+- Remove the highlight action from the Devices view title bar.
+
+### Fixed
+- None.
+
+### Security
+- None.
+
+----------------------------------------
+
 ## [1.3.0] - 2025-12-20 [TERMINAL-RECONNECT]
 
 ### Added

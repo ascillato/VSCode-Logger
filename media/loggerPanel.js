@@ -10,6 +10,19 @@
 (function () {
     const vscode = acquireVsCodeApi();
 
+    const highlightPalette = [
+        { foreground: '#1b7f5f', background: '#d2f4e8' },
+        { foreground: '#1f6fbf', background: '#d9e9ff' },
+        { foreground: '#8e44ad', background: '#efdef7' },
+        { foreground: '#c0392b', background: '#f8e0dd' },
+        { foreground: '#c27c0e', background: '#fff3ce' },
+        { foreground: '#117864', background: '#d5f5e3' },
+        { foreground: '#1e8449', background: '#d8f6e2' },
+        { foreground: '#884ea0', background: '#e9dff4' },
+        { foreground: '#b34700', background: '#fde0cc' },
+        { foreground: '#2c3e50', background: '#e2e6eb' },
+    ];
+
     const levelOrder = {
         ALL: 0,
         DEBUG: 1,
@@ -53,6 +66,7 @@
         wordWrapEnabled: false,
         autoScrollEnabled: true,
         highlights: [],
+        nextHighlightId: 1,
         searchTerm: '',
         searchMatches: [],
         searchIndex: -1,
@@ -95,6 +109,13 @@
     const searchCount = document.getElementById('searchCount');
     const autoSaveToggle = document.getElementById('autoSaveToggle');
     const lineLimitNotice = document.getElementById('lineLimitNotice');
+    const highlightToggle = document.getElementById('highlightToggle');
+    const highlightPopover = document.getElementById('highlightPopover');
+    const highlightBackdrop = document.getElementById('highlightBackdrop');
+    const highlightRows = document.getElementById('highlightRows');
+    const highlightAddBtn = document.getElementById('highlightAdd');
+    const highlightClearBtn = document.getElementById('highlightClear');
+    const highlightStatus = document.getElementById('highlightStatus');
     const bookmarkLabelDialog = createBookmarkLabelDialog();
     const bookmarkContextMenu = createBookmarkContextMenu();
     let contextMenuEntryId = null;
@@ -103,6 +124,7 @@
     let reconnectTimeoutId = null;
     let reconnectIntervalId = null;
     let reconnectCountdown = 0;
+    let highlightColorCursor = 0;
     const AUTO_SCROLL_BOTTOM_THRESHOLD = 4;
 
     /**
@@ -256,14 +278,142 @@
 
     /**
      * @brief Replaces the highlight collection with updated entries.
-     * @param highlights Highlight definitions received from the sidebar view.
+     * @param highlights Highlight definitions stored for the current panel.
      */
     function setHighlights(highlights) {
         state.highlights = (highlights || []).map((highlight) => ({
             ...highlight,
             normalizedKey: (highlight.key || '').trim().toLowerCase(),
         }));
+        state.nextHighlightId = state.highlights.reduce((max, h) => Math.max(max, h.id || 0), 0) + 1;
+        highlightColorCursor = state.highlights.length % highlightPalette.length;
+        renderHighlightRows();
         applyFilters({ preserveScrollPosition: true });
+    }
+
+    function nextHighlightColor() {
+        const pair = highlightPalette[highlightColorCursor % highlightPalette.length];
+        highlightColorCursor = (highlightColorCursor + 1) % highlightPalette.length;
+        return pair;
+    }
+
+    function syncHighlightStatus(message = '') {
+        if (!highlightStatus) {
+            return;
+        }
+        if (message) {
+            highlightStatus.textContent = message;
+            return;
+        }
+        highlightStatus.textContent = state.highlights.length >= 10 ? 'You can highlight up to 10 keys.' : '';
+    }
+
+    function pushHighlightChanges() {
+        vscode.postMessage({
+            type: 'highlightsChanged',
+            highlights: state.highlights.map((highlight) => ({
+                id: highlight.id,
+                key: highlight.key,
+                baseColor: highlight.baseColor,
+                color: highlight.color,
+                backgroundColor: highlight.backgroundColor,
+            })),
+        });
+    }
+
+    function renderHighlightRows() {
+        if (!highlightRows) {
+            return;
+        }
+        highlightRows.innerHTML = '';
+        const frag = document.createDocumentFragment();
+        state.highlights.forEach((highlight) => {
+            const row = document.createElement('div');
+            row.className = 'highlight-row';
+
+            const swatch = document.createElement('span');
+            swatch.className = 'color-swatch';
+            swatch.style.backgroundColor = highlight.baseColor;
+            swatch.style.borderColor = highlight.baseColor;
+            row.appendChild(swatch);
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = highlight.key;
+            input.placeholder = 'Key to highlight';
+            input.className = 'highlight-input';
+            input.addEventListener('input', () => {
+                highlight.key = input.value;
+                highlight.normalizedKey = (highlight.key || '').trim().toLowerCase();
+                applyFilters({ preserveScrollPosition: true });
+                pushHighlightChanges();
+                syncHighlightStatus();
+            });
+            row.appendChild(input);
+
+            const remove = document.createElement('button');
+            remove.className = 'highlight-remove';
+            remove.type = 'button';
+            remove.textContent = '✕';
+            remove.title = 'Remove highlight';
+            remove.addEventListener('click', () => {
+                state.highlights = state.highlights.filter((item) => item.id !== highlight.id);
+                renderHighlightRows();
+                pushHighlightChanges();
+                syncHighlightStatus();
+                applyFilters({ preserveScrollPosition: true });
+            });
+            row.appendChild(remove);
+
+            frag.appendChild(row);
+        });
+        highlightRows.appendChild(frag);
+        syncHighlightStatus();
+    }
+
+    function addHighlight() {
+        if (state.highlights.length >= 10) {
+            syncHighlightStatus();
+            return;
+        }
+        const { foreground, background } = nextHighlightColor();
+        state.highlights.push({
+            id: state.nextHighlightId++,
+            key: '',
+            normalizedKey: '',
+            baseColor: foreground,
+            color: foreground,
+            backgroundColor: background,
+        });
+        renderHighlightRows();
+        pushHighlightChanges();
+    }
+
+    function removeAllHighlights() {
+        if (!state.highlights.length) {
+            return;
+        }
+        state.highlights = [];
+        highlightColorCursor = 0;
+        renderHighlightRows();
+        pushHighlightChanges();
+        applyFilters({ preserveScrollPosition: true });
+    }
+
+    function toggleHighlightPopover(forceOpen) {
+        if (!highlightPopover || !highlightBackdrop) {
+            return;
+        }
+        const shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : highlightPopover.classList.contains('hidden');
+        highlightPopover.classList.toggle('hidden', !shouldOpen);
+        highlightBackdrop.classList.toggle('hidden', !shouldOpen);
+        if (shouldOpen) {
+            syncHighlightStatus();
+            const firstInput = highlightPopover.querySelector('.highlight-input');
+            if (firstInput) {
+                firstInput.focus();
+            }
+        }
     }
 
     /**
@@ -1587,6 +1737,24 @@
         vscode.postMessage({ type: 'requestReconnect' });
     });
 
+    if (highlightToggle) {
+        highlightToggle.addEventListener('click', () => {
+            toggleHighlightPopover();
+        });
+    }
+
+    if (highlightBackdrop) {
+        highlightBackdrop.addEventListener('click', () => toggleHighlightPopover(false));
+    }
+
+    if (highlightAddBtn) {
+        highlightAddBtn.addEventListener('click', () => addHighlight());
+    }
+
+    if (highlightClearBtn) {
+        highlightClearBtn.addEventListener('click', () => removeAllHighlights());
+    }
+
     searchInput.addEventListener(
         'input',
         debounce(() => {
@@ -1635,6 +1803,10 @@
     }
 
     window.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && highlightPopover && !highlightPopover.classList.contains('hidden')) {
+            toggleHighlightPopover(false);
+            return;
+        }
         if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f') {
             event.preventDefault();
             searchInput.focus();

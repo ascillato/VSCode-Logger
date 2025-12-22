@@ -7,7 +7,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { EmbeddedDevice } from './deviceTree';
-import { HighlightDefinition, SidebarViewProvider } from './sidebarView';
+import { SidebarViewProvider } from './sidebarView';
 import { LogPanel } from './logPanel';
 import { SshCommandRunner } from './sshCommandRunner';
 import { SshTerminalSession } from './sshTerminal';
@@ -20,7 +20,6 @@ const panelMap: Map<string, LogPanel> = new Map();
 const sftpPanels: Set<SftpExplorerPanel> = new Set();
 let activePanel: LogPanel | undefined;
 let sidebarProvider: SidebarViewProvider | undefined;
-let highlights: HighlightDefinition[] = [];
 
 function validateSshDevice(device: EmbeddedDevice): string | undefined {
     const host = device.host?.trim();
@@ -278,16 +277,6 @@ export async function activate(context: vscode.ExtensionContext) {
                 vscode.window.showErrorMessage('Device not found. Check embeddedLogger.devices.');
             }
         },
-        (updatedHighlights) => {
-            highlights = updatedHighlights.map((highlight, index) => ({
-                ...highlight,
-                id: highlight.id || index + 1,
-            }));
-            for (const panel of panelMap.values()) {
-                panel.updateHighlights(highlights);
-            }
-        },
-        () => highlights,
         async (deviceId, commandName, command) => {
             const device = getDevices().find((item) => item.id === deviceId);
             if (!device) {
@@ -342,12 +331,6 @@ export async function activate(context: vscode.ExtensionContext) {
     );
 
     context.subscriptions.push(vscode.window.registerWebviewViewProvider('embeddedLogger.devicesView', sidebarProvider));
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand('embeddedLogger.addHighlightRow', () => {
-            sidebarProvider?.addHighlightRow();
-        })
-    );
 
     context.subscriptions.push(
         vscode.commands.registerCommand('embeddedLogger.editDevicesConfig', async () => {
@@ -463,8 +446,7 @@ export async function activate(context: vscode.ExtensionContext) {
                     if (activePanel === panel) {
                         activePanel = undefined;
                     }
-                },
-                highlights
+                }
             );
             panel.onDidChangeViewState((event) => {
                 if (event.webviewPanel.active) {
@@ -502,8 +484,7 @@ export async function activate(context: vscode.ExtensionContext) {
                     if (activePanel === panel) {
                         activePanel = undefined;
                     }
-                },
-                highlights
+                }
             );
             panel.onDidChangeViewState((event) => {
                 if (event.webviewPanel.active) {

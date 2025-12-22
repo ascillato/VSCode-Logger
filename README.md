@@ -12,7 +12,7 @@ If you find this extension useful, please [rate it](https://marketplace.visualst
 - **Real-time log streaming over SSH** using a configurable command (default: `tail -F /var/log/syslog`).
 - **Log level parsing, filtering, and colorization** inside a Webview panel per device.
 - Saved filter presets stored per device.
-- **Highlight up to 10 custom keywords** with color-coded, bold, underlined text in both live and imported logs.
+- **Highlight up to 10 custom keywords** with color-coded, bold, underlined text in both live and imported logs, configured per log panel.
 - **Find text inside live or imported logs** with Ctrl/Cmd+F, including next/previous navigation.
 - **Reconnect closed SSH sessions** directly from the log panel and automatically mark the log when a device closes a session.
 - **Export** currently visible (filtered) logs to a file.
@@ -117,7 +117,7 @@ All options are available through the VS Code Settings UI under **Embedded Devic
 - **Filtering presets** are stored per-device in the workspace state using the key `embeddedLogger.presets.<deviceId>`.
 - Exports only include log lines currently visible after applying filters.
 - When an SSH session closes, the log view appends `--- SSH session closed on <timestamp>` and offers a **Reconnect** button next to the status text to restart streaming.
-- Click the highlight icon in the Embedded Logger devices view to add up to ten highlight rows, each with its own colour and editable keyword that updates live and imported logs instantly.
+- Use the **Highlight** button in each log panel to manage up to ten highlight rows, each with its own colour and editable keyword that updates that panel instantly.
 - Use the **Open Local Log File** button in the Embedded Logger devices view (or run the command with the same name) to select a `.log` or `.txt` file from your machine. The chosen file is loaded into the log viewer so you can reuse filtering, presets, export filtered logs and highlights just like a live connection.
 - **Status** text also shows messages from the log command used in the configuration like `tail -F /var/log/syslog`. So, some messages like: `tail: '/var/log/syslog' has appeared; following new file` may appear. This message in particular happens when the log file is rotated or recreated. The `-F` flag tells `tail` to keep watching for the file to reappear, so the message is informational and indicates that log streaming will continue with the new file. If you prefer a different log source, update the `logCommand` in your device configuration.
 - The Embedded Device Logger extension supports **sharing the VSCode Activity Bar** with other extensions. To merge an extension into the Activity Bar, simply select its icon from the Side Bar, then drag and drop it into your desired position within the Activity Bar.
