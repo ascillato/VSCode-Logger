@@ -15,7 +15,9 @@
         rightLocal: createSnapshot(),
         rightRemote: createSnapshot(),
         connectionState: 'connected',
-        sftpPresets: [],
+        sftpPresetsRemote: [],
+        sftpPresetsLocal: [],
+        presetsDialogLocation: 'remote',
     };
 
     const selectionAnchors = {
@@ -33,6 +35,8 @@
         remotePresetSelect: document.getElementById('remotePresetSelect'),
         remotePresetManage: document.getElementById('remotePresetManage'),
         localPath: document.getElementById('localPath'),
+        rightPresetSelect: document.getElementById('rightPresetSelect'),
+        rightPresetManage: document.getElementById('rightPresetManage'),
         remoteOpenTerminal: document.getElementById('remoteOpenTerminal'),
         localOpenTerminal: document.getElementById('localOpenTerminal'),
         remoteList: document.getElementById('remoteList'),
@@ -581,9 +585,8 @@
         return Array.from({ length: presetLimit }, (_, index) => sanitized[index] ?? '');
     }
 
-    function renderPresetOptions(values) {
+    function renderPresetOptions(select, values) {
         const options = normalizePresets(values).filter((entry) => entry);
-        const select = elements.remotePresetSelect;
         if (!select) {
             return;
         }
@@ -622,7 +625,8 @@
     }
 
     function openPresetsDialog() {
-        buildPresetRows(state.sftpPresets);
+        const values = state.presetsDialogLocation === 'remote' ? state.sftpPresetsRemote : state.sftpPresetsLocal;
+        buildPresetRows(values);
         elements.sftpPresetsDialog.classList.remove('dialog--hidden');
         elements.sftpPresetsDialog.setAttribute('aria-hidden', 'false');
         presetInputs[0]?.input?.focus();
@@ -635,7 +639,7 @@
 
     function savePresets() {
         const values = presetInputs.map(({ input }) => input.value.trim());
-        vscode.postMessage({ type: 'saveSftpPresets', presets: values });
+        vscode.postMessage({ type: 'saveSftpPresets', location: state.presetsDialogLocation, presets: values });
         hidePresetsDialog();
     }
 
@@ -664,6 +668,8 @@
         elements.localNewFile.disabled = disabled;
         elements.localOpenTerminal.disabled = disabled;
         elements.localPath.disabled = disabled;
+        elements.rightPresetSelect.disabled = disabled;
+        elements.rightPresetManage.disabled = disabled;
         elements.rightMode.disabled = disabled;
     }
 
@@ -696,8 +702,13 @@
         state.remote = { ...payload.remote, selected: [] };
         state.rightLocal = { ...payload.local, selected: [] };
         state.rightRemote = { ...payload.remote, selected: [] };
-        state.sftpPresets = Array.isArray(payload.sftpPresets) ? payload.sftpPresets : [];
-        renderPresetOptions(state.sftpPresets);
+        state.sftpPresetsRemote = Array.isArray(payload.sftpPresetsRemote) ? payload.sftpPresetsRemote : [];
+        state.sftpPresetsLocal = Array.isArray(payload.sftpPresetsLocal) ? payload.sftpPresetsLocal : [];
+        renderPresetOptions(elements.remotePresetSelect, state.sftpPresetsRemote);
+        renderPresetOptions(
+            elements.rightPresetSelect,
+            state.rightMode === 'local' ? state.sftpPresetsLocal : state.sftpPresetsRemote
+        );
         resetSelectionAnchors();
         renderLists();
     }
@@ -990,7 +1001,20 @@
             submitPath('remote');
         }
     });
-    elements.remotePresetManage.addEventListener('click', () => openPresetsDialog());
+    elements.remotePresetManage.addEventListener('click', () => {
+        state.presetsDialogLocation = 'remote';
+        openPresetsDialog();
+    });
+    elements.rightPresetSelect.addEventListener('change', () => {
+        if (elements.rightPresetSelect.value) {
+            elements.localPath.value = elements.rightPresetSelect.value;
+            submitPath('right');
+        }
+    });
+    elements.rightPresetManage.addEventListener('click', () => {
+        state.presetsDialogLocation = state.rightMode === 'local' ? 'local' : 'remote';
+        openPresetsDialog();
+    });
     elements.localPath.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {
             event.preventDefault();
@@ -1114,6 +1138,10 @@
         updatePaths();
         updateButtons();
         hideContextMenu();
+        renderPresetOptions(
+            elements.rightPresetSelect,
+            state.rightMode === 'local' ? state.sftpPresetsLocal : state.sftpPresetsRemote
+        );
         renderLists();
     });
 
@@ -1183,8 +1211,16 @@
                 handlePermissionsInfo(message);
                 break;
             case 'sftpPresetsUpdated':
-                state.sftpPresets = Array.isArray(message.presets) ? message.presets : [];
-                renderPresetOptions(state.sftpPresets);
+                if (message.location === 'local') {
+                    state.sftpPresetsLocal = Array.isArray(message.presets) ? message.presets : [];
+                } else {
+                    state.sftpPresetsRemote = Array.isArray(message.presets) ? message.presets : [];
+                }
+                renderPresetOptions(elements.remotePresetSelect, state.sftpPresetsRemote);
+                renderPresetOptions(
+                    elements.rightPresetSelect,
+                    state.rightMode === 'local' ? state.sftpPresetsLocal : state.sftpPresetsRemote
+                );
                 break;
         }
     });

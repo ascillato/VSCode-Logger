@@ -7,7 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
-## [1.4.0] - 2025-12-27 [INDEPENDENT-HIGHLIGHTING]
+## [1.4.1] - 2025-12-21 [SFTP-MORE-PRESETS]
+
+### Added
+- Add SFTP presets to the right panel.
+
+### Changed
+- None.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- None.
+
+### Security
+- None.
+
+----------------------------------------
+
+## [1.4.0] - 2025-12-21 [INDEPENDENT-HIGHLIGHTING]
 
 ### Added
 - Add a Highlight popup to both live and imported log panels for managing keyword highlights directly in the viewer.
