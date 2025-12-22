@@ -95,16 +95,18 @@ jobs:
           name: embedded-device-logger-${{ github.ref_name }}
           path: embedded-device-logger-${{ github.ref_name }}.vsix
 
-      # Create a DRAFT release for this tag and upload the VSIX as a release asset
-      - name: Create draft GitHub Release + upload VSIX
+      # Create a release for this tag and upload the VSIX as a release asset
+      - name: Create GitHub Release + upload VSIX
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           name: VSCode-Logger ${{ github.ref_name }}
-          draft: true
+          draft: false
+          make_latest: true
           generate_release_notes: true
           files: embedded-device-logger-${{ github.ref_name }}.vsix
 
+      # Publish the release to VSCode Market Place
       - name: Publish extension to VSCode Market Place
         run: vsce publish -p ${{ secrets.VSCE_TOKEN }}
 
