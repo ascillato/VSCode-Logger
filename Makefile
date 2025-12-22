@@ -2,7 +2,7 @@
 
 .PHONY: all clean install help check package package-clean docs docs-clean
 
-all: clean package docs ## Clean, then build VSIX package and docs
+all: clean package install ## Clean, then build VSIX package and installs it
 
 clean: package-clean docs-clean ## Remove all generated files (package + docs)
 

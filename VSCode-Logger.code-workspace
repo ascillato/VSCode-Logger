@@ -1,0 +1,196 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"extensions": {
+		"recommendations": [
+			"spencerwmiles.vscode-task-buttons",
+			"ritwickdey.LiveServer",
+			"uctakeoff.vscode-counter",
+			"aaron-bond.better-comments",
+			"streetsidesoftware.code-spell-checker",
+			"alefragnani.Bookmarks",
+			"tahabasri.snippets",
+			"ikoamu.side-clipboard",
+			"assisrMatheus.sidebar-markdown-notes",
+			"mayonnaize.multiple-search",
+			"amodio.restore-editors",
+			"searKing.preview-vscode",
+			"bierner.markdown-mermaid",
+			"bpruitt-goddard.mermaid-markdown-syntax-highlighting",
+			"hediet.vscode-drawio",
+			"nopeslide.vscode-drawio-plugin-mermaid",
+			"mechatroner.rainbow-csv",
+			"PKief.material-icon-theme",
+			"esbenp.prettier-vscode",
+			"dbaeumer.vscode-eslint",
+			"Scallant.embedded-device-logger"
+		],
+	},
+	"settings": {
+		"VsCodeTaskButtons.showCounter": false,
+		"VsCodeTaskButtons.tasks": [
+			// Icons at: https://code.visualstudio.com/api/references/icons-in-labels#icon-listing
+			{
+				"label": "$(symbol-text)",
+				"task": "Linter",
+				"tooltip": "Linter Checks"
+			},
+			{
+				"label": "$(check)",
+				"task": "Compile_Ext",
+				"tooltip": "Compile and Package Extension"
+			},
+			{
+				"label": "$(check-all)",
+				"task": "Install_Ext",
+				"tooltip": "Install Extension"
+			},
+			{
+				"label": "$(trash)",
+				"task": "Clean_Compile",
+				"tooltip": "Clean Compiled Files"
+			},
+			{
+				"label": "More Tools",
+				"tasks": [
+					{
+						"label": "$(book) Generate Docs",
+						"task": "Gen_Docs",
+						"description": ""
+					},
+					{
+						"label": "$(trash) Clean Built Docs",
+						"task": "Clean_Docs",
+						"description": ""
+					},
+				]
+			},
+			{
+				"label": "$(terminal)",
+				"task": "NewTerminal",
+				"tooltip": "New Terminal"
+			}
+		]
+	},
+	"tasks": {
+		"version": "2.0.0",
+		"tasks": [
+			{
+				"label": "Linter",
+				"type": "shell",
+				"command": "make check",
+				"options": {
+					"cwd": "${workspaceFolder}"
+				},
+				"group": {
+					"kind": "build",
+					"isDefault": false
+				},
+				"presentation": {
+					"reveal": "always",
+					"panel": "new",
+					"focus": true
+				}
+			},
+			{
+				"label": "Compile_Ext",
+				"type": "shell",
+				"command": "make package",
+				"options": {
+					"cwd": "${workspaceFolder}"
+				},
+				"group": {
+					"kind": "build",
+					"isDefault": false
+				},
+				"presentation": {
+					"reveal": "always",
+					"panel": "new",
+					"focus": true
+				}
+			},
+			{
+				"label": "Install_Ext",
+				"type": "shell",
+				"command": "make all",
+				"options": {
+					"cwd": "${workspaceFolder}"
+				},
+				"group": {
+					"kind": "build",
+					"isDefault": false
+				},
+				"presentation": {
+					"reveal": "always",
+					"panel": "new",
+					"focus": true
+				}
+			},
+			{
+				"label": "Clean_Compile",
+				"type": "shell",
+				"command": "make package-clean",
+				"options": {
+					"cwd": "${workspaceFolder}"
+				},
+				"group": {
+					"kind": "build",
+					"isDefault": false
+				},
+				"presentation": {
+					"reveal": "always",
+					"panel": "new",
+					"focus": true
+				}
+			},
+			{
+				"label": "Gen_Docs",
+				"type": "shell",
+				"command": "make docs",
+				"options": {
+					"cwd": "${workspaceFolder}"
+				},
+				"group": {
+					"kind": "build",
+					"isDefault": false
+				},
+				"presentation": {
+					"reveal": "always",
+					"panel": "new",
+					"focus": true
+				}
+			},
+			{
+				"label": "Clean_Docs",
+				"type": "shell",
+				"command": "make docs-clean",
+				"options": {
+					"cwd": "${workspaceFolder}"
+				},
+				"group": {
+					"kind": "build",
+					"isDefault": false
+				},
+				"presentation": {
+					"reveal": "always",
+					"panel": "new",
+					"focus": true
+				}
+			},
+			{
+				"label": "NewTerminal",
+				"type": "shell",
+				"command": "${command:workbench.action.terminal.newInActiveWorkspace}",
+				"problemMatcher": [],
+				"group": {
+					"kind": "build",
+					"isDefault": true
+				},
+				"detail": "This task opens a new bash terminal."
+			}
+		]
+	}
+}

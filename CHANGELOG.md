@@ -11,9 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Add SFTP presets to the right panel.
+- Add code-workspace file with optional config for buttons for several compile tasks for VSCode UI.
 
 ### Changed
-- None.
+- Changed `make` and `make all` to not compile docs by default but install the extension instead. See `make help` for all possible commands.
 
 ### Deprecated
 - None.
