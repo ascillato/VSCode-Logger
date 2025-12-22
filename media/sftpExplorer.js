@@ -15,6 +15,7 @@
         rightLocal: createSnapshot(),
         rightRemote: createSnapshot(),
         connectionState: 'connected',
+        sftpPresets: [],
     };
 
     const selectionAnchors = {
@@ -29,6 +30,8 @@
         remotePane: document.getElementById('remotePane'),
         rightPane: document.getElementById('rightPane'),
         remotePath: document.getElementById('remotePath'),
+        remotePresetSelect: document.getElementById('remotePresetSelect'),
+        remotePresetManage: document.getElementById('remotePresetManage'),
         localPath: document.getElementById('localPath'),
         remoteOpenTerminal: document.getElementById('remoteOpenTerminal'),
         localOpenTerminal: document.getElementById('localOpenTerminal'),
@@ -77,6 +80,11 @@
         permOtherRead: document.getElementById('permOtherRead'),
         permOtherWrite: document.getElementById('permOtherWrite'),
         permOtherExec: document.getElementById('permOtherExec'),
+        sftpPresetsDialog: document.getElementById('sftpPresetsDialog'),
+        sftpPresetsList: document.getElementById('sftpPresetsList'),
+        sftpPresetsSave: document.getElementById('sftpPresetsSave'),
+        sftpPresetsCancel: document.getElementById('sftpPresetsCancel'),
+        sftpPresetsDismiss: document.getElementById('sftpPresetsDismiss'),
     };
 
     const contextMenuState = {
@@ -97,6 +105,9 @@
         inputs: new Map(),
         permissions: new Map(),
     };
+
+    const presetInputs = [];
+    const presetLimit = 10;
 
     function createRequestId() {
         return (typeof crypto !== 'undefined' && crypto.randomUUID)
@@ -565,6 +576,69 @@
         elements.localPath.value = getActiveRightSnapshot().path;
     }
 
+    function normalizePresets(values) {
+        const sanitized = Array.isArray(values) ? values : [];
+        return Array.from({ length: presetLimit }, (_, index) => sanitized[index] ?? '');
+    }
+
+    function renderPresetOptions(values) {
+        const options = normalizePresets(values).filter((entry) => entry);
+        const select = elements.remotePresetSelect;
+        if (!select) {
+            return;
+        }
+        select.innerHTML = '';
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = 'Select preset…';
+        select.appendChild(placeholder);
+        options.forEach((entry) => {
+            const option = document.createElement('option');
+            option.value = entry;
+            option.textContent = entry;
+            select.appendChild(option);
+        });
+    }
+
+    function buildPresetRows(values) {
+        if (!elements.sftpPresetsList) {
+            return;
+        }
+        presetInputs.length = 0;
+        elements.sftpPresetsList.innerHTML = '';
+        normalizePresets(values).forEach((value) => {
+            const row = document.createElement('div');
+            row.className = 'preset-row';
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'preset-row__input';
+            input.value = value;
+            input.spellcheck = false;
+            input.placeholder = '/var/log';
+            row.appendChild(input);
+            elements.sftpPresetsList.appendChild(row);
+            presetInputs.push({ input });
+        });
+    }
+
+    function openPresetsDialog() {
+        buildPresetRows(state.sftpPresets);
+        elements.sftpPresetsDialog.classList.remove('dialog--hidden');
+        elements.sftpPresetsDialog.setAttribute('aria-hidden', 'false');
+        presetInputs[0]?.input?.focus();
+    }
+
+    function hidePresetsDialog() {
+        elements.sftpPresetsDialog.classList.add('dialog--hidden');
+        elements.sftpPresetsDialog.setAttribute('aria-hidden', 'true');
+    }
+
+    function savePresets() {
+        const values = presetInputs.map(({ input }) => input.value.trim());
+        vscode.postMessage({ type: 'saveSftpPresets', presets: values });
+        hidePresetsDialog();
+    }
+
     function updateButtons() {
         const remoteSelected = getSelectedEntries(state.remote).length > 0;
         const rightSnapshot = getActiveRightSnapshot();
@@ -579,6 +653,8 @@
         elements.remoteNewFile.disabled = disabled;
         elements.remoteOpenTerminal.disabled = disabled;
         elements.remotePath.disabled = disabled;
+        elements.remotePresetSelect.disabled = disabled;
+        elements.remotePresetManage.disabled = disabled;
 
         elements.localHome.disabled = disabled;
         elements.localToRemote.disabled = disabled || !rightSelected;
@@ -620,6 +696,8 @@
         state.remote = { ...payload.remote, selected: [] };
         state.rightLocal = { ...payload.local, selected: [] };
         state.rightRemote = { ...payload.remote, selected: [] };
+        state.sftpPresets = Array.isArray(payload.sftpPresets) ? payload.sftpPresets : [];
+        renderPresetOptions(state.sftpPresets);
         resetSelectionAnchors();
         renderLists();
     }
@@ -906,12 +984,23 @@
             submitPath('remote');
         }
     });
+    elements.remotePresetSelect.addEventListener('change', () => {
+        if (elements.remotePresetSelect.value) {
+            elements.remotePath.value = elements.remotePresetSelect.value;
+            submitPath('remote');
+        }
+    });
+    elements.remotePresetManage.addEventListener('click', () => openPresetsDialog());
     elements.localPath.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {
             event.preventDefault();
             submitPath('right');
         }
     });
+
+    elements.sftpPresetsSave.addEventListener('click', () => savePresets());
+    elements.sftpPresetsCancel.addEventListener('click', () => hidePresetsDialog());
+    elements.sftpPresetsDismiss.addEventListener('click', () => hidePresetsDialog());
 
     elements.contextRun.addEventListener('click', () => {
         hideContextMenu();
@@ -1092,6 +1181,10 @@
             }
             case 'permissionsInfo':
                 handlePermissionsInfo(message);
+                break;
+            case 'sftpPresetsUpdated':
+                state.sftpPresets = Array.isArray(message.presets) ? message.presets : [];
+                renderPresetOptions(state.sftpPresets);
                 break;
         }
     });
