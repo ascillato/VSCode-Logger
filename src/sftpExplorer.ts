@@ -53,6 +53,7 @@ interface InitResponse {
     localHome: string;
     remote: DirectorySnapshot;
     local: DirectorySnapshot;
+    sftpPresets: string[];
 }
 
 interface ListResponse {
@@ -98,6 +99,11 @@ interface PermissionsInfoMessage {
     info: PermissionsInfo;
 }
 
+interface SftpPresetsMessage {
+    type: 'sftpPresetsUpdated';
+    presets: string[];
+}
+
 type ConfirmationResponse = { type: 'confirmationResult'; requestId: string; confirmed: boolean };
 type InputResponse = { type: 'inputResult'; requestId: string; value?: string };
 
@@ -109,7 +115,8 @@ type WebviewResponse =
     | ConfirmationResponse
     | InputResponse
     | ConnectionStatusMessage
-    | PermissionsInfoMessage;
+    | PermissionsInfoMessage
+    | SftpPresetsMessage;
 
 type WebviewRequest =
     | { type: 'requestInit' }
@@ -155,7 +162,8 @@ type WebviewRequest =
     | { type: 'openTerminal'; location: 'remote' | 'local'; path: string }
     | { type: 'deleteEntries'; location: 'remote' | 'local'; paths: string[]; requestId: string }
     | { type: 'requestConfirmation'; message: string; requestId: string }
-    | { type: 'requestInput'; prompt: string; value?: string; requestId: string };
+    | { type: 'requestInput'; prompt: string; value?: string; requestId: string }
+    | { type: 'saveSftpPresets'; presets: string[] };
 
 interface HostKeyMismatch {
     expected: string;
@@ -235,12 +243,14 @@ export class SftpExplorerPanel {
     private disposed = false;
     private viewContentDirectory?: string;
     private readonly viewedTempFiles = new Map<string, { remotePath: string }>();
+    private readonly sftpPresetsKey: string;
 
     readonly onDidDispose = this.onDidDisposeEmitter.event;
 
     constructor(private readonly context: vscode.ExtensionContext, private readonly device: EmbeddedDevice) {
         this.passwordManager = new PasswordManager(context);
         this.localHome = os.homedir();
+        this.sftpPresetsKey = `embeddedLogger.sftpPresets.${device.id}`;
 
         this.panel = vscode.window.createWebviewPanel(
             'embeddedLoggerSftpExplorer',
@@ -477,6 +487,10 @@ export class SftpExplorerPanel {
                     this.postMessage({ type: 'inputResult', requestId: message.requestId, value: value ?? '' });
                     break;
                 }
+                case 'saveSftpPresets': {
+                    await this.saveSftpPresets(message.presets);
+                    break;
+                }
             }
         } catch (err: any) {
             const messageText = err instanceof HostKeyMismatchError ? err.message : err?.message ?? String(err);
@@ -489,6 +503,7 @@ export class SftpExplorerPanel {
         const remoteHome = await this.getRemoteHome();
         const remoteSnapshot = await this.buildSnapshot('remote', remoteHome);
         const localSnapshot = await this.buildSnapshot('local', this.localHome);
+        const sftpPresets = this.getSftpPresets();
 
         const payload: InitResponse = {
             type: 'init',
@@ -496,11 +511,22 @@ export class SftpExplorerPanel {
             localHome: this.localHome,
             remote: remoteSnapshot,
             local: localSnapshot,
+            sftpPresets,
         };
 
         this.remotePaths = { left: remoteSnapshot.path, right: remoteSnapshot.path };
         this.updateConnectionStatus('connected');
         this.postMessage(payload);
+    }
+
+    private getSftpPresets(): string[] {
+        return this.context.workspaceState.get<string[]>(this.sftpPresetsKey, []);
+    }
+
+    private async saveSftpPresets(presets: string[]): Promise<void> {
+        const sanitized = presets.map((entry) => entry.trim()).filter((entry) => entry.length > 0);
+        await this.context.workspaceState.update(this.sftpPresetsKey, sanitized);
+        this.postMessage({ type: 'sftpPresetsUpdated', presets: sanitized });
     }
 
     private async listAndPost(
@@ -2249,6 +2275,12 @@ export class SftpExplorerPanel {
                             spellcheck="false"
                             aria-label="Remote path"
                         />
+                        <label class="sr-only" for="remotePresetSelect">SFTP preset paths</label>
+                        <select class="path-select" id="remotePresetSelect" aria-label="SFTP preset paths">
+                            <option value="">Select preset…</option>
+                        </select>
+                        <button id="remotePresetGo" class="action" type="button">GO</button>
+                        <button id="remotePresetManage" class="action" type="button">PRESETS</button>
                     </div>
                 </div>
                 <div id="remoteList" class="list" role="tree"></div>
@@ -2383,6 +2415,21 @@ export class SftpExplorerPanel {
                 <footer class="dialog__actions">
                     <button class="action action--primary" id="permissionsSave">Save</button>
                     <button class="action" id="permissionsCancel">Cancel</button>
+                </footer>
+            </div>
+        </div>
+        <div class="dialog dialog--hidden" id="sftpPresetsDialog" role="dialog" aria-modal="true" aria-labelledby="sftpPresetsTitle" aria-hidden="true">
+            <div class="dialog__content">
+                <header class="dialog__header">
+                    <h3 class="dialog__title" id="sftpPresetsTitle">SFTP presets</h3>
+                    <button class="dialog__close" id="sftpPresetsDismiss" aria-label="Cancel">✕</button>
+                </header>
+                <div class="dialog__body">
+                    <div class="preset-list" id="sftpPresetsList"></div>
+                </div>
+                <footer class="dialog__actions">
+                    <button class="action action--primary" id="sftpPresetsSave">Save</button>
+                    <button class="action action--secondary" id="sftpPresetsCancel">Cancel</button>
                 </footer>
             </div>
         </div>

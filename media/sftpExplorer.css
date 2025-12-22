@@ -148,6 +148,20 @@ body {
     min-width: 0;
 }
 
+.path-select {
+    background: var(--vscode-dropdown-background);
+    color: var(--vscode-dropdown-foreground);
+    border: 1px solid var(--vscode-dropdown-border);
+    border-radius: 2px;
+    padding: 0.25rem 0.4rem;
+    font-size: 0.85rem;
+    max-width: 14rem;
+}
+
+.path-select:disabled {
+    opacity: 0.6;
+}
+
 .path-input:disabled {
     opacity: 0.6;
 }
@@ -430,6 +444,35 @@ body {
 .dialog__error {
     min-height: 1.2rem;
     color: var(--vscode-errorForeground);
+}
+
+.preset-list {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.preset-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.preset-row__input {
+    background: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    border: 1px solid var(--vscode-input-border, transparent);
+    padding: 0.35rem 0.5rem;
+    border-radius: 3px;
+}
+
+.preset-row__error {
+    font-size: 0.75rem;
+    color: var(--vscode-errorForeground);
+    display: none;
+}
+
+.preset-row__error--visible {
+    display: block;
 }
 
 .action--primary {
