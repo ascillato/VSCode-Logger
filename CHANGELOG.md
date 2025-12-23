@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [1.4.3] - 2025-12-22 [SFTP-IMPROVEMENTS]
+
+### Added
+- Show SFTP presets in dropdown menu.
+- Docs: Added function descriptions.
+- Auto-deploy to VSCode marketplace when a release tag is generated
+
+### Changed
+- None.
+
+### Deprecated
+- None.
+
+### Removed
+- Removed unnecessary files from extension package.
+
+### Fixed
+- None.
+
+### Security
+- None.
+
+----------------------------------------
+
 ## [1.4.1] - 2025-12-21 [SFTP-MORE-PRESETS]
 
 ### Added
