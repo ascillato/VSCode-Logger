@@ -2298,17 +2298,24 @@ export class SftpExplorerPanel {
                         >
                             <img class="action__icon" src="${terminalIconUri}" alt="">
                         </button>
-                        <input
-                            class="path-input"
-                            id="remotePath"
-                            type="text"
-                            spellcheck="false"
-                            aria-label="Remote path"
-                        />
-                        <label class="sr-only" for="remotePresetSelect">SFTP preset paths</label>
-                        <select class="path-select" id="remotePresetSelect" aria-label="SFTP preset paths">
-                            <option value="">Select preset…</option>
-                        </select>
+                        <div class="path-input-group">
+                            <input
+                                class="path-input"
+                                id="remotePath"
+                                type="text"
+                                spellcheck="false"
+                                aria-label="Remote path"
+                            />
+                            <div class="preset-menu" id="remotePresetMenu" role="listbox" aria-label="Remote presets"></div>
+                        </div>
+                        <button
+                            class="action action--icon preset-toggle"
+                            id="remotePresetToggle"
+                            type="button"
+                            aria-label="Show remote presets"
+                            aria-haspopup="listbox"
+                            aria-expanded="false"
+                        >▾</button>
                         <button id="remotePresetManage" class="action" type="button">PRESETS</button>
                     </div>
                 </div>
@@ -2340,17 +2347,24 @@ export class SftpExplorerPanel {
                         >
                             <img class="action__icon" src="${terminalIconUri}" alt="">
                         </button>
-                        <input
-                            class="path-input"
-                            id="localPath"
-                            type="text"
-                            spellcheck="false"
-                            aria-label="Local path"
-                        />
-                        <label class="sr-only" for="rightPresetSelect">SFTP preset paths</label>
-                        <select class="path-select" id="rightPresetSelect" aria-label="SFTP preset paths">
-                            <option value="">Select preset…</option>
-                        </select>
+                        <div class="path-input-group">
+                            <input
+                                class="path-input"
+                                id="localPath"
+                                type="text"
+                                spellcheck="false"
+                                aria-label="Local path"
+                            />
+                            <div class="preset-menu" id="rightPresetMenu" role="listbox" aria-label="Right pane presets"></div>
+                        </div>
+                        <button
+                            class="action action--icon preset-toggle"
+                            id="rightPresetToggle"
+                            type="button"
+                            aria-label="Show presets"
+                            aria-haspopup="listbox"
+                            aria-expanded="false"
+                        >▾</button>
                         <button id="rightPresetManage" class="action" type="button">PRESETS</button>
                     </div>
                 </div>
