@@ -32,10 +32,12 @@
         remotePane: document.getElementById('remotePane'),
         rightPane: document.getElementById('rightPane'),
         remotePath: document.getElementById('remotePath'),
-        remotePresetSelect: document.getElementById('remotePresetSelect'),
+        remotePresetToggle: document.getElementById('remotePresetToggle'),
+        remotePresetMenu: document.getElementById('remotePresetMenu'),
         remotePresetManage: document.getElementById('remotePresetManage'),
         localPath: document.getElementById('localPath'),
-        rightPresetSelect: document.getElementById('rightPresetSelect'),
+        rightPresetToggle: document.getElementById('rightPresetToggle'),
+        rightPresetMenu: document.getElementById('rightPresetMenu'),
         rightPresetManage: document.getElementById('rightPresetManage'),
         remoteOpenTerminal: document.getElementById('remoteOpenTerminal'),
         localOpenTerminal: document.getElementById('localOpenTerminal'),
@@ -585,22 +587,67 @@
         return Array.from({ length: presetLimit }, (_, index) => sanitized[index] ?? '');
     }
 
-    function renderPresetOptions(select, values) {
-        const options = normalizePresets(values).filter((entry) => entry);
-        if (!select) {
+    function renderPresetMenu(menu, values) {
+        if (!menu) {
             return;
         }
-        select.innerHTML = '';
-        const placeholder = document.createElement('option');
-        placeholder.value = '';
-        placeholder.textContent = 'Select preset…';
-        select.appendChild(placeholder);
+        const options = normalizePresets(values).filter((entry) => entry);
+        menu.innerHTML = '';
+        if (!options.length) {
+            const empty = document.createElement('div');
+            empty.className = 'preset-menu__empty';
+            empty.textContent = 'No presets saved';
+            menu.appendChild(empty);
+            return;
+        }
         options.forEach((entry) => {
-            const option = document.createElement('option');
-            option.value = entry;
-            option.textContent = entry;
-            select.appendChild(option);
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'preset-menu__item';
+            item.textContent = entry;
+            item.dataset.value = entry;
+            menu.appendChild(item);
         });
+    }
+
+    function setPresetMenuOpen(side, isOpen) {
+        const menu = side === 'remote' ? elements.remotePresetMenu : elements.rightPresetMenu;
+        const toggle = side === 'remote' ? elements.remotePresetToggle : elements.rightPresetToggle;
+        if (!menu || !toggle) {
+            return;
+        }
+        menu.classList.toggle('preset-menu--open', isOpen);
+        toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    }
+
+    function closePresetMenus() {
+        setPresetMenuOpen('remote', false);
+        setPresetMenuOpen('right', false);
+    }
+
+    function togglePresetMenu(side) {
+        const menu = side === 'remote' ? elements.remotePresetMenu : elements.rightPresetMenu;
+        if (!menu) {
+            return;
+        }
+        const isOpen = menu.classList.contains('preset-menu--open');
+        closePresetMenus();
+        if (!isOpen) {
+            setPresetMenuOpen(side, true);
+        }
+    }
+
+    function selectPreset(side, value) {
+        if (!value) {
+            return;
+        }
+        if (side === 'remote') {
+            elements.remotePath.value = value;
+            submitPath('remote');
+        } else {
+            elements.localPath.value = value;
+            submitPath('right');
+        }
     }
 
     function buildPresetRows(values) {
@@ -657,7 +704,7 @@
         elements.remoteNewFile.disabled = disabled;
         elements.remoteOpenTerminal.disabled = disabled;
         elements.remotePath.disabled = disabled;
-        elements.remotePresetSelect.disabled = disabled;
+        elements.remotePresetToggle.disabled = disabled;
         elements.remotePresetManage.disabled = disabled;
 
         elements.localHome.disabled = disabled;
@@ -668,9 +715,13 @@
         elements.localNewFile.disabled = disabled;
         elements.localOpenTerminal.disabled = disabled;
         elements.localPath.disabled = disabled;
-        elements.rightPresetSelect.disabled = disabled;
+        elements.rightPresetToggle.disabled = disabled;
         elements.rightPresetManage.disabled = disabled;
         elements.rightMode.disabled = disabled;
+
+        if (disabled) {
+            closePresetMenus();
+        }
     }
 
     function requestList(location, path, requestId) {
@@ -704,9 +755,9 @@
         state.rightRemote = { ...payload.remote, selected: [] };
         state.sftpPresetsRemote = Array.isArray(payload.sftpPresetsRemote) ? payload.sftpPresetsRemote : [];
         state.sftpPresetsLocal = Array.isArray(payload.sftpPresetsLocal) ? payload.sftpPresetsLocal : [];
-        renderPresetOptions(elements.remotePresetSelect, state.sftpPresetsRemote);
-        renderPresetOptions(
-            elements.rightPresetSelect,
+        renderPresetMenu(elements.remotePresetMenu, state.sftpPresetsRemote);
+        renderPresetMenu(
+            elements.rightPresetMenu,
             state.rightMode === 'local' ? state.sftpPresetsLocal : state.sftpPresetsRemote
         );
         resetSelectionAnchors();
@@ -995,21 +1046,31 @@
             submitPath('remote');
         }
     });
-    elements.remotePresetSelect.addEventListener('change', () => {
-        if (elements.remotePresetSelect.value) {
-            elements.remotePath.value = elements.remotePresetSelect.value;
-            submitPath('remote');
+    elements.remotePresetToggle.addEventListener('click', () => {
+        togglePresetMenu('remote');
+    });
+    elements.remotePresetMenu.addEventListener('click', (event) => {
+        const target = event.target.closest('.preset-menu__item');
+        if (!target) {
+            return;
         }
+        selectPreset('remote', target.dataset.value);
+        closePresetMenus();
     });
     elements.remotePresetManage.addEventListener('click', () => {
         state.presetsDialogLocation = 'remote';
         openPresetsDialog();
     });
-    elements.rightPresetSelect.addEventListener('change', () => {
-        if (elements.rightPresetSelect.value) {
-            elements.localPath.value = elements.rightPresetSelect.value;
-            submitPath('right');
+    elements.rightPresetToggle.addEventListener('click', () => {
+        togglePresetMenu('right');
+    });
+    elements.rightPresetMenu.addEventListener('click', (event) => {
+        const target = event.target.closest('.preset-menu__item');
+        if (!target) {
+            return;
         }
+        selectPreset('right', target.dataset.value);
+        closePresetMenus();
     });
     elements.rightPresetManage.addEventListener('click', () => {
         state.presetsDialogLocation = state.rightMode === 'local' ? 'local' : 'remote';
@@ -1118,10 +1179,19 @@
     });
 
     document.addEventListener('click', (event) => {
+        const target = event.target;
+        const clickedPreset =
+            elements.remotePresetMenu?.contains(target)
+            || elements.rightPresetMenu?.contains(target)
+            || elements.remotePresetToggle?.contains(target)
+            || elements.rightPresetToggle?.contains(target);
+        if (!clickedPreset) {
+            closePresetMenus();
+        }
         if (!elements.contextMenu) {
             return;
         }
-        if (!elements.contextMenu.contains(event.target)) {
+        if (!elements.contextMenu.contains(target)) {
             hideContextMenu();
         }
     });
@@ -1137,9 +1207,10 @@
         clearSelection('right');
         updatePaths();
         updateButtons();
+        closePresetMenus();
         hideContextMenu();
-        renderPresetOptions(
-            elements.rightPresetSelect,
+        renderPresetMenu(
+            elements.rightPresetMenu,
             state.rightMode === 'local' ? state.sftpPresetsLocal : state.sftpPresetsRemote
         );
         renderLists();
@@ -1216,9 +1287,9 @@
                 } else {
                     state.sftpPresetsRemote = Array.isArray(message.presets) ? message.presets : [];
                 }
-                renderPresetOptions(elements.remotePresetSelect, state.sftpPresetsRemote);
-                renderPresetOptions(
-                    elements.rightPresetSelect,
+                renderPresetMenu(elements.remotePresetMenu, state.sftpPresetsRemote);
+                renderPresetMenu(
+                    elements.rightPresetMenu,
                     state.rightMode === 'local' ? state.sftpPresetsLocal : state.sftpPresetsRemote
                 );
                 break;
