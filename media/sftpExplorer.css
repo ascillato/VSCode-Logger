@@ -100,6 +100,7 @@ body {
     position: relative;
     flex: 1 1 0;
     min-width: 0;
+    display: flex;
 }
 
 .actions {
@@ -151,8 +152,10 @@ body {
     border: 1px solid var(--vscode-input-border, transparent);
     border-radius: 2px;
     padding: 0.25rem 0.4rem;
-    width: 100%;
+    flex: 1 1 auto;
+    width: auto;
     min-width: 0;
+    box-sizing: border-box;
 }
 
 .preset-toggle {
