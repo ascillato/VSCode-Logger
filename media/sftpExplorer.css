@@ -98,7 +98,7 @@ body {
 
 .path-input-group {
     position: relative;
-    flex: 1 1 auto;
+    flex: 1 1 0;
     min-width: 0;
 }
 
