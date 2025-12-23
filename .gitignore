@@ -152,3 +152,6 @@ docs/typedoc/
 
 #temp files
 temp_*.*
+
+#vscode
+.vscode/settings.json
