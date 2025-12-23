@@ -93,11 +93,12 @@ body {
     display: flex;
     align-items: center;
     gap: 0.35rem;
+    flex-wrap: nowrap;
 }
 
 .path-input-group {
     position: relative;
-    flex: 1;
+    flex: 1 1 auto;
     min-width: 0;
 }
 
@@ -151,9 +152,11 @@ body {
     border-radius: 2px;
     padding: 0.25rem 0.4rem;
     width: 100%;
+    min-width: 0;
 }
 
 .preset-toggle {
+    flex: 0 0 auto;
     width: 1.6rem;
     min-width: 1.6rem;
     justify-content: center;
