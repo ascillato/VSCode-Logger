@@ -82,6 +82,51 @@
         activeBookmarkId: null,
     };
 
+    let isRestoringState = false;
+
+    /**
+     * @brief Persists the current UI state so it can be restored if the Webview reloads.
+     */
+    function persistState() {
+        const serializedState = {
+            deviceId: state.deviceId,
+            presets: state.presets,
+            entries: state.entries,
+            minLevel: state.minLevel,
+            textFilter: state.textFilter,
+            wordWrapEnabled: state.wordWrapEnabled,
+            autoScrollEnabled: state.autoScrollEnabled,
+            highlights: state.highlights,
+            nextHighlightId: state.nextHighlightId,
+            searchTerm: state.searchTerm,
+            isLiveLog: state.isLiveLog,
+            autoReconnectEnabled: state.autoReconnectEnabled,
+            connectionState: state.connectionState,
+            maxEntries: state.maxEntries,
+            statusText: state.statusText,
+            secondaryStatus: state.secondaryStatus,
+            autoSaveActive: state.autoSaveActive,
+            lineLimitReached: state.lineLimitReached,
+            activeBookmarkId: state.activeBookmarkId,
+        };
+        vscode.setState(serializedState);
+    }
+
+    let persistTimeout = null;
+
+    function schedulePersist() {
+        if (isRestoringState) {
+            return;
+        }
+        if (persistTimeout) {
+            return;
+        }
+        persistTimeout = setTimeout(() => {
+            persistTimeout = null;
+            persistState();
+        }, 300);
+    }
+
     const minLevelSelect = document.getElementById('minLevel');
     const textFilterInput = document.getElementById('textFilter');
     const presetSelect = document.getElementById('presetSelect');
@@ -120,6 +165,7 @@
     const bookmarkContextMenu = createBookmarkContextMenu();
     let contextMenuEntryId = null;
     let contextMenuSelectedText = '';
+    const savedState = vscode.getState();
 
     let reconnectTimeoutId = null;
     let reconnectIntervalId = null;
@@ -167,6 +213,7 @@
         });
         render({ preserveScrollPosition });
         updateSearchMatches();
+        schedulePersist();
     }
 
     /**
@@ -181,6 +228,7 @@
                 : LINE_LIMIT_NOTICE_OFFLINE;
             lineLimitNotice.classList.toggle('hidden', !reached);
         }
+        schedulePersist();
     }
 
     /**
@@ -211,6 +259,100 @@
         return highlights;
     }
 
+    /**
+     * @brief Restores persisted entries while enforcing the current maximum limit.
+     * @param savedEntries Entries captured from a previous Webview instance.
+     * @param maxEntries Maximum number of entries to retain.
+     * @returns Sanitized entries ready for rendering.
+     */
+    function restoreEntries(savedEntries, maxEntries) {
+        if (!Array.isArray(savedEntries) || !savedEntries.length) {
+            return [];
+        }
+
+        const sanitized = savedEntries
+            .filter((entry) => entry && typeof entry.rawLine === 'string')
+            .map((entry) => {
+                const timestamp = typeof entry.timestamp === 'number' ? entry.timestamp : Date.now();
+                const level = typeof entry.level === 'string' ? entry.level : parseLevel(entry.rawLine);
+                const id = typeof entry.id === 'number' ? entry.id : entryIdCounter++;
+                return {
+                    id,
+                    timestamp,
+                    level,
+                    rawLine: entry.rawLine,
+                    className: typeof entry.className === 'string' ? entry.className : null,
+                    bypassFilters: entry.bypassFilters === true,
+                    isBookmark: entry.isBookmark === true,
+                    bookmarkLabel: typeof entry.bookmarkLabel === 'string' ? entry.bookmarkLabel : '',
+                };
+            });
+
+        const limited = sanitized.slice(-maxEntries);
+        const maxId = limited.reduce((max, entry) => Math.max(max, entry.id || 0), -1);
+        entryIdCounter = Math.max(entryIdCounter, maxId + 1);
+        return limited;
+    }
+
+    /**
+     * @brief Restores the persisted Webview state when available.
+     * @param snapshot Serialized state captured via vscode.setState.
+     */
+    function restoreStateFromSnapshot(snapshot) {
+        if (!snapshot) {
+            return;
+        }
+
+        isRestoringState = true;
+        state.deviceId = snapshot.deviceId || state.deviceId;
+        state.presets = Array.isArray(snapshot.presets) ? snapshot.presets : state.presets;
+        state.minLevel = snapshot.minLevel || state.minLevel;
+        state.textFilter = typeof snapshot.textFilter === 'string' ? snapshot.textFilter : state.textFilter;
+        state.wordWrapEnabled = snapshot.wordWrapEnabled === true || snapshot.wordWrapEnabled === false
+            ? snapshot.wordWrapEnabled
+            : state.wordWrapEnabled;
+        state.autoScrollEnabled = snapshot.autoScrollEnabled === false ? false : state.autoScrollEnabled;
+        state.highlights = Array.isArray(snapshot.highlights) ? snapshot.highlights : state.highlights;
+        state.nextHighlightId = typeof snapshot.nextHighlightId === 'number' ? snapshot.nextHighlightId : state.nextHighlightId;
+        state.searchTerm = typeof snapshot.searchTerm === 'string' ? snapshot.searchTerm : state.searchTerm;
+        state.isLiveLog = snapshot.isLiveLog === false ? false : state.isLiveLog;
+        state.autoReconnectEnabled = snapshot.autoReconnectEnabled === false ? false : state.autoReconnectEnabled;
+        state.connectionState = snapshot.connectionState || state.connectionState;
+        state.maxEntries = Math.max(1, Number(snapshot.maxEntries) || state.maxEntries);
+        state.statusText = snapshot.statusText || state.statusText;
+        state.secondaryStatus = snapshot.secondaryStatus || null;
+        state.autoSaveActive = snapshot.autoSaveActive === true;
+        state.activeBookmarkId = typeof snapshot.activeBookmarkId === 'number' ? snapshot.activeBookmarkId : null;
+
+        const restoredEntries = restoreEntries(snapshot.entries, state.maxEntries);
+        state.entries = restoredEntries;
+        entryIdCounter = restoredEntries.reduce((max, entry) => Math.max(max, entry.id || 0), -1) + 1;
+        state.lineLimitReached = snapshot.lineLimitReached === true || state.entries.length >= state.maxEntries;
+
+        minLevelSelect.value = state.minLevel;
+        textFilterInput.value = state.textFilter;
+        wordWrapToggle.checked = state.wordWrapEnabled;
+        autoScrollToggle.checked = state.autoScrollEnabled;
+        autoReconnectToggle.checked = state.autoReconnectEnabled;
+        searchInput.value = state.searchTerm;
+
+        setHighlights(state.highlights);
+        updatePresetDropdown();
+        applyFilters();
+        updateWordWrapClass();
+        setLineLimitReached(state.lineLimitReached);
+        setConnectionState(state.connectionState || (state.isLiveLog ? 'connecting' : 'disconnected'));
+        updateStatus(state.statusText, { preserveSecondary: true });
+        if (state.secondaryStatus?.source === 'autoSave') {
+            setAutoSaveStatus(state.secondaryStatus.text, state.secondaryStatus.fileName);
+        } else if (state.secondaryStatus?.text) {
+            setSecondaryStatus(state.secondaryStatus.text);
+        }
+        if (state.autoSaveActive) {
+            setAutoSaveActive(true);
+        }
+        isRestoringState = false;
+    }
     /**
      * @brief Builds a DOM fragment with highlighted matches for a log line.
      * @param line The raw log line.
@@ -619,6 +761,7 @@
                 setLineLimitReached(true);
             }
         }
+        schedulePersist();
     }
 
     /**
@@ -644,6 +787,7 @@
         if (trimmed) {
             setLineLimitReached(true);
         }
+        schedulePersist();
     }
 
     /**
@@ -660,6 +804,7 @@
         render();
         updateSearchStatus();
         setLineLimitReached(false);
+        schedulePersist();
     }
 
     /**
@@ -1137,6 +1282,7 @@
         updateActionButton();
         updateAutoSaveToggleState();
         updateConnectionDecorations();
+        schedulePersist();
     }
 
     /**
@@ -1151,6 +1297,7 @@
         state.statusText = text || '';
         renderStatusText();
         updateActionButton(options);
+        schedulePersist();
     }
 
     /**
@@ -1164,6 +1311,7 @@
             state.secondaryStatus = null;
         }
         renderStatusText();
+        schedulePersist();
     }
 
     /**
@@ -1239,6 +1387,7 @@
             state.secondaryStatus = null;
         }
         renderStatusText();
+        schedulePersist();
     }
 
     /**
@@ -1252,6 +1401,7 @@
             autoSaveToggle.classList.toggle('auto-save-active', active);
             updateAutoSaveToggleState();
         }
+        schedulePersist();
     }
 
     /**
@@ -1436,6 +1586,7 @@
 
         state.autoScrollEnabled = enabled;
         autoScrollToggle.checked = enabled;
+        schedulePersist();
     }
 
     /**
@@ -1524,6 +1675,7 @@
             clearActiveSearchLine();
             updateSearchStatus();
             updateSearchClearButton();
+            schedulePersist();
             return;
         }
 
@@ -1538,6 +1690,7 @@
             clearActiveSearchLine();
             updateSearchStatus();
             updateSearchClearButton();
+            schedulePersist();
             return;
         }
 
@@ -1547,6 +1700,7 @@
 
         scrollToActiveMatch();
         updateSearchClearButton();
+        schedulePersist();
     }
 
     /**
@@ -1579,6 +1733,8 @@
             handle = setTimeout(() => fn.apply(null, args), delay);
         };
     }
+
+    restoreStateFromSnapshot(savedState);
 
     // Event wiring
     minLevelSelect.value = state.minLevel;
@@ -1657,6 +1813,7 @@
     wordWrapToggle.addEventListener('change', () => {
         state.wordWrapEnabled = wordWrapToggle.checked;
         updateWordWrapClass();
+        schedulePersist();
     });
 
     autoScrollToggle.addEventListener('change', () => {
@@ -1664,6 +1821,7 @@
         if (state.autoScrollEnabled && state.searchIndex === -1) {
             logContainer.scrollTop = logContainer.scrollHeight;
         }
+        schedulePersist();
     });
 
     autoReconnectToggle.addEventListener('change', () => {
@@ -1673,6 +1831,7 @@
         } else if (state.connectionState === 'disconnected') {
             startReconnectCountdown('Connection closed.');
         }
+        schedulePersist();
     });
 
     logContainer.addEventListener('scroll', () => {
@@ -1917,6 +2076,8 @@
                 break;
         }
     });
+
+    window.addEventListener('beforeunload', persistState);
 
     vscode.postMessage({ type: 'ready' });
 
