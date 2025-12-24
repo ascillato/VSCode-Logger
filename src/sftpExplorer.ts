@@ -234,6 +234,7 @@ export class SftpExplorerPanel {
     private readonly onDidDisposeEmitter = new vscode.EventEmitter<void>();
     private readonly webviewReady: Promise<void>;
     private resolveWebviewReady?: () => void;
+    private hasPostedInitialState = false;
 
     private client?: ClientWithSftp;
     private bastionClient?: Client;
@@ -308,7 +309,7 @@ export class SftpExplorerPanel {
      */
     async start(): Promise<void> {
         await this.webviewReady;
-        await this.postInitialState();
+        await this.sendInitialState();
     }
 
     /**
@@ -347,10 +348,7 @@ export class SftpExplorerPanel {
         try {
             switch (message.type) {
                 case 'requestInit':
-                    if (this.resolveWebviewReady) {
-                        this.resolveWebviewReady();
-                        this.resolveWebviewReady = undefined;
-                    }
+                    await this.handleInitRequest();
                     break;
                 case 'listEntries':
                     await this.listAndPost(
@@ -523,6 +521,29 @@ export class SftpExplorerPanel {
             this.postMessage({ type: 'error', message: messageText });
             vscode.window.showErrorMessage(messageText);
         }
+    }
+
+    private async handleInitRequest(): Promise<void> {
+        if (this.resolveWebviewReady) {
+            this.resolveWebviewReady();
+            this.resolveWebviewReady = undefined;
+            if (this.hasPostedInitialState) {
+                await this.sendInitialState();
+            }
+            return;
+        }
+
+        if (this.hasPostedInitialState) {
+            await this.sendInitialState();
+        }
+    }
+
+    private async sendInitialState(): Promise<void> {
+        if (this.disposed) {
+            return;
+        }
+        await this.postInitialState();
+        this.hasPostedInitialState = true;
     }
 
     private async postInitialState(): Promise<void> {
