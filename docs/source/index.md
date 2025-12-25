@@ -8,6 +8,8 @@
 :caption: Contents
 
 Embedded Device Logger <self>
+Detailed Usage and Configuration <detailed-usage>
+Developer Setup and Workflow <developer-guide>
 Architecture Overview <extension-overview>
 Code Development <code-development>
 API <api/index>
