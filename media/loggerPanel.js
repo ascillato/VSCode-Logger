@@ -23,6 +23,8 @@
         { foreground: '#2c3e50', background: '#e2e6eb' },
     ];
 
+    const DEFAULT_CONNECTED_STATUS = 'Connected. Streaming logs...';
+
     const levelOrder = {
         ALL: 0,
         DEBUG: 1,
@@ -163,6 +165,7 @@
     const highlightStatus = document.getElementById('highlightStatus');
     const bookmarkLabelDialog = createBookmarkLabelDialog();
     const bookmarkContextMenu = createBookmarkContextMenu();
+    const statusContextMenu = createStatusContextMenu();
     let contextMenuEntryId = null;
     let contextMenuSelectedText = '';
     const savedState = vscode.getState();
@@ -171,6 +174,7 @@
     let reconnectIntervalId = null;
     let reconnectCountdown = 0;
     let highlightColorCursor = 0;
+    let lastConnectedStatusText = DEFAULT_CONNECTED_STATUS;
     const AUTO_SCROLL_BOTTOM_THRESHOLD = 4;
 
     /**
@@ -342,6 +346,9 @@
         updateWordWrapClass();
         setLineLimitReached(state.lineLimitReached);
         setConnectionState(state.connectionState || (state.isLiveLog ? 'connecting' : 'disconnected'));
+        if (state.connectionState === 'connected' && state.statusText) {
+            lastConnectedStatusText = state.statusText;
+        }
         updateStatus(state.statusText, { preserveSecondary: true });
         if (state.secondaryStatus?.source === 'autoSave') {
             setAutoSaveStatus(state.secondaryStatus.text, state.secondaryStatus.fileName);
@@ -1237,6 +1244,113 @@
     }
 
     /**
+     * @brief Creates the context menu for status actions.
+     * @returns The created context menu element.
+     */
+    function createStatusContextMenu() {
+        const menu = document.createElement('div');
+        menu.id = 'statusContextMenu';
+        menu.className = 'status-context-menu hidden';
+        const list = document.createElement('ul');
+        const listItem = document.createElement('li');
+        const button = document.createElement('button');
+        button.textContent = 'Reset status text';
+        button.dataset.action = 'resetStatus';
+        listItem.appendChild(button);
+        list.appendChild(listItem);
+        menu.appendChild(list);
+        menu.addEventListener('click', (event) => {
+            const target = event.target;
+            if (!(target instanceof HTMLElement)) {
+                return;
+            }
+            const action = target.dataset.action;
+            if (!action) {
+                return;
+            }
+            event.preventDefault();
+            handleStatusContextAction(action);
+            hideStatusContextMenu();
+        });
+        document.addEventListener('click', (event) => {
+            if (!menu.contains(event.target)) {
+                hideStatusContextMenu();
+            }
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                hideStatusContextMenu();
+            }
+        });
+        logContainer?.addEventListener('scroll', hideStatusContextMenu);
+        window.addEventListener('resize', hideStatusContextMenu);
+        document.body.appendChild(menu);
+        return menu;
+    }
+
+    /**
+     * @brief Handles actions invoked from the status context menu.
+     * @param action Identifier for the selected menu action.
+     */
+    function handleStatusContextAction(action) {
+        if (action === 'resetStatus') {
+            resetStatusTextToDefault();
+        }
+    }
+
+    /**
+     * @brief Restores the status text to the default connected message.
+     */
+    function resetStatusTextToDefault() {
+        if (!state.isLiveLog || state.connectionState !== 'connected') {
+            return;
+        }
+        const fallbackStatus = lastConnectedStatusText || DEFAULT_CONNECTED_STATUS;
+        state.secondaryStatus = null;
+        lastConnectedStatusText = fallbackStatus;
+        updateStatus(fallbackStatus);
+        setConnectionState('connected');
+    }
+
+    /**
+     * @brief Displays the status context menu at the pointer location.
+     * @param event Context menu mouse event.
+     */
+    function showStatusContextMenu(event) {
+        if (!state.isLiveLog || state.connectionState !== 'connected') {
+            return;
+        }
+        event.preventDefault();
+        const actionButton = statusContextMenu.querySelector('button[data-action="resetStatus"]');
+        if (actionButton instanceof HTMLButtonElement) {
+            actionButton.disabled = !lastConnectedStatusText;
+        }
+
+        statusContextMenu.classList.remove('hidden');
+        let adjustedX = event.clientX;
+        let adjustedY = event.clientY;
+        const padding = 8;
+        const menuRect = statusContextMenu.getBoundingClientRect();
+
+        if (menuRect.right > window.innerWidth - padding) {
+            adjustedX = Math.max(padding, window.innerWidth - menuRect.width - padding);
+        }
+        if (menuRect.bottom > window.innerHeight - padding) {
+            adjustedY = Math.max(padding, window.innerHeight - menuRect.height - padding);
+        }
+
+        statusContextMenu.style.left = `${adjustedX}px`;
+        statusContextMenu.style.top = `${adjustedY}px`;
+    }
+
+    /**
+     * @brief Hides the status context menu.
+     */
+    function hideStatusContextMenu() {
+        statusContextMenu.classList.add('hidden');
+    }
+
+    /**
      * @brief Clears any active reconnect countdown timers.
      */
     function clearReconnectTimers() {
@@ -1546,6 +1660,7 @@
         }
 
         if (text.startsWith('Connected')) {
+            lastConnectedStatusText = text;
             setConnectionState('connected');
             updateStatus(text, { disableButton: false });
             if (autoReconnectToggle) {
@@ -1751,6 +1866,10 @@
             applyFilters();
         }, 150)
     );
+
+    if (statusEl) {
+        statusEl.addEventListener('contextmenu', (event) => showStatusContextMenu(event));
+    }
 
     logContent.addEventListener('contextmenu', (event) => {
         const target = event.target;

@@ -98,18 +98,16 @@ export class LogSession {
 
             const logCommand = this.getLogCommand();
             const authentication = await this.getAuthentication();
-            const endpoints = getHostEndpoints(this.device);
+            const endpoints = this.buildEndpointAttemptOrder(getHostEndpoints(this.device));
 
             if (endpoints.length === 0) {
                 throw new Error(`Device "${this.device.name}" is missing a host.`);
             }
 
-            const maxAttempts = endpoints.length > 1 ? 3 : 1;
             let endpointIndex = 0;
-            let attempts = 0;
             let lastError: any;
 
-            while (!this.disposed && attempts < maxAttempts) {
+            while (!this.disposed && endpointIndex < endpoints.length) {
                 const endpoint = endpoints[endpointIndex];
                 this.activeEndpoint = endpoint;
 
@@ -133,14 +131,8 @@ export class LogSession {
                     }
 
                     lastError = err;
-                    attempts++;
-
-                    if (endpoints.length > 1) {
-                        endpointIndex = (endpointIndex + 1) % endpoints.length;
-                        continue;
-                    }
-
-                    break;
+                    endpointIndex += 1;
+                    continue;
                 }
             }
 
@@ -193,6 +185,20 @@ export class LogSession {
             throw new Error('Log command must not contain control characters or new lines.');
         }
         return command;
+    }
+
+    private buildEndpointAttemptOrder(endpoints: HostEndpoint[]): HostEndpoint[] {
+        if (!endpoints.length) {
+            return [];
+        }
+
+        const primary = endpoints.find((endpoint) => endpoint.label === 'primary');
+        if (!primary) {
+            return [...endpoints];
+        }
+
+        const remaining = endpoints.filter((endpoint) => endpoint !== primary);
+        return [primary, ...remaining];
     }
 
     private async getAuthentication(): Promise<Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>> {
