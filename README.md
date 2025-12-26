@@ -20,7 +20,7 @@ If you like the extension, please [rate it](https://marketplace.visualstudio.com
 2. Open the **Embedded Logger** view from the Activity Bar (terminal icon).
 3. Add your devices under `embeddedLogger.devices` and start streaming logs.
 
-For the full setup and configuration reference, see the [Detailed Usage and Configuration guide](docs/source/detailed-usage.md).
+For the full setup and configuration reference, see the [Detailed Usage and Configuration guide](https://ascillato.github.io/VSCode-Logger/detailed-usage.html).
 
 ## Installation
 
@@ -32,4 +32,4 @@ Visit the [Marketplace page](https://marketplace.visualstudio.com/items?itemName
 
 ## For developers
 
-Want to build from source or contribute? See the [Developer Setup and Workflow](docs/source/developer-guide.md) for packaging, local installs, and contribution guidelines. The project is open to pull requests—check the [CONTRIBUTING guide](CONTRIBUTING.md) before submitting.
+Want to build from source or contribute? See the [Developer Setup and Workflow](https://ascillato.github.io/VSCode-Logger/developer-guide.html) for packaging, local installs, and contribution guidelines. The project is open to pull requests—check the [CONTRIBUTING guide](https://github.com/ascillato/VSCode-Logger/blob/main/CONTRIBUTING.md) before submitting.
