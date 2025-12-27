@@ -7,7 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
-## [1.4.7] - 2025-12-26 [DOCS-IMPROVEMENTS]
+## [] - UNRELEASED []
+
+### Added
+- None.
+
+### Changed
+- None.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- None.
+
+### Security
+- None.
+
+----------------------------------------
+
+## [1.4.7] - 2025-12-26 [SFTP-RESTYLE]
 
 ### Added
 - Log build result in `make <option>`.
