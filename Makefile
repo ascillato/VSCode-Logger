@@ -3,6 +3,7 @@
 YELLOW=\033[1;33m
 RED=\033[1;31m
 GREEN=\033[1;32m
+BLUE=\033[1;34m
 RESET=\033[0m
 
 .PHONY: all clean install help check package package-clean docs docs-clean
@@ -15,7 +16,7 @@ check: ## Linting and type checking
 	@ts=""; \
 	if npm install && npm run lint && npm run format:check; then \
 		ts="$$(date +"%Y-%m-%dT%H:%M:%S%z")"; \
-		printf "$(GREEN)\n\nCheck target completed at %s\n\n$(RESET)\n" "$$ts"; \
+		printf "$(BLUE)\n\nCheck target completed at %s\n\n$(RESET)\n" "$$ts"; \
 	else \
 		ts="$$(date +"%Y-%m-%dT%H:%M:%S%z")"; \
 		printf "$(RED)\n\nError running check target. %s\n\n$(RESET)\n" "$$ts"; \
