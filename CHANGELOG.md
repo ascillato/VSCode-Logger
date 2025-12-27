@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.4.7] - UNRELEASED [DOCS-IMPROVEMENTS]
 
 ### Added
-- Log build result in make target.
+- Log build result in `make <option>`.
 
 ### Changed
 - Refactor README and update documentation structure.
