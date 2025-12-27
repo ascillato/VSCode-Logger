@@ -1,8 +1,10 @@
 # Detailed Usage and Configuration
 
-The Embedded Device Logger extension connects to embedded Linux targets over SSH, tails their logs, and displays them with rich filtering, highlighting, and export options. If you find it useful, please [rate it in the Marketplace](https://marketplace.visualstudio.com/items?itemName=Scallant.embedded-device-logger&ssr=false#review-details).
+The Embedded Device Logger is a Visual Studio Code extension that can connect to your devices over SSH, tail their logs, and help you analyze the data with loglevel colorization, quick filters, custom keywords highlights and filtered export. It provides also an SFTP client, SSH terminals and one-off SSH commands to help you develop, debug and maintain your Linux-based devices.
 
 ![Log panel screenshot](../images/screenshot_example1.png)
+
+If you like the extension, please [rate it](https://marketplace.visualstudio.com/items?itemName=Scallant.embedded-device-logger&ssr=false#review-details). We welcome issue reports and feature requests.
 
 ## Full feature set
 

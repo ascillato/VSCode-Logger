@@ -1,24 +1,26 @@
 # Embedded Device Logger
 
-Embedded Device Logger is a Visual Studio Code extension built for Linux and embedded engineers. Connect to your devices over SSH, tail their logs, and stay in control with quick filters and highlights.
+The Embedded Device Logger is a Visual Studio Code extension that can connect to your devices over SSH, tail their logs, and help you analyze the data with loglevel colorization, quick filters, custom keywords highlights and filtered export. It provides also an SFTP client, SSH terminals and one-off SSH commands to help you develop, debug and maintain your Linux-based devices.
 
-![Screenshot1](docs/images/screenshot_example1.png)
+![Log panel screenshot](docs/images/screenshot_example1.png)
 
 If you like the extension, please [rate it](https://marketplace.visualstudio.com/items?itemName=Scallant.embedded-device-logger&ssr=false#review-details). We welcome issue reports and feature requests.
 
-## Highlights
+## Key Features
 
 - Stream device logs over SSH with real-time level parsing and colorization.
 - Search, filter, bookmark, and export the exact lines you need.
 - Highlight up to 10 keywords per panel to spot critical events fast.
-- Run one-off SSH commands, open terminals, or browse files with the built-in SFTP explorer.
+- Run one-off SSH commands.
+- Open SSH terminals.
+- Browse files with the built-in SFTP explorer.
 - Secure by default: passwords and key passphrases live in VS Code Secret Storage.
 
 ## Getting started
 
 1. **Install** the extension (see below).
 2. Open the **Embedded Logger** view from the Activity Bar (terminal icon).
-3. Add your devices under `embeddedLogger.devices` and start streaming logs.
+3. Open the configuration with the "pencil" icon and add your devices under `embeddedLogger.devices` and start streaming logs.
 
 For the full setup and configuration reference, see the [Detailed Usage and Configuration guide](https://ascillato.github.io/VSCode-Logger/detailed-usage.html).
 
@@ -32,4 +34,4 @@ Visit the [Marketplace page](https://marketplace.visualstudio.com/items?itemName
 
 ## For developers
 
-Want to build from source or contribute? See the [Developer Setup and Workflow](https://ascillato.github.io/VSCode-Logger/developer-guide.html) for packaging, local installs, and contribution guidelines. The project is open to pull requests—check the [CONTRIBUTING guide](https://github.com/ascillato/VSCode-Logger/blob/main/CONTRIBUTING.md) before submitting.
+Want to build from source or contribute? See the [Developer Setup and Workflow](https://ascillato.github.io/VSCode-Logger/developer-guide.html) for packaging, local installs, and contribution guidelines. The project is open to pull requests. Please, check the [CONTRIBUTING guide](https://ascillato.github.io/VSCode-Logger/code-development.html) before submitting.
