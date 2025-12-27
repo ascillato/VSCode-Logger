@@ -20,8 +20,15 @@ package-clean: ## Remove node_modules, build outputs, and generated .vsix
 	rm -rf node_modules out *.vsix
 
 docs: ## Build documentation (TypeDoc + Sphinx HTML)
-	npm install
-	sphinx-build -b html docs/source docs/build/html
+	@ts=""; \
+	if npm install && sphinx-build -b html docs/source docs/build/html; then \
+		ts="$$(date +"%Y-%m-%dT%H:%M:%S%z")"; \
+		printf "\033[1;33m\n\nDocs Build finished at %s\n\n\033[0m\n" "$$ts"; \
+	else \
+		ts="$$(date +"%Y-%m-%dT%H:%M:%S%z")"; \
+		printf "\033[1;31m\n\nError building docs. %s\n\n\033[0m\n" "$$ts"; \
+		exit 1; \
+	fi
 
 docs-clean: ## Remove generated documentation outputs
 	rm -rf docs/build docs/html docs/typedoc
