@@ -32,3 +32,12 @@ table.align-default th {
   height: 100%;
   width: 100%;
 }
+
+.project-footer {
+  border-top: 1px solid var(--color-border-default, #e0e0e0);
+  color: var(--color-fg-default, #444);
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  text-align: center;
+  font-size: 0.9rem;
+}

@@ -1,0 +1,8 @@
+{% extends "!layout.html" %}
+
+{% block footer %}
+  {{ super() }}
+  <div class="project-footer">
+    {{ project_name or project }}{% if project_version %} v{{ project_version }}{% endif %}
+  </div>
+{% endblock %}

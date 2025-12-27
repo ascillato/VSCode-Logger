@@ -1,4 +1,5 @@
 import importlib.util
+import json
 import os
 import shutil
 import subprocess
@@ -20,6 +21,23 @@ project = "VSCode-Logger"
 author = "A. Scillato"
 # Use the current year in the copyright
 copyright = f"{datetime.now().year}, {author}"
+
+
+def _load_package_metadata() -> dict:
+    """Load metadata from package.json if available."""
+
+    package_json = PROJECT_ROOT / "package.json"
+    try:
+        with package_json.open("r", encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, json.JSONDecodeError):
+        warnings.warn("Unable to read package.json; version footer will be omitted.")
+        return {}
+
+
+_package_metadata = _load_package_metadata()
+version = _package_metadata.get("version", "")
+release = version
 
 # -- General configuration ---------------------------------------------------
 extensions = [
@@ -158,3 +176,8 @@ default_dark_mode = True
 # Ensure syntax highlighting adapts to the user's theme.
 pygments_style = "sphinx"
 pygments_dark_style = "native"
+
+html_context = {
+    "project_name": project,
+    "project_version": version,
+}
