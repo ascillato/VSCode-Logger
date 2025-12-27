@@ -6,7 +6,7 @@ GREEN=\033[1;32m
 BLUE=\033[1;34m
 RESET=\033[0m
 
-.PHONY: all clean install help check package package-clean docs docs-clean
+.PHONY: all clean install help check package force-install package-clean docs docs-clean
 
 all: clean package install ## Clean, then build VSIX package and installs it
 
@@ -83,6 +83,25 @@ install: ## Install the first .vsix found in the current directory
 	else \
 		ts="$$(date +"%Y-%m-%dT%H:%M:%S%z")"; \
 		printf "$(RED)\n\nError running install target. %s\n\n$(RESET)\n" "$$ts"; \
+		exit 1; \
+	fi
+
+force-install: ## Force to Install the first .vsix found in the current directory (even if it is downgrading versions)
+	@ts=""; \
+	vsix="$$(find . -maxdepth 1 -type f -name '*.vsix' -print | sort | head -n 1)"; \
+	if [ -z "$$vsix" ]; then \
+		ts="$$(date +"%Y-%m-%dT%H:%M:%S%z")"; \
+		printf "$(RED)\n\nError: no .vsix file found. %s\n\n$(RESET)\n" "$$ts"; \
+		printf "Run 'make package' first.\n"; \
+		exit 1; \
+	fi; \
+	echo "Force Installing extension: $$vsix"; \
+	if code --install-extension "$$vsix" --force; then \
+		ts="$$(date +"%Y-%m-%dT%H:%M:%S%z")"; \
+		printf "$(GREEN)\n\nForce Install target completed at %s\n\n$(RESET)\n" "$$ts"; \
+	else \
+		ts="$$(date +"%Y-%m-%dT%H:%M:%S%z")"; \
+		printf "$(RED)\n\nError running force install target. %s\n\n$(RESET)\n" "$$ts"; \
 		exit 1; \
 	fi
 
