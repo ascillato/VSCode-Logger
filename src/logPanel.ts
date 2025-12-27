@@ -529,25 +529,25 @@ export class LogPanel {
             </select>
         </label>
         <label>&nbsp;
-            <button id="savePreset">Save Preset</button>
+            <button id="savePreset" class="toolbar-button">Save Preset</button>
         </label>
         <label>&nbsp;
-            <button id="deletePreset">Delete Preset</button>
+            <button id="deletePreset" class="toolbar-button">Delete Preset</button>
         </label>
         <label>&nbsp;
-            <button id="exportLogs">Export Logs</button>
+            <button id="exportLogs" class="toolbar-button">Export Logs</button>
         </label>
         <label>&nbsp;
-            <button id="editLogFile" class="hidden">Edit</button>
+            <button id="editLogFile" class="toolbar-button hidden">Edit</button>
         </label>
         <label>&nbsp;
-            <button id="refreshLogFile" class="hidden">Refresh</button>
+            <button id="refreshLogFile" class="toolbar-button hidden">Refresh</button>
         </label>
         <label>&nbsp;
-            <button id="autoSaveToggle">Auto-Save</button>
+            <button id="autoSaveToggle" class="toolbar-button">Auto-Save</button>
         </label>
         <label>&nbsp;
-            <button id="clearLogs">Clear Logs</button>
+            <button id="clearLogs" class="toolbar-button">Clear Logs</button>
         </label>
         <label class="word-wrap-toggle">
             <span>Word Wrap</span>
@@ -562,31 +562,31 @@ export class LogPanel {
             <input type="checkbox" id="autoReconnectToggle" checked />
         </label>
         <label>&nbsp;
-            <button id="highlightToggle">Highlight</button>
+            <button id="highlightToggle" class="toolbar-button">Highlight</button>
         </label>
         <div class="search-bar">
             <label>Find
                 <input type="text" id="searchInput" placeholder="Find in logs (Ctrl/Cmd+F)" />
             </label>
-            <button id="searchClear" class="icon-button" title="Clear search" aria-label="Clear search">&times;</button>
+            <button id="searchClear" class="toolbar-button toolbar-button--icon" title="Clear search" aria-label="Clear search">&times;</button>
             <div class="search-controls">
-                <button id="searchPrev" title="Previous match">Prev</button>
-                <button id="searchNext" title="Next match">Next</button>
+                <button id="searchPrev" class="toolbar-button" title="Previous match">Prev</button>
+                <button id="searchNext" class="toolbar-button" title="Next match">Next</button>
                 <span id="searchCount">0 / 0</span>
             </div>
         </div>
         <div class="top-bar-spacer"></div>
         <div class="status-area">
             <span id="status"></span>
-            <button id="reconnectButton" class="status-action" hidden>Reconnect</button>
+            <button id="reconnectButton" class="toolbar-button status-action" hidden>Reconnect</button>
         </div>
     </div>
     <div id="highlightPopover" class="highlight-popover hidden" role="dialog" aria-label="Highlight keywords">
         <div class="highlight-header">
             <span class="highlight-title">Highlights</span>
             <div class="highlight-actions">
-                <button id="highlightAdd">add</button>
-                <button id="highlightClear">remove all</button>
+                <button id="highlightAdd" class="toolbar-button">add</button>
+                <button id="highlightClear" class="toolbar-button">remove all</button>
             </div>
         </div>
         <div id="highlightStatus" class="highlight-status"></div>
