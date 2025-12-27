@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
-## [1.4.7] - UNRELEASED [DOCS-IMPROVEMENTS]
+## [1.4.7] - 2025-12-26 [DOCS-IMPROVEMENTS]
 
 ### Added
 - Log build result in `make <option>`.
