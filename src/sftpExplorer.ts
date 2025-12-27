@@ -2303,19 +2303,162 @@ export class SftpExplorerPanel {
             <section class="pane pane--remote" id="remotePane" aria-label="Remote files">
                 <div class="pane__controls">
                     <div class="actions">
-                        <button id="remoteHome" class="action">HOME</button>
-                        <button id="remoteUp" class="action">UP</button>
-                        <button id="remoteRefresh" class="action">REFRESH</button>
-                        <button id="remoteNewFolder" class="action">NEW FOLDER</button>
-                        <button id="remoteNewFile" class="action">NEW FILE</button>
-                        <button id="remoteToLocal" class="action" disabled title="Copy to right pane">→</button>
+                        <span class="pane__mode-label" aria-label="Left pane is remote">Remote</span>
+                        <button
+                            id="remoteHome"
+                            class="action action--icon"
+                            title="Go to remote home directory"
+                            aria-label="Go to remote home directory"
+                        >
+                            <svg class="action__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                <path
+                                    d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H5a1 1 0 0 1-1-1z"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linejoin="round"
+                                />
+                            </svg>
+                        </button>
+                        <button
+                            id="remoteUp"
+                            class="action action--icon"
+                            title="Go up one level on the remote pane"
+                            aria-label="Go up one level on the remote pane"
+                        >
+                            <svg class="action__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                <path
+                                    d="m6 12 6-7 6 7M12 5v14"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                            </svg>
+                        </button>
+                        <button
+                            id="remoteRefresh"
+                            class="action action--icon"
+                            title="Refresh remote files"
+                            aria-label="Refresh remote files"
+                        >
+                            <svg class="action__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                <path
+                                    d="M5 8a7 7 0 0 1 7-4 7 7 0 0 1 7 7"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                                <path
+                                    d="M9 8H5V4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                                <path
+                                    d="M19 16a7 7 0 0 1-7 4 7 7 0 0 1-7-7"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                                <path
+                                    d="M15 16h4v4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                            </svg>
+                        </button>
+                        <button
+                            id="remoteNewFolder"
+                            class="action action--icon"
+                            title="Create remote folder"
+                            aria-label="Create remote folder"
+                        >
+                            <svg class="action__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                <path
+                                    d="M4 7h6l2 2h8v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linejoin="round"
+                                />
+                                <path
+                                    d="M12 12v5m-2.5-2.5h5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                            </svg>
+                        </button>
+                        <button
+                            id="remoteNewFile"
+                            class="action action--icon"
+                            title="Create remote file"
+                            aria-label="Create remote file"
+                        >
+                            <svg class="action__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                <path
+                                    d="M6 4h8l4 4v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linejoin="round"
+                                />
+                                <path
+                                    d="M14 4v5h5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linejoin="round"
+                                    stroke-linecap="round"
+                                />
+                                <path
+                                    d="M12 13v5m-2.5-2.5h5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                            </svg>
+                        </button>
+                        <button
+                            id="remoteToLocal"
+                            class="action action--icon"
+                            disabled
+                            title="Copy selection to right pane"
+                            aria-label="Copy selection to right pane"
+                        >
+                            <svg class="action__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                <path
+                                    d="M5 12h14m-5-5 5 5-5 5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                            </svg>
+                        </button>
                     </div>
                     <div class="path-row">
                         <button
                             id="remoteOpenTerminal"
                             class="action action--icon"
-                            title="Open Terminal here"
-                            aria-label="Open Terminal here"
+                            title="Open terminal here"
+                            aria-label="Open terminal here"
                         >
                             <img class="action__icon" src="${terminalIconUri}" alt="">
                         </button>
@@ -2336,8 +2479,20 @@ export class SftpExplorerPanel {
                             aria-label="Show remote presets"
                             aria-haspopup="listbox"
                             aria-expanded="false"
-                        >▾</button>
-                        <button id="remotePresetManage" class="action" type="button">PRESETS</button>
+                            title="Show remote presets"
+                        >
+                            <svg class="action__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                <path
+                                    d="m6 10 6 6 6-6"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                            </svg>
+                        </button>
+                        <button id="remotePresetManage" class="action" type="button" title="Manage remote presets">PRESETS</button>
                     </div>
                 </div>
                 <div id="remoteList" class="list" role="tree"></div>
@@ -2352,19 +2507,161 @@ export class SftpExplorerPanel {
                                 <option value="remote">remote</option>
                             </select>
                         </label>
-                        <button id="localHome" class="action">HOME</button>
-                        <button id="localUp" class="action">UP</button>
-                        <button id="localRefresh" class="action">REFRESH</button>
-                        <button id="localNewFolder" class="action">NEW FOLDER</button>
-                        <button id="localNewFile" class="action">NEW FILE</button>
-                        <button id="localToRemote" class="action" disabled title="Copy to left pane">←</button>
+                        <button
+                            id="localHome"
+                            class="action action--icon"
+                            title="Go to home directory"
+                            aria-label="Go to home directory"
+                        >
+                            <svg class="action__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                <path
+                                    d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H5a1 1 0 0 1-1-1z"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linejoin="round"
+                                />
+                            </svg>
+                        </button>
+                        <button
+                            id="localUp"
+                            class="action action--icon"
+                            title="Go up one level"
+                            aria-label="Go up one level"
+                        >
+                            <svg class="action__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                <path
+                                    d="m6 12 6-7 6 7M12 5v14"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                            </svg>
+                        </button>
+                        <button
+                            id="localRefresh"
+                            class="action action--icon"
+                            title="Refresh files"
+                            aria-label="Refresh files"
+                        >
+                            <svg class="action__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                <path
+                                    d="M5 8a7 7 0 0 1 7-4 7 7 0 0 1 7 7"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                                <path
+                                    d="M9 8H5V4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                                <path
+                                    d="M19 16a7 7 0 0 1-7 4 7 7 0 0 1-7-7"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                                <path
+                                    d="M15 16h4v4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                            </svg>
+                        </button>
+                        <button
+                            id="localNewFolder"
+                            class="action action--icon"
+                            title="Create folder"
+                            aria-label="Create folder"
+                        >
+                            <svg class="action__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                <path
+                                    d="M4 7h6l2 2h8v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linejoin="round"
+                                />
+                                <path
+                                    d="M12 12v5m-2.5-2.5h5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                            </svg>
+                        </button>
+                        <button
+                            id="localNewFile"
+                            class="action action--icon"
+                            title="Create file"
+                            aria-label="Create file"
+                        >
+                            <svg class="action__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                <path
+                                    d="M6 4h8l4 4v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linejoin="round"
+                                />
+                                <path
+                                    d="M14 4v5h5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linejoin="round"
+                                    stroke-linecap="round"
+                                />
+                                <path
+                                    d="M12 13v5m-2.5-2.5h5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                            </svg>
+                        </button>
+                        <button
+                            id="localToRemote"
+                            class="action action--icon"
+                            disabled
+                            title="Copy selection to left pane"
+                            aria-label="Copy selection to left pane"
+                        >
+                            <svg class="action__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                <path
+                                    d="M19 12H5m5-5-5 5 5 5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                            </svg>
+                        </button>
                     </div>
                     <div class="path-row">
                         <button
                             id="localOpenTerminal"
                             class="action action--icon"
-                            title="Open Terminal here"
-                            aria-label="Open Terminal here"
+                            title="Open terminal here"
+                            aria-label="Open terminal here"
                         >
                             <img class="action__icon" src="${terminalIconUri}" alt="">
                         </button>
@@ -2385,34 +2682,46 @@ export class SftpExplorerPanel {
                             aria-label="Show presets"
                             aria-haspopup="listbox"
                             aria-expanded="false"
-                        >▾</button>
-                        <button id="rightPresetManage" class="action" type="button">PRESETS</button>
+                            title="Show presets"
+                        >
+                            <svg class="action__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                <path
+                                    d="m6 10 6 6 6-6"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                            </svg>
+                        </button>
+                        <button id="rightPresetManage" class="action" type="button" title="Manage presets for right pane">PRESETS</button>
                     </div>
                 </div>
                 <div id="localList" class="list" role="tree"></div>
             </section>
         </div>
         <div class="context-menu" id="contextMenu" role="menu" aria-hidden="true">
-            <button class="context-menu__item" id="contextSelect" role="menuitem">Select</button>
-            <button class="context-menu__item" id="contextRun" role="menuitem">Run</button>
-            <button class="context-menu__item" id="contextViewContent" role="menuitem">View Content</button>
-            <button class="context-menu__item" id="contextRename" role="menuitem">Rename</button>
-            <button class="context-menu__item" id="contextDuplicate" role="menuitem">Duplicate</button>
-            <button class="context-menu__item" id="contextPermissions" role="menuitem">Change Permissions</button>
-            <button class="context-menu__item context-menu__item--danger" id="contextDelete" role="menuitem">Delete</button>
+            <button class="context-menu__item" id="contextSelect" role="menuitem" title="Select">Select</button>
+            <button class="context-menu__item" id="contextRun" role="menuitem" title="Run">Run</button>
+            <button class="context-menu__item" id="contextViewContent" role="menuitem" title="View content">View Content</button>
+            <button class="context-menu__item" id="contextRename" role="menuitem" title="Rename">Rename</button>
+            <button class="context-menu__item" id="contextDuplicate" role="menuitem" title="Duplicate">Duplicate</button>
+            <button class="context-menu__item" id="contextPermissions" role="menuitem" title="Change permissions">Change Permissions</button>
+            <button class="context-menu__item context-menu__item--danger" id="contextDelete" role="menuitem" title="Delete">Delete</button>
         </div>
         <div class="dialog dialog--hidden" id="confirmDialog" role="dialog" aria-modal="true" aria-labelledby="confirmTitle" aria-hidden="true">
             <div class="dialog__content">
                 <header class="dialog__header">
                     <h3 class="dialog__title" id="confirmTitle">Confirm delete</h3>
-                    <button class="dialog__close" id="confirmDismiss" aria-label="Cancel">✕</button>
+                    <button class="dialog__close" id="confirmDismiss" aria-label="Cancel" title="Cancel">✕</button>
                 </header>
                 <div class="dialog__body">
                     <div class="dialog__message" id="confirmMessage"></div>
                 </div>
                 <div class="dialog__actions">
-                    <button class="action action--danger" id="confirmYes">Yes</button>
-                    <button class="action action--secondary" id="confirmCancel">Cancel</button>
+                    <button class="action action--danger" id="confirmYes" title="Confirm delete">Yes</button>
+                    <button class="action action--secondary" id="confirmCancel" title="Cancel delete">Cancel</button>
                 </div>
             </div>
         </div>
@@ -2420,7 +2729,7 @@ export class SftpExplorerPanel {
             <div class="dialog__content">
                 <header class="dialog__header">
                     <h3 class="dialog__title" id="permissionsTitle">Change permissions</h3>
-                    <button class="dialog__close" id="permissionsDismiss" aria-label="Cancel">✕</button>
+                    <button class="dialog__close" id="permissionsDismiss" aria-label="Cancel" title="Cancel">✕</button>
                 </header>
                 <div class="dialog__body">
                     <div class="dialog__target" id="permissionsTarget"></div>
@@ -2482,8 +2791,8 @@ export class SftpExplorerPanel {
                     <div class="dialog__error" id="permissionsError" role="status" aria-live="polite"></div>
                 </div>
                 <footer class="dialog__actions">
-                    <button class="action action--primary" id="permissionsSave">Save</button>
-                    <button class="action" id="permissionsCancel">Cancel</button>
+                    <button class="action action--primary" id="permissionsSave" title="Save permissions">Save</button>
+                    <button class="action" id="permissionsCancel" title="Cancel changes">Cancel</button>
                 </footer>
             </div>
         </div>
@@ -2491,14 +2800,14 @@ export class SftpExplorerPanel {
             <div class="dialog__content">
                 <header class="dialog__header">
                     <h3 class="dialog__title" id="sftpPresetsTitle">SFTP presets</h3>
-                    <button class="dialog__close" id="sftpPresetsDismiss" aria-label="Cancel">✕</button>
+                    <button class="dialog__close" id="sftpPresetsDismiss" aria-label="Cancel" title="Cancel">✕</button>
                 </header>
                 <div class="dialog__body">
                     <div class="preset-list" id="sftpPresetsList"></div>
                 </div>
                 <footer class="dialog__actions">
-                    <button class="action action--primary" id="sftpPresetsSave">Save</button>
-                    <button class="action action--secondary" id="sftpPresetsCancel">Cancel</button>
+                    <button class="action action--primary" id="sftpPresetsSave" title="Save presets">Save</button>
+                    <button class="action action--secondary" id="sftpPresetsCancel" title="Cancel changes">Cancel</button>
                 </footer>
             </div>
         </div>
