@@ -1,5 +1,9 @@
 # Makefile for packaging the Extension and building the docs
 
+YELLOW=\033[1;33m
+RED=\033[1;31m
+RESET=\033[0m
+
 .PHONY: all clean install help check package package-clean docs docs-clean
 
 all: clean package install ## Clean, then build VSIX package and installs it
@@ -23,10 +27,10 @@ docs: ## Build documentation (TypeDoc + Sphinx HTML)
 	@ts=""; \
 	if npm install && sphinx-build -b html docs/source docs/build/html; then \
 		ts="$$(date +"%Y-%m-%dT%H:%M:%S%z")"; \
-		printf "\033[1;33m\n\nDocs Build finished at %s\n\n\033[0m\n" "$$ts"; \
+		printf "$(YELLOW)\n\nDocs Build finished at %s\n\n$(RESET)\n" "$$ts"; \
 	else \
 		ts="$$(date +"%Y-%m-%dT%H:%M:%S%z")"; \
-		printf "\033[1;31m\n\nError building docs. %s\n\n\033[0m\n" "$$ts"; \
+		printf "$(RED)\n\nError building docs. %s\n\n$(RESET)\n" "$$ts"; \
 		exit 1; \
 	fi
 
