@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [1.4.7] - UNRELEASED [DOCS-IMPROVEMENTS]
+
+### Added
+- Log build result in make target.
+
+### Changed
+- Refactor README and update documentation structure.
+- Restyle SFTP explorer toolbar.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- None.
+
+### Security
+- None.
+
+----------------------------------------
+
 ## [1.4.5] - 2025-12-23 [DETACH-SUPPORT]
 
 ### Added
