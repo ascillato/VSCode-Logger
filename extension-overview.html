@@ -1,0 +1,789 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VSCode-Logger Architecture Overview &mdash; VSCode-Logger Documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=86ef7b58" />
+      <link rel="stylesheet" type="text/css" href="_static/dark_mode_css/general.css?v=c0a7eb24" />
+      <link rel="stylesheet" type="text/css" href="_static/dark_mode_css/dark.css?v=70edf1c7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs"></script>
+      <script type="module" src="https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.2.0/dist/mermaid-layout-elk.esm.min.mjs"></script>
+      <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";import elkLayouts from "https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.2.0/dist/mermaid-layout-elk.esm.min.mjs";mermaid.registerLayoutLoaders(elkLayouts);mermaid.initialize({startOnLoad:false});</script>
+      <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+      <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";
+
+const defaultStyle = document.createElement('style');
+defaultStyle.textContent = `pre.mermaid {
+    /* Same as .mermaid-container > pre */
+    display: block;
+    width: 100%;
+}
+
+pre.mermaid > svg {
+    /* Same as .mermaid-container > pre > svg */
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}
+`;
+document.head.appendChild(defaultStyle);
+
+const fullscreenStyle = document.createElement('style');
+fullscreenStyle.textContent = `.mermaid-container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+
+.mermaid-container > pre {
+    display: block;
+    width: 100%;
+}
+
+.mermaid-container > pre > svg {
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}
+
+.mermaid-fullscreen-btn {
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+    color: #333;
+}
+
+.mermaid-fullscreen-btn:hover {
+    opacity: 100% !important;
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-btn.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-btn.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal {
+    display: none;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 95vw;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.98);
+    z-index: 9999;
+    padding: 20px;
+    overflow: auto;
+}
+
+.mermaid-fullscreen-modal.dark-theme {
+    background: rgba(0, 0, 0, 0.98);
+}
+
+.mermaid-fullscreen-modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen {
+    position: relative;
+    width: 95vw;
+    height: 90vh;
+    max-width: 95vw;
+    max-height: 90vh;
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen.dark-theme {
+    background: #1a1a1a;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+}
+
+.mermaid-container-fullscreen pre.mermaid {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen .mermaid svg {
+    height: 100% !important;
+    width: 100% !important;
+    cursor: grab;
+}
+
+.mermaid-fullscreen-close {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s;
+    font-size: 24px;
+    line-height: 1;
+    color: #333;
+}
+
+.mermaid-fullscreen-close:hover {
+    background: white;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-close.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-close.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal .mermaid-fullscreen-btn {
+    display: none !important;
+}`;
+document.head.appendChild(fullscreenStyle);
+
+// Detect if page has dark background
+const isDarkTheme = () => {
+    const bgColor = window.getComputedStyle(document.body).backgroundColor;
+    const match = bgColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)/);
+    if (match) {
+        const r = parseInt(match[1]);
+        const g = parseInt(match[2]);
+        const b = parseInt(match[3]);
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        return brightness < 128;
+    }
+    return false;
+};
+
+const load = async () => {
+    await mermaid.run();
+
+    const all_mermaids = document.querySelectorAll(".mermaid");
+    const mermaids_processed = document.querySelectorAll(".mermaid[data-processed='true']");
+
+    if ("True" === "True") {
+        const mermaids_to_add_zoom = 1 === -1 ? all_mermaids.length : 1;
+        if(mermaids_to_add_zoom > 0) {
+            var svgs = d3.selectAll(".mermaid[data-zoom-id=id-90fe86af-fe69-4ccd-970e-a18e9d08e1d5] svg");
+            if(all_mermaids.length !== mermaids_processed.length) {
+                setTimeout(load, 200);
+                return;
+            } else if(svgs.size() !== mermaids_to_add_zoom) {
+                setTimeout(load, 200);
+                return;
+            } else {
+                svgs.each(function() {
+                    var svg = d3.select(this);
+                    svg.html("<g class='wrapper'>" + svg.html() + "</g>");
+                    var inner = svg.select("g");
+                    var zoom = d3.zoom().on("zoom", function(event) {
+                        inner.attr("transform", event.transform);
+                    });
+                    svg.call(zoom);
+                });
+            }
+        }
+    } else if(all_mermaids.length !== mermaids_processed.length) {
+        // Wait for mermaid to process all diagrams
+        setTimeout(load, 200);
+        return;
+    }
+
+    const darkTheme = isDarkTheme();
+
+    // Stop here if not adding fullscreen capability
+    if ("True" !== "True") return;
+
+    const modal = document.createElement('div');
+    modal.className = 'mermaid-fullscreen-modal' + (darkTheme ? ' dark-theme' : '');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', 'Fullscreen diagram viewer');
+    modal.innerHTML = `
+        <button class="mermaid-fullscreen-close${darkTheme ? ' dark-theme' : ''}" aria-label="Close fullscreen">✕</button>
+        <div class="mermaid-container-fullscreen${darkTheme ? ' dark-theme' : ''}"></div>
+    `;
+    document.body.appendChild(modal);
+
+    const modalContent = modal.querySelector('.mermaid-container-fullscreen');
+    const closeBtn = modal.querySelector('.mermaid-fullscreen-close');
+
+    let previousScrollOffset = [window.scrollX, window.scrollY];
+
+    const closeModal = () => {
+        modal.classList.remove('active');
+        modalContent.innerHTML = '';
+        document.body.style.overflow = ''
+        window.scrollTo({left: previousScrollOffset[0], top: previousScrollOffset[1], behavior: 'instant'});
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+            closeModal();
+        }
+    });
+
+    const allButtons = [];
+
+    document.querySelectorAll('.mermaid').forEach((mermaidDiv) => {
+        if (mermaidDiv.parentNode.classList.contains('mermaid-container') ||
+            mermaidDiv.closest('.mermaid-fullscreen-modal')) {
+            return;
+        }
+
+        const container = document.createElement('div');
+        container.className = 'mermaid-container';
+        mermaidDiv.parentNode.insertBefore(container, mermaidDiv);
+        container.appendChild(mermaidDiv);
+
+        const fullscreenBtn = document.createElement('button');
+        fullscreenBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+        fullscreenBtn.setAttribute('aria-label', 'View diagram in fullscreen');
+        fullscreenBtn.textContent = '⛶';
+        fullscreenBtn.style.opacity = '50%';
+
+        // Calculate dynamic position based on diagram's margin and padding
+        const diagramStyle = window.getComputedStyle(mermaidDiv);
+        const marginTop = parseFloat(diagramStyle.marginTop) || 0;
+        const marginRight = parseFloat(diagramStyle.marginRight) || 0;
+        const paddingTop = parseFloat(diagramStyle.paddingTop) || 0;
+        const paddingRight = parseFloat(diagramStyle.paddingRight) || 0;
+        fullscreenBtn.style.top = `${marginTop + paddingTop + 4}px`;
+        fullscreenBtn.style.right = `${marginRight + paddingRight + 4}px`;
+
+        fullscreenBtn.addEventListener('click', () => {
+            previousScrollOffset = [window.scroll, window.scrollY];
+            const clone = mermaidDiv.cloneNode(true);
+            modalContent.innerHTML = '';
+            modalContent.appendChild(clone);
+
+            const svg = clone.querySelector('svg');
+            if (svg) {
+                svg.removeAttribute('width');
+                svg.removeAttribute('height');
+                svg.style.width = '100%';
+                svg.style.height = 'auto';
+                svg.style.maxWidth = '100%';
+                svg.style.sdisplay = 'block';
+
+                if ("True" === "True") {
+                    setTimeout(() => {
+                        const g = svg.querySelector('g');
+                        if (g) {
+                            var svgD3 = d3.select(svg);
+                            svgD3.html("<g class='wrapper'>" + svgD3.html() + "</g>");
+                            var inner = svgD3.select("g");
+                            var zoom = d3.zoom().on("zoom", function(event) {
+                                inner.attr("transform", event.transform);
+                            });
+                            svgD3.call(zoom);
+                        }
+                    }, 100);
+                }
+            }
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+
+        container.appendChild(fullscreenBtn);
+        allButtons.push(fullscreenBtn);
+    });
+
+    // Update theme classes when theme changes
+    const updateTheme = () => {
+        const dark = isDarkTheme();
+        allButtons.forEach(btn => {
+            if (dark) {
+                btn.classList.add('dark-theme');
+            } else {
+                btn.classList.remove('dark-theme');
+            }
+        });
+        if (dark) {
+            modal.classList.add('dark-theme');
+            modalContent.classList.add('dark-theme');
+            closeBtn.classList.add('dark-theme');
+        } else {
+            modal.classList.remove('dark-theme');
+            modalContent.classList.remove('dark-theme');
+            closeBtn.classList.remove('dark-theme');
+        }
+    };
+
+    // Watch for theme changes
+    const observer = new MutationObserver(updateTheme);
+    observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+    observer.observe(document.body, {
+        attributes: true,
+        attributeFilter: ['class', 'style']
+    });
+};
+
+window.addEventListener("load", load);
+</script>
+      <script src="_static/dark_mode_js/default_dark.js?v=fd565c74"></script>
+      <script src="_static/dark_mode_js/theme_switcher.js?v=358d3910"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Contributing Guidelines for VSCode‑Logger" href="code-development.html" />
+    <link rel="prev" title="Developer Setup and Workflow" href="developer-guide.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            VSCode-Logger
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Embedded Device Logger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="detailed-usage.html">Detailed Usage and Configuration</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="detailed-usage.html#full-feature-set">Full feature set</a></li>
+<li class="toctree-l2"><a class="reference internal" href="detailed-usage.html#getting-started">Getting started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="detailed-usage.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="detailed-usage.html#configuration">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="detailed-usage.html#notes">Notes</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="developer-guide.html">Developer Setup and Workflow</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="developer-guide.html#source-code-and-documentation">Source code and documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer-guide.html#build-and-run-from-source">Build and run from source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer-guide.html#packaging-and-installation">Packaging and installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer-guide.html#cleaning-and-rebuilding">Cleaning and rebuilding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer-guide.html#linting-and-formatting">Linting and formatting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer-guide.html#documentation">Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer-guide.html#how-to-contribute">How to contribute</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Architecture Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#activation-and-configuration">Activation and configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#major-components">Major components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#data-and-control-flow">Data and control flow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#lifecycle-details">Lifecycle details</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#how-to-extend-safely">How to extend safely</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#security-overview">Security Overview</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#strengths">Strengths</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="code-development.html">Code Development</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="code-development.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code-development.html#repository-structure">Repository structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code-development.html#setup-and-development">Setup and development</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code-development.html#contribution-guidelines">Contribution guidelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="code-development.html#general-principles">General principles</a></li>
+<li class="toctree-l3"><a class="reference internal" href="code-development.html#adding-new-features">Adding new features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="code-development.html#working-with-ssh-connections">Working with SSH connections</a></li>
+<li class="toctree-l3"><a class="reference internal" href="code-development.html#webview-guidelines">Webview guidelines</a></li>
+<li class="toctree-l3"><a class="reference internal" href="code-development.html#versioning-and-publishing">Versioning and publishing</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="code-development.html#conclusion">Conclusion</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/index.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docgen.html">Documentation Generation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="docgen.html#diagrams">Diagrams</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docgen.html#api-reference">API reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docgen.html#building-this-documentation">Building this documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#docs-improvements">[1.4.7] - 2025-12-26 [DOCS-IMPROVEMENTS]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#added">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#changed">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#deprecated">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#removed">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#fixed">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#security">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#detach-support">[1.4.5] - 2025-12-23 [DETACH-SUPPORT]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id1">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id2">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id3">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id4">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id5">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id6">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#sftp-improvements">[1.4.3] - 2025-12-22 [SFTP-IMPROVEMENTS]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id7">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id8">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id9">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id10">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id11">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id12">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#sftp-more-presets">[1.4.1] - 2025-12-21 [SFTP-MORE-PRESETS]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id13">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id14">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id15">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id16">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id17">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id18">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#independent-highlighting">[1.4.0] - 2025-12-21 [INDEPENDENT-HIGHLIGHTING]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id19">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id20">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id21">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id22">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id23">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id24">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#terminal-reconnect">[1.3.0] - 2025-12-20 [TERMINAL-RECONNECT]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id25">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id26">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id27">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id28">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id29">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id30">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#bastion">[1.2.0] - 2025-12-15 [BASTION]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id31">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id32">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id33">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id34">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id35">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id36">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#sftp">[1.1.0] - 2025-12-11 [SFTP]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id37">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id38">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id39">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id40">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id41">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id42">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#ssh-keys">[1.0.0] - 2025-12-08 [SSH-KEYS]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id43">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id44">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id45">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id46">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id47">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id48">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#settings">[0.9.0] - 2025-12-07 [SETTINGS]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id49">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id50">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id51">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id52">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id53">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id54">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#console">[0.8.0] - 2025-12-06 [CONSOLE]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id55">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id56">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id57">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id58">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id59">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id60">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#commands">[0.7.0] - 2025-12-06 [COMMANDS]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id61">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id62">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id63">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id64">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id65">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id66">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#bookmarks">[0.6.0] - 2025-12-06 [BOOKMARKS]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id67">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id68">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id69">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id70">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id71">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id72">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#auto-autoscroll">[0.5.0] - 2025-12-03 [AUTO-AUTOSCROLL]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id73">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id74">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id75">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id76">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id77">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id78">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#reconnect">[0.4.0] - 2025-12-01 [RECONNECT]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id79">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id80">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id81">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id82">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id83">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id84">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#search-and-highlights">[0.3.0] - 2025-11-30 [SEARCH-AND-HIGHLIGHTS]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id85">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id86">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id87">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id88">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id89">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id90">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#log-files">[0.2.0] - 2025-11-30 [LOG-FILES]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id91">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id92">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id93">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id94">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id95">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id96">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#initial">[0.1.1] - 2025-11-29 [INITIAL]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id97">Added</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="security-issues.html">Security Issues Report and Management</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="security-issues.html#reporting-a-vulnerability">Reporting a Vulnerability</a></li>
+<li class="toctree-l2"><a class="reference internal" href="security-issues.html#contact">Contact</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="code-of-conduct.html">Code of Conduct</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="code-of-conduct.html#our-pledge">Our Pledge</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code-of-conduct.html#our-standards">Our Standards</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code-of-conduct.html#enforcement-responsibilities">Enforcement Responsibilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code-of-conduct.html#scope">Scope</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code-of-conduct.html#enforcement">Enforcement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code-of-conduct.html#enforcement-guidelines">Enforcement Guidelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="code-of-conduct.html#correction">1. Correction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="code-of-conduct.html#warning">2. Warning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="code-of-conduct.html#temporary-ban">3. Temporary Ban</a></li>
+<li class="toctree-l3"><a class="reference internal" href="code-of-conduct.html#permanent-ban">4. Permanent Ban</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="code-of-conduct.html#attribution">Attribution</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">VSCode-Logger</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">VSCode-Logger Architecture Overview</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="vscode-logger-architecture-overview">
+<h1>VSCode-Logger Architecture Overview<a class="headerlink" href="#vscode-logger-architecture-overview" title="Link to this heading"></a></h1>
+<p>This document explains how the VSCode-Logger extension streams logs from embedded Linux devices into Visual Studio Code. It covers the activation lifecycle, major components, data flows between the extension host and the Webview, and key configuration or security considerations.</p>
+<section id="activation-and-configuration">
+<h2>Activation and configuration<a class="headerlink" href="#activation-and-configuration" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Activation trigger</strong>: The extension activates when VS Code loads the workspace or when a contributed command or view is invoked.</p></li>
+<li><p><strong>Configuration resolution</strong>: Devices come from <code class="docutils literal notranslate"><span class="pre">embeddedLogger.devices</span></code> and are enriched with defaults from <code class="docutils literal notranslate"><span class="pre">embeddedLogger.defaultPort</span></code>, <code class="docutils literal notranslate"><span class="pre">embeddedLogger.defaultLogCommand</span></code>, <code class="docutils literal notranslate"><span class="pre">embeddedLogger.defaultEnableSshTerminal</span></code>, <code class="docutils literal notranslate"><span class="pre">embeddedLogger.defaultEnableSftpExplorer</span></code>, and <code class="docutils literal notranslate"><span class="pre">embeddedLogger.defaultSshCommands</span></code>. The max in-memory log history per tab comes from <code class="docutils literal notranslate"><span class="pre">embeddedLogger.maxLinesPerTab</span></code>.</p></li>
+<li><p><strong>Password migration</strong>: During activation, legacy plaintext passwords from settings are migrated into VS Code Secret Storage so future connections prompt the user instead of persisting raw secrets in configuration.</p></li>
+<li><p><strong>View and command registration</strong>: Activation registers the devices sidebar Webview, highlight-row commands, device-level SSH command/terminal handlers, and <code class="docutils literal notranslate"><span class="pre">embeddedLogger.openDevice</span></code> so selecting a device item opens its log panel or launches auxiliary actions.</p></li>
+</ul>
+</section>
+<section id="major-components">
+<h2>Major components<a class="headerlink" href="#major-components" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Configuration helpers (<code class="docutils literal notranslate"><span class="pre">src/configuration.ts</span></code>)</strong>: Centralizes reading extension settings and applying default SSH port, log command, terminal enablement, and shared SSH commands to each device, while surfacing the max-lines limit.</p></li>
+<li><p><strong>Sidebar view (<code class="docutils literal notranslate"><span class="pre">src/sidebarView.ts</span></code> + <code class="docutils literal notranslate"><span class="pre">media/sidebarView.*</span></code>)</strong>: Renders devices and highlight rows in a Webview. Users can open devices, run per-device SSH commands, open a dedicated SSH terminal when enabled, or manage highlight definitions that synchronize across log panels.</p></li>
+<li><p><strong>Device tree (<code class="docutils literal notranslate"><span class="pre">src/deviceTree.ts</span></code>)</strong>: Supplies device metadata to the sidebar view and tree interactions.</p></li>
+<li><p><strong>Log panel (<code class="docutils literal notranslate"><span class="pre">src/logPanel.ts</span></code>)</strong>: Creates a Webview panel per remote or local log source, injects assets, and wires callbacks for presets, exports, highlights, bookmarks, find/highlight rows, and status updates. It owns a <code class="docutils literal notranslate"><span class="pre">LogSession</span></code> for remote devices.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">LogSession</span></code> (<code class="docutils literal notranslate"><span class="pre">src/logSession.ts</span></code>)</strong>: Manages the SSH connection to a device, pulls credentials from secret storage or prompts the user, runs the log command, and forwards complete lines to the panel callbacks. It reports status changes and errors back to the Webview so the UI can react.</p></li>
+<li><p><strong>SSH helpers (<code class="docutils literal notranslate"><span class="pre">src/sshCommandRunner.ts</span></code>, <code class="docutils literal notranslate"><span class="pre">src/sshTerminal.ts</span></code>)</strong>: Execute one-off SSH commands from the sidebar or spawn an interactive SSH terminal using stored or prompted credentials.</p></li>
+<li><p><strong>Webview clients (<code class="docutils literal notranslate"><span class="pre">media/loggerPanel.js</span></code> + <code class="docutils literal notranslate"><span class="pre">media/loggerPanel.css</span></code>)</strong>: Receive log lines, parse severity, apply filters, manage presets and bookmarks, enforce the max-lines cap, and render the terminal-like UI. They can request preset persistence, deletion, exports, bookmark toggles, and highlight updates via <code class="docutils literal notranslate"><span class="pre">postMessage</span></code> events.</p></li>
+</ul>
+</section>
+<section id="data-and-control-flow">
+<h2>Data and control flow<a class="headerlink" href="#data-and-control-flow" title="Link to this heading"></a></h2>
+<pre data-zoom-id="id-90fe86af-fe69-4ccd-970e-a18e9d08e1d5" class="mermaid">
+        graph TD
+    A[Extension activation] --&gt; B[getEmbeddedLoggerConfiguration]
+    B --&gt; C[Register sidebar view &amp; commands]
+    C --&gt; D[Sidebar renders devices, highlights, SSH commands]
+    D -- Open device --&gt; E[embeddedLogger.openDevice]
+    D -- Run SSH command --&gt; M[SshCommandRunner executes via ssh2]
+    D -- Open SSH terminal --&gt; N[Create terminal using SshTerminalSession]
+    E --&gt; F[&quot;Create LogPanel (remote or local)&quot;]
+    F --&gt; G[&quot;Start LogSession for remote devices&quot;]
+    G --&gt; H[Fetch credentials from Secret Storage or prompt]
+    H --&gt; I[Run logCommand via ssh2]
+    I --&gt; J[Stream stdout/stderr data]
+    J --&gt; K[Parse lines, levels, highlights, bookmarks in loggerPanel.js]
+    K --&gt; L[Apply filters, presets, max-line cap, and formatting]
+    L --&gt; O[Render log entries and statuses in Webview]
+    O -- Export/preset/bookmark requests --&gt; P[Extension persists workspace state or writes file]
+    F -- Status updates --&gt; O
+    </pre></section>
+<section id="lifecycle-details">
+<h2>Lifecycle details<a class="headerlink" href="#lifecycle-details" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p><strong>Panel creation</strong>: Each device or imported log opens in its own Webview panel. Existing panels re-activate instead of spawning duplicates when the same source is selected again.</p></li>
+<li><p><strong>Session management</strong>: <code class="docutils literal notranslate"><span class="pre">LogSession</span></code> tracks connection lifecycle events (connecting, streaming, disconnecting, error) and disposes of SSH resources when panels close or the extension deactivates.</p></li>
+<li><p><strong>Back-pressure handling</strong>: Incoming data is buffered until complete lines are available to avoid splitting log entries mid-line.</p></li>
+<li><p><strong>Presets, filters, and bookmarks</strong>: Presets are stored per device in workspace state keyed by device ID. Bookmark toggles, auto-save, highlight rows, find navigation, and colour-coded level filtering live in the Webview state so they restore when a panel gains focus.</p></li>
+<li><p><strong>Exports</strong>: The Webview requests exports for only the currently visible (filtered) lines. The extension host asks the user for a destination path and writes the collected text.</p></li>
+<li><p><strong>Configuration changes</strong>: When any <code class="docutils literal notranslate"><span class="pre">embeddedLogger</span></code> setting changes, the sidebar refreshes device metadata (including defaults). Active panels continue streaming with their existing session until closed.</p></li>
+<li><p><strong>Security</strong>: Password prompts rely on VS Code’s secure input. Secrets are never written to the Webview or logs; they remain in secret storage or transient prompts. SSH sessions close on disposal to avoid leaving hanging connections.</p></li>
+</ol>
+</section>
+<section id="how-to-extend-safely">
+<h2>How to extend safely<a class="headerlink" href="#how-to-extend-safely" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Keep UI logic inside the Webview scripts and backend logic in the extension host files.</p></li>
+<li><p>When adding device fields, update <code class="docutils literal notranslate"><span class="pre">EmbeddedDevice</span></code> and the contributed configuration schema so the tree view and Webview receive consistent data.</p></li>
+<li><p>If altering log parsing or styling, adjust both <code class="docutils literal notranslate"><span class="pre">loggerPanel.js</span></code> and <code class="docutils literal notranslate"><span class="pre">loggerPanel.css</span></code> to ensure new levels or formats render correctly.</p></li>
+<li><p>Preserve default behaviours (e.g., default log command, maximum retained lines) unless there is a clear reason to change them, and document new settings.</p></li>
+</ul>
+</section>
+<section id="security-overview">
+<h2>Security Overview<a class="headerlink" href="#security-overview" title="Link to this heading"></a></h2>
+<section id="strengths">
+<h3>Strengths<a class="headerlink" href="#strengths" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Workspace trust gating prevents connections in untrusted workspaces before prompting for credentials. The log command is trimmed and checked for control characters to avoid obvious injection via newlines.</p></li>
+<li><p>Secrets are stored in VS Code Secret Storage after prompting users, keeping interactive credentials off disk by default.</p></li>
+<li><p>Webview UIs render log lines using <code class="docutils literal notranslate"><span class="pre">textContent</span></code> with a restrictive Content-Security-Policy that disallows remote scripts and limits styles to extension resources.</p></li>
+<li><p>Webview CSPs block external scripts and restrict styles to bundled assets, reducing XSS risk. Log lines are inserted as text nodes, preventing HTML injection from streamed content.</p></li>
+<li><p>Auto-reconnect logic includes visible status updates and timers</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="developer-guide.html" class="btn btn-neutral float-left" title="Developer Setup and Workflow" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="code-development.html" class="btn btn-neutral float-right" title="Contributing Guidelines for VSCode‑Logger" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, A. Scillato.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

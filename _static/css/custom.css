@@ -1,0 +1,34 @@
+/* Allow table cell content to wrap instead of forcing a single line. */
+.wy-table-responsive table td,
+.wy-table-responsive table th,
+table.docutils td,
+table.docutils th,
+table.align-default td,
+table.align-default th {
+  white-space: normal !important;
+  /* Wrap content by whole words when possible. */
+  word-break: keep-all;
+  hyphens: auto;
+}
+
+/* Prevent responsive tables from introducing scrollbars due to nowrap removal. */
+.wy-table-responsive {
+  overflow: visible !important;
+}
+
+/* Allow documentation pages to use the full available width. */
+.wy-nav-content {
+  max-width: 100%;
+}
+
+.typedoc-embed {
+  height: 85vh;
+  min-height: 600px;
+  width: 100%;
+}
+
+.typedoc-embed iframe {
+  border: none;
+  height: 100%;
+  width: 100%;
+}

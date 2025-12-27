@@ -1,0 +1,470 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Detailed Usage and Configuration &mdash; VSCode-Logger Documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=86ef7b58" />
+      <link rel="stylesheet" type="text/css" href="_static/dark_mode_css/general.css?v=c0a7eb24" />
+      <link rel="stylesheet" type="text/css" href="_static/dark_mode_css/dark.css?v=70edf1c7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/dark_mode_js/default_dark.js?v=fd565c74"></script>
+      <script src="_static/dark_mode_js/theme_switcher.js?v=358d3910"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Developer Setup and Workflow" href="developer-guide.html" />
+    <link rel="prev" title="Embedded Device Logger" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            VSCode-Logger
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Embedded Device Logger</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Detailed Usage and Configuration</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#full-feature-set">Full feature set</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#getting-started">Getting started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#configuration">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#notes">Notes</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="developer-guide.html">Developer Setup and Workflow</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="developer-guide.html#source-code-and-documentation">Source code and documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer-guide.html#build-and-run-from-source">Build and run from source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer-guide.html#packaging-and-installation">Packaging and installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer-guide.html#cleaning-and-rebuilding">Cleaning and rebuilding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer-guide.html#linting-and-formatting">Linting and formatting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer-guide.html#documentation">Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer-guide.html#how-to-contribute">How to contribute</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="extension-overview.html">Architecture Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="extension-overview.html#activation-and-configuration">Activation and configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="extension-overview.html#major-components">Major components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="extension-overview.html#data-and-control-flow">Data and control flow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="extension-overview.html#lifecycle-details">Lifecycle details</a></li>
+<li class="toctree-l2"><a class="reference internal" href="extension-overview.html#how-to-extend-safely">How to extend safely</a></li>
+<li class="toctree-l2"><a class="reference internal" href="extension-overview.html#security-overview">Security Overview</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="extension-overview.html#strengths">Strengths</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="code-development.html">Code Development</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="code-development.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code-development.html#repository-structure">Repository structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code-development.html#setup-and-development">Setup and development</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code-development.html#contribution-guidelines">Contribution guidelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="code-development.html#general-principles">General principles</a></li>
+<li class="toctree-l3"><a class="reference internal" href="code-development.html#adding-new-features">Adding new features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="code-development.html#working-with-ssh-connections">Working with SSH connections</a></li>
+<li class="toctree-l3"><a class="reference internal" href="code-development.html#webview-guidelines">Webview guidelines</a></li>
+<li class="toctree-l3"><a class="reference internal" href="code-development.html#versioning-and-publishing">Versioning and publishing</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="code-development.html#conclusion">Conclusion</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/index.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docgen.html">Documentation Generation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="docgen.html#diagrams">Diagrams</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docgen.html#api-reference">API reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docgen.html#building-this-documentation">Building this documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#docs-improvements">[1.4.7] - 2025-12-26 [DOCS-IMPROVEMENTS]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#added">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#changed">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#deprecated">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#removed">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#fixed">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#security">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#detach-support">[1.4.5] - 2025-12-23 [DETACH-SUPPORT]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id1">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id2">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id3">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id4">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id5">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id6">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#sftp-improvements">[1.4.3] - 2025-12-22 [SFTP-IMPROVEMENTS]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id7">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id8">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id9">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id10">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id11">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id12">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#sftp-more-presets">[1.4.1] - 2025-12-21 [SFTP-MORE-PRESETS]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id13">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id14">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id15">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id16">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id17">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id18">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#independent-highlighting">[1.4.0] - 2025-12-21 [INDEPENDENT-HIGHLIGHTING]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id19">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id20">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id21">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id22">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id23">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id24">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#terminal-reconnect">[1.3.0] - 2025-12-20 [TERMINAL-RECONNECT]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id25">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id26">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id27">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id28">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id29">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id30">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#bastion">[1.2.0] - 2025-12-15 [BASTION]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id31">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id32">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id33">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id34">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id35">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id36">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#sftp">[1.1.0] - 2025-12-11 [SFTP]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id37">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id38">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id39">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id40">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id41">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id42">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#ssh-keys">[1.0.0] - 2025-12-08 [SSH-KEYS]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id43">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id44">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id45">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id46">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id47">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id48">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#settings">[0.9.0] - 2025-12-07 [SETTINGS]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id49">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id50">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id51">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id52">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id53">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id54">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#console">[0.8.0] - 2025-12-06 [CONSOLE]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id55">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id56">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id57">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id58">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id59">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id60">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#commands">[0.7.0] - 2025-12-06 [COMMANDS]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id61">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id62">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id63">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id64">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id65">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id66">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#bookmarks">[0.6.0] - 2025-12-06 [BOOKMARKS]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id67">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id68">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id69">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id70">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id71">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id72">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#auto-autoscroll">[0.5.0] - 2025-12-03 [AUTO-AUTOSCROLL]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id73">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id74">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id75">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id76">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id77">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id78">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#reconnect">[0.4.0] - 2025-12-01 [RECONNECT]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id79">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id80">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id81">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id82">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id83">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id84">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#search-and-highlights">[0.3.0] - 2025-11-30 [SEARCH-AND-HIGHLIGHTS]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id85">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id86">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id87">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id88">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id89">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id90">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#log-files">[0.2.0] - 2025-11-30 [LOG-FILES]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id91">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id92">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id93">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id94">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id95">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id96">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#initial">[0.1.1] - 2025-11-29 [INITIAL]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="changelog.html#id97">Added</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="security-issues.html">Security Issues Report and Management</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="security-issues.html#reporting-a-vulnerability">Reporting a Vulnerability</a></li>
+<li class="toctree-l2"><a class="reference internal" href="security-issues.html#contact">Contact</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="code-of-conduct.html">Code of Conduct</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="code-of-conduct.html#our-pledge">Our Pledge</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code-of-conduct.html#our-standards">Our Standards</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code-of-conduct.html#enforcement-responsibilities">Enforcement Responsibilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code-of-conduct.html#scope">Scope</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code-of-conduct.html#enforcement">Enforcement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code-of-conduct.html#enforcement-guidelines">Enforcement Guidelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="code-of-conduct.html#correction">1. Correction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="code-of-conduct.html#warning">2. Warning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="code-of-conduct.html#temporary-ban">3. Temporary Ban</a></li>
+<li class="toctree-l3"><a class="reference internal" href="code-of-conduct.html#permanent-ban">4. Permanent Ban</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="code-of-conduct.html#attribution">Attribution</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">VSCode-Logger</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Detailed Usage and Configuration</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="detailed-usage-and-configuration">
+<h1>Detailed Usage and Configuration<a class="headerlink" href="#detailed-usage-and-configuration" title="Link to this heading"></a></h1>
+<p>The Embedded Device Logger is a Visual Studio Code extension that can connect to your devices over SSH, tail their logs, and help you analyze the data with loglevel colorization, quick filters, custom keywords highlights and filtered export. It provides also an SFTP client, SSH terminals and one-off SSH commands to help you develop, debug and maintain your Linux-based devices.</p>
+<ul class="simple">
+<li><p><strong>Offline logs view:</strong></p></li>
+</ul>
+<p><img alt="Log panel screenshot" src="docs/images/screenshot_example1.png" /></p>
+<ul class="simple">
+<li><p><strong>SFTP Panel view:</strong></p></li>
+</ul>
+<p><img alt="SFTP panel screenshot" src="docs/images/screenshot_example_sftp.png" /></p>
+<p>If you like the extension, please <a class="reference external" href="https://marketplace.visualstudio.com/items?itemName=Scallant.embedded-device-logger&amp;amp;ssr=false#review-details">rate it</a>. We welcome issue reports and feature requests.</p>
+<section id="full-feature-set">
+<h2>Full feature set<a class="headerlink" href="#full-feature-set" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Activity Bar view listing configured devices.</p></li>
+<li><p><strong>Real-time log streaming over SSH</strong> using a configurable command (default: <code class="docutils literal notranslate"><span class="pre">tail</span> <span class="pre">-F</span> <span class="pre">/var/log/syslog</span></code>).</p></li>
+<li><p><strong>Log level parsing, filtering, and colorization</strong> inside a Webview panel per device.</p></li>
+<li><p>Saved filter presets stored per device.</p></li>
+<li><p><strong>Highlight up to 10 custom keywords</strong> with color-coded, bold, underlined text in both live and imported logs, configured per log panel.</p></li>
+<li><p><strong>Find text inside live or imported logs</strong> with Ctrl/Cmd+F, including next/previous navigation.</p></li>
+<li><p><strong>Reconnect closed SSH sessions</strong> directly from the log panel and automatically mark the log when a device closes a session.</p></li>
+<li><p><strong>Export</strong> currently visible (filtered) logs to a file.</p></li>
+<li><p><strong>Auto-save</strong> to file option for live SSH logs.</p></li>
+<li><p><strong>Open any log files and filter them</strong> with the same interface.</p></li>
+<li><p>Add, edit, and remove <strong>Bookmarks</strong> in live logs and imported logs.</p></li>
+<li><p>Run optional <strong>on-demand SSH commands</strong> configured per device from the Devices view.</p></li>
+<li><p>Optionally <strong>launch an SSH terminal</strong> directly from a device card when enabled in settings.</p></li>
+<li><p>Optionally open a dual-pane <strong>SFTP explorer</strong> to browse remote and local files side-by-side and transfer files.</p></li>
+<li><p>Optionally open the configured device URL in your default <strong>web browser</strong> from the device card when enabled.</p></li>
+<li><p>Authenticate with SSH passwords or private keys.</p></li>
+<li><p>SSH passwords and private key passphrases are <strong>stored securely</strong> with VS Code Secret Storage.</p></li>
+<li><p><strong>Privacy focused</strong>. <strong>No telemetry</strong>. Everything <strong>runs locally</strong>.</p></li>
+<li><p><strong>Built with security in mind</strong>.</p></li>
+</ul>
+</section>
+<section id="getting-started">
+<h2>Getting started<a class="headerlink" href="#getting-started" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Install the extension as explained under <a class="reference internal" href="#installation">Installation</a>.</p></li>
+<li><p>Open it by clicking on the terminal icon of the side bar.</p></li>
+<li><p>Configure your devices by clicking on the pencil icon. Add them under the <code class="docutils literal notranslate"><span class="pre">embeddedLogger.devices</span></code> setting as explained in <a class="reference internal" href="#configuration">Configuration</a>, then open the <strong>Embedded Logger</strong> view from the activity bar.</p></li>
+</ul>
+</section>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
+<p><strong>From VS Code:</strong></p>
+<ul class="simple">
+<li><p>Click on Extensions in the side bar and search for <strong>Embedded Device Logger</strong> (Publisher: Scallant, Author: A. Scillato).</p></li>
+<li><p>Or from the VS Code Quick Open (Ctrl+P), paste the command: <code class="docutils literal notranslate"><span class="pre">ext</span> <span class="pre">install</span> <span class="pre">Scallant.embedded-device-logger</span></code>, and press Enter.</p></li>
+<li><p>Or from the console: <code class="docutils literal notranslate"><span class="pre">code</span> <span class="pre">--install-extension</span> <span class="pre">Scallant.embedded-device-logger</span></code>.</p></li>
+</ul>
+<p>For more information visit the <a class="reference external" href="https://marketplace.visualstudio.com/items?itemName=Scallant.embedded-device-logger">Embedded Device Logger extension</a> in the VS Code Marketplace.</p>
+</section>
+<section id="configuration">
+<h2>Configuration<a class="headerlink" href="#configuration" title="Link to this heading"></a></h2>
+<p><img alt="Configuration screenshot" src="_images/screenshot_example_setup.png" /></p>
+<p>Add devices in your VS Code settings under <code class="docutils literal notranslate"><span class="pre">embeddedLogger.devices</span></code>:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="nt">&quot;embeddedLogger.maxLinesPerTab&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">100000</span><span class="p">,</span>
+<span class="nt">&quot;embeddedLogger.devices&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deviceA&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Device A&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;host&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;192.168.1.10&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;hostFingerprint&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;SHA256:your-device-fingerprint&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;secondaryHost&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;192.168.1.11&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;secondaryHostFingerprint&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;SHA256:backup-device-fingerprint&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;bastion&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;host&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;bastion.example.com&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;hostFingerprint&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;SHA256:bastion-fingerprint&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;port&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">22</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;username&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;jump-user&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;port&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">22</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;privateKeyPath&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;${env:HOME}/.ssh/id_ed25519&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;username&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;root&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;logCommand&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;tail -F /var/log/syslog&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;enableSshTerminal&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;enableSftpExplorer&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;enableWebBrowser&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;webBrowserUrl&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://192.168.1.10&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;sshCommands&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Restart IOT&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;systemctl restart fw-iot&quot;</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+<p>Names for commands support emojis that can be copied from: <a class="reference external" href="https://emojidb.org">https://emojidb.org</a>.</p>
+<p>If no password is stored yet, the extension prompts for it when connecting and saves it locally and securely. When using an encrypted private key, the passphrase is requested once and stored securely in VS Code Secret Storage. Private key paths may include <code class="docutils literal notranslate"><span class="pre">~</span></code> or <code class="docutils literal notranslate"><span class="pre">${env:VAR}</span></code> tokens for convenience.</p>
+<p><strong>Pin each device’s host key</strong> by setting <code class="docutils literal notranslate"><span class="pre">hostFingerprint</span></code> to the device’s SSH host key fingerprint (for example, <code class="docutils literal notranslate"><span class="pre">ssh-keygen</span> <span class="pre">-lf</span> <span class="pre">/etc/ssh/ssh_host_ed25519_key.pub</span> <span class="pre">-E</span> <span class="pre">sha256</span></code>). If no fingerprint is configured, the extension records the server’s fingerprint on the first successful connection. When a server presents a different fingerprint later, you’ll be prompted to accept the new value before reconnecting.</p>
+<p><strong>Optionally configure a secondary host</strong> via <code class="docutils literal notranslate"><span class="pre">secondaryHost</span></code> (and <code class="docutils literal notranslate"><span class="pre">secondaryHostFingerprint</span></code> when pinning). Connections start with the primary host and automatically fall back to the secondary host when the primary connection fails; if the secondary host also fails, the extension retries the primary host.</p>
+<p><strong>[EXPERIMENTAL] Tunnel through a bastion/jump host</strong> by supplying a <code class="docutils literal notranslate"><span class="pre">bastion</span></code> block with its <code class="docutils literal notranslate"><span class="pre">host</span></code>, <code class="docutils literal notranslate"><span class="pre">username</span></code>, optional <code class="docutils literal notranslate"><span class="pre">port</span></code>, and optional <code class="docutils literal notranslate"><span class="pre">hostFingerprint</span></code> plus password or private key authentication. Secrets and host key fingerprints for the bastion are stored independently in Secret Storage and captured on first connect when omitted.</p>
+<p>Set <code class="docutils literal notranslate"><span class="pre">enableSshTerminal</span></code> to control visibility of the <strong>Open SSH Terminal</strong> button alongside any configured SSH commands for that device (the action is enabled by default; set it to <code class="docutils literal notranslate"><span class="pre">false</span></code> to hide it). The <strong>Open SSH Terminal</strong> action opens a dedicated VS Code terminal tab for the device and authenticates using the stored password or private key (prompting for and saving the credential securely when missing).</p>
+<p>Set <code class="docutils literal notranslate"><span class="pre">enableSftpExplorer</span></code> to control visibility of the <strong>Open SFTP Explorer</strong> button on the device card (enabled by default; set it to <code class="docutils literal notranslate"><span class="pre">false</span></code> to hide it). The explorer opens a dual-pane view with the remote home on the left and the local home on the right, including navigation, rename/delete/duplicate actions, and arrows to transfer selected files between panes (or between two remote panes when the right-side mode is switched to remote). If the SSH link drops, the explorer stays open, greys out, shows a reconnection countdown beside the title, and automatically retries every five seconds without losing the active remote paths.</p>
+<p>Set <code class="docutils literal notranslate"><span class="pre">enableWebBrowser</span></code> to surface the <strong>Open WEB Browser</strong> button beneath each device. The button is disabled by default; when enabled, clicking it opens the configured <code class="docutils literal notranslate"><span class="pre">webBrowserUrl</span></code> if provided, otherwise the extension opens <code class="docutils literal notranslate"><span class="pre">http://&lt;host&gt;</span></code> derived from the device host (including any port in the custom URL when supplied). Both <code class="docutils literal notranslate"><span class="pre">http://</span></code> and <code class="docutils literal notranslate"><span class="pre">https://</span></code> URLs are supported.</p>
+<p>Control memory usage by capping retained lines per log tab with <code class="docutils literal notranslate"><span class="pre">embeddedLogger.maxLinesPerTab</span></code> (default: 100000). For auto-save, this limit is not applied to a file. Everything is saved.</p>
+<p>All options are available through the VS Code Settings UI under <strong>Embedded Device Logger</strong>, including defaults for omitted device values:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">embeddedLogger.defaultPort</span></code> – applied when a device does not specify a port.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">embeddedLogger.defaultLogCommand</span></code> – used when <code class="docutils literal notranslate"><span class="pre">logCommand</span></code> is omitted.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">embeddedLogger.defaultEnableSshTerminal</span></code> – toggles whether the SSH terminal action is shown by default (default: true).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">embeddedLogger.defaultEnableSftpExplorer</span></code> – toggles whether the SFTP explorer action is shown by default (default: true).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">embeddedLogger.defaultEnableWebBrowser</span></code> – toggles whether the web browser action is shown by default (default: false).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">enableWebBrowser</span></code> – when set to true per device, the <strong>Open WEB Browser</strong> button opens <code class="docutils literal notranslate"><span class="pre">webBrowserUrl</span></code> if configured or <code class="docutils literal notranslate"><span class="pre">http://&lt;host&gt;</span></code> otherwise.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">embeddedLogger.defaultSshCommands</span></code> – shared SSH actions applied to devices that do not define their own list.</p></li>
+</ul>
+</section>
+<section id="notes">
+<h2>Notes<a class="headerlink" href="#notes" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Colorization of lines</strong> is performed based on the log level (DEBUG, INFO, ERROR, etc). If these keys are not present in the log, no colorization is applied.</p></li>
+<li><p><strong>Filtering presets</strong> are stored per-device in the workspace state using the key <code class="docutils literal notranslate"><span class="pre">embeddedLogger.presets.&lt;deviceId&gt;</span></code>.</p></li>
+<li><p>Exports only include log lines currently visible after applying filters.</p></li>
+<li><p>When an SSH session closes, the log view appends <code class="docutils literal notranslate"><span class="pre">---</span> <span class="pre">SSH</span> <span class="pre">session</span> <span class="pre">closed</span> <span class="pre">on</span> <span class="pre">&lt;timestamp&gt;</span></code> and offers a <strong>Reconnect</strong> button next to the status text to restart streaming.</p></li>
+<li><p>Use the <strong>Highlight</strong> button in each log panel to manage up to ten highlight rows, each with its own colour and editable keyword that updates that panel instantly.</p></li>
+<li><p>Use the <strong>Open Local Log File</strong> button in the Embedded Logger devices view (or run the command with the same name) to select a <code class="docutils literal notranslate"><span class="pre">.log</span></code> or <code class="docutils literal notranslate"><span class="pre">.txt</span></code> file from your machine. The chosen file is loaded into the log viewer so you can reuse filtering, presets, export filtered logs, and highlights just like a live connection.</p></li>
+<li><p><strong>Status</strong> text also shows messages from the log command used in the configuration like <code class="docutils literal notranslate"><span class="pre">tail</span> <span class="pre">-F</span> <span class="pre">/var/log/syslog</span></code>. Messages such as <code class="docutils literal notranslate"><span class="pre">tail:</span> <span class="pre">'/var/log/syslog'</span> <span class="pre">has</span> <span class="pre">appeared;</span> <span class="pre">following</span> <span class="pre">new</span> <span class="pre">file</span></code> may appear when the log file is rotated or recreated. The <code class="docutils literal notranslate"><span class="pre">-F</span></code> flag tells <code class="docutils literal notranslate"><span class="pre">tail</span></code> to keep watching for the file to reappear, so the message is informational and indicates that log streaming will continue with the new file. If you prefer a different log source, update the <code class="docutils literal notranslate"><span class="pre">logCommand</span></code> in your device configuration.</p></li>
+<li><p>The Embedded Device Logger extension supports <strong>sharing the VS Code Activity Bar</strong> with other extensions. To merge an extension into the Activity Bar, select its icon from the Side Bar, then drag and drop it into your desired position within the Activity Bar.</p></li>
+<li><p>This extension also supports connecting to devices through a VPN (already running on the machine with VS Code).</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Embedded Device Logger" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="developer-guide.html" class="btn btn-neutral float-right" title="Developer Setup and Workflow" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, A. Scillato.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

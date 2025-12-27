@@ -1,0 +1,1094 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Changelog &mdash; VSCode-Logger Documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=86ef7b58" />
+      <link rel="stylesheet" type="text/css" href="_static/dark_mode_css/general.css?v=c0a7eb24" />
+      <link rel="stylesheet" type="text/css" href="_static/dark_mode_css/dark.css?v=70edf1c7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/dark_mode_js/default_dark.js?v=fd565c74"></script>
+      <script src="_static/dark_mode_js/theme_switcher.js?v=358d3910"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Security Policy" href="security-issues.html" />
+    <link rel="prev" title="VSCode-Logger Documentation Generation" href="docgen.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            VSCode-Logger
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Embedded Device Logger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="detailed-usage.html">Detailed Usage and Configuration</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="detailed-usage.html#full-feature-set">Full feature set</a></li>
+<li class="toctree-l2"><a class="reference internal" href="detailed-usage.html#getting-started">Getting started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="detailed-usage.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="detailed-usage.html#configuration">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="detailed-usage.html#notes">Notes</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="developer-guide.html">Developer Setup and Workflow</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="developer-guide.html#source-code-and-documentation">Source code and documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer-guide.html#build-and-run-from-source">Build and run from source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer-guide.html#packaging-and-installation">Packaging and installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer-guide.html#cleaning-and-rebuilding">Cleaning and rebuilding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer-guide.html#linting-and-formatting">Linting and formatting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer-guide.html#documentation">Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer-guide.html#how-to-contribute">How to contribute</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="extension-overview.html">Architecture Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="extension-overview.html#activation-and-configuration">Activation and configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="extension-overview.html#major-components">Major components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="extension-overview.html#data-and-control-flow">Data and control flow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="extension-overview.html#lifecycle-details">Lifecycle details</a></li>
+<li class="toctree-l2"><a class="reference internal" href="extension-overview.html#how-to-extend-safely">How to extend safely</a></li>
+<li class="toctree-l2"><a class="reference internal" href="extension-overview.html#security-overview">Security Overview</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="extension-overview.html#strengths">Strengths</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="code-development.html">Code Development</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="code-development.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code-development.html#repository-structure">Repository structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code-development.html#setup-and-development">Setup and development</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code-development.html#contribution-guidelines">Contribution guidelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="code-development.html#general-principles">General principles</a></li>
+<li class="toctree-l3"><a class="reference internal" href="code-development.html#adding-new-features">Adding new features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="code-development.html#working-with-ssh-connections">Working with SSH connections</a></li>
+<li class="toctree-l3"><a class="reference internal" href="code-development.html#webview-guidelines">Webview guidelines</a></li>
+<li class="toctree-l3"><a class="reference internal" href="code-development.html#versioning-and-publishing">Versioning and publishing</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="code-development.html#conclusion">Conclusion</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/index.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docgen.html">Documentation Generation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="docgen.html#diagrams">Diagrams</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docgen.html#api-reference">API reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docgen.html#building-this-documentation">Building this documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Changelog</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#docs-improvements">[1.4.7] - 2025-12-26 [DOCS-IMPROVEMENTS]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#added">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#changed">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#deprecated">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#removed">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#fixed">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#security">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#detach-support">[1.4.5] - 2025-12-23 [DETACH-SUPPORT]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id1">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id2">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id3">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id4">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id5">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id6">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#sftp-improvements">[1.4.3] - 2025-12-22 [SFTP-IMPROVEMENTS]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id7">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id8">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id9">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id10">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id11">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id12">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#sftp-more-presets">[1.4.1] - 2025-12-21 [SFTP-MORE-PRESETS]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id13">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id14">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id15">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id16">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id17">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id18">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#independent-highlighting">[1.4.0] - 2025-12-21 [INDEPENDENT-HIGHLIGHTING]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id19">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id20">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id21">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id22">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id23">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id24">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#terminal-reconnect">[1.3.0] - 2025-12-20 [TERMINAL-RECONNECT]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id25">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id26">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id27">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id28">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id29">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id30">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#bastion">[1.2.0] - 2025-12-15 [BASTION]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id31">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id32">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id33">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id34">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id35">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id36">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#sftp">[1.1.0] - 2025-12-11 [SFTP]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id37">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id38">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id39">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id40">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id41">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id42">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#ssh-keys">[1.0.0] - 2025-12-08 [SSH-KEYS]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id43">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id44">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id45">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id46">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id47">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id48">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#settings">[0.9.0] - 2025-12-07 [SETTINGS]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id49">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id50">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id51">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id52">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id53">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id54">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#console">[0.8.0] - 2025-12-06 [CONSOLE]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id55">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id56">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id57">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id58">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id59">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id60">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#commands">[0.7.0] - 2025-12-06 [COMMANDS]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id61">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id62">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id63">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id64">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id65">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id66">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#bookmarks">[0.6.0] - 2025-12-06 [BOOKMARKS]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id67">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id68">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id69">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id70">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id71">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id72">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#auto-autoscroll">[0.5.0] - 2025-12-03 [AUTO-AUTOSCROLL]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id73">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id74">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id75">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id76">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id77">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id78">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#reconnect">[0.4.0] - 2025-12-01 [RECONNECT]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id79">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id80">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id81">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id82">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id83">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id84">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#search-and-highlights">[0.3.0] - 2025-11-30 [SEARCH-AND-HIGHLIGHTS]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id85">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id86">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id87">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id88">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id89">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id90">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#log-files">[0.2.0] - 2025-11-30 [LOG-FILES]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id91">Added</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id92">Changed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id93">Deprecated</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id94">Removed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id95">Fixed</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id96">Security</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#initial">[0.1.1] - 2025-11-29 [INITIAL]</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id97">Added</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="security-issues.html">Security Issues Report and Management</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="security-issues.html#reporting-a-vulnerability">Reporting a Vulnerability</a></li>
+<li class="toctree-l2"><a class="reference internal" href="security-issues.html#contact">Contact</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="code-of-conduct.html">Code of Conduct</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="code-of-conduct.html#our-pledge">Our Pledge</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code-of-conduct.html#our-standards">Our Standards</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code-of-conduct.html#enforcement-responsibilities">Enforcement Responsibilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code-of-conduct.html#scope">Scope</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code-of-conduct.html#enforcement">Enforcement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code-of-conduct.html#enforcement-guidelines">Enforcement Guidelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="code-of-conduct.html#correction">1. Correction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="code-of-conduct.html#warning">2. Warning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="code-of-conduct.html#temporary-ban">3. Temporary Ban</a></li>
+<li class="toctree-l3"><a class="reference internal" href="code-of-conduct.html#permanent-ban">4. Permanent Ban</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="code-of-conduct.html#attribution">Attribution</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">VSCode-Logger</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Changelog</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="changelog">
+<h1>Changelog<a class="headerlink" href="#changelog" title="Link to this heading"></a></h1>
+<p>All notable changes to this project will be documented in this file.</p>
+<p>The format is based on <a class="reference external" href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a>,
+and this project adheres to <a class="reference external" href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
+<hr class="docutils" />
+<section id="docs-improvements">
+<h2>[1.4.7] - 2025-12-26 [DOCS-IMPROVEMENTS]<a class="headerlink" href="#docs-improvements" title="Link to this heading"></a></h2>
+<section id="added">
+<h3>Added<a class="headerlink" href="#added" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Log build result in <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">&lt;option&gt;</span></code>.</p></li>
+</ul>
+</section>
+<section id="changed">
+<h3>Changed<a class="headerlink" href="#changed" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Refactor README and update documentation structure.</p></li>
+<li><p>Restyle SFTP explorer toolbar.</p></li>
+</ul>
+</section>
+<section id="deprecated">
+<h3>Deprecated<a class="headerlink" href="#deprecated" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="removed">
+<h3>Removed<a class="headerlink" href="#removed" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="fixed">
+<h3>Fixed<a class="headerlink" href="#fixed" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="security">
+<h3>Security<a class="headerlink" href="#security" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="detach-support">
+<h2>[1.4.5] - 2025-12-23 [DETACH-SUPPORT]<a class="headerlink" href="#detach-support" title="Link to this heading"></a></h2>
+<section id="id1">
+<h3>Added<a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Persist log panel state across detaches.</p></li>
+<li><p>Ensure detached SFTP panels restore presets.</p></li>
+</ul>
+</section>
+<section id="id2">
+<h3>Changed<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id3">
+<h3>Deprecated<a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id4">
+<h3>Removed<a class="headerlink" href="#id4" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Removed unnecessary files from extension package.</p></li>
+</ul>
+</section>
+<section id="id5">
+<h3>Fixed<a class="headerlink" href="#id5" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id6">
+<h3>Security<a class="headerlink" href="#id6" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="sftp-improvements">
+<h2>[1.4.3] - 2025-12-22 [SFTP-IMPROVEMENTS]<a class="headerlink" href="#sftp-improvements" title="Link to this heading"></a></h2>
+<section id="id7">
+<h3>Added<a class="headerlink" href="#id7" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Show SFTP presets in dropdown menu.</p></li>
+<li><p>Docs: Added function descriptions.</p></li>
+<li><p>Auto-deploy to VSCode marketplace when a release tag is generated.</p></li>
+</ul>
+</section>
+<section id="id8">
+<h3>Changed<a class="headerlink" href="#id8" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id9">
+<h3>Deprecated<a class="headerlink" href="#id9" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id10">
+<h3>Removed<a class="headerlink" href="#id10" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Removed unnecessary files from extension package.</p></li>
+</ul>
+</section>
+<section id="id11">
+<h3>Fixed<a class="headerlink" href="#id11" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id12">
+<h3>Security<a class="headerlink" href="#id12" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="sftp-more-presets">
+<h2>[1.4.1] - 2025-12-21 [SFTP-MORE-PRESETS]<a class="headerlink" href="#sftp-more-presets" title="Link to this heading"></a></h2>
+<section id="id13">
+<h3>Added<a class="headerlink" href="#id13" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Add SFTP presets to the right panel.</p></li>
+<li><p>Add code-workspace file with optional config for buttons for several compile tasks for VSCode UI.</p></li>
+</ul>
+</section>
+<section id="id14">
+<h3>Changed<a class="headerlink" href="#id14" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Changed <code class="docutils literal notranslate"><span class="pre">make</span></code> and <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">all</span></code> to not compile docs by default but install the extension instead. See <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">help</span></code> for all possible commands.</p></li>
+</ul>
+</section>
+<section id="id15">
+<h3>Deprecated<a class="headerlink" href="#id15" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id16">
+<h3>Removed<a class="headerlink" href="#id16" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id17">
+<h3>Fixed<a class="headerlink" href="#id17" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id18">
+<h3>Security<a class="headerlink" href="#id18" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="independent-highlighting">
+<h2>[1.4.0] - 2025-12-21 [INDEPENDENT-HIGHLIGHTING]<a class="headerlink" href="#independent-highlighting" title="Link to this heading"></a></h2>
+<section id="id19">
+<h3>Added<a class="headerlink" href="#id19" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Add a Highlight popup to both live and imported log panels for managing keyword highlights directly in the viewer.</p></li>
+<li><p>Add SFTP path presets UI and per-device persistence.</p></li>
+</ul>
+</section>
+<section id="id20">
+<h3>Changed<a class="headerlink" href="#id20" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Store highlight keywords per log panel instead of sharing them across the Devices view.</p></li>
+</ul>
+</section>
+<section id="id21">
+<h3>Deprecated<a class="headerlink" href="#id21" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id22">
+<h3>Removed<a class="headerlink" href="#id22" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Remove the highlight action from the Devices view title bar.</p></li>
+</ul>
+</section>
+<section id="id23">
+<h3>Fixed<a class="headerlink" href="#id23" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id24">
+<h3>Security<a class="headerlink" href="#id24" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="terminal-reconnect">
+<h2>[1.3.0] - 2025-12-20 [TERMINAL-RECONNECT]<a class="headerlink" href="#terminal-reconnect" title="Link to this heading"></a></h2>
+<section id="id25">
+<h3>Added<a class="headerlink" href="#id25" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Keep SSH terminals open when connections drop and automatically retry every five seconds with an in-terminal reconnect notice.</p></li>
+<li><p>Allow multiple SFTP instances.</p></li>
+<li><p>Add context menu to copy device details on devices view.</p></li>
+<li><p>Add <code class="docutils literal notranslate"><span class="pre">embeddedLogger.defaultEnableWebBrowser</span></code> default setting for the per-device web browser action.</p></li>
+<li><p>Add Makefile for packaging and docs generation.</p></li>
+<li><p>Show waiting status during password prompts.</p></li>
+<li><p>Add CI checks.</p></li>
+<li><p>Add Local Linter checks.</p></li>
+</ul>
+</section>
+<section id="id26">
+<h3>Changed<a class="headerlink" href="#id26" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Migrated documentation system and publishing workflow to Sphinx + TypeDoc + Mermaid.</p></li>
+</ul>
+</section>
+<section id="id27">
+<h3>Deprecated<a class="headerlink" href="#id27" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id28">
+<h3>Removed<a class="headerlink" href="#id28" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id29">
+<h3>Fixed<a class="headerlink" href="#id29" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Fix context menu rendering in log panel.</p></li>
+<li><p>Prompt user before overwriting existing files during SFTP copy operations instead of failing immediately.</p></li>
+<li><p>Carry source permissions through copies, uploads, downloads, and duplicates for files and directories during SFTP.</p></li>
+</ul>
+</section>
+<section id="id30">
+<h3>Security<a class="headerlink" href="#id30" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="bastion">
+<h2>[1.2.0] - 2025-12-15 [BASTION]<a class="headerlink" href="#bastion" title="Link to this heading"></a></h2>
+<section id="id31">
+<h3>Added<a class="headerlink" href="#id31" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>(Experimental) Allow devices to tunnel log streaming, terminals, and one-off SSH commands through an optional bastion host with its own credentials and host key pinning.</p></li>
+<li><p>Optional <strong>Open WEB Browser</strong> button on device cards that launches the configured URL in the system browser, defaulting to <code class="docutils literal notranslate"><span class="pre">http://&lt;host&gt;</span></code> when no <code class="docutils literal notranslate"><span class="pre">webBrowserUrl</span></code> is set.</p></li>
+<li><p>New per-device settings <code class="docutils literal notranslate"><span class="pre">enableWebBrowser</span></code> and <code class="docutils literal notranslate"><span class="pre">webBrowserUrl</span></code> to control and customize the browser action.</p></li>
+</ul>
+</section>
+<section id="id32">
+<h3>Changed<a class="headerlink" href="#id32" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id33">
+<h3>Deprecated<a class="headerlink" href="#id33" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id34">
+<h3>Removed<a class="headerlink" href="#id34" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id35">
+<h3>Fixed<a class="headerlink" href="#id35" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id36">
+<h3>Security<a class="headerlink" href="#id36" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="sftp">
+<h2>[1.1.0] - 2025-12-11 [SFTP]<a class="headerlink" href="#sftp" title="Link to this heading"></a></h2>
+<section id="id37">
+<h3>Added<a class="headerlink" href="#id37" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Optional SFTP explorer panel with dual-pane remote/local navigation, per-pane file operations, and arrows to transfer selected files between remote and local (or remote-to-remote when the right pane is set to remote).</p></li>
+<li><p>Device-level and default settings to surface the <strong>Open SFTP Explorer</strong> action alongside existing SSH terminal and command options.</p></li>
+<li><p>Add secondary host fallback support.</p></li>
+</ul>
+</section>
+<section id="id38">
+<h3>Changed<a class="headerlink" href="#id38" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Keep the SFTP explorer open when the SSH session drops, greying out the UI, colouring the remote pane to reflect disconnect/reconnect attempts, showing a countdown beside the title, and retrying every five seconds without losing the current paths.</p></li>
+</ul>
+</section>
+<section id="id39">
+<h3>Deprecated<a class="headerlink" href="#id39" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id40">
+<h3>Removed<a class="headerlink" href="#id40" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id41">
+<h3>Fixed<a class="headerlink" href="#id41" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id42">
+<h3>Security<a class="headerlink" href="#id42" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="ssh-keys">
+<h2>[1.0.0] - 2025-12-08 [SSH-KEYS]<a class="headerlink" href="#ssh-keys" title="Link to this heading"></a></h2>
+<section id="id43">
+<h3>Added<a class="headerlink" href="#id43" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Support authenticating with SSH private keys (including passphrases) for log streaming, SSH commands, and interactive terminals.</p></li>
+<li><p>Expand private key paths that include <code class="docutils literal notranslate"><span class="pre">~</span></code> or <code class="docutils literal notranslate"><span class="pre">${env:VAR}</span></code> tokens for convenience.</p></li>
+</ul>
+</section>
+<section id="id44">
+<h3>Changed<a class="headerlink" href="#id44" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Migrate legacy private key passphrases into VS Code Secret Storage alongside passwords.</p></li>
+</ul>
+</section>
+<section id="id45">
+<h3>Deprecated<a class="headerlink" href="#id45" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id46">
+<h3>Removed<a class="headerlink" href="#id46" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id47">
+<h3>Fixed<a class="headerlink" href="#id47" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id48">
+<h3>Security<a class="headerlink" href="#id48" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Store SSH private key passphrases securely in Secret Storage and sanitize configuration to remove inlined secrets when possible.</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="settings">
+<h2>[0.9.0] - 2025-12-07 [SETTINGS]<a class="headerlink" href="#settings" title="Link to this heading"></a></h2>
+<section id="id49">
+<h3>Added<a class="headerlink" href="#id49" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Surface default device options (port, log command, SSH terminal toggle, and shared SSH commands) plus the max-line limit as configurable fields in the VS Code Settings UI.</p></li>
+<li><p>Provide JSON examples for device definitions and default SSH commands directly in the Settings descriptions.</p></li>
+<li><p>Add Design Overview Document.</p></li>
+</ul>
+</section>
+<section id="id50">
+<h3>Changed<a class="headerlink" href="#id50" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Consolidate configuration resolution so default values apply consistently when loading devices and log panels.</p></li>
+</ul>
+</section>
+<section id="id51">
+<h3>Deprecated<a class="headerlink" href="#id51" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id52">
+<h3>Removed<a class="headerlink" href="#id52" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id53">
+<h3>Fixed<a class="headerlink" href="#id53" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id54">
+<h3>Security<a class="headerlink" href="#id54" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Migrate legacy device passwords to Secret Storage and clear plaintext values from settings when possible.</p></li>
+<li><p>Enforce SSH host key verification.</p></li>
+<li><p>Scope stored device passwords to the host, username, and workspace with confirmation prompts before reusing secrets when device metadata changes.</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="console">
+<h2>[0.8.0] - 2025-12-06 [CONSOLE]<a class="headerlink" href="#console" title="Link to this heading"></a></h2>
+<section id="id55">
+<h3>Added<a class="headerlink" href="#id55" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Add Open SSH Terminal action alongside SSH commands in the Devices view when enabled, to open a dedicated terminal tab that uses stored or prompted passwords for authentication.</p></li>
+</ul>
+</section>
+<section id="id56">
+<h3>Changed<a class="headerlink" href="#id56" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id57">
+<h3>Deprecated<a class="headerlink" href="#id57" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id58">
+<h3>Removed<a class="headerlink" href="#id58" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id59">
+<h3>Fixed<a class="headerlink" href="#id59" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id60">
+<h3>Security<a class="headerlink" href="#id60" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="commands">
+<h2>[0.7.0] - 2025-12-06 [COMMANDS]<a class="headerlink" href="#commands" title="Link to this heading"></a></h2>
+<section id="id61">
+<h3>Added<a class="headerlink" href="#id61" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Allow configuring optional SSH commands per device and show them as collapsible lists in the Devices view.</p></li>
+<li><p>Run one-off SSH commands from the Devices view and surface command output in VS Code notifications.</p></li>
+</ul>
+</section>
+<section id="id62">
+<h3>Changed<a class="headerlink" href="#id62" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id63">
+<h3>Deprecated<a class="headerlink" href="#id63" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id64">
+<h3>Removed<a class="headerlink" href="#id64" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id65">
+<h3>Fixed<a class="headerlink" href="#id65" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id66">
+<h3>Security<a class="headerlink" href="#id66" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="bookmarks">
+<h2>[0.6.0] - 2025-12-06 [BOOKMARKS]<a class="headerlink" href="#bookmarks" title="Link to this heading"></a></h2>
+<section id="id67">
+<h3>Added<a class="headerlink" href="#id67" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Add Bookmarks to live logs and imported logs.</p></li>
+<li><p>Add line limit display notice to log panel.</p></li>
+<li><p>Highlight session closed markers in imported logs.</p></li>
+<li><p>Add Edit button to imported log tabs for opening files in a separated editor tab.</p></li>
+<li><p>Add Refresh button to imported log tabs for reloading content in case it was externally updated.</p></li>
+</ul>
+</section>
+<section id="id68">
+<h3>Changed<a class="headerlink" href="#id68" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Surround auto-saved SSH session closed markers with blank lines to improve visibility.</p></li>
+<li><p>Increase log panel SSH message height to improve visibility.</p></li>
+<li><p>Update log message handling behavior. Messages from auto-save or from logger commands are handled in a secondary line from the connection status.</p></li>
+<li><p>When loglevel filter is set to ALL, do not hide blank lines and lines without a log tag.</p></li>
+</ul>
+</section>
+<section id="id69">
+<h3>Deprecated<a class="headerlink" href="#id69" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id70">
+<h3>Removed<a class="headerlink" href="#id70" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id71">
+<h3>Fixed<a class="headerlink" href="#id71" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Fix spacing for word wrapped lines.</p></li>
+</ul>
+</section>
+<section id="id72">
+<h3>Security<a class="headerlink" href="#id72" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="auto-autoscroll">
+<h2>[0.5.0] - 2025-12-03 [AUTO-AUTOSCROLL]<a class="headerlink" href="#auto-autoscroll" title="Link to this heading"></a></h2>
+<section id="id73">
+<h3>Added<a class="headerlink" href="#id73" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Introduce <code class="docutils literal notranslate"><span class="pre">embeddedLogger.maxLinesPerTab</span></code> to configure how many log lines each tab retains (default: 100000).</p></li>
+<li><p>Add full-width background color to SSH session closed message for better spotting.</p></li>
+<li><p>Adjust auto-scroll behavior based on log panel scrolling.</p></li>
+<li><p>Add clear button for find textbox.</p></li>
+<li><p>Add auto-save option for live SSH logs.</p></li>
+<li><p>Update find functionality for log navigation.</p></li>
+<li><p>Add visual indicators for wrapped log lines.</p></li>
+</ul>
+</section>
+<section id="id74">
+<h3>Changed<a class="headerlink" href="#id74" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id75">
+<h3>Deprecated<a class="headerlink" href="#id75" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id76">
+<h3>Removed<a class="headerlink" href="#id76" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Removed Port from device list view.</p></li>
+</ul>
+</section>
+<section id="id77">
+<h3>Fixed<a class="headerlink" href="#id77" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Preserve log panel scroll during highlight updates.</p></li>
+<li><p>Load offline log files in a single batch to reduce tab initialization time.</p></li>
+</ul>
+</section>
+<section id="id78">
+<h3>Security<a class="headerlink" href="#id78" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="reconnect">
+<h2>[0.4.0] - 2025-12-01 [RECONNECT]<a class="headerlink" href="#reconnect" title="Link to this heading"></a></h2>
+<section id="id79">
+<h3>Added<a class="headerlink" href="#id79" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Add auto-scroll toggle to log panel.</p></li>
+<li><p>Append a marker line to the log output when an SSH session closes, including a timestamp.</p></li>
+<li><p>Add auto-reconnect controls to live logs.</p></li>
+<li><p>Update log panel frame colors depending if the SSH session is connected (green), re-connecting (yellow) or disconnected (red).</p></li>
+<li><p>Add Clear Logs button.</p></li>
+</ul>
+</section>
+<section id="id80">
+<h3>Changed<a class="headerlink" href="#id80" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id81">
+<h3>Deprecated<a class="headerlink" href="#id81" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id82">
+<h3>Removed<a class="headerlink" href="#id82" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id83">
+<h3>Fixed<a class="headerlink" href="#id83" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Fix sidebar device list not loading after switching views.</p></li>
+</ul>
+</section>
+<section id="id84">
+<h3>Security<a class="headerlink" href="#id84" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="search-and-highlights">
+<h2>[0.3.0] - 2025-11-30 [SEARCH-AND-HIGHLIGHTS]<a class="headerlink" href="#search-and-highlights" title="Link to this heading"></a></h2>
+<section id="id85">
+<h3>Added<a class="headerlink" href="#id85" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Add Ctrl/Cmd+F find support in the log panel, including navigation across matches in both live and imported logs.</p></li>
+<li><p>Add a title bar highlight button that spawns up to ten colour-coded rows for emphasizing custom keywords across live and imported logs.</p></li>
+<li><p>Render highlighted matches in bold, underlined text with the same colour as their corresponding search row.</p></li>
+</ul>
+</section>
+<section id="id86">
+<h3>Changed<a class="headerlink" href="#id86" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Restructure the log panel header to accommodate the new highlight controls and preserve readability on smaller widths.</p></li>
+</ul>
+</section>
+<section id="id87">
+<h3>Deprecated<a class="headerlink" href="#id87" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id88">
+<h3>Removed<a class="headerlink" href="#id88" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id89">
+<h3>Fixed<a class="headerlink" href="#id89" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id90">
+<h3>Security<a class="headerlink" href="#id90" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="log-files">
+<h2>[0.2.0] - 2025-11-30 [LOG-FILES]<a class="headerlink" href="#log-files" title="Link to this heading"></a></h2>
+<section id="id91">
+<h3>Added<a class="headerlink" href="#id91" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Open local log files directly from the Embedded Logger view title button or command palette and reuse the existing log viewer workflow.</p></li>
+<li><p>Add word wrap toggle to log panel.</p></li>
+<li><p>Add device view title action to edit configuration.</p></li>
+<li><p>Add device view title action to clear stored passwords.</p></li>
+<li><p>Provide a default device configuration template matching the README example.</p></li>
+</ul>
+</section>
+<section id="id92">
+<h3>Changed<a class="headerlink" href="#id92" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Default log filtering now starts at <strong>ALL</strong> to show every level on initial load.</p></li>
+<li><p>Colorize based on loglevel now accepts a wider range of log formats.</p></li>
+<li><p>Align Presets buttons with combo boxes.</p></li>
+<li><p>Improve Issues Templates for GH repository.</p></li>
+<li><p>Improved Readme file.</p></li>
+</ul>
+</section>
+<section id="id93">
+<h3>Deprecated<a class="headerlink" href="#id93" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id94">
+<h3>Removed<a class="headerlink" href="#id94" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>None.</p></li>
+</ul>
+</section>
+<section id="id95">
+<h3>Fixed<a class="headerlink" href="#id95" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Fix top bar when status plus buttons are wider than screen’s width.</p></li>
+</ul>
+</section>
+<section id="id96">
+<h3>Security<a class="headerlink" href="#id96" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Send webview initialization data securely.</p></li>
+<li><p>Fixed Workflow not containing GH permissions.</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="initial">
+<h2>[0.1.1] - 2025-11-29 [INITIAL]<a class="headerlink" href="#initial" title="Link to this heading"></a></h2>
+<section id="id97">
+<h3>Added<a class="headerlink" href="#id97" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Initial publication of the extension.</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="docgen.html" class="btn btn-neutral float-left" title="VSCode-Logger Documentation Generation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="security-issues.html" class="btn btn-neutral float-right" title="Security Policy" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, A. Scillato.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
