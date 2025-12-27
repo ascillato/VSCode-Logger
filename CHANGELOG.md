@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Refactor README and update documentation structure.
+- Restyle SFTP explorer toolbar.
 
 ### Deprecated
 - None.
