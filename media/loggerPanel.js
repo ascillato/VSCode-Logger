@@ -84,6 +84,8 @@
 
     let isRestoringState = false;
 
+    const DEFAULT_CONNECTED_STATUS = 'Connected. Streaming logs...';
+
     /**
      * @brief Persists the current UI state so it can be restored if the Webview reloads.
      */
@@ -163,6 +165,7 @@
     const highlightStatus = document.getElementById('highlightStatus');
     const bookmarkLabelDialog = createBookmarkLabelDialog();
     const bookmarkContextMenu = createBookmarkContextMenu();
+    const statusContextMenu = createStatusContextMenu();
     let contextMenuEntryId = null;
     let contextMenuSelectedText = '';
     const savedState = vscode.getState();
@@ -1237,6 +1240,113 @@
     }
 
     /**
+     * @brief Builds the status context menu used to reset status text.
+     * @returns The created context menu element.
+     */
+    function createStatusContextMenu() {
+        const menu = document.createElement('div');
+        menu.id = 'statusContextMenu';
+        menu.className = 'status-context-menu hidden';
+        const list = document.createElement('ul');
+        const item = document.createElement('li');
+        const button = document.createElement('button');
+        button.textContent = 'Reset status text';
+        button.dataset.action = 'resetStatus';
+        item.appendChild(button);
+        list.appendChild(item);
+        menu.appendChild(list);
+
+        menu.addEventListener('click', (event) => {
+            const target = event.target;
+            if (!(target instanceof HTMLElement)) {
+                return;
+            }
+            const action = target.dataset.action;
+            if (!action) {
+                return;
+            }
+            event.preventDefault();
+            handleStatusAction(action);
+            hideStatusContextMenu();
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!menu.contains(event.target)) {
+                hideStatusContextMenu();
+            }
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                hideStatusContextMenu();
+            }
+        });
+
+        window.addEventListener('resize', hideStatusContextMenu);
+        document.body.appendChild(menu);
+        return menu;
+    }
+
+    /**
+     * @brief Shows the status context menu at the pointer location.
+     * @param event Context menu mouse event.
+     */
+    function showStatusContextMenu(event) {
+        hideBookmarkContextMenu();
+        const initialX = event.clientX;
+        const initialY = event.clientY;
+        statusContextMenu.style.top = `${initialY}px`;
+        statusContextMenu.style.left = `${initialX}px`;
+        statusContextMenu.classList.remove('hidden');
+
+        const menuRect = statusContextMenu.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        const padding = 8;
+        let adjustedX = initialX;
+        let adjustedY = initialY;
+
+        if (menuRect.right > viewportWidth - padding) {
+            adjustedX = Math.max(padding, viewportWidth - menuRect.width - padding);
+        }
+        if (menuRect.bottom > viewportHeight - padding) {
+            adjustedY = Math.max(padding, viewportHeight - menuRect.height - padding);
+        }
+
+        statusContextMenu.style.left = `${adjustedX}px`;
+        statusContextMenu.style.top = `${adjustedY}px`;
+    }
+
+    /**
+     * @brief Hides the status context menu.
+     */
+    function hideStatusContextMenu() {
+        statusContextMenu.classList.add('hidden');
+    }
+
+    /**
+     * @brief Handles actions selected from the status context menu.
+     * @param action Action identifier to execute.
+     */
+    function handleStatusAction(action) {
+        if (action === 'resetStatus') {
+            resetStatusText();
+        }
+    }
+
+    /**
+     * @brief Restores the default connected status text and clears secondary messages.
+     */
+    function resetStatusText() {
+        if (!state.isLiveLog) {
+            return;
+        }
+        state.secondaryStatus = null;
+        setConnectionState('connected');
+        updateStatus(DEFAULT_CONNECTED_STATUS, { disableButton: false });
+    }
+
+    /**
      * @brief Clears any active reconnect countdown timers.
      */
     function clearReconnectTimers() {
@@ -1757,6 +1867,7 @@
         if (!(target instanceof HTMLElement)) {
             return;
         }
+        hideStatusContextMenu();
         const line = target.closest('.log-line');
         if (!line || !line.dataset.entryId) {
             return;
@@ -1764,6 +1875,16 @@
         event.preventDefault();
         showBookmarkContextMenu(event, Number(line.dataset.entryId));
     });
+
+    if (statusEl) {
+        statusEl.addEventListener('contextmenu', (event) => {
+            if (!state.isLiveLog) {
+                return;
+            }
+            event.preventDefault();
+            showStatusContextMenu(event);
+        });
+    }
 
     presetSelect.addEventListener('change', () => {
         const value = presetSelect.value;

@@ -330,7 +330,8 @@ body {
     margin: 0;
 }
 
-.bookmark-context-menu {
+.bookmark-context-menu,
+.status-context-menu {
     position: fixed;
     background: var(--vscode-editorWidget-background, var(--vscode-editor-background));
     border: 1px solid var(--vscode-editorWidget-border, #3c3c3c);
@@ -341,21 +342,25 @@ body {
     z-index: 10;
 }
 
-.bookmark-context-menu.hidden {
+.bookmark-context-menu.hidden,
+.status-context-menu.hidden {
     display: none;
 }
 
-.bookmark-context-menu ul {
+.bookmark-context-menu ul,
+.status-context-menu ul {
     list-style: none;
     padding: 0;
     margin: 0;
 }
 
-.bookmark-context-menu li {
+.bookmark-context-menu li,
+.status-context-menu li {
     margin: 0;
 }
 
-.bookmark-context-menu button {
+.bookmark-context-menu button,
+.status-context-menu button {
     width: 100%;
     text-align: left;
     background: transparent;
@@ -366,11 +371,13 @@ body {
     cursor: pointer;
 }
 
-.bookmark-context-menu button:hover:enabled {
+.bookmark-context-menu button:hover:enabled,
+.status-context-menu button:hover:enabled {
     background: var(--vscode-list-hoverBackground);
 }
 
-.bookmark-context-menu button:disabled {
+.bookmark-context-menu button:disabled,
+.status-context-menu button:disabled {
     opacity: 0.6;
     cursor: default;
 }
