@@ -7,7 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
-## [1.4.7] - 2025-12-26 [DOCS-IMPROVEMENTS]
+## [1.4.8] - 2025-12-28 [LOG-PANEL-RESTYLE]
+
+### Added
+- Live log status context menu option to restore the default connected message.
+- Add extension version to documentation.
+- Update contribution note about repository branches usage.
+
+### Changed
+- Restyle Log Panel toolbar.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- Ensure reconnects retry secondary host.
+
+### Security
+- None.
+
+----------------------------------------
+
+## [1.4.7] - 2025-12-26 [SFTP-RESTYLE]
 
 ### Added
 - Log build result in `make <option>`.

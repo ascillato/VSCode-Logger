@@ -18,58 +18,153 @@ body {
     flex-wrap: wrap;
 }
 
-.icon-button {
-    border: 1px solid var(--vscode-button-border, transparent);
-    background: var(--vscode-button-secondaryBackground, var(--vscode-button-background));
+.toolbar-button {
+    background: var(--vscode-button-background);
     color: var(--vscode-button-foreground);
-    padding: 4px 8px;
-    border-radius: 4px;
+    border: 1px solid var(--vscode-button-border, transparent);
+    padding: 4px 10px;
+    border-radius: 2px;
     cursor: pointer;
+    font-size: 0.85rem;
+    line-height: 1.2;
+    font-family: var(--vscode-font-family);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    height: 28px;
+    min-height: 28px;
+}
+
+.toolbar-button:hover {
+    background: var(--vscode-button-hoverBackground, color-mix(in srgb, var(--vscode-button-background) 80%, white));
+}
+
+.toolbar-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.toolbar-button__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    font-size: 16px;
+    line-height: 1;
+}
+
+.toolbar-button__icon svg {
+    width: 100%;
+    height: 100%;
+    fill: currentColor;
+}
+
+.toolbar-button--icon {
+    padding: 4px;
     min-width: 32px;
 }
 
-.icon-button:hover {
-    background: var(--vscode-button-secondaryHoverBackground, var(--vscode-button-hoverBackground));
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.toggle-button {
+    background: var(--vscode-button-secondaryBackground, var(--vscode-button-background));
+    color: var(--vscode-button-foreground);
+}
+
+.toggle-button[aria-pressed='true'],
+.toggle-button.toggle-button--active {
+    background: color-mix(in srgb, var(--vscode-button-background) 85%, #0e639c);
+    box-shadow: inset 0 0 0 1px var(--vscode-focusBorder, var(--vscode-button-border, transparent));
+}
+
+.toggle-button:not([aria-pressed='true']):hover {
+    background: color-mix(in srgb, var(--vscode-button-secondaryBackground, var(--vscode-button-background)) 80%, white);
+}
+
+.toggle-button[aria-pressed='true']:hover,
+.toggle-button.toggle-button--active:hover {
+    background: var(--vscode-button-hoverBackground, color-mix(in srgb, var(--vscode-button-background) 80%, white));
 }
 
 .top-bar {
     display: flex;
-    gap: 8px;
-    align-items: center;
+    gap: 6px;
+    align-items: flex-start;
     flex-wrap: wrap;
     margin-bottom: 8px;
 }
 
 .top-bar label {
     display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+}
+
+.top-bar label.stacked-field {
     flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
     font-size: 12px;
+}
+
+.toolbar-actions,
+.toggle-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 6px;
+    align-self: flex-end;
+}
+
+.toolbar-actions__item,
+.toggle-actions__item {
+    display: flex;
 }
 
 .search-bar {
     display: flex;
     align-items: flex-end;
-    gap: 8px;
+    gap: 6px;
+    align-self: flex-end;
 }
 
 .search-controls {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding-bottom: 2px;
     font-size: 12px;
-}
-
-.search-controls button {
-    padding: 4px 8px;
 }
 
 #searchInput {
     min-width: 220px;
+}
+
+.top-bar select,
+.top-bar input[type='text'] {
+    background: var(--vscode-dropdown-background);
+    color: var(--vscode-dropdown-foreground);
+    border: 1px solid var(--vscode-dropdown-border);
+    border-radius: 2px;
+    padding: 4px 6px;
+    font-size: 0.85rem;
+    line-height: 1.2;
+    height: 28px;
+    box-sizing: border-box;
+}
+
+.top-bar select {
+    min-height: 28px;
 }
 
 .highlight-popover {
@@ -120,10 +215,6 @@ body {
 .highlight-actions {
     display: flex;
     gap: 6px;
-}
-
-.highlight-actions button {
-    padding: 4px 8px;
 }
 
 .highlight-status {
@@ -302,6 +393,7 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
+    align-self: flex-end;
 }
 
 #status {
@@ -330,7 +422,8 @@ body {
     margin: 0;
 }
 
-.bookmark-context-menu {
+.bookmark-context-menu,
+.status-context-menu {
     position: fixed;
     background: var(--vscode-editorWidget-background, var(--vscode-editor-background));
     border: 1px solid var(--vscode-editorWidget-border, #3c3c3c);
@@ -341,21 +434,25 @@ body {
     z-index: 10;
 }
 
-.bookmark-context-menu.hidden {
+.bookmark-context-menu.hidden,
+.status-context-menu.hidden {
     display: none;
 }
 
-.bookmark-context-menu ul {
+.bookmark-context-menu ul,
+.status-context-menu ul {
     list-style: none;
     padding: 0;
     margin: 0;
 }
 
-.bookmark-context-menu li {
+.bookmark-context-menu li,
+.status-context-menu li {
     margin: 0;
 }
 
-.bookmark-context-menu button {
+.bookmark-context-menu button,
+.status-context-menu button {
     width: 100%;
     text-align: left;
     background: transparent;
@@ -365,12 +462,13 @@ body {
     font-size: 12px;
     cursor: pointer;
 }
-
-.bookmark-context-menu button:hover:enabled {
+.bookmark-context-menu button:hover:enabled,
+.status-context-menu button:hover:enabled {
     background: var(--vscode-list-hoverBackground);
 }
 
-.bookmark-context-menu button:disabled {
+.bookmark-context-menu button:disabled,
+.status-context-menu button:disabled {
     opacity: 0.6;
     cursor: default;
 }
