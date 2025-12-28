@@ -561,10 +561,24 @@ export class LogPanel {
                 </button>
             </div>
             <div class="toolbar-actions__item">
-                <button id="editLogFile" class="toolbar-button hidden" type="button">Edit</button>
+                <button id="editLogFile" class="toolbar-button toolbar-button--icon hidden" type="button" title="Edit log file" aria-label="Edit log file">
+                    <span class="toolbar-button__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+                            <path d="M5 17.59V20h2.41L17 10.41 14.59 8 5 17.59ZM20.71 7a1 1 0 0 0 0-1.41l-2.3-2.3a1 1 0 0 0-1.41 0L15 4.29 19.71 9l1-1Z" />
+                        </svg>
+                    </span>
+                    <span class="sr-only">Edit log file</span>
+                </button>
             </div>
             <div class="toolbar-actions__item">
-                <button id="refreshLogFile" class="toolbar-button hidden" type="button">Refresh</button>
+                <button id="refreshLogFile" class="toolbar-button toolbar-button--icon hidden" type="button" title="Refresh log file" aria-label="Refresh log file">
+                    <span class="toolbar-button__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+                            <path d="M12 6V3L8 7l4 4V8a4 4 0 1 1-4 4H6a6 6 0 1 0 6-6Z" />
+                        </svg>
+                    </span>
+                    <span class="sr-only">Refresh log file</span>
+                </button>
             </div>
             <div class="toolbar-actions__item">
                 <button id="autoSaveToggle" class="toolbar-button toolbar-button--icon" type="button" title="Start auto-save" aria-label="Start auto-save">

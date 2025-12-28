@@ -213,6 +213,8 @@
     setButtonLabel(exportBtn, 'Export logs');
     setButtonLabel(autoSaveToggle, state.autoSaveActive ? 'Stop auto-save' : 'Start auto-save');
     setButtonLabel(clearLogsBtn, 'Clear logs');
+    setButtonLabel(editBtn, 'Edit log file');
+    setButtonLabel(refreshBtn, 'Refresh log file');
 
     setToggleState(wordWrapToggle, state.wordWrapEnabled);
     setToggleState(autoScrollToggle, state.autoScrollEnabled);
