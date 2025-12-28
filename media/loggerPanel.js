@@ -2174,6 +2174,10 @@
                 if (autoSaveContainer) {
                     autoSaveContainer.classList.toggle('hidden', hideLiveOnlyControl);
                 }
+                if (!state.isLiveLog && reconnectButton) {
+                    reconnectButton.hidden = true;
+                    reconnectButton.disabled = true;
+                }
                 setToggleState(autoScrollToggle, state.autoScrollEnabled);
                 setToggleState(autoReconnectToggle, state.autoReconnectEnabled);
                 updatePresetDropdown();
