@@ -28,6 +28,10 @@ body {
     font-size: 0.85rem;
     line-height: 1.2;
     font-family: var(--vscode-font-family);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 28px;
 }
 
 .toolbar-button:hover {
@@ -41,9 +45,6 @@ body {
 
 .toolbar-button--icon {
     padding: 4px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
     min-width: 32px;
 }
 
@@ -64,7 +65,7 @@ body {
 
 .search-bar {
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     gap: 8px;
 }
 
@@ -72,7 +73,6 @@ body {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding-bottom: 2px;
     font-size: 12px;
 }
 
