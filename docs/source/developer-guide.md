@@ -2,6 +2,8 @@
 
 Embedded Device Logger welcomes contributions from the community. Please review the [CONTRIBUTING guide](https://github.com/ascillato/VSCode-Logger/blob/main/CONTRIBUTING.md) before opening a pull request.
 
+> **Important:** Open pull requests against the **development** branch. The **main** branch is reserved for releases.
+
 ## Source code and documentation
 
 - Repository: https://github.com/ascillato/VSCode-Logger

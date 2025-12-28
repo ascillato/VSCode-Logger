@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Live log status context menu option to restore the default connected message.
+- Add extension version to documentation.
+- Update contribution note about branches usage.
 
 ### Changed
 - None.
