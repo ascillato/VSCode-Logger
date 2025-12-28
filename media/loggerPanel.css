@@ -79,8 +79,9 @@ body {
 .toggle-actions {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
+    align-items: flex-end;
     gap: 6px;
+    align-self: flex-end;
 }
 
 .toolbar-actions__item,
@@ -90,8 +91,9 @@ body {
 
 .search-bar {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     gap: 6px;
+    align-self: flex-end;
 }
 
 .search-controls {
