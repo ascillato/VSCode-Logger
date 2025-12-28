@@ -48,7 +48,13 @@ body {
     min-width: 32px;
 }
 
-.toggle-button[aria-pressed='true'] {
+.toggle-button {
+    background: var(--vscode-button-secondaryBackground, var(--vscode-button-background));
+    color: var(--vscode-button-foreground);
+}
+
+.toggle-button[aria-pressed='true'],
+.toggle-button.toggle-button--active {
     background: var(--vscode-button-hoverBackground, var(--vscode-button-background));
     box-shadow: inset 0 0 0 1px var(--vscode-focusBorder, var(--vscode-button-border, transparent));
 }
@@ -348,8 +354,9 @@ body {
 
 .status-area {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     gap: 8px;
+    align-self: flex-end;
 }
 
 #status {
