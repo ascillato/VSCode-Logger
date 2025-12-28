@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
-## [1.4.8] - UNRELEASED [LOG-PANEL_RESTYLE]
+## [1.4.8] - UNRELEASED [LOG-PANEL-RESTYLE]
 
 ### Added
 - Live log status context menu option to restore the default connected message.
