@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - None.
 
 ### Fixed
-- None.
+- Ensure reconnects retry secondary host.
 
 ### Security
 - None.
