@@ -2,7 +2,7 @@
 
 {% block footer %}
   {{ super() }}
-  <div class="project-footer">
+  <div class="project-footer" role="contentinfo" aria-label="Project metadata">
     {{ project_name or project }}{% if project_version %} v{{ project_version }}{% endif %}
   </div>
 {% endblock %}
