@@ -49,6 +49,8 @@ body {
     justify-content: center;
     width: 16px;
     height: 16px;
+    font-size: 16px;
+    line-height: 1;
 }
 
 .toolbar-button__icon svg {
