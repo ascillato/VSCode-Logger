@@ -141,6 +141,8 @@
     const autoScrollContainer = document.getElementById('autoScrollContainer');
     const autoReconnectToggle = document.getElementById('autoReconnectToggle');
     const autoReconnectContainer = document.getElementById('autoReconnectContainer');
+    const autoSaveContainer = autoSaveToggle?.closest('.toolbar-actions__item');
+    const clearLogsContainer = clearLogsBtn?.closest('.toolbar-actions__item');
     const editContainer = editBtn?.closest('.toolbar-actions__item');
     const refreshContainer = refreshBtn?.closest('.toolbar-actions__item');
     const logContainer = document.getElementById('logContainer');
@@ -2036,6 +2038,12 @@
                 if (autoSaveToggle) {
                     autoSaveToggle.classList.toggle('hidden', !state.isLiveLog);
                     autoSaveToggle.disabled = !state.isLiveLog;
+                }
+                if (autoSaveContainer) {
+                    autoSaveContainer.classList.toggle('hidden', !state.isLiveLog);
+                }
+                if (clearLogsContainer) {
+                    clearLogsContainer.classList.toggle('hidden', !state.isLiveLog);
                 }
                 setToggleState(autoScrollToggle, state.autoScrollEnabled);
                 setToggleState(autoReconnectToggle, state.autoReconnectEnabled);
