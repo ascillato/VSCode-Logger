@@ -1,6 +1,6 @@
 # Developer Setup and Workflow
 
-Embedded Device Logger welcomes contributions from the community. Please review the [CONTRIBUTING guide](https://github.com/ascillato/VSCode-Logger/blob/main/CONTRIBUTING.md) before opening a pull request.
+Embedded Device Logger welcomes contributions from the community. Please review the [CONTRIBUTING guide](https://ascillato.github.io/VSCode-Logger/code-development.html) before opening a pull request.
 
 > **Important:** Open pull requests against the **development** branch. The **main** branch is reserved for releases.
 
@@ -66,4 +66,4 @@ Continuous integration builds and publishes the site from `main` to `gh-pages`.
 
 - Open issues for bug reports or feature requests.
 - Submit pull requests with clear descriptions and tests where applicable.
-- Follow the coding and security practices outlined in the [CONTRIBUTING guide](https://github.com/ascillato/VSCode-Logger/blob/main/CONTRIBUTING.md).
+- Follow the coding and security practices outlined in the [CONTRIBUTING guide](https://ascillato.github.io/VSCode-Logger/code-development.html)
