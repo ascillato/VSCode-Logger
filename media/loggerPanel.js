@@ -141,8 +141,8 @@
     const autoScrollContainer = document.getElementById('autoScrollContainer');
     const autoReconnectToggle = document.getElementById('autoReconnectToggle');
     const autoReconnectContainer = document.getElementById('autoReconnectContainer');
-    const editContainer = editBtn?.closest('label');
-    const refreshContainer = refreshBtn?.closest('label');
+    const editContainer = editBtn?.closest('.toolbar-actions__item');
+    const refreshContainer = refreshBtn?.closest('.toolbar-actions__item');
     const logContainer = document.getElementById('logContainer');
     const logContent = document.getElementById('logContent');
     const statusEl = document.getElementById('status');
@@ -166,6 +166,23 @@
     let contextMenuEntryId = null;
     let contextMenuSelectedText = '';
     const savedState = vscode.getState();
+
+    function setToggleState(button, active) {
+        if (!button) {
+            return;
+        }
+        button.dataset.active = active ? 'true' : 'false';
+        button.setAttribute('aria-pressed', String(active));
+        button.classList.toggle('toggle-button--active', active);
+    }
+
+    function isToggleActive(button) {
+        return button?.dataset.active === 'true';
+    }
+
+    setToggleState(wordWrapToggle, state.wordWrapEnabled);
+    setToggleState(autoScrollToggle, state.autoScrollEnabled);
+    setToggleState(autoReconnectToggle, state.autoReconnectEnabled);
 
     let reconnectTimeoutId = null;
     let reconnectIntervalId = null;
@@ -331,9 +348,9 @@
 
         minLevelSelect.value = state.minLevel;
         textFilterInput.value = state.textFilter;
-        wordWrapToggle.checked = state.wordWrapEnabled;
-        autoScrollToggle.checked = state.autoScrollEnabled;
-        autoReconnectToggle.checked = state.autoReconnectEnabled;
+        setToggleState(wordWrapToggle, state.wordWrapEnabled);
+        setToggleState(autoScrollToggle, state.autoScrollEnabled);
+        setToggleState(autoReconnectToggle, state.autoReconnectEnabled);
         searchInput.value = state.searchTerm;
 
         setHighlights(state.highlights);
@@ -1475,7 +1492,7 @@
     function handleHostKeyMismatch(expected, received) {
         state.autoReconnectEnabled = false;
         if (autoReconnectToggle) {
-            autoReconnectToggle.checked = false;
+            setToggleState(autoReconnectToggle, false);
             autoReconnectToggle.disabled = true;
         }
         clearReconnectTimers();
@@ -1580,13 +1597,12 @@
      * @param enabled Whether auto-scroll should be enabled.
      */
     function setAutoScrollEnabled(enabled) {
-        if (state.autoScrollEnabled === enabled) {
-            return;
-        }
-
+        const changed = state.autoScrollEnabled !== enabled;
         state.autoScrollEnabled = enabled;
-        autoScrollToggle.checked = enabled;
-        schedulePersist();
+        setToggleState(autoScrollToggle, enabled);
+        if (changed) {
+            schedulePersist();
+        }
     }
 
     /**
@@ -1810,22 +1826,27 @@
         clearLogsBtn.addEventListener('click', clearLogs);
     }
 
-    wordWrapToggle.addEventListener('change', () => {
-        state.wordWrapEnabled = wordWrapToggle.checked;
+    wordWrapToggle.addEventListener('click', () => {
+        const next = !isToggleActive(wordWrapToggle);
+        setToggleState(wordWrapToggle, next);
+        state.wordWrapEnabled = next;
         updateWordWrapClass();
         schedulePersist();
     });
 
-    autoScrollToggle.addEventListener('change', () => {
-        setAutoScrollEnabled(autoScrollToggle.checked);
+    autoScrollToggle.addEventListener('click', () => {
+        const next = !isToggleActive(autoScrollToggle);
+        setAutoScrollEnabled(next);
         if (state.autoScrollEnabled && state.searchIndex === -1) {
             logContainer.scrollTop = logContainer.scrollHeight;
         }
         schedulePersist();
     });
 
-    autoReconnectToggle.addEventListener('change', () => {
-        state.autoReconnectEnabled = autoReconnectToggle.checked;
+    autoReconnectToggle.addEventListener('click', () => {
+        const next = !isToggleActive(autoReconnectToggle);
+        state.autoReconnectEnabled = next;
+        setToggleState(autoReconnectToggle, next);
         if (!state.autoReconnectEnabled) {
             clearReconnectTimers();
         } else if (state.connectionState === 'disconnected') {
@@ -1883,7 +1904,7 @@
         if (state.connectionState === 'connected') {
             state.autoReconnectEnabled = false;
             if (autoReconnectToggle) {
-                autoReconnectToggle.checked = false;
+                setToggleState(autoReconnectToggle, false);
             }
             setConnectionState('connecting');
             updateStatus('Disconnecting...', { disableButton: true });
@@ -2016,8 +2037,8 @@
                     autoSaveToggle.classList.toggle('hidden', !state.isLiveLog);
                     autoSaveToggle.disabled = !state.isLiveLog;
                 }
-                autoScrollToggle.checked = state.autoScrollEnabled;
-                autoReconnectToggle.checked = state.autoReconnectEnabled;
+                setToggleState(autoScrollToggle, state.autoScrollEnabled);
+                setToggleState(autoReconnectToggle, state.autoReconnectEnabled);
                 updatePresetDropdown();
                 applyFilters();
                 break;

@@ -507,7 +507,7 @@ export class LogPanel {
 </head>
 <body>
     <div class="top-bar">
-        <label>Min Level
+        <label class="stacked-field">Min Level
             <select id="minLevel">
                 <option selected>ALL</option>
                 <option>DEBUG</option>
@@ -520,52 +520,53 @@ export class LogPanel {
                 <option>EMERG</option>
             </select>
         </label>
-        <label>Text Filter
+        <label class="stacked-field">Text Filter
             <input type="text" id="textFilter" placeholder="Filter substring" />
         </label>
-        <label>Presets
+        <label class="stacked-field">Presets
             <select id="presetSelect">
                 <option value="">(no preset)</option>
             </select>
         </label>
-        <label>&nbsp;
-            <button id="savePreset" class="toolbar-button">Save Preset</button>
-        </label>
-        <label>&nbsp;
-            <button id="deletePreset" class="toolbar-button">Delete Preset</button>
-        </label>
-        <label>&nbsp;
-            <button id="exportLogs" class="toolbar-button">Export Logs</button>
-        </label>
-        <label>&nbsp;
-            <button id="editLogFile" class="toolbar-button hidden">Edit</button>
-        </label>
-        <label>&nbsp;
-            <button id="refreshLogFile" class="toolbar-button hidden">Refresh</button>
-        </label>
-        <label>&nbsp;
-            <button id="autoSaveToggle" class="toolbar-button">Auto-Save</button>
-        </label>
-        <label>&nbsp;
-            <button id="clearLogs" class="toolbar-button">Clear Logs</button>
-        </label>
-        <label class="word-wrap-toggle">
-            <span>Word Wrap</span>
-            <input type="checkbox" id="wordWrapToggle" />
-        </label>
-        <label class="word-wrap-toggle" id="autoScrollContainer">
-            <span>Auto-Scroll</span>
-            <input type="checkbox" id="autoScrollToggle" checked />
-        </label>
-        <label class="word-wrap-toggle" id="autoReconnectContainer">
-            <span>Auto-Reconnect</span>
-            <input type="checkbox" id="autoReconnectToggle" checked />
-        </label>
-        <label>&nbsp;
-            <button id="highlightToggle" class="toolbar-button">Highlight</button>
-        </label>
+        <div class="toolbar-actions">
+            <div class="toolbar-actions__item">
+                <button id="savePreset" class="toolbar-button" type="button">Save Preset</button>
+            </div>
+            <div class="toolbar-actions__item">
+                <button id="deletePreset" class="toolbar-button" type="button">Delete Preset</button>
+            </div>
+            <div class="toolbar-actions__item">
+                <button id="exportLogs" class="toolbar-button" type="button">Export Logs</button>
+            </div>
+            <div class="toolbar-actions__item">
+                <button id="editLogFile" class="toolbar-button hidden" type="button">Edit</button>
+            </div>
+            <div class="toolbar-actions__item">
+                <button id="refreshLogFile" class="toolbar-button hidden" type="button">Refresh</button>
+            </div>
+            <div class="toolbar-actions__item">
+                <button id="autoSaveToggle" class="toolbar-button" type="button">Auto-Save</button>
+            </div>
+            <div class="toolbar-actions__item">
+                <button id="clearLogs" class="toolbar-button" type="button">Clear Logs</button>
+            </div>
+            <div class="toolbar-actions__item">
+                <button id="highlightToggle" class="toolbar-button" type="button">Highlight</button>
+            </div>
+        </div>
+        <div class="toggle-actions">
+            <div class="toggle-actions__item">
+                <button id="wordWrapToggle" class="toolbar-button toggle-button" type="button" aria-pressed="false">Word Wrap</button>
+            </div>
+            <div class="toggle-actions__item" id="autoScrollContainer">
+                <button id="autoScrollToggle" class="toolbar-button toggle-button" type="button" aria-pressed="false">Auto-Scroll</button>
+            </div>
+            <div class="toggle-actions__item" id="autoReconnectContainer">
+                <button id="autoReconnectToggle" class="toolbar-button toggle-button" type="button" aria-pressed="false">Auto-Reconnect</button>
+            </div>
+        </div>
         <div class="search-bar">
-            <label>Find
+            <label class="stacked-field">Find
                 <input type="text" id="searchInput" placeholder="Find in logs (Ctrl/Cmd+F)" />
             </label>
             <button id="searchClear" class="toolbar-button toolbar-button--icon" title="Clear search" aria-label="Clear search">&times;</button>
