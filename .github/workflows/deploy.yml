@@ -110,13 +110,23 @@ jobs:
       - name: Publish extension to VSCode Market Place
         run: vsce publish -p ${{ secrets.VSCE_TOKEN }}
 
-  # 4. Documentation (build on PRs/pushes; deploy only on pushes to main)
+  # 4. Documentation (build on PRs/pushes/manual; deploy on push-to-main OR manual; never on PRs)
   docs:
     runs-on: ubuntu-latest
     needs: build
+
+    # Build on pushes + workflow_dispatch always; on PRs only if not draft
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+
     permissions:
-      contents: write
+      contents: read
+      pages: write
+      id-token: write
+
+    concurrency:
+      group: "pages"
+      cancel-in-progress: true
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -136,18 +146,18 @@ jobs:
           make docs-clean
           make docs
 
-      # Deploy ONLY on push to main
-      - name: Prepare GitHub Pages content
-        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
-        run: |
-          cp -a docs/build/html/. docs/
-          rm -rf docs/build/html
+      # Deploy condition: push to main OR workflow_dispatch, but NEVER pull_request
+      - name: Configure GitHub Pages
+        if: github.event_name != 'pull_request' && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main')
+        uses: actions/configure-pages@v5
+
+      - name: Upload GitHub Pages artifact
+        if: github.event_name != 'pull_request' && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main')
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/build/html
 
       - name: Deploy to GitHub Pages
-        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs
-          publish_branch: gh-pages
-          force_orphan: true
+        if: github.event_name != 'pull_request' && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main')
+        id: deployment
+        uses: actions/deploy-pages@v4
