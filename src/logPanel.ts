@@ -530,13 +530,35 @@ export class LogPanel {
         </label>
         <div class="toolbar-actions">
             <div class="toolbar-actions__item">
-                <button id="savePreset" class="toolbar-button" type="button">Save Preset</button>
+                <button id="savePreset" class="toolbar-button toolbar-button--icon" type="button" title="Save preset" aria-label="Save preset">
+                    <span class="toolbar-button__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+                            <path d="M17 3H5a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2V7l-4-4Zm-5 16a3 3 0 1 1 0-6 3 3 0 0 1 0 6Zm3-10H5V5h10v4Z" />
+                        </svg>
+                    </span>
+                    <span class="sr-only">Save preset</span>
+                </button>
             </div>
             <div class="toolbar-actions__item">
-                <button id="deletePreset" class="toolbar-button" type="button">Delete Preset</button>
+                <button id="deletePreset" class="toolbar-button toolbar-button--icon" type="button" title="Delete preset" aria-label="Delete preset">
+                    <span class="toolbar-button__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+                            <path d="M9 3h6a1 1 0 0 1 1 1v1h4v2H4V5h4V4a1 1 0 0 1 1-1Zm-3 5h12l-1 12H7L6 8Zm3 2v8h2v-8H9Zm4 0v8h2v-8h-2Z" />
+                        </svg>
+                    </span>
+                    <span class="sr-only">Delete preset</span>
+                </button>
             </div>
             <div class="toolbar-actions__item">
-                <button id="exportLogs" class="toolbar-button" type="button">Export Logs</button>
+                <button id="exportLogs" class="toolbar-button toolbar-button--icon" type="button" title="Export logs" aria-label="Export logs">
+                    <span class="toolbar-button__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+                            <path d="M12 3v10.586l3.293-3.293 1.414 1.414L12 16.414l-4.707-4.707 1.414-1.414L12 13.586V3h0Z" />
+                            <path d="M5 18h14v2H5v-2Z" />
+                        </svg>
+                    </span>
+                    <span class="sr-only">Export logs</span>
+                </button>
             </div>
             <div class="toolbar-actions__item">
                 <button id="editLogFile" class="toolbar-button hidden" type="button">Edit</button>
@@ -545,10 +567,24 @@ export class LogPanel {
                 <button id="refreshLogFile" class="toolbar-button hidden" type="button">Refresh</button>
             </div>
             <div class="toolbar-actions__item">
-                <button id="autoSaveToggle" class="toolbar-button" type="button">Auto-Save</button>
+                <button id="autoSaveToggle" class="toolbar-button toolbar-button--icon" type="button" title="Start auto-save" aria-label="Start auto-save">
+                    <span class="toolbar-button__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+                            <path d="M12 4a8 8 0 1 1-8 8 8 8 0 0 1 8-8Zm0 2a6 6 0 1 0 6 6 6 6 0 0 0-6-6Zm1 2h-2v4.2l3.2 1.9.8-1.6-2-1.2V8Z" />
+                        </svg>
+                    </span>
+                    <span class="sr-only">Start auto-save</span>
+                </button>
             </div>
             <div class="toolbar-actions__item">
-                <button id="clearLogs" class="toolbar-button" type="button">Clear Logs</button>
+                <button id="clearLogs" class="toolbar-button toolbar-button--icon" type="button" title="Clear logs" aria-label="Clear logs">
+                    <span class="toolbar-button__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+                            <path d="M5 5h14v14H5V5Zm2 2v10h10V7H7Zm2.7 2.7 1.8 1.8 1.8-1.8 1.4 1.4-1.8 1.8 1.8 1.8-1.4 1.4-1.8-1.8-1.8 1.8-1.4-1.4 1.8-1.8-1.8-1.8 1.4-1.4Z" />
+                        </svg>
+                    </span>
+                    <span class="sr-only">Clear logs</span>
+                </button>
             </div>
             <div class="toolbar-actions__item">
                 <button id="highlightToggle" class="toolbar-button" type="button">Highlight</button>
@@ -556,13 +592,34 @@ export class LogPanel {
         </div>
         <div class="toggle-actions">
             <div class="toggle-actions__item">
-                <button id="wordWrapToggle" class="toolbar-button toggle-button" type="button" aria-pressed="false">Word Wrap</button>
+                <button id="wordWrapToggle" class="toolbar-button toolbar-button--icon toggle-button" type="button" aria-pressed="false" data-label="Word wrap" title="Word wrap">
+                    <span class="toolbar-button__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+                            <path d="M4 6h16v2H4V6Zm0 5h10v2H4v-2Zm0 5h8v2H4v-2Zm12 0h2v-2h-2v-2h-2v6h4v-2Z" />
+                        </svg>
+                    </span>
+                    <span class="sr-only">Word wrap</span>
+                </button>
             </div>
             <div class="toggle-actions__item" id="autoScrollContainer">
-                <button id="autoScrollToggle" class="toolbar-button toggle-button" type="button" aria-pressed="false">Auto-Scroll</button>
+                <button id="autoScrollToggle" class="toolbar-button toolbar-button--icon toggle-button" type="button" aria-pressed="false" data-label="Auto-scroll" title="Auto-scroll">
+                    <span class="toolbar-button__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+                            <path d="M12 4v12m0 0-4-4m4 4 4-4M6 20h12v-2H6v2Z" />
+                        </svg>
+                    </span>
+                    <span class="sr-only">Auto-scroll</span>
+                </button>
             </div>
             <div class="toggle-actions__item" id="autoReconnectContainer">
-                <button id="autoReconnectToggle" class="toolbar-button toggle-button" type="button" aria-pressed="false">Auto-Reconnect</button>
+                <button id="autoReconnectToggle" class="toolbar-button toolbar-button--icon toggle-button" type="button" aria-pressed="false" data-label="Auto-reconnect" title="Auto-reconnect">
+                    <span class="toolbar-button__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+                            <path d="M7.5 6.1A7 7 0 0 1 18 10h2.5L17 13.5 13.5 10H16a5 5 0 0 0-9.5-1.7l1.9.8ZM16.5 17.9A7 7 0 0 1 6 14H3.5L7 10.5 10.5 14H8a5 5 0 0 0 9.5 1.7l-1.9-.8Z" />
+                        </svg>
+                    </span>
+                    <span class="sr-only">Auto-reconnect</span>
+                </button>
             </div>
         </div>
         <div class="search-bar">

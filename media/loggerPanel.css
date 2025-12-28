@@ -43,9 +43,35 @@ body {
     cursor: not-allowed;
 }
 
+.toolbar-button__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+}
+
+.toolbar-button__icon svg {
+    width: 100%;
+    height: 100%;
+    fill: currentColor;
+}
+
 .toolbar-button--icon {
     padding: 4px;
     min-width: 32px;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }
 
 .toggle-button {
