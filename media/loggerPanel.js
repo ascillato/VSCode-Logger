@@ -1393,9 +1393,11 @@
     function updateActionButton(options = {}) {
         if (!state.isLiveLog) {
             reconnectButton.hidden = true;
+            reconnectButton.classList.add('hidden');
             return;
         }
 
+        reconnectButton.classList.remove('hidden');
         reconnectButton.hidden = false;
         reconnectButton.textContent = state.connectionState === 'connected' ? 'Disconnect' : 'Reconnect';
 
@@ -2177,6 +2179,7 @@
                 if (!state.isLiveLog && reconnectButton) {
                     reconnectButton.hidden = true;
                     reconnectButton.disabled = true;
+                    reconnectButton.classList.add('hidden');
                 }
                 setToggleState(autoScrollToggle, state.autoScrollEnabled);
                 setToggleState(autoReconnectToggle, state.autoReconnectEnabled);
