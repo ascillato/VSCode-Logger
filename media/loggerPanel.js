@@ -144,8 +144,11 @@
     const autoScrollContainer = document.getElementById('autoScrollContainer');
     const autoReconnectToggle = document.getElementById('autoReconnectToggle');
     const autoReconnectContainer = document.getElementById('autoReconnectContainer');
+    const autoSaveToggle = document.getElementById('autoSaveToggle');
     const editContainer = editBtn?.closest('.toolbar-actions__item');
     const refreshContainer = refreshBtn?.closest('.toolbar-actions__item');
+    const autoSaveContainer = autoSaveToggle?.closest('.toolbar-actions__item');
+    const clearLogsContainer = clearLogsBtn?.closest('.toolbar-actions__item');
     const logContainer = document.getElementById('logContainer');
     const logContent = document.getElementById('logContent');
     const statusEl = document.getElementById('status');
@@ -155,7 +158,6 @@
     const searchPrevBtn = document.getElementById('searchPrev');
     const searchNextBtn = document.getElementById('searchNext');
     const searchCount = document.getElementById('searchCount');
-    const autoSaveToggle = document.getElementById('autoSaveToggle');
     const lineLimitNotice = document.getElementById('lineLimitNotice');
     const highlightToggle = document.getElementById('highlightToggle');
     const highlightPopover = document.getElementById('highlightPopover');
@@ -1391,9 +1393,11 @@
     function updateActionButton(options = {}) {
         if (!state.isLiveLog) {
             reconnectButton.hidden = true;
+            reconnectButton.classList.add('hidden');
             return;
         }
 
+        reconnectButton.classList.remove('hidden');
         reconnectButton.hidden = false;
         reconnectButton.textContent = state.connectionState === 'connected' ? 'Disconnect' : 'Reconnect';
 
@@ -2145,8 +2149,12 @@
                 if (!state.isLiveLog && autoReconnectContainer) {
                     autoReconnectContainer.classList.add('hidden');
                 }
+                const hideLiveOnlyControl = !state.isLiveLog;
                 if (clearLogsBtn) {
-                    clearLogsBtn.classList.toggle('hidden', !state.isLiveLog);
+                    clearLogsBtn.classList.toggle('hidden', hideLiveOnlyControl);
+                }
+                if (clearLogsContainer) {
+                    clearLogsContainer.classList.toggle('hidden', hideLiveOnlyControl);
                 }
                 const showImportedControls = !state.isLiveLog;
                 if (editContainer) {
@@ -2162,8 +2170,16 @@
                     refreshBtn.classList.toggle('hidden', !showImportedControls);
                 }
                 if (autoSaveToggle) {
-                    autoSaveToggle.classList.toggle('hidden', !state.isLiveLog);
+                    autoSaveToggle.classList.toggle('hidden', hideLiveOnlyControl);
                     autoSaveToggle.disabled = !state.isLiveLog;
+                }
+                if (autoSaveContainer) {
+                    autoSaveContainer.classList.toggle('hidden', hideLiveOnlyControl);
+                }
+                if (!state.isLiveLog && reconnectButton) {
+                    reconnectButton.hidden = true;
+                    reconnectButton.disabled = true;
+                    reconnectButton.classList.add('hidden');
                 }
                 setToggleState(autoScrollToggle, state.autoScrollEnabled);
                 setToggleState(autoReconnectToggle, state.autoReconnectEnabled);
