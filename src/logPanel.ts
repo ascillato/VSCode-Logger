@@ -530,25 +530,54 @@ export class LogPanel {
         </label>
         <div class="toolbar-actions">
             <div class="toolbar-actions__item">
-                <button id="savePreset" class="toolbar-button" type="button">Save Preset</button>
+                <button id="savePreset" class="toolbar-button toolbar-button--icon" type="button" title="Save preset" aria-label="Save preset">
+                    <span class="toolbar-button__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+                            <path d="M17 3H5a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2V7l-4-4Zm-5 16a3 3 0 1 1 0-6 3 3 0 0 1 0 6Zm3-10H5V5h10v4Z" />
+                        </svg>
+                    </span>
+                    <span class="sr-only">Save preset</span>
+                </button>
             </div>
             <div class="toolbar-actions__item">
-                <button id="deletePreset" class="toolbar-button" type="button">Delete Preset</button>
+                <button id="deletePreset" class="toolbar-button toolbar-button--icon" type="button" title="Delete preset" aria-label="Delete preset">
+                    <span class="toolbar-button__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+                            <path d="M9 3h6a1 1 0 0 1 1 1v1h4v2H4V5h4V4a1 1 0 0 1 1-1Zm-3 5h12l-1 12H7L6 8Zm3 2v8h2v-8H9Zm4 0v8h2v-8h-2Z" />
+                        </svg>
+                    </span>
+                    <span class="sr-only">Delete preset</span>
+                </button>
             </div>
             <div class="toolbar-actions__item">
-                <button id="exportLogs" class="toolbar-button" type="button">Export Logs</button>
+                <button id="exportLogs" class="toolbar-button toolbar-button--icon" type="button" title="Export logs" aria-label="Export logs">
+                    <span class="toolbar-button__icon" aria-hidden="true" role="img">➜]</span>
+                    <span class="sr-only">Export logs</span>
+                </button>
             </div>
             <div class="toolbar-actions__item">
-                <button id="editLogFile" class="toolbar-button hidden" type="button">Edit</button>
+                <button id="editLogFile" class="toolbar-button toolbar-button--icon hidden" type="button" title="Edit log file" aria-label="Edit log file">
+                    <span class="toolbar-button__icon" aria-hidden="true" role="img">📝</span>
+                    <span class="sr-only">Edit log file</span>
+                </button>
             </div>
             <div class="toolbar-actions__item">
-                <button id="refreshLogFile" class="toolbar-button hidden" type="button">Refresh</button>
+                <button id="refreshLogFile" class="toolbar-button toolbar-button--icon hidden" type="button" title="Refresh log file" aria-label="Refresh log file">
+                    <span class="toolbar-button__icon" aria-hidden="true" role="img">⟳</span>
+                    <span class="sr-only">Refresh log file</span>
+                </button>
             </div>
             <div class="toolbar-actions__item">
-                <button id="autoSaveToggle" class="toolbar-button" type="button">Auto-Save</button>
+                <button id="autoSaveToggle" class="toolbar-button toolbar-button--icon" type="button" title="Start auto-save" aria-label="Start auto-save">
+                    <span class="toolbar-button__icon" aria-hidden="true" role="img">🗄️</span>
+                    <span class="sr-only">Start auto-save</span>
+                </button>
             </div>
             <div class="toolbar-actions__item">
-                <button id="clearLogs" class="toolbar-button" type="button">Clear Logs</button>
+                <button id="clearLogs" class="toolbar-button toolbar-button--icon" type="button" title="Clear logs" aria-label="Clear logs">
+                    <span class="toolbar-button__icon" aria-hidden="true" role="img">🧹</span>
+                    <span class="sr-only">Clear logs</span>
+                </button>
             </div>
             <div class="toolbar-actions__item">
                 <button id="highlightToggle" class="toolbar-button" type="button">Highlight</button>
@@ -556,13 +585,26 @@ export class LogPanel {
         </div>
         <div class="toggle-actions">
             <div class="toggle-actions__item">
-                <button id="wordWrapToggle" class="toolbar-button toggle-button" type="button" aria-pressed="false">Word Wrap</button>
+                <button id="wordWrapToggle" class="toolbar-button toolbar-button--icon toggle-button" type="button" aria-pressed="false" data-label="Word wrap" title="Word wrap">
+                    <span class="toolbar-button__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+                            <path d="M4 6h16v2H4V6Zm0 5h10v2H4v-2Zm0 5h8v2H4v-2Zm12 0h2v-2h-2v-2h-2v6h4v-2Z" />
+                        </svg>
+                    </span>
+                    <span class="sr-only">Word wrap</span>
+                </button>
             </div>
             <div class="toggle-actions__item" id="autoScrollContainer">
-                <button id="autoScrollToggle" class="toolbar-button toggle-button" type="button" aria-pressed="false">Auto-Scroll</button>
+                <button id="autoScrollToggle" class="toolbar-button toolbar-button--icon toggle-button" type="button" aria-pressed="false" data-label="Auto-scroll" title="Auto-scroll">
+                    <span class="toolbar-button__icon" aria-hidden="true" role="img">⏭️</span>
+                    <span class="sr-only">Auto-scroll</span>
+                </button>
             </div>
             <div class="toggle-actions__item" id="autoReconnectContainer">
-                <button id="autoReconnectToggle" class="toolbar-button toggle-button" type="button" aria-pressed="false">Auto-Reconnect</button>
+                <button id="autoReconnectToggle" class="toolbar-button toolbar-button--icon toggle-button" type="button" aria-pressed="false" data-label="Auto-reconnect" title="Auto-reconnect">
+                    <span class="toolbar-button__icon" aria-hidden="true" role="img">🔁</span>
+                    <span class="sr-only">Auto-reconnect</span>
+                </button>
             </div>
         </div>
         <div class="search-bar">

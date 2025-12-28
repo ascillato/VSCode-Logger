@@ -173,6 +173,27 @@
     let contextMenuSelectedText = '';
     const savedState = vscode.getState();
 
+    function setButtonLabel(button, label) {
+        if (!button || !label) {
+            return;
+        }
+        button.title = label;
+        button.setAttribute('aria-label', label);
+        const hiddenText = button.querySelector('.sr-only');
+        if (hiddenText) {
+            hiddenText.textContent = label;
+        }
+    }
+
+    function updateToggleLabel(button, active) {
+        if (!button || !button.dataset.label) {
+            return;
+        }
+        const baseLabel = button.dataset.label;
+        const label = `${baseLabel} (${active ? 'on' : 'off'})`;
+        setButtonLabel(button, label);
+    }
+
     function setToggleState(button, active) {
         if (!button) {
             return;
@@ -180,11 +201,20 @@
         button.dataset.active = active ? 'true' : 'false';
         button.setAttribute('aria-pressed', String(active));
         button.classList.toggle('toggle-button--active', active);
+        updateToggleLabel(button, active);
     }
 
     function isToggleActive(button) {
         return button?.dataset.active === 'true';
     }
+
+    setButtonLabel(savePresetBtn, 'Save preset');
+    setButtonLabel(deletePresetBtn, 'Delete preset');
+    setButtonLabel(exportBtn, 'Export logs');
+    setButtonLabel(autoSaveToggle, state.autoSaveActive ? 'Stop auto-save' : 'Start auto-save');
+    setButtonLabel(clearLogsBtn, 'Clear logs');
+    setButtonLabel(editBtn, 'Edit log file');
+    setButtonLabel(refreshBtn, 'Refresh log file');
 
     setToggleState(wordWrapToggle, state.wordWrapEnabled);
     setToggleState(autoScrollToggle, state.autoScrollEnabled);
@@ -1537,7 +1567,8 @@
     function setAutoSaveActive(active) {
         state.autoSaveActive = active;
         if (autoSaveToggle) {
-            autoSaveToggle.textContent = active ? 'Stop Auto-Save' : 'Auto-Save';
+            const label = active ? 'Stop auto-save' : 'Start auto-save';
+            setButtonLabel(autoSaveToggle, label);
             autoSaveToggle.classList.toggle('auto-save-active', active);
             updateAutoSaveToggleState();
         }
