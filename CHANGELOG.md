@@ -7,13 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
-## [] - UNRELEASED []
+## [1.4.8] - UNRELEASED [LOG-PANEL_RESTYLE]
 
 ### Added
-- None.
+- Live log status context menu option to restore the default connected message.
+- Add extension version to documentation.
+- Update contribution note about repository branches usage.
 
 ### Changed
-- None.
+- Restyle Log Panel toolbar.
 
 ### Deprecated
 - None.
@@ -22,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - None.
 
 ### Fixed
-- None.
+- Ensure reconnects retry secondary host.
 
 ### Security
 - None.

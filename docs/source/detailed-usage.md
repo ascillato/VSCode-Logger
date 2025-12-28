@@ -4,11 +4,11 @@ The Embedded Device Logger is a Visual Studio Code extension that can connect to
 
 - **Offline logs view:**
 
-![Log panel screenshot](docs/images/screenshot_example1.png)
+![Log panel screenshot](../images/screenshot_example1.png)
 
 - **SFTP Panel view:**
 
-![SFTP panel screenshot](docs/images/screenshot_example_sftp.png)
+![SFTP panel screenshot](../images/screenshot_example_sftp.png)
 
 If you like the extension, please [rate it](https://marketplace.visualstudio.com/items?itemName=Scallant.embedded-device-logger&ssr=false#review-details). We welcome issue reports and feature requests.
 

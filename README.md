@@ -14,19 +14,20 @@ If you like the extension, please [rate it](https://marketplace.visualstudio.com
 
 ## Key Features
 
-- Stream device logs over SSH with real-time level parsing and colorization.
-- Search, filter, bookmark, and export the exact lines you need.
-- Highlight up to 10 keywords per panel to spot critical events fast.
-- Run one-off SSH commands.
-- Open SSH terminals.
-- Browse files with the built-in SFTP explorer.
-- Secure by default: passwords and key passphrases live in VS Code Secret Storage.
+- Stream device **logs over SSH** with real-time **log-level parsing** and **colorization**.
+- **Search**, **filter**, **bookmark**, and **export** the exact lines you need.
+- **Highlight** up to 10 keywords per panel to spot critical events fast.
+- Run **one-off SSH commands**.
+- Open **SSH terminals**.
+- Browse files with the built-in **SFTP explorer**.
+- **Secure by default**: passwords and key passphrases live in VS Code Secret Storage.
+- **Privacy focused**. **No telemetry**. Everything **runs locally**.
 
 ## Getting started
 
 1. **Install** the extension (see below).
 2. Open the **Embedded Logger** view from the Activity Bar (terminal icon).
-3. Open the configuration with the "pencil" icon and add your devices under `embeddedLogger.devices` and start streaming logs.
+3. Open the configuration with the edit icon (🖍) and add your devices under `embeddedLogger.devices` and start streaming logs.
 
 For the full setup and configuration reference, see the [Detailed Usage and Configuration guide](https://ascillato.github.io/VSCode-Logger/detailed-usage.html).
 

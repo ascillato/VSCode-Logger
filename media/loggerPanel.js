@@ -76,6 +76,7 @@
         connectionState: 'unknown',
         maxEntries: 100000,
         statusText: '',
+        defaultConnectedStatus: '',
         secondaryStatus: null,
         autoSaveActive: false,
         lineLimitReached: false,
@@ -83,6 +84,7 @@
     };
 
     let isRestoringState = false;
+    const DEFAULT_CONNECTED_STATUS = 'Connected. Streaming logs...';
 
     /**
      * @brief Persists the current UI state so it can be restored if the Webview reloads.
@@ -104,6 +106,7 @@
             connectionState: state.connectionState,
             maxEntries: state.maxEntries,
             statusText: state.statusText,
+            defaultConnectedStatus: state.defaultConnectedStatus,
             secondaryStatus: state.secondaryStatus,
             autoSaveActive: state.autoSaveActive,
             lineLimitReached: state.lineLimitReached,
@@ -163,6 +166,7 @@
     const highlightStatus = document.getElementById('highlightStatus');
     const bookmarkLabelDialog = createBookmarkLabelDialog();
     const bookmarkContextMenu = createBookmarkContextMenu();
+    const statusContextMenu = createStatusContextMenu();
     let contextMenuEntryId = null;
     let contextMenuSelectedText = '';
     const savedState = vscode.getState();
@@ -337,6 +341,10 @@
         state.connectionState = snapshot.connectionState || state.connectionState;
         state.maxEntries = Math.max(1, Number(snapshot.maxEntries) || state.maxEntries);
         state.statusText = snapshot.statusText || state.statusText;
+        state.defaultConnectedStatus = snapshot.defaultConnectedStatus || state.defaultConnectedStatus;
+        if (!state.defaultConnectedStatus && typeof state.statusText === 'string' && state.statusText.startsWith('Connected')) {
+            state.defaultConnectedStatus = state.statusText;
+        }
         state.secondaryStatus = snapshot.secondaryStatus || null;
         state.autoSaveActive = snapshot.autoSaveActive === true;
         state.activeBookmarkId = typeof snapshot.activeBookmarkId === 'number' ? snapshot.activeBookmarkId : null;
@@ -1254,6 +1262,114 @@
     }
 
     /**
+     * @brief Builds the context menu for the status area.
+     * @returns The created context menu element.
+     */
+    function createStatusContextMenu() {
+        const menu = document.createElement('div');
+        menu.id = 'statusContextMenu';
+        menu.className = 'status-context-menu hidden';
+
+        const list = document.createElement('ul');
+        const resetItem = document.createElement('li');
+        const resetButton = document.createElement('button');
+        resetButton.textContent = 'Clear status message';
+        resetButton.dataset.action = 'resetStatus';
+        resetItem.appendChild(resetButton);
+        list.appendChild(resetItem);
+        menu.appendChild(list);
+
+        menu.addEventListener('click', (event) => {
+            const target = event.target;
+            if (!(target instanceof HTMLButtonElement) || target.disabled) {
+                return;
+            }
+            if (target.dataset.action === 'resetStatus') {
+                resetStatusToDefault();
+            }
+            hideStatusContextMenu();
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!menu.contains(event.target)) {
+                hideStatusContextMenu();
+            }
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                hideStatusContextMenu();
+            }
+        });
+
+        window.addEventListener('resize', hideStatusContextMenu);
+        document.body.appendChild(menu);
+        return menu;
+    }
+
+    /**
+     * @brief Shows the status context menu anchored to the pointer position.
+     * @param event Context menu mouse event.
+     */
+    function showStatusContextMenu(event) {
+        const initialX = event.clientX;
+        const initialY = event.clientY;
+        statusContextMenu.style.left = `${initialX}px`;
+        statusContextMenu.style.top = `${initialY}px`;
+        updateStatusContextMenuState();
+        statusContextMenu.classList.remove('hidden');
+
+        const menuRect = statusContextMenu.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        const padding = 8;
+        let adjustedX = initialX;
+        let adjustedY = initialY;
+
+        if (menuRect.right > viewportWidth - padding) {
+            adjustedX = Math.max(padding, viewportWidth - menuRect.width - padding);
+        }
+        if (menuRect.bottom > viewportHeight - padding) {
+            adjustedY = Math.max(padding, viewportHeight - menuRect.height - padding);
+        }
+
+        statusContextMenu.style.left = `${adjustedX}px`;
+        statusContextMenu.style.top = `${adjustedY}px`;
+    }
+
+    /**
+     * @brief Hides the status context menu.
+     */
+    function hideStatusContextMenu() {
+        statusContextMenu.classList.add('hidden');
+    }
+
+    /**
+     * @brief Enables or disables the reset option based on connection state.
+     */
+    function updateStatusContextMenuState() {
+        const resetButton = statusContextMenu.querySelector('button[data-action="resetStatus"]');
+        if (!(resetButton instanceof HTMLButtonElement)) {
+            return;
+        }
+        const isConnected = state.isLiveLog && state.connectionState === 'connected';
+        resetButton.disabled = !isConnected;
+    }
+
+    /**
+     * @brief Clears custom status messages and restores the default connected text.
+     */
+    function resetStatusToDefault() {
+        if (!state.isLiveLog || state.connectionState !== 'connected') {
+            return;
+        }
+        const fallbackStatus = state.defaultConnectedStatus || DEFAULT_CONNECTED_STATUS;
+        state.secondaryStatus = null;
+        state.defaultConnectedStatus = fallbackStatus;
+        updateStatus(fallbackStatus, { disableButton: false });
+    }
+
+    /**
      * @brief Clears any active reconnect countdown timers.
      */
     function clearReconnectTimers() {
@@ -1294,6 +1410,9 @@
     function setConnectionState(connectionState) {
         state.connectionState = connectionState;
         if (connectionState === 'connected') {
+            if (!state.defaultConnectedStatus) {
+                state.defaultConnectedStatus = state.statusText || DEFAULT_CONNECTED_STATUS;
+            }
             clearReconnectTimers();
         }
         updateActionButton();
@@ -1563,6 +1682,7 @@
         }
 
         if (text.startsWith('Connected')) {
+            state.defaultConnectedStatus = text;
             setConnectionState('connected');
             updateStatus(text, { disableButton: false });
             if (autoReconnectToggle) {
@@ -1779,6 +1899,14 @@
         }
         event.preventDefault();
         showBookmarkContextMenu(event, Number(line.dataset.entryId));
+    });
+
+    statusEl?.addEventListener('contextmenu', (event) => {
+        if (!state.isLiveLog) {
+            return;
+        }
+        event.preventDefault();
+        showStatusContextMenu(event);
     });
 
     presetSelect.addEventListener('change', () => {

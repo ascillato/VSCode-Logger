@@ -66,6 +66,7 @@ export class LogSession {
     private lastSeenBastionFingerprint: { display: string; hex: string } | undefined;
     private activeEndpoint: HostEndpoint | undefined;
     private activeBastionEndpoint: HostEndpoint | undefined;
+    private hasConnected = false;
     private readonly passwordManager: PasswordManager;
 
     /**
@@ -414,6 +415,7 @@ export class LogSession {
                             return;
                         }
                         this.stream = stream;
+                        this.hasConnected = true;
                         stream
                             .on('data', (data: Buffer) => this.handleData(data))
                             .on('close', () => this.handleClose())
@@ -686,7 +688,7 @@ export class LogSession {
      * Handles stream closures and notifies callbacks if not disposed.
      */
     private handleClose() {
-        if (this.disposed || this.closedNotified) {
+        if (this.disposed || this.closedNotified || !this.hasConnected) {
             return;
         }
         this.closedNotified = true;
@@ -698,6 +700,7 @@ export class LogSession {
      */
     dispose() {
         this.disposed = true;
+        this.hasConnected = false;
         try {
             this.stream?.close?.();
             this.client?.end();
