@@ -57,8 +57,9 @@ body {
 
 .top-bar label {
     display: flex;
-    flex-direction: column;
-    font-size: 12px;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
 }
 
 .search-bar {
@@ -77,6 +78,27 @@ body {
 
 #searchInput {
     min-width: 220px;
+}
+
+.top-bar select,
+.top-bar input[type='text'] {
+    background: var(--vscode-dropdown-background);
+    color: var(--vscode-dropdown-foreground);
+    border: 1px solid var(--vscode-dropdown-border);
+    border-radius: 2px;
+    padding: 4px 6px;
+    font-size: 0.85rem;
+    line-height: 1.2;
+    height: 28px;
+    box-sizing: border-box;
+}
+
+.top-bar select {
+    min-height: 28px;
+}
+
+.top-bar input[type='checkbox'] {
+    accent-color: var(--vscode-button-background);
 }
 
 .highlight-popover {
