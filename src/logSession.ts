@@ -10,7 +10,7 @@ import { createHash } from 'crypto';
 import * as fs from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
-import type { ConnectConfig } from 'ssh2';
+import type { ClientChannel, ConnectConfig } from 'ssh2';
 import { Client } from 'ssh2';
 import type { BastionConfig, EmbeddedDevice } from './deviceTree';
 import type { HostEndpoint } from './hostEndpoints';
@@ -23,11 +23,11 @@ type ForwardingClient = Client & {
     srcPort: number,
     dstIP: string,
     dstPort: number,
-    callback: (err: Error | undefined, stream: any) => void
+    callback: (err: Error | undefined, stream: ClientChannel) => void
   ): void;
 };
 
-type SocketConnectConfig = ConnectConfig & { sock?: any };
+type SocketConnectConfig = ConnectConfig & { sock?: ClientChannel };
 
 /**
  * Callback contract used to surface session events to the UI.
@@ -58,7 +58,7 @@ class HostKeyMismatchError extends Error {
 export class LogSession {
   private client: Client | undefined;
   private bastionClient: Client | undefined;
-  private stream: any;
+  private stream: ClientChannel | undefined;
   private buffer = '';
   private disposed = false;
   private closedNotified = false;
@@ -110,7 +110,7 @@ export class LogSession {
       const maxAttempts = endpoints.length > 1 ? 3 : 1;
       let endpointIndex = 0;
       let attempts = 0;
-      let lastError: any;
+      let lastError: unknown;
 
       while (!this.disposed && attempts < maxAttempts) {
         const endpoint = endpoints[endpointIndex];
@@ -119,7 +119,7 @@ export class LogSession {
         try {
           await this.connect(endpoint, authentication, logCommand);
           return;
-        } catch (err: any) {
+        } catch (err: unknown) {
           if (err instanceof HostKeyMismatchError) {
             const retry = await this.promptToUpdateFingerprint(
               err.expected,
@@ -151,9 +151,12 @@ export class LogSession {
         }
       }
 
-      throw lastError ?? new Error('Failed to connect to the device.');
-    } catch (err: any) {
-      this.callbacks.onError(err?.message ?? String(err));
+      if (lastError instanceof Error) {
+        throw lastError;
+      }
+      throw new Error(this.getErrorMessage(lastError) || 'Failed to connect to the device.');
+    } catch (err: unknown) {
+      this.callbacks.onError(this.getErrorMessage(err));
       this.dispose();
     }
   }
@@ -272,7 +275,7 @@ export class LogSession {
       name: `${this.device.name} bastion`,
       host: bastion.host,
       username: bastion.username,
-    } as EmbeddedDevice;
+    };
   }
 
   private async loadPrivateKey(filePath: string): Promise<Buffer> {
@@ -283,8 +286,8 @@ export class LogSession {
         throw new Error('The private key file is empty.');
       }
       return content;
-    } catch (err: any) {
-      const reason = err?.message ?? String(err);
+    } catch (err: unknown) {
+      const reason = this.getErrorMessage(err) || 'unknown error';
       throw new Error(`Failed to read private key from ${expanded}: ${reason}`);
     }
   }
@@ -352,8 +355,8 @@ export class LogSession {
 
       bastionClient
         .on('ready', () => {
-          void this.persistBastionFingerprintIfMissing().catch((err) => {
-            this.callbacks.onError(err?.message ?? String(err));
+          void this.persistBastionFingerprintIfMissing().catch((err: unknown) => {
+            this.callbacks.onError(this.getErrorMessage(err));
           });
           this.callbacks.onStatus(
             `Connected to bastion. Tunneling to ${endpoint.host}:${this.device.port ?? 22} ...`
@@ -363,7 +366,7 @@ export class LogSession {
             0,
             endpoint.host,
             this.device.port ?? 22,
-            (err: Error | undefined, stream: any) => {
+            (err: Error | undefined, stream: ClientChannel) => {
               if (err) {
                 reject(err);
                 return;
@@ -371,9 +374,9 @@ export class LogSession {
 
               void this.connectToEndpoint(endpoint, authentication, logCommand, stream)
                 .then(resolve)
-                .catch((connectionError) => {
+                .catch((connectionError: unknown) => {
                   bastionClient.end();
-                  reject(connectionError);
+                  reject(this.toError(connectionError, 'Failed to connect through bastion.'));
                 });
             }
           );
@@ -414,7 +417,7 @@ export class LogSession {
     endpoint: HostEndpoint,
     authentication: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>,
     logCommand: string,
-    sock?: any
+    sock?: ClientChannel
   ): Promise<void> {
     const expectedFingerprint = this.getExpectedFingerprint(endpoint);
     this.hostKeyFailure = undefined;
@@ -430,8 +433,8 @@ export class LogSession {
 
       this.client
         .on('ready', () => {
-          void this.persistFingerprintIfMissing().catch((err) => {
-            this.callbacks.onError(err?.message ?? String(err));
+          void this.persistFingerprintIfMissing().catch((err: unknown) => {
+            this.callbacks.onError(this.getErrorMessage(err));
           });
           this.callbacks.onStatus('Connected. Streaming logs...');
           this.client?.exec(logCommand, (err, stream) => {
@@ -719,7 +722,7 @@ export class LogSession {
    * Processes data buffers from the SSH stream and emits complete lines.
    * @param data Chunk of data received from the remote stream.
    */
-  private handleData(data: Buffer) {
+  private handleData(data: Buffer): void {
     this.buffer += data.toString();
     let idx: number;
     while ((idx = this.buffer.indexOf('\n')) !== -1) {
@@ -732,7 +735,7 @@ export class LogSession {
   /**
    * Handles stream closures and notifies callbacks if not disposed.
    */
-  private handleClose() {
+  private handleClose(): void {
     if (this.disposed || this.closedNotified || !this.hasConnected) {
       return;
     }
@@ -743,15 +746,30 @@ export class LogSession {
   /**
    * Disposes SSH resources and prevents further callbacks.
    */
-  dispose() {
+  dispose(): void {
     this.disposed = true;
     this.hasConnected = false;
     try {
       this.stream?.close?.();
       this.client?.end();
       this.bastionClient?.end();
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
     }
+  }
+
+  private getErrorMessage(err: unknown): string {
+    if (err instanceof Error) {
+      return err.message;
+    }
+    return typeof err === 'string' ? err : String(err);
+  }
+
+  private toError(err: unknown, fallbackMessage: string): Error {
+    if (err instanceof Error) {
+      return err;
+    }
+    const message = this.getErrorMessage(err) || fallbackMessage;
+    return new Error(message);
   }
 }
