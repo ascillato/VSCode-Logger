@@ -72,11 +72,6 @@ async function migrateLegacyPasswords(
   const sanitizeDevices = (entries: EmbeddedDevice[]): EmbeddedDevice[] =>
     entries.map((device) => {
       const { password: _password, privateKeyPassphrase: _passphrase, bastion, ...rest } = device;
-      const {
-        password: _strippedPassword,
-        privateKeyPassphrase: _strippedPassphrase,
-        ...cleanDevice
-      } = rest;
       const sanitizedBastion = bastion
         ? (({
             password: _bastionPassword,
@@ -91,11 +86,9 @@ async function migrateLegacyPasswords(
 
       void _password;
       void _passphrase;
-      void _strippedPassword;
-      void _strippedPassphrase;
 
       return {
-        ...cleanDevice,
+        ...rest,
         bastion: sanitizedBastion,
       };
     });
