@@ -71,6 +71,11 @@
             "task": "Linter_fix",
             "description": "",
           },
+          {
+            "label": "$(test-view-icon) Run Tests",
+            "task": "Test_Extension",
+            "description": "",
+          },
         ],
       },
       {
@@ -190,6 +195,23 @@
         "label": "Linter_fix",
         "type": "shell",
         "command": "make linter-fix",
+        "options": {
+          "cwd": "${workspaceFolder}",
+        },
+        "group": {
+          "kind": "build",
+          "isDefault": false,
+        },
+        "presentation": {
+          "reveal": "always",
+          "panel": "new",
+          "focus": true,
+        },
+      },
+      {
+        "label": "Test_Extension",
+        "type": "shell",
+        "command": "make test",
         "options": {
           "cwd": "${workspaceFolder}",
         },
