@@ -26,6 +26,11 @@ type ForwardingClient = Client & {
 };
 
 type SocketConnectConfig = ConnectConfig & { sock?: ClientChannel };
+const ANSI_ESCAPE_SEQUENCE = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*[A-Za-z]`, 'g');
+const CONTROL_CHARACTERS = new RegExp(
+  `[${String.fromCharCode(0)}-${String.fromCharCode(31)}\\x7F]`,
+  'g'
+);
 
 /**
  * Pseudoterminal that proxies input/output to an SSH shell session.
@@ -97,8 +102,7 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
   handleInput(data: string): void {
     this.inputBuffer += data;
     if (data.includes('\r') || data.includes('\n')) {
-      const trimmed = this.inputBuffer.trim();
-      if (trimmed === 'exit') {
+      if (this.isExitCommand(this.inputBuffer)) {
         this.userRequestedClose = true;
       }
       this.inputBuffer = '';
@@ -411,6 +415,11 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
             }
 
             stream
+              .on('exit', (code: number | null | undefined, signal: string | null | undefined) => {
+                if (this.isCleanExit(code, signal)) {
+                  this.userRequestedClose = true;
+                }
+              })
               .on('data', (data: Buffer) => {
                 this.writeEmitter.fire(data.toString().replace(/\n/g, '\r\n'));
               })
@@ -532,5 +541,24 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
 
   private quotePath(value: string): string {
     return `'${value.replace(/'/g, "'\\''")}'`;
+  }
+
+  private isExitCommand(input: string): boolean {
+    const normalized = input
+      .replace(/\r?\n/g, '')
+      .replace(ANSI_ESCAPE_SEQUENCE, '')
+      .replace(CONTROL_CHARACTERS, '')
+      .trim()
+      .toLowerCase();
+
+    if (normalized === 'exit' || normalized === 'logout') {
+      return true;
+    }
+
+    return /^exit\s+\d+$/.test(normalized);
+  }
+
+  private isCleanExit(code?: number | null, signal?: string | null): boolean {
+    return (code === 0 || code === null || code === undefined) && !signal;
   }
 }
