@@ -8,7 +8,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
-import type { ConnectConfig } from 'ssh2';
+import type { ClientChannel, ConnectConfig } from 'ssh2';
 import { Client } from 'ssh2';
 import type { BastionConfig, EmbeddedDevice } from './deviceTree';
 import type { HostEndpoint } from './hostEndpoints';
@@ -21,11 +21,11 @@ type ForwardingClient = Client & {
     srcPort: number,
     dstIP: string,
     dstPort: number,
-    callback: (err: Error | undefined, stream: any) => void
+    callback: (err: Error | undefined, stream: ClientChannel) => void
   ): void;
 };
 
-type SocketConnectConfig = ConnectConfig & { sock?: any };
+type SocketConnectConfig = ConnectConfig & { sock?: ClientChannel };
 
 /**
  * Represents a named SSH command configured for a device.
@@ -56,6 +56,8 @@ export class SshCommandError extends Error {
  */
 export class SshCommandRunner {
   private readonly passwordManager: PasswordManager;
+  private readonly getErrorMessage = (err: unknown): string =>
+    err instanceof Error ? err.message : typeof err === 'string' ? err : String(err);
 
   /**
    * Creates a runner bound to a device and extension context.
@@ -113,7 +115,7 @@ export class SshCommandRunner {
           bastion,
           bastionAuthentication
         );
-      } catch (err) {
+      } catch (err: unknown) {
         lastError = err;
         attempts++;
 
@@ -126,7 +128,10 @@ export class SshCommandRunner {
       }
     }
 
-    throw lastError ?? new Error(`Failed to run command "${command.name}".`);
+    if (lastError instanceof Error) {
+      throw lastError;
+    }
+    throw new Error(this.getErrorMessage(lastError) || `Failed to run command "${command.name}".`);
   }
 
   private validateDeviceConfiguration(): string | undefined {
@@ -270,7 +275,7 @@ export class SshCommandRunner {
             0,
             endpoint.host,
             this.device.port ?? 22,
-            (err: Error | undefined, stream: any) => {
+            (err: Error | undefined, stream: ClientChannel) => {
               if (err) {
                 bastionClient.end();
                 reject(err);
@@ -281,9 +286,9 @@ export class SshCommandRunner {
                 bastionClient.end()
               )
                 .then(resolve)
-                .catch((error) => {
+                .catch((error: unknown) => {
                   bastionClient.end();
-                  reject(error);
+                  reject(this.toError(error, 'Failed to execute command through bastion.'));
                 });
             }
           );
@@ -308,7 +313,7 @@ export class SshCommandRunner {
     endpoint: HostEndpoint,
     command: string,
     authentication: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>,
-    sock?: any,
+    sock?: ClientChannel,
     onComplete?: () => void
   ): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -322,7 +327,7 @@ export class SshCommandRunner {
       let exitSignal: string | null = null;
       let completed = false;
 
-      const finalize = () => {
+      const finalize = (): void => {
         if (!completed) {
           completed = true;
           onComplete?.();
@@ -334,8 +339,8 @@ export class SshCommandRunner {
           client.exec(command, (err, stream) => {
             if (err) {
               finalize();
-              reject(err);
               client.end();
+              reject(err);
               return;
             }
 
@@ -399,8 +404,8 @@ export class SshCommandRunner {
         throw new Error('The private key file is empty.');
       }
       return content;
-    } catch (err: any) {
-      const reason = err?.message ?? String(err);
+    } catch (err: unknown) {
+      const reason = this.getErrorMessage(err) || 'unknown error';
       throw new Error(`Failed to read private key from ${expanded}: ${reason}`);
     }
   }
@@ -414,5 +419,19 @@ export class SshCommandRunner {
       ? path.join(os.homedir(), envExpanded.slice(1))
       : envExpanded;
     return path.resolve(tildeExpanded);
+  }
+
+  private getErrorMessage(err: unknown): string {
+    if (err instanceof Error) {
+      return err.message;
+    }
+    return typeof err === 'string' ? err : String(err);
+  }
+
+  private toError(err: unknown, fallbackMessage: string): Error {
+    if (err instanceof Error) {
+      return err;
+    }
+    return new Error(this.getErrorMessage(err) || fallbackMessage);
   }
 }

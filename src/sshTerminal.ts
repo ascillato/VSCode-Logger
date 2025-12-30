@@ -21,11 +21,11 @@ type ForwardingClient = Client & {
     srcPort: number,
     dstIP: string,
     dstPort: number,
-    callback: (err: Error | undefined, stream: any) => void
+    callback: (err: Error | undefined, stream: ClientChannel) => void
   ): void;
 };
 
-type SocketConnectConfig = ConnectConfig & { sock?: any };
+type SocketConnectConfig = ConnectConfig & { sock?: ClientChannel };
 
 /**
  * Pseudoterminal that proxies input/output to an SSH shell session.
@@ -47,6 +47,10 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
   private inputBuffer = '';
   private lastDimensions: vscode.TerminalDimensions | undefined;
   private readonly passwordManager: PasswordManager;
+  private readonly getErrorMessage = (err: unknown): string =>
+    err instanceof Error ? err.message : typeof err === 'string' ? err : String(err);
+  private readonly toError = (err: unknown, fallbackMessage: string): Error =>
+    err instanceof Error ? err : new Error(this.getErrorMessage(err) || fallbackMessage);
 
   /**
    * Creates a new SSH terminal session for the given device.
@@ -174,7 +178,7 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
           this.reconnectNoticeShown = false;
           this.userRequestedClose = false;
           return;
-        } catch (err) {
+        } catch (err: unknown) {
           lastError = err;
           attempts++;
 
@@ -187,9 +191,12 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
         }
       }
 
-      throw lastError ?? new Error('Failed to open SSH terminal.');
-    } catch (err: any) {
-      const message = err?.message ?? String(err);
+      if (lastError instanceof Error) {
+        throw lastError;
+      }
+      throw new Error(this.getErrorMessage(lastError) || 'Failed to open SSH terminal.');
+    } catch (err: unknown) {
+      const message = this.getErrorMessage(err);
       if (this.isReconnecting) {
         this.scheduleReconnect();
         return;
@@ -336,18 +343,18 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
             0,
             endpoint.host,
             this.device.port ?? 22,
-            (err: Error | undefined, stream: any) => {
+            (err: Error | undefined, stream: ClientChannel) => {
               if (err) {
                 bastionClient.end();
-                reject(err);
+                reject(err instanceof Error ? err : new Error(this.getErrorMessage(err)));
                 return;
               }
 
               void this.connectDirect(endpoint, authentication, initialDimensions, stream)
                 .then(resolve)
-                .catch((error) => {
+                .catch((error: unknown) => {
                   bastionClient.end();
-                  reject(error);
+                  reject(this.toError(error, 'Failed to open SSH tunnel through bastion.'));
                 });
             }
           );
@@ -372,7 +379,7 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
     endpoint: HostEndpoint,
     authentication: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>,
     initialDimensions?: vscode.TerminalDimensions,
-    sock?: any
+    sock?: ClientChannel
   ): Promise<void> {
     return new Promise((resolve, reject) => {
       const client = new Client();
@@ -506,8 +513,8 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
         throw new Error('The private key file is empty.');
       }
       return content;
-    } catch (err: any) {
-      const reason = err?.message ?? String(err);
+    } catch (err: unknown) {
+      const reason = this.getErrorMessage(err) || 'unknown error';
       throw new Error(`Failed to read private key from ${expanded}: ${reason}`);
     }
   }

@@ -144,7 +144,7 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
   /**
    * Pushes updated device data to the webview.
    */
-  refreshDevices() {
+  refreshDevices(): void {
     if (!this.view) {
       return;
     }
@@ -154,7 +154,7 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
   /**
    * Sends the initial device payload to the webview.
    */
-  private postInitialPayload() {
+  private postInitialPayload(): void {
     if (!this.view) {
       return;
     }
@@ -182,7 +182,7 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
    * @param value The text to copy.
    * @param label The label shown in the confirmation message.
    */
-  private async copyToClipboard(value: string, label: string) {
+  private async copyToClipboard(value: string, label: string): Promise<void> {
     await vscode.env.clipboard.writeText(value);
     await vscode.window.showInformationMessage(`${label} copied to clipboard.`);
   }
@@ -200,6 +200,8 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
     const styleUri = webview.asWebviewUri(
       vscode.Uri.file(path.join(this.context.extensionPath, 'media', 'sidebarView.css'))
     );
+    const scriptUriString = scriptUri.toString(true);
+    const styleUriString = styleUri.toString(true);
     const nonce = getNonce();
 
     return `<!DOCTYPE html>
@@ -208,13 +210,13 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
     <meta charset="UTF-8">
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="${styleUri}" rel="stylesheet" />
+    <link href="${styleUriString}" rel="stylesheet" />
     <title>Embedded Logger Devices</title>
 </head>
 <body>
     <div class="device-list" id="deviceList"></div>
     <div id="sidebarStatus" class="sidebar-status"></div>
-    <script nonce="${nonce}" src="${scriptUri}"></script>
+    <script nonce="${nonce}" src="${scriptUriString}"></script>
 </body>
 </html>`;
   }
@@ -225,7 +227,7 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
  *
  * @returns A random nonce string.
  */
-function getNonce() {
+function getNonce(): string {
   let text = '';
   const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   for (let i = 0; i < 32; i++) {
