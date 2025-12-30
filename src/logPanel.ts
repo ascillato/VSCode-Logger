@@ -6,33 +6,46 @@
  */
 
 import * as vscode from 'vscode';
-import { EmbeddedDevice } from './deviceTree';
+import type { EmbeddedDevice } from './deviceTree';
 import { LogSession } from './logSession';
 import * as fs from 'fs';
 import * as path from 'path';
-import { HighlightDefinition } from './highlights';
+import type { HighlightDefinition } from './highlights';
 import { getEmbeddedLoggerConfiguration } from './configuration';
+
+type WebviewMessage =
+  | { type: 'ready' }
+  | { type: 'requestSavePreset'; minLevel: string; textFilter: string }
+  | { type: 'deletePreset'; name: string }
+  | { type: 'exportLogs'; lines: string[] }
+  | { type: 'highlightsChanged'; highlights: HighlightDefinition[] }
+  | { type: 'openSourceFile' }
+  | { type: 'refreshSourceFile' }
+  | { type: 'requestReconnect' }
+  | { type: 'requestDisconnect' }
+  | { type: 'startAutoSave' }
+  | { type: 'stopAutoSave'; message?: string };
 
 /**
  * Saved filtering preferences for a device.
  */
 interface FilterPreset {
-    name: string;
-    minLevel: string;
-    textFilter: string;
+  name: string;
+  minLevel: string;
+  textFilter: string;
 }
 
 type RemoteLogTarget = {
-    type: 'remote';
-    device: EmbeddedDevice;
+  type: 'remote';
+  device: EmbeddedDevice;
 };
 
 type LocalLogTarget = {
-    type: 'local';
-    id: string;
-    name: string;
-    lines: string[];
-    filePath: string;
+  type: 'local';
+  id: string;
+  name: string;
+  lines: string[];
+  filePath: string;
 };
 
 type LogPanelTarget = RemoteLogTarget | LocalLogTarget;
@@ -41,468 +54,531 @@ type LogPanelTarget = RemoteLogTarget | LocalLogTarget;
  * Hosts the WebviewPanel for a device and wires it to the SSH log session.
  */
 export class LogPanel {
-    private readonly panel: vscode.WebviewPanel;
-    private session?: LogSession;
-    private readonly presetsKey: string;
-    private readonly highlightsKey: string;
-    private readonly targetName: string;
-    private readonly targetId: string;
-    private readonly initialLines: string[] = [];
-    private readonly sourcePath?: string;
-    private readonly device?: EmbeddedDevice;
-    private highlights: HighlightDefinition[];
-    private readonly maxLogEntries: number;
-    private autoSaveStream?: fs.WriteStream;
-    private autoSavePath?: string;
-    private readonly webviewReady: Promise<void>;
-    private resolveWebviewReady?: () => void;
-    private disposed = false;
+  private readonly panel: vscode.WebviewPanel;
+  private session?: LogSession;
+  private readonly presetsKey: string;
+  private readonly highlightsKey: string;
+  private readonly targetName: string;
+  private readonly targetId: string;
+  private readonly initialLines: string[] = [];
+  private readonly sourcePath?: string;
+  private readonly device?: EmbeddedDevice;
+  private highlights: HighlightDefinition[];
+  private readonly maxLogEntries: number;
+  private autoSaveStream?: fs.WriteStream;
+  private autoSavePath?: string;
+  private readonly webviewReady: Promise<void>;
+  private resolveWebviewReady?: () => void;
+  private disposed = false;
 
-    /**
-     * Builds a log panel for the given device and prepares event wiring.
-     *
-     * @param context VS Code extension context used for resources and state.
-     * @param target Log panel target describing the remote device or local file.
-     * @param onDispose Callback invoked when the panel is disposed.
-     */
-    constructor(
-        private readonly context: vscode.ExtensionContext,
-        target: LogPanelTarget,
-        private readonly onDispose: () => void
-    ) {
-        if (target.type === 'remote') {
-            this.device = target.device;
-            this.targetName = target.device.name;
-            this.targetId = target.device.id;
-        } else {
-            this.targetName = target.name;
-            this.targetId = target.id;
-            this.initialLines = target.lines;
-            this.sourcePath = target.filePath;
-        }
-
-        this.presetsKey = `embeddedLogger.presets.${this.targetId}`;
-        this.highlightsKey = `embeddedLogger.highlights.${this.targetId}`;
-        this.highlights = this.getStoredHighlights();
-        this.maxLogEntries = getEmbeddedLoggerConfiguration().maxLinesPerTab;
-
-        this.panel = vscode.window.createWebviewPanel(
-            'embeddedLogger.logPanel',
-            `${this.targetName} Logs`,
-            vscode.ViewColumn.Active,
-            {
-                enableScripts: true,
-                retainContextWhenHidden: true,
-                localResourceRoots: [
-                    vscode.Uri.file(path.join(context.extensionPath, 'media')),
-                    vscode.Uri.file(path.join(context.extensionPath, 'resources')),
-                ],
-            }
-        );
-
-        this.panel.onDidDispose(() => {
-            if (!this.disposed) {
-                this.session?.dispose();
-                this.onDispose();
-                this.disposed = true;
-            }
-        });
-
-        if (this.device) {
-            this.session = this.createSession();
-        }
-
-        this.webviewReady = new Promise((resolve) => {
-            this.resolveWebviewReady = resolve;
-        });
-
-        this.panel.webview.onDidReceiveMessage(async (message) => {
-            if (!message || typeof message.type !== 'string') {
-                return;
-            }
-            switch (message.type) {
-                case 'ready': {
-                    if (this.resolveWebviewReady) {
-                        this.resolveWebviewReady();
-                        this.resolveWebviewReady = undefined;
-                    }
-                    await this.sendInitialData();
-                    break;
-                }
-                case 'requestSavePreset': {
-                    if (!this.isValidPresetPayload(message)) {
-                        vscode.window.showErrorMessage('Invalid preset payload received from webview.');
-                        return;
-                    }
-                    const name = await vscode.window.showInputBox({
-                        prompt: 'Preset name',
-                        ignoreFocusOut: true,
-                    });
-                    if (name) {
-                        const preset: FilterPreset = {
-                            name,
-                            minLevel: message.minLevel,
-                            textFilter: message.textFilter,
-                        };
-                        await this.savePreset(preset);
-                    }
-                    break;
-                }
-                case 'deletePreset': {
-                    if (typeof message.name !== 'string' || !message.name) {
-                        vscode.window.showErrorMessage('Invalid preset name received from webview.');
-                        return;
-                    }
-                    await this.deletePreset(message.name);
-                    break;
-                }
-                case 'exportLogs': {
-                    if (!this.isStringArray(message.lines)) {
-                        vscode.window.showErrorMessage('Export failed because the log payload was malformed.');
-                        return;
-                    }
-                    await this.exportLogs(message.lines);
-                    break;
-                }
-                case 'highlightsChanged': {
-                    if (!this.isValidHighlightPayload(message.highlights)) {
-                        vscode.window.showErrorMessage('Invalid highlight payload received from webview.');
-                        return;
-                    }
-                    await this.saveHighlights(message.highlights);
-                    break;
-                }
-                case 'openSourceFile': {
-                    await this.openSourceFile();
-                    break;
-                }
-                case 'refreshSourceFile': {
-                    await this.refreshFromSource();
-                    break;
-                }
-                case 'requestReconnect': {
-                    await this.reconnect();
-                    break;
-                }
-                case 'requestDisconnect': {
-                    this.disconnect();
-                    break;
-                }
-                case 'startAutoSave': {
-                    await this.startAutoSave();
-                    break;
-                }
-                case 'stopAutoSave': {
-                    await this.stopAutoSave({ message: '' });
-                    break;
-                }
-            }
-        });
-
-        this.panel.webview.html = this.getHtml();
+  /**
+   * Builds a log panel for the given device and prepares event wiring.
+   *
+   * @param context VS Code extension context used for resources and state.
+   * @param target Log panel target describing the remote device or local file.
+   * @param onDispose Callback invoked when the panel is disposed.
+   */
+  constructor(
+    private readonly context: vscode.ExtensionContext,
+    target: LogPanelTarget,
+    private readonly onDispose: () => void
+  ) {
+    if (target.type === 'remote') {
+      this.device = target.device;
+      this.targetName = target.device.name;
+      this.targetId = target.device.id;
+    } else {
+      this.targetName = target.name;
+      this.targetId = target.id;
+      this.initialLines = target.lines;
+      this.sourcePath = target.filePath;
     }
 
-    /**
-     * Starts the underlying log session.
-     */
-    async start() {
-        await this.webviewReady;
-        if (this.session) {
-            await this.session.start();
-            return;
-        }
-        this.sendInitialLines();
-    }
+    this.presetsKey = `embeddedLogger.presets.${this.targetId}`;
+    this.highlightsKey = `embeddedLogger.highlights.${this.targetId}`;
+    this.highlights = this.getStoredHighlights();
+    this.maxLogEntries = getEmbeddedLoggerConfiguration().maxLinesPerTab;
 
-    /**
-     * Creates a new log session wired to the current panel callbacks.
-     */
-    private createSession(): LogSession {
-        if (!this.device) {
-            throw new Error('Cannot create a log session without a device.');
-        }
+    this.panel = vscode.window.createWebviewPanel(
+      'embeddedLogger.logPanel',
+      `${this.targetName} Logs`,
+      vscode.ViewColumn.Active,
+      {
+        enableScripts: true,
+        retainContextWhenHidden: true,
+        localResourceRoots: [
+          vscode.Uri.file(path.join(context.extensionPath, 'media')),
+          vscode.Uri.file(path.join(context.extensionPath, 'resources')),
+        ],
+      }
+    );
 
-        return new LogSession(this.device, this.context, {
-            onLine: (line) => this.handleIncomingLine(line),
-            onError: (message) => this.panel.webview.postMessage({ type: 'error', message }),
-            onStatus: (message) => this.panel.webview.postMessage({ type: 'status', message }),
-            onClose: () => this.handleSessionClose(),
-            onHostKeyMismatch: (details) => this.handleHostKeyMismatch(details),
-        });
-    }
-
-    private async handleHostKeyMismatch(details: { expected: string; received: string }) {
-        await this.panel.webview.postMessage({ type: 'hostKeyMismatch', ...details });
-        void vscode.window.showErrorMessage(
-            `Host key verification failed for ${this.targetName}. Expected ${details.expected} but received ${details.received}. Update the fingerprint in settings to reconnect.`
-        );
-    }
-
-    /**
-     * Forwards an incoming log line to the Webview and any active auto-save stream.
-     * @param line Raw log line emitted by the SSH session.
-     */
-    private handleIncomingLine(line: string) {
-        this.writeAutoSaveLine(line);
-        this.panel.webview.postMessage({ type: 'logLine', line });
-    }
-
-    /**
-     * Attempts to write a log line to the active auto-save stream.
-     * @param line Log line to persist.
-     */
-    private writeAutoSaveLine(line: string) {
-        if (!this.autoSaveStream) {
-            return;
-        }
-
-        try {
-            this.autoSaveStream.write(`${line}\n`);
-        } catch (err: any) {
-            this.panel.webview.postMessage({
-                type: 'autoSaveError',
-                message: err?.message ? `Auto-save failed: ${err.message}` : 'Auto-save failed.',
-            });
-            void this.stopAutoSave({ silent: true });
-        }
-    }
-
-    /**
-     * Emits preloaded log lines for local files into the Webview.
-     */
-    private sendInitialLines() {
-        this.panel.webview.postMessage({ type: 'initialLines', lines: this.initialLines });
-        this.panel.webview.postMessage({
-            type: 'status',
-            message: `Loaded ${this.initialLines.length} lines.`,
-        });
-    }
-
-    /**
-     * Reveals the panel if it is hidden or behind other tabs.
-     */
-    reveal() {
-        this.panel.reveal();
-    }
-
-    /**
-     * Cleans up the panel and SSH session resources.
-     */
-    dispose() {
-        if (this.disposed) {
-            return;
-        }
+    this.panel.onDidDispose(() => {
+      if (!this.disposed) {
+        this.session?.dispose();
+        this.onDispose();
         this.disposed = true;
-        void this.stopAutoSave({ silent: true });
-        this.session?.dispose();
-        this.panel.dispose();
+      }
+    });
+
+    if (this.device) {
+      this.session = this.createSession();
     }
 
-    /**
-     * Posts the session closed status and marker line to the Webview.
-     */
-    private handleSessionClose() {
-        const closedAt = Date.now();
-        this.session = undefined;
-        this.appendSessionClosedMarker(closedAt);
-        this.panel.webview.postMessage({
-            type: 'sessionClosed',
-            message: 'Session closed.',
-            closedAt,
+    this.webviewReady = new Promise((resolve) => {
+      this.resolveWebviewReady = resolve;
+    });
+
+    this.panel.webview.onDidReceiveMessage((message) => {
+      void this.handleWebviewMessage(message);
+    });
+
+    this.panel.webview.html = this.getHtml();
+  }
+
+  private parseWebviewMessage(raw: unknown): WebviewMessage | undefined {
+    if (!raw || typeof raw !== 'object') {
+      return undefined;
+    }
+
+    const message = raw as Record<string, unknown>;
+    switch (message.type) {
+      case 'ready':
+        return { type: 'ready' };
+      case 'requestSavePreset':
+        if (this.isValidPresetPayload(message)) {
+          return {
+            type: 'requestSavePreset',
+            minLevel: message.minLevel,
+            textFilter: message.textFilter,
+          };
+        }
+        return undefined;
+      case 'deletePreset':
+        return typeof message.name === 'string' && message.name
+          ? { type: 'deletePreset', name: message.name }
+          : undefined;
+      case 'exportLogs':
+        return this.isStringArray(message.lines)
+          ? { type: 'exportLogs', lines: message.lines }
+          : undefined;
+      case 'highlightsChanged':
+        return this.isValidHighlightPayload(message.highlights)
+          ? { type: 'highlightsChanged', highlights: message.highlights }
+          : undefined;
+      case 'openSourceFile':
+        return { type: 'openSourceFile' };
+      case 'refreshSourceFile':
+        return { type: 'refreshSourceFile' };
+      case 'requestReconnect':
+        return { type: 'requestReconnect' };
+      case 'requestDisconnect':
+        return { type: 'requestDisconnect' };
+      case 'startAutoSave':
+        return { type: 'startAutoSave' };
+      case 'stopAutoSave':
+        return typeof message.message === 'string'
+          ? { type: 'stopAutoSave', message: message.message }
+          : { type: 'stopAutoSave' };
+      default:
+        return undefined;
+    }
+  }
+
+  private async handleWebviewMessage(raw: unknown): Promise<void> {
+    const message = this.parseWebviewMessage(raw);
+    if (!message) {
+      return;
+    }
+
+    switch (message.type) {
+      case 'ready': {
+        if (this.resolveWebviewReady) {
+          this.resolveWebviewReady();
+          this.resolveWebviewReady = undefined;
+        }
+        await this.sendInitialData();
+        break;
+      }
+      case 'requestSavePreset': {
+        const name = await vscode.window.showInputBox({
+          prompt: 'Preset name',
+          ignoreFocusOut: true,
         });
+        if (name) {
+          const preset: FilterPreset = {
+            name,
+            minLevel: message.minLevel,
+            textFilter: message.textFilter,
+          };
+          await this.savePreset(preset);
+        }
+        break;
+      }
+      case 'deletePreset': {
+        await this.deletePreset(message.name);
+        break;
+      }
+      case 'exportLogs': {
+        await this.exportLogs(message.lines);
+        break;
+      }
+      case 'highlightsChanged': {
+        await this.saveHighlights(message.highlights);
+        break;
+      }
+      case 'openSourceFile': {
+        await this.openSourceFile();
+        break;
+      }
+      case 'refreshSourceFile': {
+        await this.refreshFromSource();
+        break;
+      }
+      case 'requestReconnect': {
+        await this.reconnect();
+        break;
+      }
+      case 'requestDisconnect': {
+        this.disconnect();
+        break;
+      }
+      case 'startAutoSave': {
+        await this.startAutoSave();
+        break;
+      }
+      case 'stopAutoSave': {
+        await this.stopAutoSave({ message: message.message ?? '' });
+        break;
+      }
+    }
+  }
+
+  /**
+   * Starts the underlying log session.
+   */
+  async start(): Promise<void> {
+    await this.webviewReady;
+    if (this.session) {
+      await this.session.start();
+      return;
+    }
+    this.sendInitialLines();
+  }
+
+  /**
+   * Creates a new log session wired to the current panel callbacks.
+   */
+  private createSession(): LogSession {
+    if (!this.device) {
+      throw new Error('Cannot create a log session without a device.');
     }
 
-    /**
-     * Disposes the active session and notifies the Webview of the closure.
-     */
-    private disconnect() {
-        if (!this.session) {
-            return;
-        }
+    return new LogSession(this.device, this.context, {
+      onLine: (line: string): void => this.handleIncomingLine(line),
+      onError: (message: string): void => {
+        void this.panel.webview.postMessage({ type: 'error', message });
+      },
+      onStatus: (message: string): void => {
+        void this.panel.webview.postMessage({ type: 'status', message });
+      },
+      onClose: (): void => this.handleSessionClose(),
+      onHostKeyMismatch: (details): void => {
+        void this.handleHostKeyMismatch(details);
+      },
+    });
+  }
 
-        this.session.dispose();
-        this.session = undefined;
-        const closedAt = Date.now();
-        this.appendSessionClosedMarker(closedAt);
-        void this.stopAutoSave({ message: '' });
-        this.panel.webview.postMessage({
-            type: 'sessionClosed',
-            message: 'Disconnected.',
-            closedAt,
-        });
+  private async handleHostKeyMismatch(details: {
+    expected: string;
+    received: string;
+  }): Promise<void> {
+    await this.panel.webview.postMessage({ type: 'hostKeyMismatch', ...details });
+    void vscode.window.showErrorMessage(
+      `Host key verification failed for ${this.targetName}. Expected ${details.expected} but received ${details.received}. Update the fingerprint in settings to reconnect.`
+    );
+  }
+
+  /**
+   * Forwards an incoming log line to the Webview and any active auto-save stream.
+   * @param line Raw log line emitted by the SSH session.
+   */
+  private handleIncomingLine(line: string): void {
+    this.writeAutoSaveLine(line);
+    this.panel.webview.postMessage({ type: 'logLine', line });
+  }
+
+  /**
+   * Attempts to write a log line to the active auto-save stream.
+   * @param line Log line to persist.
+   */
+  private writeAutoSaveLine(line: string): void {
+    if (!this.autoSaveStream) {
+      return;
     }
 
-    /**
-     * Registers a listener for panel view state changes.
-     * @param listener Callback invoked when the panel visibility changes.
-     * @returns Disposable subscription handle.
-     */
-    onDidChangeViewState(listener: (e: vscode.WebviewPanelOnDidChangeViewStateEvent) => void): vscode.Disposable {
-        return this.panel.onDidChangeViewState(listener);
+    try {
+      this.autoSaveStream.write(`${line}\n`);
+    } catch (err: unknown) {
+      const message = this.getErrorMessage(err);
+      this.panel.webview.postMessage({
+        type: 'autoSaveError',
+        message: message ? `Auto-save failed: ${message}` : 'Auto-save failed.',
+      });
+      void this.stopAutoSave({ silent: true });
+    }
+  }
+
+  /**
+   * Emits preloaded log lines for local files into the Webview.
+   */
+  private sendInitialLines(): void {
+    this.panel.webview.postMessage({ type: 'initialLines', lines: this.initialLines });
+    this.panel.webview.postMessage({
+      type: 'status',
+      message: `Loaded ${this.initialLines.length} lines.`,
+    });
+  }
+
+  /**
+   * Reveals the panel if it is hidden or behind other tabs.
+   */
+  reveal(): void {
+    this.panel.reveal();
+  }
+
+  /**
+   * Cleans up the panel and SSH session resources.
+   */
+  dispose(): void {
+    if (this.disposed) {
+      return;
+    }
+    this.disposed = true;
+    void this.stopAutoSave({ silent: true });
+    this.session?.dispose();
+    this.panel.dispose();
+  }
+
+  /**
+   * Posts the session closed status and marker line to the Webview.
+   */
+  private handleSessionClose(): void {
+    const closedAt = Date.now();
+    this.session = undefined;
+    this.appendSessionClosedMarker(closedAt);
+    this.panel.webview.postMessage({
+      type: 'sessionClosed',
+      message: 'Session closed.',
+      closedAt,
+    });
+  }
+
+  /**
+   * Disposes the active session and notifies the Webview of the closure.
+   */
+  private disconnect(): void {
+    if (!this.session) {
+      return;
     }
 
-    /**
-     * Attempts to reconnect the SSH session when requested by the Webview.
-     */
-    private async reconnect() {
-        if (!this.device || this.disposed) {
-            return;
-        }
+    this.session.dispose();
+    this.session = undefined;
+    const closedAt = Date.now();
+    this.appendSessionClosedMarker(closedAt);
+    void this.stopAutoSave({ message: '' });
+    this.panel.webview.postMessage({
+      type: 'sessionClosed',
+      message: 'Disconnected.',
+      closedAt,
+    });
+  }
 
-        this.session?.dispose();
-        this.session = this.createSession();
-        await this.panel.webview.postMessage({ type: 'status', message: 'Reconnecting...' });
+  /**
+   * Registers a listener for panel view state changes.
+   * @param listener Callback invoked when the panel visibility changes.
+   * @returns Disposable subscription handle.
+   */
+  onDidChangeViewState(
+    listener: (e: vscode.WebviewPanelOnDidChangeViewStateEvent) => void
+  ): vscode.Disposable {
+    return this.panel.onDidChangeViewState(listener);
+  }
 
-        try {
-            await this.session.start();
-        } catch (err: any) {
-            await this.panel.webview.postMessage({
-                type: 'error',
-                message: err?.message ?? 'Failed to reconnect.',
-            });
-        }
+  /**
+   * Attempts to reconnect the SSH session when requested by the Webview.
+   */
+  private async reconnect(): Promise<void> {
+    if (!this.device || this.disposed) {
+      return;
     }
 
-    /**
-     * Prompts the user for an auto-save destination and starts persisting incoming lines.
-     */
-    private async startAutoSave() {
-        if (!this.session) {
-            await this.panel.webview.postMessage({
-                type: 'autoSaveStopped',
-                message: '',
-            });
-            return;
-        }
+    this.session?.dispose();
+    this.session = this.createSession();
+    await this.panel.webview.postMessage({ type: 'status', message: 'Reconnecting...' });
 
-        const defaultUri = this.getDefaultAutoSaveUri();
-        const selectedUri = await vscode.window.showSaveDialog({
-            title: 'Select log file to auto-save SSH output',
-            defaultUri,
-            filters: {
-                Logs: ['log', 'txt'],
-                'All Files': ['*'],
-            },
-        });
+    try {
+      await this.session.start();
+    } catch (err: unknown) {
+      const message = this.getErrorMessage(err);
+      await this.panel.webview.postMessage({
+        type: 'error',
+        message: message || 'Failed to reconnect.',
+      });
+    }
+  }
 
-        if (!selectedUri) {
-            await this.panel.webview.postMessage({
-                type: 'autoSaveStopped',
-                message: 'Auto-save cancelled.',
-            });
-            return;
-        }
-
-        try {
-            await this.stopAutoSave({ silent: true });
-            this.autoSavePath = selectedUri.fsPath;
-            this.autoSaveStream = fs.createWriteStream(this.autoSavePath, { flags: 'a' });
-            this.autoSaveStream.on('error', async (err) => {
-                await this.panel.webview.postMessage({
-                    type: 'autoSaveError',
-                    message: err?.message ? `Auto-save failed: ${err.message}` : 'Auto-save failed.',
-                });
-                void this.stopAutoSave({ silent: true });
-            });
-
-            await this.panel.webview.postMessage({
-                type: 'autoSaveStarted',
-                filePath: this.autoSavePath,
-                fileName: path.basename(this.autoSavePath),
-            });
-        } catch (err: any) {
-            await this.panel.webview.postMessage({
-                type: 'autoSaveError',
-                message: err?.message ? `Auto-save failed: ${err.message}` : 'Auto-save failed.',
-            });
-            void this.stopAutoSave({ silent: true });
-        }
+  /**
+   * Prompts the user for an auto-save destination and starts persisting incoming lines.
+   */
+  private async startAutoSave(): Promise<void> {
+    if (!this.session) {
+      await this.panel.webview.postMessage({
+        type: 'autoSaveStopped',
+        message: '',
+      });
+      return;
     }
 
-    /**
-     * Stops any active auto-save stream and notifies the Webview unless silenced.
-     * @param options Optional flags to silence notifications or override the status message.
-     */
-    private async stopAutoSave(options: { silent?: boolean; message?: string } = {}) {
-        const { silent = false, message } = options;
-        const hadAutoSave = !!(this.autoSaveStream || this.autoSavePath);
+    const defaultUri = this.getDefaultAutoSaveUri();
+    const selectedUri = await vscode.window.showSaveDialog({
+      title: 'Select log file to auto-save SSH output',
+      defaultUri,
+      filters: {
+        Logs: ['log', 'txt'],
+        'All Files': ['*'],
+      },
+    });
 
-        if (this.autoSaveStream) {
-            await new Promise((resolve) => {
-                const stream = this.autoSaveStream;
-                if (!stream) {
-                    resolve(undefined);
-                    return;
-                }
-
-                if ((stream as any).closed) {
-                    resolve(undefined);
-                    return;
-                }
-
-                stream.once('close', resolve);
-                stream.end();
-            });
-            this.autoSaveStream = undefined;
-        }
-
-        const stoppedPath = this.autoSavePath;
-        this.autoSavePath = undefined;
-
-        if (!silent && hadAutoSave) {
-            await this.panel.webview.postMessage({
-                type: 'autoSaveStopped',
-                message: typeof message === 'string' ? message : '',
-            });
-        }
+    if (!selectedUri) {
+      await this.panel.webview.postMessage({
+        type: 'autoSaveStopped',
+        message: 'Auto-save cancelled.',
+      });
+      return;
     }
 
-    private appendSessionClosedMarker(closedAt: number) {
-        const timestamp = this.formatTimestamp(closedAt);
-        this.writeAutoSaveLine('');
-        this.writeAutoSaveLine(`--- SSH session closed on ${timestamp}`);
-        this.writeAutoSaveLine('');
-    }
+    try {
+      await this.stopAutoSave({ silent: true });
+      this.autoSavePath = selectedUri.fsPath;
+      this.autoSaveStream = fs.createWriteStream(this.autoSavePath, { flags: 'a' });
+      this.autoSaveStream.on('error', (err) => {
+        void this.handleAutoSaveStreamError(err);
+      });
 
-    private formatTimestamp(value: number) {
-        const timestamp = new Date(value);
-        if (Number.isNaN(timestamp.valueOf())) {
-            return new Date().toLocaleString();
+      await this.panel.webview.postMessage({
+        type: 'autoSaveStarted',
+        filePath: this.autoSavePath,
+        fileName: path.basename(this.autoSavePath),
+      });
+    } catch (err: unknown) {
+      const message = this.getErrorMessage(err);
+      await this.panel.webview.postMessage({
+        type: 'autoSaveError',
+        message: message ? `Auto-save failed: ${message}` : 'Auto-save failed.',
+      });
+      void this.stopAutoSave({ silent: true });
+    }
+  }
+
+  private async handleAutoSaveStreamError(err: unknown): Promise<void> {
+    const message = this.getErrorMessage(err);
+    await this.panel.webview.postMessage({
+      type: 'autoSaveError',
+      message: message ? `Auto-save failed: ${message}` : 'Auto-save failed.',
+    });
+    void this.stopAutoSave({ silent: true });
+  }
+
+  /**
+   * Stops any active auto-save stream and notifies the Webview unless silenced.
+   * @param options Optional flags to silence notifications or override the status message.
+   */
+  private async stopAutoSave(options: { silent?: boolean; message?: string } = {}): Promise<void> {
+    const { silent = false, message } = options;
+    const hadAutoSave = !!(this.autoSaveStream || this.autoSavePath);
+
+    if (this.autoSaveStream) {
+      await new Promise((resolve) => {
+        const stream = this.autoSaveStream;
+        if (!stream) {
+          resolve(undefined);
+          return;
         }
-        return timestamp.toLocaleString();
-    }
 
-    /**
-     * Builds a default URI for the auto-save dialog using the workspace folder when available.
-     * @returns VS Code URI pointing to a suggested log file path.
-     */
-    private getDefaultAutoSaveUri() {
-        const defaultFileName = `${this.targetName.replace(/\s+/g, '_').toLowerCase()}-logs.txt`;
-        const workspaceUri = vscode.workspace.workspaceFolders?.[0]?.uri;
-        if (!workspaceUri) {
-            return vscode.Uri.file(path.join(process.cwd(), defaultFileName));
+        if (stream.closed) {
+          resolve(undefined);
+          return;
         }
 
-        return vscode.Uri.file(path.join(workspaceUri.fsPath, defaultFileName));
+        stream.once('close', resolve);
+        stream.end();
+      });
+      this.autoSaveStream = undefined;
     }
 
-    /**
-     * Builds the HTML string loaded into the Webview.
-     * @returns HTML markup with scripts, styles, and initial data payload.
-     */
-    private getHtml(): string {
-        const webview = this.panel.webview;
-        const scriptUri = webview.asWebviewUri(vscode.Uri.file(path.join(this.context.extensionPath, 'media', 'loggerPanel.js')));
-        const styleUri = webview.asWebviewUri(vscode.Uri.file(path.join(this.context.extensionPath, 'media', 'loggerPanel.css')));
-        const nonce = getNonce();
+    this.autoSavePath = undefined;
 
-        return `<!DOCTYPE html>
+    if (!silent && hadAutoSave) {
+      await this.panel.webview.postMessage({
+        type: 'autoSaveStopped',
+        message: typeof message === 'string' ? message : '',
+      });
+    }
+  }
+
+  private appendSessionClosedMarker(closedAt: number): void {
+    const timestamp = this.formatTimestamp(closedAt);
+    this.writeAutoSaveLine('');
+    this.writeAutoSaveLine(`--- SSH session closed on ${timestamp}`);
+    this.writeAutoSaveLine('');
+  }
+
+  private formatTimestamp(value: number): string {
+    const timestamp = new Date(value);
+    if (Number.isNaN(timestamp.valueOf())) {
+      return new Date().toLocaleString();
+    }
+    return timestamp.toLocaleString();
+  }
+
+  /**
+   * Builds a default URI for the auto-save dialog using the workspace folder when available.
+   * @returns VS Code URI pointing to a suggested log file path.
+   */
+  private getDefaultAutoSaveUri(): vscode.Uri {
+    const defaultFileName = `${this.targetName.replace(/\s+/g, '_').toLowerCase()}-logs.txt`;
+    const workspaceUri = vscode.workspace.workspaceFolders?.[0]?.uri;
+    if (!workspaceUri) {
+      return vscode.Uri.file(path.join(process.cwd(), defaultFileName));
+    }
+
+    return vscode.Uri.file(path.join(workspaceUri.fsPath, defaultFileName));
+  }
+
+  /**
+   * Builds the HTML string loaded into the Webview.
+   * @returns HTML markup with scripts, styles, and initial data payload.
+   */
+  private getHtml(): string {
+    const webview = this.panel.webview;
+    const scriptUri = webview.asWebviewUri(
+      vscode.Uri.file(path.join(this.context.extensionPath, 'media', 'loggerPanel.js'))
+    );
+    const styleUri = webview.asWebviewUri(
+      vscode.Uri.file(path.join(this.context.extensionPath, 'media', 'loggerPanel.css'))
+    );
+    const scriptUriString = scriptUri.toString(true);
+    const styleUriString = styleUri.toString(true);
+    const nonce = getNonce();
+
+    return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}'; style-src ${webview.cspSource};">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="${styleUri}" rel="stylesheet" />
+    <link href="${styleUriString}" rel="stylesheet" />
     <title>${this.targetName} Logs</title>
 </head>
 <body>
@@ -640,187 +716,210 @@ export class LogPanel {
         <div id="lineLimitNotice" class="line-limit-notice hidden">Configured display line limit reached. Older lines are being replaced with newer entries.</div>
         <div id="logContent"></div>
     </div>
-    <script nonce="${nonce}" src="${scriptUri}"></script>
+    <script nonce="${nonce}" src="${scriptUriString}"></script>
 </body>
 </html>`;
+  }
+
+  /**
+   * Retrieves saved presets from workspace state.
+   * @returns The array of stored presets, or an empty array when none exist.
+   */
+  private getStoredPresets(): FilterPreset[] {
+    return this.context.workspaceState.get<FilterPreset[]>(this.presetsKey, []);
+  }
+
+  /**
+   * Sends device metadata and stored presets to the Webview.
+   */
+  private async sendInitialData(): Promise<void> {
+    const presets = this.getStoredPresets();
+    await this.panel.webview.postMessage({
+      type: 'initData',
+      deviceId: this.targetId,
+      presets,
+      highlights: this.highlights,
+      isLive: !!this.session,
+      maxEntries: this.maxLogEntries,
+    });
+  }
+
+  private getStoredHighlights(): HighlightDefinition[] {
+    return this.context.workspaceState.get<HighlightDefinition[]>(this.highlightsKey, []);
+  }
+
+  private async saveHighlights(values: HighlightDefinition[]): Promise<void> {
+    const sanitized = values
+      .filter((highlight) => typeof highlight?.key === 'string')
+      .slice(0, 10)
+      .map((highlight, index) => ({
+        id: highlight.id || index + 1,
+        key: highlight.key,
+        baseColor: highlight.baseColor,
+        color: highlight.color,
+        backgroundColor: highlight.backgroundColor,
+      }));
+
+    this.highlights = sanitized;
+    await this.context.workspaceState.update(this.highlightsKey, sanitized);
+  }
+
+  /**
+   * Saves or replaces a filter preset for the current device.
+   * @param preset Preset data to persist.
+   */
+  private async savePreset(preset: FilterPreset): Promise<void> {
+    const presets = this.getStoredPresets();
+    const filtered = presets.filter((p) => p.name !== preset.name);
+    filtered.push(preset);
+    await this.context.workspaceState.update(this.presetsKey, filtered);
+    this.panel.webview.postMessage({ type: 'presetsUpdated', presets: filtered });
+    vscode.window.showInformationMessage(`Preset "${preset.name}" saved for ${this.targetName}.`);
+  }
+
+  /**
+   * Deletes a saved preset by name and notifies the Webview.
+   * @param name Name of the preset to remove.
+   */
+  private async deletePreset(name: string): Promise<void> {
+    const presets = this.getStoredPresets();
+    const filtered = presets.filter((p) => p.name !== name);
+    await this.context.workspaceState.update(this.presetsKey, filtered);
+    this.panel.webview.postMessage({ type: 'presetsUpdated', presets: filtered });
+    vscode.window.showInformationMessage(`Preset "${name}" removed for ${this.targetName}.`);
+  }
+
+  /**
+   * Exports the provided log lines to a user-specified file.
+   * @param lines Collection of log lines to write.
+   */
+  private async exportLogs(lines: string[]): Promise<void> {
+    const uri = await vscode.window.showSaveDialog({
+      filters: { Logs: ['log', 'txt'] },
+      saveLabel: 'Export logs',
+    });
+    if (!uri) {
+      return;
+    }
+    const content = Buffer.from(lines.join('\n'), 'utf8');
+    try {
+      await vscode.workspace.fs.writeFile(uri, content);
+      vscode.window.showInformationMessage(
+        `Exported ${lines.length} lines from ${this.targetName}.`
+      );
+    } catch (err: unknown) {
+      const message = this.getErrorMessage(err);
+      vscode.window.showErrorMessage(
+        message ? `Failed to export logs: ${message}` : 'Failed to export logs.'
+      );
+    }
+  }
+
+  /**
+   * Opens the source log file in a standard VS Code editor tab.
+   */
+  private async openSourceFile(): Promise<void> {
+    if (!this.sourcePath) {
+      vscode.window.showErrorMessage('Edit is only available for imported log files.');
+      return;
     }
 
-    /**
-     * Retrieves saved presets from workspace state.
-     * @returns The array of stored presets, or an empty array when none exist.
-     */
-    private getStoredPresets(): FilterPreset[] {
-        return this.context.workspaceState.get<FilterPreset[]>(this.presetsKey, []);
+    try {
+      const document = await vscode.workspace.openTextDocument(vscode.Uri.file(this.sourcePath));
+      await vscode.window.showTextDocument(document, { preview: false });
+    } catch (err: unknown) {
+      const message = this.getErrorMessage(err);
+      vscode.window.showErrorMessage(
+        message ? `Failed to open log file: ${message}` : 'Failed to open log file.'
+      );
+    }
+  }
+
+  /**
+   * Reloads the source log file and replaces the Webview contents.
+   */
+  private async refreshFromSource(): Promise<void> {
+    if (!this.sourcePath) {
+      vscode.window.showErrorMessage('Refresh is only available for imported log files.');
+      return;
     }
 
-    /**
-     * Sends device metadata and stored presets to the Webview.
-     */
-    private async sendInitialData() {
-        const presets = this.getStoredPresets();
-        await this.panel.webview.postMessage({
-            type: 'initData',
-            deviceId: this.targetId,
-            presets,
-            highlights: this.highlights,
-            isLive: !!this.session,
-            maxEntries: this.maxLogEntries,
-        });
+    let content: Uint8Array;
+    try {
+      content = await vscode.workspace.fs.readFile(vscode.Uri.file(this.sourcePath));
+    } catch (err: unknown) {
+      const message = this.getErrorMessage(err);
+      vscode.window.showErrorMessage(
+        message ? `Failed to read log file: ${message}` : 'Failed to read log file.'
+      );
+      return;
     }
 
-    private getStoredHighlights(): HighlightDefinition[] {
-        return this.context.workspaceState.get<HighlightDefinition[]>(this.highlightsKey, []);
-    }
+    const decoded = Buffer.from(content).toString('utf8');
+    const lines = decoded.split(/\r?\n/);
+    this.initialLines.length = 0;
+    this.initialLines.push(...lines);
 
-    private async saveHighlights(values: HighlightDefinition[]) {
-        const sanitized = values
-            .filter((highlight) => typeof highlight?.key === 'string')
-            .slice(0, 10)
-            .map((highlight, index) => ({
-                id: highlight.id || index + 1,
-                key: highlight.key,
-                baseColor: highlight.baseColor,
-                color: highlight.color,
-                backgroundColor: highlight.backgroundColor,
-            }));
+    await this.panel.webview.postMessage({
+      type: 'replaceLines',
+      lines,
+      message: `Reloaded ${lines.length} lines from ${path.basename(this.sourcePath)}.`,
+    });
+  }
 
-        this.highlights = sanitized;
-        await this.context.workspaceState.update(this.highlightsKey, sanitized);
-    }
+  /**
+   * Type guard verifying preset payloads from the Webview.
+   * @param message Arbitrary message payload.
+   * @returns True when the payload has the expected shape.
+   */
+  private isValidPresetPayload(
+    message: unknown
+  ): message is { minLevel: string; textFilter: string } {
+    const candidate = message as { minLevel?: unknown; textFilter?: unknown };
+    return typeof candidate?.minLevel === 'string' && typeof candidate?.textFilter === 'string';
+  }
 
-    /**
-     * Saves or replaces a filter preset for the current device.
-     * @param preset Preset data to persist.
-     */
-    private async savePreset(preset: FilterPreset) {
-        const presets = this.getStoredPresets();
-        const filtered = presets.filter((p) => p.name !== preset.name);
-        filtered.push(preset);
-        await this.context.workspaceState.update(this.presetsKey, filtered);
-        this.panel.webview.postMessage({ type: 'presetsUpdated', presets: filtered });
-        vscode.window.showInformationMessage(`Preset "${preset.name}" saved for ${this.targetName}.`);
-    }
-
-    /**
-     * Deletes a saved preset by name and notifies the Webview.
-     * @param name Name of the preset to remove.
-     */
-    private async deletePreset(name: string) {
-        const presets = this.getStoredPresets();
-        const filtered = presets.filter((p) => p.name !== name);
-        await this.context.workspaceState.update(this.presetsKey, filtered);
-        this.panel.webview.postMessage({ type: 'presetsUpdated', presets: filtered });
-        vscode.window.showInformationMessage(`Preset "${name}" removed for ${this.targetName}.`);
-    }
-
-    /**
-     * Exports the provided log lines to a user-specified file.
-     * @param lines Collection of log lines to write.
-     */
-    private async exportLogs(lines: string[]) {
-        const uri = await vscode.window.showSaveDialog({
-            filters: { Logs: ['log', 'txt'] },
-            saveLabel: 'Export logs',
-        });
-        if (!uri) {
-            return;
+  private isValidHighlightPayload(value: unknown): value is HighlightDefinition[] {
+    return (
+      Array.isArray(value) &&
+      value.every((highlight: unknown) => {
+        if (!highlight || typeof highlight !== 'object') {
+          return false;
         }
-        const content = Buffer.from(lines.join('\n'), 'utf8');
-        try {
-            await vscode.workspace.fs.writeFile(uri, content);
-            vscode.window.showInformationMessage(`Exported ${lines.length} lines from ${this.targetName}.`);
-        } catch (err: any) {
-            vscode.window.showErrorMessage(`Failed to export logs: ${err?.message ?? err}`);
-        }
-    }
-
-    /**
-     * Opens the source log file in a standard VS Code editor tab.
-     */
-    private async openSourceFile() {
-        if (!this.sourcePath) {
-            vscode.window.showErrorMessage('Edit is only available for imported log files.');
-            return;
-        }
-
-        try {
-            const document = await vscode.workspace.openTextDocument(vscode.Uri.file(this.sourcePath));
-            await vscode.window.showTextDocument(document, { preview: false });
-        } catch (err: any) {
-            vscode.window.showErrorMessage(`Failed to open log file: ${err?.message ?? err}`);
-        }
-    }
-
-    /**
-     * Reloads the source log file and replaces the Webview contents.
-     */
-    private async refreshFromSource() {
-        if (!this.sourcePath) {
-            vscode.window.showErrorMessage('Refresh is only available for imported log files.');
-            return;
-        }
-
-        let content: Uint8Array;
-        try {
-            content = await vscode.workspace.fs.readFile(vscode.Uri.file(this.sourcePath));
-        } catch (err: any) {
-            vscode.window.showErrorMessage(`Failed to read log file: ${err?.message ?? err}`);
-            return;
-        }
-
-        const decoded = Buffer.from(content).toString('utf8');
-        const lines = decoded.split(/\r?\n/);
-        this.initialLines.length = 0;
-        this.initialLines.push(...lines);
-
-        await this.panel.webview.postMessage({
-            type: 'replaceLines',
-            lines,
-            message: `Reloaded ${lines.length} lines from ${path.basename(this.sourcePath)}.`,
-        });
-    }
-
-    /**
-     * Type guard verifying preset payloads from the Webview.
-     * @param message Arbitrary message payload.
-     * @returns True when the payload has the expected shape.
-     */
-    private isValidPresetPayload(message: any): message is { minLevel: string; textFilter: string } {
-        return typeof message?.minLevel === 'string' && typeof message?.textFilter === 'string';
-    }
-
-    private isValidHighlightPayload(value: unknown): value is HighlightDefinition[] {
+        const candidate = highlight as Partial<HighlightDefinition>;
         return (
-            Array.isArray(value) &&
-            value.every(
-                (highlight) =>
-                    typeof highlight?.key === 'string' &&
-                    typeof highlight?.baseColor === 'string' &&
-                    typeof highlight?.color === 'string' &&
-                    typeof highlight?.backgroundColor === 'string'
-            )
+          typeof candidate.key === 'string' &&
+          typeof candidate.baseColor === 'string' &&
+          typeof candidate.color === 'string' &&
+          typeof candidate.backgroundColor === 'string'
         );
-    }
+      })
+    );
+  }
 
-    /**
-     * Determines whether a value is an array of strings.
-     * @param value Unknown value to check.
-     * @returns True when every element is a string.
-     */
-    private isStringArray(value: unknown): value is string[] {
-        return Array.isArray(value) && value.every((entry) => typeof entry === 'string');
-    }
+  private getErrorMessage(err: unknown): string {
+    return err instanceof Error ? err.message : typeof err === 'string' ? err : String(err);
+  }
+
+  /**
+   * Determines whether a value is an array of strings.
+   * @param value Unknown value to check.
+   * @returns True when every element is a string.
+   */
+  private isStringArray(value: unknown): value is string[] {
+    return Array.isArray(value) && value.every((entry) => typeof entry === 'string');
+  }
 }
 
 /**
  * Generates a random nonce for script tags in the Webview.
  * @returns A 32-character nonce comprised of letters and numbers.
  */
-function getNonce() {
-    let text = '';
-    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    for (let i = 0; i < 32; i++) {
-        text += possible.charAt(Math.floor(Math.random() * possible.length));
-    }
-    return text;
+function getNonce(): string {
+  let text = '';
+  const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  for (let i = 0; i < 32; i++) {
+    text += possible.charAt(Math.floor(Math.random() * possible.length));
+  }
+  return text;
 }

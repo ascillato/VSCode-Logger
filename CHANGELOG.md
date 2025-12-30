@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [1.4.9] - UNRELEASED [SFTP-MORE-IMPROVEMENTS]
+
+### Added
+- Add view file content option to the right of the SFTP panel.
+
+### Changed
+- Review and updated documentation.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- Linter Checks.
+- Fix exit command behavior in SSH terminal.
+- Clear text filter on no preset select on log panel.
+- Fix disconnect button state after detaching on log panel.
+
+### Security
+- None.
+
+----------------------------------------
+
 ## [1.4.8] - 2025-12-28 [LOG-PANEL-RESTYLE]
 
 ### Added
