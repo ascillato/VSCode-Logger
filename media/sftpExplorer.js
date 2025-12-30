@@ -403,11 +403,12 @@
 
   function updateContextMenuOptions(side) {
     const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
+    const location = resolveLocationForSide(side, snapshot);
     const selected = getSelectedEntries(snapshot);
     const selectedCount = selected.length;
     const disableSingleOnly = selectedCount !== 1;
     const selectedEntry = selectedCount === 1 ? selected[0] : undefined;
-    const isRemoteLocation = side === 'remote' || getActiveRightLocation() === 'remote';
+    const isRemoteLocation = location === 'remote';
 
     if (elements.contextRun) {
       const canRun = Boolean(
@@ -842,6 +843,16 @@
     return state.rightMode === 'local' ? requestIds.local : requestIds.rightRemote;
   }
 
+  function resolveLocationForSide(side, snapshot) {
+    if (side === 'remote') {
+      return 'remote';
+    }
+    if (snapshot?.location === 'remote') {
+      return 'remote';
+    }
+    return getActiveRightLocation();
+  }
+
   function goHome(side) {
     resetStatus();
     if (side === 'remote') {
@@ -907,7 +918,7 @@
   function runSelected(side) {
     resetStatus();
     const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
-    const location = side === 'remote' ? 'remote' : getActiveRightLocation();
+    const location = resolveLocationForSide(side, snapshot);
     if (location !== 'remote') {
       return;
     }
@@ -930,7 +941,7 @@
   function viewContent(side) {
     resetStatus();
     const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
-    const location = side === 'remote' ? 'remote' : getActiveRightLocation();
+    const location = resolveLocationForSide(side, snapshot);
     if (location !== 'remote') {
       return;
     }
