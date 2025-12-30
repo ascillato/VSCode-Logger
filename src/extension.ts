@@ -58,7 +58,7 @@ async function migrateLegacyPasswords(
   context: vscode.ExtensionContext,
   devices: EmbeddedDevice[],
   passwordManager: PasswordManager
-) {
+): Promise<void> {
   const secrets = context.secrets;
   const hasLegacyPasswords = devices.some(
     (device) => device.password !== undefined || device.bastion?.password !== undefined
@@ -69,21 +69,27 @@ async function migrateLegacyPasswords(
       device.bastion?.privateKeyPassphrase !== undefined
   );
 
-  const sanitizeDevices = (entries: EmbeddedDevice[]) =>
+  const sanitizeDevices = (entries: EmbeddedDevice[]): EmbeddedDevice[] =>
     entries.map((device) => {
       const { password: _password, privateKeyPassphrase: _passphrase, bastion, ...rest } = device;
+      const sanitizedBastion = bastion
+        ? (({
+            password: _bastionPassword,
+            privateKeyPassphrase: _bastionPassphrase,
+            ...bastionRest
+          }): EmbeddedDevice['bastion'] => {
+            void _bastionPassword;
+            void _bastionPassphrase;
+            return bastionRest;
+          })(bastion)
+        : undefined;
+
+      void _password;
+      void _passphrase;
+
       return {
         ...rest,
-        bastion: bastion
-          ? (() => {
-              const {
-                password: _bastionPassword,
-                privateKeyPassphrase: _bastionPassphrase,
-                ...bastionRest
-              } = bastion;
-              return bastionRest;
-            })()
-          : undefined,
+        bastion: sanitizedBastion,
       };
     });
 
@@ -161,7 +167,7 @@ async function migrateLegacyPasswords(
         sanitizeDevices(folderValue),
         vscode.ConfigurationTarget.WorkspaceFolder
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to remove legacy passwords from workspace folder settings.', err);
       vscode.window.showWarningMessage(warningMessage);
       return;
@@ -178,7 +184,7 @@ async function migrateLegacyPasswords(
         sanitizeDevices(workspaceValue),
         vscode.ConfigurationTarget.Workspace
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to remove legacy passwords from workspace settings.', err);
       vscode.window.showWarningMessage(warningMessage);
       return;
@@ -195,7 +201,7 @@ async function migrateLegacyPasswords(
         sanitizeDevices(globalValue),
         vscode.ConfigurationTarget.Global
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to remove legacy passwords from user settings.', err);
       vscode.window.showWarningMessage(warningMessage);
       return;
@@ -215,15 +221,17 @@ async function migrateLegacyPasswords(
  *
  * @param context VS Code extension context provided on activation.
  */
-export async function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const passwordManager = new PasswordManager(context);
   const { devices } = getEmbeddedLoggerConfiguration();
 
   await migrateLegacyPasswords(context, devices, passwordManager);
 
-  const getDevices = () => getEmbeddedLoggerConfiguration().devices;
+  const getDevices = (): EmbeddedDevice[] => getEmbeddedLoggerConfiguration().devices;
+  const findDevice = (deviceId: string): EmbeddedDevice | undefined =>
+    getDevices().find((item) => item.id === deviceId);
 
-  const openWebBrowser = async (device: EmbeddedDevice | undefined) => {
+  const openWebBrowser = async (device: EmbeddedDevice | undefined): Promise<void> => {
     if (!device) {
       vscode.window.showErrorMessage('Device not found. Check embeddedLogger.devices.');
       return;
@@ -246,10 +254,9 @@ export async function activate(context: vscode.ExtensionContext) {
     let uri: vscode.Uri;
     try {
       uri = vscode.Uri.parse(normalizedUrl, true);
-    } catch (err: any) {
-      vscode.window.showErrorMessage(
-        `Invalid web URL for ${device.name}: ${err?.message ?? String(err)}`
-      );
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      vscode.window.showErrorMessage(`Invalid web URL for ${device.name}: ${message}`);
       return;
     }
 
@@ -260,14 +267,13 @@ export async function activate(context: vscode.ExtensionContext) {
 
     try {
       await vscode.env.openExternal(uri);
-    } catch (err: any) {
-      vscode.window.showErrorMessage(
-        `Failed to open ${uri.toString(true)}: ${err?.message ?? String(err)}`
-      );
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      vscode.window.showErrorMessage(`Failed to open ${uri.toString(true)}: ${message}`);
     }
   };
 
-  const openSftpExplorer = async (device: EmbeddedDevice | undefined) => {
+  const openSftpExplorer = async (device: EmbeddedDevice | undefined): Promise<void> => {
     if (!device) {
       vscode.window.showErrorMessage('Device not found. Check embeddedLogger.devices.');
       return;
@@ -291,11 +297,12 @@ export async function activate(context: vscode.ExtensionContext) {
       sftpPanels.add(createdPanel);
       createdPanel.onDidDispose(() => sftpPanels.delete(createdPanel));
       await panel.start();
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (panel) {
         sftpPanels.delete(panel);
       }
-      vscode.window.showErrorMessage(err?.message ?? String(err));
+      const message = err instanceof Error ? err.message : String(err);
+      vscode.window.showErrorMessage(message);
     }
   };
 
@@ -303,40 +310,43 @@ export async function activate(context: vscode.ExtensionContext) {
     context,
     getDevices,
     (deviceId) => {
-      const device = getDevices().find((item) => item.id === deviceId);
+      const device = findDevice(deviceId);
       if (device) {
-        vscode.commands.executeCommand('embeddedLogger.openDevice', device);
+        void vscode.commands.executeCommand('embeddedLogger.openDevice', device);
       } else {
         vscode.window.showErrorMessage('Device not found. Check embeddedLogger.devices.');
       }
     },
-    async (deviceId, commandName, command) => {
-      const device = getDevices().find((item) => item.id === deviceId);
+    (deviceId, commandName, command) => {
+      const device = findDevice(deviceId);
       if (!device) {
         vscode.window.showErrorMessage('Device not found. Check embeddedLogger.devices.');
         return;
       }
 
-      try {
-        await vscode.window.withProgress(
-          {
-            title: `Running "${commandName}" on ${device.name}`,
-            location: vscode.ProgressLocation.Notification,
-          },
-          async () => {
-            const runner = new SshCommandRunner(device, context);
-            const output = await runner.run({ name: commandName, command });
-            const trimmed = output.trim();
-            const message = trimmed || `Command "${commandName}" finished on ${device.name}.`;
-            vscode.window.showInformationMessage(message);
-          }
-        );
-      } catch (err: any) {
-        vscode.window.showErrorMessage(err?.message ?? String(err));
-      }
+      void (async (): Promise<void> => {
+        try {
+          await vscode.window.withProgress(
+            {
+              title: `Running "${commandName}" on ${device.name}`,
+              location: vscode.ProgressLocation.Notification,
+            },
+            async () => {
+              const runner = new SshCommandRunner(device, context);
+              const output = await runner.run({ name: commandName, command });
+              const trimmed = output.trim();
+              const message = trimmed || `Command "${commandName}" finished on ${device.name}.`;
+              vscode.window.showInformationMessage(message);
+            }
+          );
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : String(err);
+          vscode.window.showErrorMessage(message);
+        }
+      })();
     },
-    async (deviceId) => {
-      const device = getDevices().find((item) => item.id === deviceId);
+    (deviceId) => {
+      const device = findDevice(deviceId);
       if (!device) {
         vscode.window.showErrorMessage('Device not found. Check embeddedLogger.devices.');
         return;
@@ -359,8 +369,14 @@ export async function activate(context: vscode.ExtensionContext) {
       });
       terminal.show(true);
     },
-    (deviceId) => openSftpExplorer(getDevices().find((item) => item.id === deviceId)),
-    (deviceId) => openWebBrowser(getDevices().find((item) => item.id === deviceId))
+    (deviceId) => {
+      const device = findDevice(deviceId);
+      void openSftpExplorer(device);
+    },
+    (deviceId) => {
+      const device = findDevice(deviceId);
+      void openWebBrowser(device);
+    }
   );
 
   context.subscriptions.push(
@@ -447,7 +463,7 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('embeddedLogger.openLocalLogFile', async () => {
+    vscode.commands.registerCommand('embeddedLogger.openLocalLogFile', async (): Promise<void> => {
       const selection = await vscode.window.showOpenDialog({
         canSelectFiles: true,
         canSelectFolders: false,
@@ -464,8 +480,9 @@ export async function activate(context: vscode.ExtensionContext) {
       let content: Uint8Array;
       try {
         content = await vscode.workspace.fs.readFile(uri);
-      } catch (err: any) {
-        vscode.window.showErrorMessage(`Failed to read log file: ${err?.message ?? err}`);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        vscode.window.showErrorMessage(`Failed to read log file: ${message}`);
         return;
       }
 
@@ -500,42 +517,45 @@ export async function activate(context: vscode.ExtensionContext) {
       });
       activePanel = panel;
       panelMap.set(panelId, panel);
-      panel.start();
+      await panel.start();
     })
   );
 
   // Command used by tree items to open a device panel.
   context.subscriptions.push(
-    vscode.commands.registerCommand('embeddedLogger.openDevice', async (device: EmbeddedDevice) => {
-      if (!device) {
-        vscode.window.showErrorMessage('No device information supplied.');
-        return;
-      }
-
-      const existing = panelMap.get(device.id);
-      if (existing) {
-        existing.reveal();
-        activePanel = existing;
-        return;
-      }
-
-      const panel = new LogPanel(context, { type: 'remote', device }, () => {
-        panelMap.delete(device.id);
-        if (activePanel === panel) {
-          activePanel = undefined;
+    vscode.commands.registerCommand(
+      'embeddedLogger.openDevice',
+      async (device: EmbeddedDevice): Promise<void> => {
+        if (!device) {
+          vscode.window.showErrorMessage('No device information supplied.');
+          return;
         }
-      });
-      panel.onDidChangeViewState((event) => {
-        if (event.webviewPanel.active) {
-          activePanel = panel;
-        } else if (activePanel === panel) {
-          activePanel = undefined;
+
+        const existing = panelMap.get(device.id);
+        if (existing) {
+          existing.reveal();
+          activePanel = existing;
+          return;
         }
-      });
-      activePanel = panel;
-      panelMap.set(device.id, panel);
-      panel.start();
-    })
+
+        const panel = new LogPanel(context, { type: 'remote', device }, () => {
+          panelMap.delete(device.id);
+          if (activePanel === panel) {
+            activePanel = undefined;
+          }
+        });
+        panel.onDidChangeViewState((event) => {
+          if (event.webviewPanel.active) {
+            activePanel = panel;
+          } else if (activePanel === panel) {
+            activePanel = undefined;
+          }
+        });
+        activePanel = panel;
+        panelMap.set(device.id, panel);
+        await panel.start();
+      }
+    )
   );
 
   // Refresh the tree when configuration changes.
@@ -551,7 +571,7 @@ export async function activate(context: vscode.ExtensionContext) {
 /**
  * Disposes all active log panels when the extension deactivates.
  */
-export function deactivate() {
+export function deactivate(): void {
   for (const panel of panelMap.values()) {
     panel.dispose();
   }

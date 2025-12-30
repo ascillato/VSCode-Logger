@@ -78,7 +78,10 @@ function applyDeviceDefaults(device: EmbeddedDevice, defaults: LoggerDefaults): 
  *
  * @returns The resolved devices list and tab line limit.
  */
-export function getEmbeddedLoggerConfiguration() {
+export function getEmbeddedLoggerConfiguration(): {
+  devices: EmbeddedDevice[];
+  maxLinesPerTab: number;
+} {
   const config = vscode.workspace.getConfiguration('embeddedLogger');
   const defaults = getLoggerDefaults(config);
   const devices = config.get<EmbeddedDevice[]>('devices', []);

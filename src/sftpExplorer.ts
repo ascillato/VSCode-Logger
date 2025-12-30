@@ -10,7 +10,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { execFile } from 'child_process';
 import { createHash } from 'crypto';
-import type { ConnectConfig } from 'ssh2';
+import type { ClientChannel, ConnectConfig } from 'ssh2';
 import { Client } from 'ssh2';
 import type { Readable, Writable } from 'stream';
 import { promisify } from 'util';
@@ -27,11 +27,11 @@ type ForwardingClient = Client & {
     srcPort: number,
     dstIP: string,
     dstPort: number,
-    callback: (err: Error | undefined, stream: any) => void
+    callback: (err: Error | undefined, stream: ClientChannel) => void
   ): void;
 };
 
-type SocketConnectConfig = ConnectConfig & { sock?: any };
+type SocketConnectConfig = ConnectConfig & { sock?: ClientChannel };
 
 interface ExplorerEntry {
   name: string;
@@ -613,9 +613,9 @@ export class SftpExplorerPanel {
           break;
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       const messageText =
-        err instanceof HostKeyMismatchError ? err.message : (err?.message ?? String(err));
+        err instanceof HostKeyMismatchError ? err.message : this.getErrorMessage(err);
       this.postMessage({ type: 'error', message: messageText });
       vscode.window.showErrorMessage(messageText);
     }
@@ -882,7 +882,6 @@ export class SftpExplorerPanel {
     newName: string
   ): Promise<string> {
     const normalizedTarget = this.normalizePath(location, targetPath);
-    const stats = await this.getEntryStats(location, normalizedTarget);
 
     const parent = this.getParentDir(location, normalizedTarget);
     const destination =
@@ -1193,9 +1192,9 @@ export class SftpExplorerPanel {
       this.sftp = await this.sftpReady;
       this.updateConnectionStatus('connected');
       await this.refreshRemoteViewsAfterReconnect();
-    } catch (err: any) {
+    } catch (err: unknown) {
       const messageText =
-        err instanceof HostKeyMismatchError ? err.message : (err?.message ?? String(err));
+        err instanceof HostKeyMismatchError ? err.message : this.getErrorMessage(err);
       this.postMessage({ type: 'error', message: messageText });
       vscode.window.showErrorMessage(messageText);
       this.startReconnectCountdown();
@@ -1314,7 +1313,7 @@ export class SftpExplorerPanel {
       if (name) {
         return name;
       }
-    } catch (err) {
+    } catch {
       // ignore and fall back
     }
 
@@ -1323,7 +1322,7 @@ export class SftpExplorerPanel {
       const { stdout } = await execFileAsync('id', args);
       const name = stdout.trim();
       return name || undefined;
-    } catch (err) {
+    } catch {
       return undefined;
     }
   }
@@ -1338,7 +1337,7 @@ export class SftpExplorerPanel {
       const { stdout } = await execFileAsync('id', args);
       const value = Number(stdout.trim());
       return Number.isInteger(value) ? value : undefined;
-    } catch (err) {
+    } catch {
       return undefined;
     }
   }
@@ -1393,7 +1392,7 @@ export class SftpExplorerPanel {
         if (name) {
           return name;
         }
-      } catch (err) {
+      } catch {
         // ignore and try next
       }
     }
@@ -1410,7 +1409,7 @@ export class SftpExplorerPanel {
       const output = await this.execRemoteCommand(command);
       const value = Number(output.trim());
       return Number.isInteger(value) ? value : undefined;
-    } catch (err) {
+    } catch {
       return undefined;
     }
   }
@@ -1685,7 +1684,7 @@ export class SftpExplorerPanel {
         const writeStream = sftp.createWriteStream(destination);
         let finished = false;
 
-        const fail = (err: Error) => {
+        const fail = (err: Error): void => {
           if (finished) {
             return;
           }
@@ -1741,7 +1740,7 @@ export class SftpExplorerPanel {
       const writeStream = sftp.createWriteStream(destination);
       let completed = false;
 
-      const fail = (err: Error) => {
+      const fail = (err: Error): void => {
         if (completed) {
           return;
         }
@@ -1978,8 +1977,8 @@ export class SftpExplorerPanel {
         type: 'status',
         message: `Saved to remote: ${path.posix.basename(mapping.remotePath)}`,
       });
-    } catch (err: any) {
-      const message = err?.message ?? 'Unable to save file back to remote.';
+    } catch (err: unknown) {
+      const message = this.getErrorMessage(err) || 'Unable to save file back to remote.';
       this.postMessage({ type: 'error', message });
       vscode.window.showErrorMessage(message);
     }
@@ -1993,7 +1992,7 @@ export class SftpExplorerPanel {
     this.viewedTempFiles.delete(doc.uri.fsPath);
     try {
       await fs.unlink(doc.uri.fsPath);
-    } catch (err) {
+    } catch {
       // Ignore cleanup errors
     }
   }
@@ -2005,7 +2004,7 @@ export class SftpExplorerPanel {
       entries.map(async (filePath) => {
         try {
           await fs.unlink(filePath);
-        } catch (err) {
+        } catch {
           // Ignore cleanup errors
         }
       })
@@ -2117,7 +2116,10 @@ export class SftpExplorerPanel {
       }
     }
 
-    throw lastError ?? new Error('Failed to connect over SFTP.');
+    if (lastError instanceof Error) {
+      throw lastError;
+    }
+    throw new Error(this.getErrorMessage(lastError) || 'Failed to connect over SFTP.');
   }
 
   private validateDeviceConfiguration(): string | undefined {
@@ -2194,7 +2196,7 @@ export class SftpExplorerPanel {
             0,
             endpoint.host,
             this.device.port ?? 22,
-            (err: Error | undefined, stream: any) => {
+            (err: Error | undefined, stream: ClientChannel) => {
               if (err) {
                 bastionClient.end();
                 reject(err);
@@ -2205,9 +2207,9 @@ export class SftpExplorerPanel {
                 bastionClient.end()
               )
                 .then(resolve)
-                .catch((error) => {
+                .catch((error: unknown) => {
                   bastionClient.end();
-                  reject(error);
+                  reject(this.toError(error, 'Failed to open SFTP tunnel through bastion.'));
                 });
             }
           );
@@ -2244,7 +2246,7 @@ export class SftpExplorerPanel {
     endpoint: HostEndpoint,
     auth: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>,
     expectedFingerprint?: { display: string; hex: string },
-    sock?: any,
+    sock?: ClientChannel,
     onComplete?: () => void
   ): Promise<SftpClient> {
     return await new Promise<SftpClient>((resolve, reject) => {
@@ -2256,7 +2258,7 @@ export class SftpExplorerPanel {
       const username = this.device.username.trim();
       let completed = false;
 
-      const finalize = () => {
+      const finalize = (): void => {
         if (!completed) {
           completed = true;
           onComplete?.();
@@ -2523,6 +2525,9 @@ export class SftpExplorerPanel {
     const terminalIconUri = webview.asWebviewUri(
       vscode.Uri.file(path.join(this.context.extensionPath, 'resources', 'terminal.svg'))
     );
+    const scriptUriString = scriptUri.toString(true);
+    const styleUriString = styleUri.toString(true);
+    const terminalIconUriString = terminalIconUri.toString(true);
     const nonce = getNonce();
 
     return `<!DOCTYPE html>
@@ -2531,7 +2536,7 @@ export class SftpExplorerPanel {
     <meta charset="UTF-8">
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src 'nonce-${nonce}'; img-src ${webview.cspSource};">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="${styleUri}" rel="stylesheet" />
+    <link href="${styleUriString}" rel="stylesheet" />
     <title>SFTP Explorer</title>
 </head>
 <body>
@@ -2701,7 +2706,7 @@ export class SftpExplorerPanel {
                             title="Open terminal here"
                             aria-label="Open terminal here"
                         >
-                            <img class="action__icon" src="${terminalIconUri}" alt="">
+                            <img class="action__icon" src="${terminalIconUriString}" alt="">
                         </button>
                         <div class="path-input-group">
                             <input
@@ -2904,7 +2909,7 @@ export class SftpExplorerPanel {
                             title="Open terminal here"
                             aria-label="Open terminal here"
                         >
-                            <img class="action__icon" src="${terminalIconUri}" alt="">
+                            <img class="action__icon" src="${terminalIconUriString}" alt="">
                         </button>
                         <div class="path-input-group">
                             <input
@@ -3053,13 +3058,13 @@ export class SftpExplorerPanel {
             </div>
         </div>
     </div>
-    <script nonce="${nonce}" src="${scriptUri}"></script>
+    <script nonce="${nonce}" src="${scriptUriString}"></script>
 </body>
 </html>`;
   }
 
   private escapeHtml(value: string): string {
-    return value.replace(/[&<>\"]/g, (char) => {
+    return value.replace(/[&<>"]/g, (char) => {
       switch (char) {
         case '&':
           return '&amp;';
@@ -3073,6 +3078,21 @@ export class SftpExplorerPanel {
           return char;
       }
     });
+  }
+
+  private getErrorMessage(err: unknown): string {
+    if (err instanceof Error) {
+      return err.message;
+    }
+    return typeof err === 'string' ? err : String(err);
+  }
+
+  private toError(err: unknown, fallbackMessage: string): Error {
+    if (err instanceof Error) {
+      return err;
+    }
+    const message = this.getErrorMessage(err) || fallbackMessage;
+    return new Error(message);
   }
 }
 
