@@ -15,6 +15,11 @@ import type { HostEndpoint } from './hostEndpoints';
 import { getHostEndpoints } from './hostEndpoints';
 import { PasswordManager } from './passwordManager';
 
+interface SshCommandRunnerDependencies {
+  createClient?: () => Client;
+  createForwardingClient?: () => ForwardingClient;
+}
+
 type ForwardingClient = Client & {
   forwardOut(
     srcIP: string,
@@ -67,7 +72,8 @@ export class SshCommandRunner {
    */
   constructor(
     private readonly device: EmbeddedDevice,
-    private readonly context: vscode.ExtensionContext
+    private readonly context: vscode.ExtensionContext,
+    private readonly dependencies: SshCommandRunnerDependencies = {}
   ) {
     this.passwordManager = new PasswordManager(this.context);
   }
@@ -265,7 +271,7 @@ export class SshCommandRunner {
     bastionAuthentication: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>
   ): Promise<string> {
     return new Promise((resolve, reject) => {
-      const bastionClient = new Client() as ForwardingClient;
+      const bastionClient = this.createForwardingClient();
       const bastionPort = bastion.port ?? 22;
 
       bastionClient
@@ -317,7 +323,7 @@ export class SshCommandRunner {
     onComplete?: () => void
   ): Promise<string> {
     return new Promise((resolve, reject) => {
-      const client = new Client();
+      const client = this.createClient();
       const port = this.device.port ?? 22;
       const host = endpoint.host;
       const username = this.device.username.trim();
@@ -394,6 +400,14 @@ export class SshCommandRunner {
           ...authentication,
         } as SocketConnectConfig);
     });
+  }
+
+  private createClient(): Client {
+    return this.dependencies.createClient?.() ?? new Client();
+  }
+
+  private createForwardingClient(): ForwardingClient {
+    return this.dependencies.createForwardingClient?.() ?? (new Client() as ForwardingClient);
   }
 
   private async loadPrivateKey(filePath: string): Promise<Buffer> {
