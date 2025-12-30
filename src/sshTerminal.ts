@@ -26,6 +26,11 @@ type ForwardingClient = Client & {
 };
 
 type SocketConnectConfig = ConnectConfig & { sock?: ClientChannel };
+const ANSI_ESCAPE_SEQUENCE = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*[A-Za-z]`, 'g');
+const CONTROL_CHARACTERS = new RegExp(
+  `[${String.fromCharCode(0)}-${String.fromCharCode(31)}\\x7F]`,
+  'g'
+);
 
 /**
  * Pseudoterminal that proxies input/output to an SSH shell session.
@@ -541,8 +546,8 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
   private isExitCommand(input: string): boolean {
     const normalized = input
       .replace(/\r?\n/g, '')
-      .replace(/\x1b\[[0-9;]*[A-Za-z]/g, '')
-      .replace(/[\u0000-\u001f\u007f]/g, '')
+      .replace(ANSI_ESCAPE_SEQUENCE, '')
+      .replace(CONTROL_CHARACTERS, '')
       .trim()
       .toLowerCase();
 
