@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [1.4.9] - UNRELEASED []
+
+### Added
+- None.
+
+### Changed
+- None.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- Linter Checks.
+
+### Security
+- None.
+
+----------------------------------------
+
 ## [1.4.8] - 2025-12-28 [LOG-PANEL-RESTYLE]
 
 ### Added
