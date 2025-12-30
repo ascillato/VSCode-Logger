@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add view file content option to the right of the SFTP panel.
 
 ### Changed
-- None.
+- Review and updated documentation.
 
 ### Deprecated
 - None.
