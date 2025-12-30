@@ -421,13 +421,6 @@ export class SshCommandRunner {
     return path.resolve(tildeExpanded);
   }
 
-  private getErrorMessage(err: unknown): string {
-    if (err instanceof Error) {
-      return err.message;
-    }
-    return typeof err === 'string' ? err : String(err);
-  }
-
   private toError(err: unknown, fallbackMessage: string): Error {
     if (err instanceof Error) {
       return err;
