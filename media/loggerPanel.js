@@ -2200,7 +2200,13 @@
           state.entries = state.entries.slice(-state.maxEntries);
           setLineLimitReached(true);
         }
-        setConnectionState(state.isLiveLog ? 'connecting' : 'disconnected');
+        const initialConnectionState =
+          state.connectionState === 'unknown'
+            ? state.isLiveLog
+              ? 'connecting'
+              : 'disconnected'
+            : state.connectionState;
+        setConnectionState(initialConnectionState);
         setHighlights(message.highlights || []);
         if (!state.isLiveLog && autoScrollContainer) {
           autoScrollContainer.classList.add('hidden');
