@@ -1940,6 +1940,9 @@
     debounce(() => {
       state.textFilter = textFilterInput.value;
       applyFilters();
+      if (presetSelect.value) {
+        presetSelect.value = '';
+      }
     }, 150)
   );
 
@@ -1970,7 +1973,8 @@
       applyPreset(value);
     } else {
       state.minLevel = minLevelSelect.value;
-      state.textFilter = textFilterInput.value;
+      state.textFilter = '';
+      textFilterInput.value = '';
       applyFilters();
     }
   });
