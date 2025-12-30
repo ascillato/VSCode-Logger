@@ -1940,6 +1940,9 @@
     debounce(() => {
       state.textFilter = textFilterInput.value;
       applyFilters();
+      if (presetSelect.value) {
+        presetSelect.value = '';
+      }
     }, 150)
   );
 
@@ -2004,23 +2007,6 @@
 
   refreshBtn.addEventListener('click', () => {
     vscode.postMessage({ type: 'refreshSourceFile' });
-  });
-
-  textFilterInput.addEventListener('keydown', (event) => {
-    if (event.key !== 'Enter') {
-      return;
-    }
-
-    const activePreset = state.presets.find((preset) => preset.name === presetSelect.value);
-    const presetText = activePreset?.textFilter ?? '';
-    const hasModifiedText = textFilterInput.value !== presetText;
-
-    state.textFilter = textFilterInput.value;
-    applyFilters();
-
-    if (presetSelect.value && hasModifiedText) {
-      presetSelect.value = '';
-    }
   });
 
   if (clearLogsBtn) {
