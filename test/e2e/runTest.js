@@ -18,7 +18,7 @@ vscodeTestUtil.validateStream = async (readable, _length, sha256) =>
 async function main() {
   try {
     const extensionDevelopmentPath = path.resolve(__dirname, '../..');
-    const extensionTestsPath = path.resolve(__dirname, './suite/index');
+    const extensionTestsPath = path.resolve(__dirname, './suite/index.js');
 
     await runTests({
       extensionDevelopmentPath,

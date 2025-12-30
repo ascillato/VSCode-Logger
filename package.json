@@ -369,7 +369,7 @@
     "test": "npm run test:unit && npm run test:integration && npm run test:e2e",
     "test:unit": "vitest run --config vitest.config.ts tests/unit",
     "test:integration": "vitest run --config vitest.config.ts tests/integration",
-    "test:e2e": "node ./test/e2e/runTest.js"
+    "test:e2e": "npm run compile && node ./test/e2e/runTest.js"
   },
   "devDependencies": {
     "@types/node": "^18.19.0",
