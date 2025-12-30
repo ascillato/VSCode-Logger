@@ -19,15 +19,6 @@ Embedded Device Logger welcomes contributions from the community. Please review 
    ```
 3. Launch the Extension Development Host with `F5` in VS Code and open the **Embedded Logger** view.
 
-## Required checks before submitting changes
-
-Run the standard project checks locally to catch regressions early:
-
-```bash
-npm run compile
-npm run lint
-```
-
 ## Packaging and installation
 
 - Generate a VSIX (requires `@vscode/vsce`):
@@ -54,13 +45,10 @@ make all
 
 ## Linting and formatting
 
-Run the lint suite before opening a pull request:
+Install lint dependencies and run checks:
 ```bash
-npm run lint
-```
-For formatting checks, use:
-```bash
-npm run format:check
+npm install --save-dev eslint prettier @typescript-eslint/parser @typescript-eslint/eslint-plugin eslint-config-prettier eslint-plugin-prettier
+make check
 ```
 
 ## Documentation
@@ -78,4 +66,10 @@ Continuous integration builds and publishes the site from `main` to `gh-pages`.
 
 - Open issues for bug reports or feature requests.
 - Submit pull requests with clear descriptions and tests where applicable.
+- Run the standard project checks locally to catch regressions early:
+```bash
+make check
+make package
+make docs
+```
 - Follow the coding and security practices outlined in the [CONTRIBUTING guide](https://ascillato.github.io/VSCode-Logger/code-development.html)
