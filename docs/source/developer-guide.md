@@ -66,4 +66,10 @@ Continuous integration builds and publishes the site from `main` to `gh-pages`.
 
 - Open issues for bug reports or feature requests.
 - Submit pull requests with clear descriptions and tests where applicable.
+- Run the standard project checks locally to catch regressions early:
+```bash
+make check
+make package
+make docs
+```
 - Follow the coding and security practices outlined in the [CONTRIBUTING guide](https://ascillato.github.io/VSCode-Logger/code-development.html)
