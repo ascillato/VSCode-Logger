@@ -1,9 +1,10 @@
+/* global suite, test */
+
 const assert = require('assert');
 const vscode = require('vscode');
-const { describe, it } = require('mocha');
 
-describe('VS Code Extension E2E Suite', () => {
-  it('activates the extension', async () => {
+suite('VS Code Extension E2E Suite', () => {
+  test('activates the extension', async () => {
     const extension = vscode.extensions.getExtension('Scallant.embedded-device-logger');
     assert.ok(extension, 'Extension should be available');
 
