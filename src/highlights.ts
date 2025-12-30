@@ -5,9 +5,9 @@
  */
 
 export interface HighlightDefinition {
-    id: number;
-    key: string;
-    baseColor: string;
-    color: string;
-    backgroundColor: string;
+  id: number;
+  key: string;
+  baseColor: string;
+  color: string;
+  backgroundColor: string;
 }

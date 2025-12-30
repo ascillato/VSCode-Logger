@@ -6,7 +6,7 @@ GREEN=\033[1;32m
 BLUE=\033[1;34m
 RESET=\033[0m
 
-.PHONY: all clean install help check package force-install package-clean docs docs-clean
+.PHONY: all clean install help check package force-install package-clean linter-fix docs docs-clean
 
 all: clean package install ## Clean, then build VSIX package and installs it
 
@@ -24,6 +24,21 @@ check: ## Linting and type checking
 	else \
 		ts="$$(date +"%Y-%m-%dT%H:%M:%S%z")"; \
 		printf "$(RED)\n\nError running check. %s\n\n$(RESET)\n" "$$ts"; \
+		exit 1; \
+	fi
+
+linter-fix: ## Apply Linter Fixes when possible
+	@ts=""; \
+	ts="$$(date +"%Y-%m-%dT%H:%M:%S%z")"; \
+	printf "$(YELLOW)\n\nStart Linter Fixes at %s\n\n$(RESET)\n" "$$ts"
+
+	@ts=""; \
+	if npm install && npm run lint:fix && npm run format; then \
+		ts="$$(date +"%Y-%m-%dT%H:%M:%S%z")"; \
+		printf "$(BLUE)\n\nLinter Fixes completed at %s\n\n$(RESET)\n" "$$ts"; \
+	else \
+		ts="$$(date +"%Y-%m-%dT%H:%M:%S%z")"; \
+		printf "$(RED)\n\nError running Linter Fixes. %s\n\n$(RESET)\n" "$$ts"; \
 		exit 1; \
 	fi
 

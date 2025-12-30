@@ -8,2276 +8,2300 @@
  * @brief Initializes the logger panel UI and event wiring inside the Webview.
  */
 (function () {
-    const vscode = acquireVsCodeApi();
+  const vscode = acquireVsCodeApi();
 
-    const highlightPalette = [
-        { foreground: '#1b7f5f', background: '#d2f4e8' },
-        { foreground: '#1f6fbf', background: '#d9e9ff' },
-        { foreground: '#8e44ad', background: '#efdef7' },
-        { foreground: '#c0392b', background: '#f8e0dd' },
-        { foreground: '#c27c0e', background: '#fff3ce' },
-        { foreground: '#117864', background: '#d5f5e3' },
-        { foreground: '#1e8449', background: '#d8f6e2' },
-        { foreground: '#884ea0', background: '#e9dff4' },
-        { foreground: '#b34700', background: '#fde0cc' },
-        { foreground: '#2c3e50', background: '#e2e6eb' },
-    ];
+  const highlightPalette = [
+    { foreground: '#1b7f5f', background: '#d2f4e8' },
+    { foreground: '#1f6fbf', background: '#d9e9ff' },
+    { foreground: '#8e44ad', background: '#efdef7' },
+    { foreground: '#c0392b', background: '#f8e0dd' },
+    { foreground: '#c27c0e', background: '#fff3ce' },
+    { foreground: '#117864', background: '#d5f5e3' },
+    { foreground: '#1e8449', background: '#d8f6e2' },
+    { foreground: '#884ea0', background: '#e9dff4' },
+    { foreground: '#b34700', background: '#fde0cc' },
+    { foreground: '#2c3e50', background: '#e2e6eb' },
+  ];
 
-    const levelOrder = {
-        ALL: 0,
-        DEBUG: 1,
-        INFO: 2,
-        NOTICE: 3,
-        WARNING: 4,
-        ERR: 5,
-        CRIT: 6,
-        ALERT: 7,
-        EMERG: 8,
+  const levelOrder = {
+    ALL: 0,
+    DEBUG: 1,
+    INFO: 2,
+    NOTICE: 3,
+    WARNING: 4,
+    ERR: 5,
+    CRIT: 6,
+    ALERT: 7,
+    EMERG: 8,
+  };
+
+  const levelAliases = {
+    DEBUG: 'DEBUG',
+    INFO: 'INFO',
+    NOTICE: 'NOTICE',
+    WARN: 'WARNING',
+    WARNING: 'WARNING',
+    ERR: 'ERR',
+    ERROR: 'ERR',
+    CRIT: 'CRIT',
+    CRITICAL: 'CRIT',
+    ALERT: 'ALERT',
+    EMERG: 'EMERG',
+    FATAL: 'EMERG',
+  };
+
+  const LINE_LIMIT_NOTICE_LIVE =
+    'Configured display line limit reached. Older lines are being replaced with newer entries.';
+  const LINE_LIMIT_NOTICE_OFFLINE =
+    'Configured display line limit reached. Older lines are not shown.';
+
+  let entryIdCounter = 0;
+
+  const state = {
+    deviceId: '',
+    presets: [],
+    entries: [],
+    filtered: [],
+    minLevel: 'ALL',
+    textFilter: '',
+    wordWrapEnabled: false,
+    autoScrollEnabled: true,
+    highlights: [],
+    nextHighlightId: 1,
+    searchTerm: '',
+    searchMatches: [],
+    searchIndex: -1,
+    activeSearchEntry: -1,
+    isLiveLog: true,
+    autoReconnectEnabled: true,
+    connectionState: 'unknown',
+    maxEntries: 100000,
+    statusText: '',
+    defaultConnectedStatus: '',
+    secondaryStatus: null,
+    autoSaveActive: false,
+    lineLimitReached: false,
+    activeBookmarkId: null,
+  };
+
+  let isRestoringState = false;
+  const DEFAULT_CONNECTED_STATUS = 'Connected. Streaming logs...';
+
+  /**
+   * @brief Persists the current UI state so it can be restored if the Webview reloads.
+   */
+  function persistState() {
+    const serializedState = {
+      deviceId: state.deviceId,
+      presets: state.presets,
+      entries: state.entries,
+      minLevel: state.minLevel,
+      textFilter: state.textFilter,
+      wordWrapEnabled: state.wordWrapEnabled,
+      autoScrollEnabled: state.autoScrollEnabled,
+      highlights: state.highlights,
+      nextHighlightId: state.nextHighlightId,
+      searchTerm: state.searchTerm,
+      isLiveLog: state.isLiveLog,
+      autoReconnectEnabled: state.autoReconnectEnabled,
+      connectionState: state.connectionState,
+      maxEntries: state.maxEntries,
+      statusText: state.statusText,
+      defaultConnectedStatus: state.defaultConnectedStatus,
+      secondaryStatus: state.secondaryStatus,
+      autoSaveActive: state.autoSaveActive,
+      lineLimitReached: state.lineLimitReached,
+      activeBookmarkId: state.activeBookmarkId,
     };
+    vscode.setState(serializedState);
+  }
 
-    const levelAliases = {
-        DEBUG: 'DEBUG',
-        INFO: 'INFO',
-        NOTICE: 'NOTICE',
-        WARN: 'WARNING',
-        WARNING: 'WARNING',
-        ERR: 'ERR',
-        ERROR: 'ERR',
-        CRIT: 'CRIT',
-        CRITICAL: 'CRIT',
-        ALERT: 'ALERT',
-        EMERG: 'EMERG',
-        FATAL: 'EMERG',
-    };
+  let persistTimeout = null;
 
-    const LINE_LIMIT_NOTICE_LIVE =
-        'Configured display line limit reached. Older lines are being replaced with newer entries.';
-    const LINE_LIMIT_NOTICE_OFFLINE = 'Configured display line limit reached. Older lines are not shown.';
+  function schedulePersist() {
+    if (isRestoringState) {
+      return;
+    }
+    if (persistTimeout) {
+      return;
+    }
+    persistTimeout = setTimeout(() => {
+      persistTimeout = null;
+      persistState();
+    }, 300);
+  }
 
-    let entryIdCounter = 0;
+  const minLevelSelect = document.getElementById('minLevel');
+  const textFilterInput = document.getElementById('textFilter');
+  const presetSelect = document.getElementById('presetSelect');
+  const savePresetBtn = document.getElementById('savePreset');
+  const deletePresetBtn = document.getElementById('deletePreset');
+  const exportBtn = document.getElementById('exportLogs');
+  const editBtn = document.getElementById('editLogFile');
+  const refreshBtn = document.getElementById('refreshLogFile');
+  const clearLogsBtn = document.getElementById('clearLogs');
+  const wordWrapToggle = document.getElementById('wordWrapToggle');
+  const autoScrollToggle = document.getElementById('autoScrollToggle');
+  const autoScrollContainer = document.getElementById('autoScrollContainer');
+  const autoReconnectToggle = document.getElementById('autoReconnectToggle');
+  const autoReconnectContainer = document.getElementById('autoReconnectContainer');
+  const autoSaveToggle = document.getElementById('autoSaveToggle');
+  const editContainer = editBtn?.closest('.toolbar-actions__item');
+  const refreshContainer = refreshBtn?.closest('.toolbar-actions__item');
+  const autoSaveContainer = autoSaveToggle?.closest('.toolbar-actions__item');
+  const clearLogsContainer = clearLogsBtn?.closest('.toolbar-actions__item');
+  const logContainer = document.getElementById('logContainer');
+  const logContent = document.getElementById('logContent');
+  const statusEl = document.getElementById('status');
+  const reconnectButton = document.getElementById('reconnectButton');
+  const searchInput = document.getElementById('searchInput');
+  const searchClearBtn = document.getElementById('searchClear');
+  const searchPrevBtn = document.getElementById('searchPrev');
+  const searchNextBtn = document.getElementById('searchNext');
+  const searchCount = document.getElementById('searchCount');
+  const lineLimitNotice = document.getElementById('lineLimitNotice');
+  const highlightToggle = document.getElementById('highlightToggle');
+  const highlightPopover = document.getElementById('highlightPopover');
+  const highlightBackdrop = document.getElementById('highlightBackdrop');
+  const highlightRows = document.getElementById('highlightRows');
+  const highlightAddBtn = document.getElementById('highlightAdd');
+  const highlightClearBtn = document.getElementById('highlightClear');
+  const highlightStatus = document.getElementById('highlightStatus');
+  const bookmarkLabelDialog = createBookmarkLabelDialog();
+  const bookmarkContextMenu = createBookmarkContextMenu();
+  const statusContextMenu = createStatusContextMenu();
+  let contextMenuEntryId = null;
+  let contextMenuSelectedText = '';
+  const savedState = vscode.getState();
 
-    const state = {
-        deviceId: '',
-        presets: [],
-        entries: [],
-        filtered: [],
-        minLevel: 'ALL',
-        textFilter: '',
-        wordWrapEnabled: false,
-        autoScrollEnabled: true,
-        highlights: [],
-        nextHighlightId: 1,
-        searchTerm: '',
-        searchMatches: [],
-        searchIndex: -1,
-        activeSearchEntry: -1,
-        isLiveLog: true,
-        autoReconnectEnabled: true,
-        connectionState: 'unknown',
-        maxEntries: 100000,
-        statusText: '',
-        defaultConnectedStatus: '',
-        secondaryStatus: null,
-        autoSaveActive: false,
-        lineLimitReached: false,
-        activeBookmarkId: null,
-    };
+  function setButtonLabel(button, label) {
+    if (!button || !label) {
+      return;
+    }
+    button.title = label;
+    button.setAttribute('aria-label', label);
+    const hiddenText = button.querySelector('.sr-only');
+    if (hiddenText) {
+      hiddenText.textContent = label;
+    }
+  }
 
-    let isRestoringState = false;
-    const DEFAULT_CONNECTED_STATUS = 'Connected. Streaming logs...';
+  function updateToggleLabel(button, active) {
+    if (!button || !button.dataset.label) {
+      return;
+    }
+    const baseLabel = button.dataset.label;
+    const label = `${baseLabel} (${active ? 'on' : 'off'})`;
+    setButtonLabel(button, label);
+  }
 
-    /**
-     * @brief Persists the current UI state so it can be restored if the Webview reloads.
-     */
-    function persistState() {
-        const serializedState = {
-            deviceId: state.deviceId,
-            presets: state.presets,
-            entries: state.entries,
-            minLevel: state.minLevel,
-            textFilter: state.textFilter,
-            wordWrapEnabled: state.wordWrapEnabled,
-            autoScrollEnabled: state.autoScrollEnabled,
-            highlights: state.highlights,
-            nextHighlightId: state.nextHighlightId,
-            searchTerm: state.searchTerm,
-            isLiveLog: state.isLiveLog,
-            autoReconnectEnabled: state.autoReconnectEnabled,
-            connectionState: state.connectionState,
-            maxEntries: state.maxEntries,
-            statusText: state.statusText,
-            defaultConnectedStatus: state.defaultConnectedStatus,
-            secondaryStatus: state.secondaryStatus,
-            autoSaveActive: state.autoSaveActive,
-            lineLimitReached: state.lineLimitReached,
-            activeBookmarkId: state.activeBookmarkId,
+  function setToggleState(button, active) {
+    if (!button) {
+      return;
+    }
+    button.dataset.active = active ? 'true' : 'false';
+    button.setAttribute('aria-pressed', String(active));
+    button.classList.toggle('toggle-button--active', active);
+    updateToggleLabel(button, active);
+  }
+
+  function isToggleActive(button) {
+    return button?.dataset.active === 'true';
+  }
+
+  setButtonLabel(savePresetBtn, 'Save preset');
+  setButtonLabel(deletePresetBtn, 'Delete preset');
+  setButtonLabel(exportBtn, 'Export logs');
+  setButtonLabel(autoSaveToggle, state.autoSaveActive ? 'Stop auto-save' : 'Start auto-save');
+  setButtonLabel(clearLogsBtn, 'Clear logs');
+  setButtonLabel(editBtn, 'Edit log file');
+  setButtonLabel(refreshBtn, 'Refresh log file');
+
+  setToggleState(wordWrapToggle, state.wordWrapEnabled);
+  setToggleState(autoScrollToggle, state.autoScrollEnabled);
+  setToggleState(autoReconnectToggle, state.autoReconnectEnabled);
+
+  let reconnectTimeoutId = null;
+  let reconnectIntervalId = null;
+  let reconnectCountdown = 0;
+  let highlightColorCursor = 0;
+  const AUTO_SCROLL_BOTTOM_THRESHOLD = 4;
+
+  /**
+   * @brief Extracts the log level from a raw log line.
+   * @param line Log line emitted by the extension backend.
+   * @returns Normalized log level string.
+   */
+  function parseLevel(line) {
+    const match = line.match(
+      /\b(DEBUG|INFO|NOTICE|WARN|WARNING|ERR|ERROR|CRIT|CRITICAL|ALERT|EMERG|FATAL)\b/i
+    );
+    if (match && match[1]) {
+      const key = match[1].toUpperCase();
+      return levelAliases[key] || 'INFO';
+    }
+    return 'INFO';
+  }
+
+  /**
+   * @brief Determines whether a log level passes the current filter threshold.
+   * @param level Normalized log level to evaluate.
+   * @returns True when the level is at or above the selected minimum.
+   */
+  function levelPasses(level) {
+    const selected = state.minLevel || 'ALL';
+    return levelOrder[level] >= levelOrder[selected];
+  }
+
+  /**
+   * @brief Applies the active filters to all entries and re-renders the list.
+   */
+  function applyFilters(options = {}) {
+    const preserveScrollPosition = options.preserveScrollPosition === true;
+    const filterText = state.textFilter.toLowerCase();
+    state.filtered = state.entries.filter((entry) => {
+      if (entry.bypassFilters) {
+        return true;
+      }
+
+      const textMatches = filterText ? entry.rawLine.toLowerCase().includes(filterText) : true;
+      return textMatches && levelPasses(entry.level);
+    });
+    render({ preserveScrollPosition });
+    updateSearchMatches();
+    schedulePersist();
+  }
+
+  /**
+   * @brief Toggles the visibility of the line limit notice.
+   * @param reached True when the maximum number of entries has been hit.
+   */
+  function setLineLimitReached(reached) {
+    state.lineLimitReached = reached;
+    if (lineLimitNotice) {
+      lineLimitNotice.textContent = state.isLiveLog
+        ? LINE_LIMIT_NOTICE_LIVE
+        : LINE_LIMIT_NOTICE_OFFLINE;
+      lineLimitNotice.classList.toggle('hidden', !reached);
+    }
+    schedulePersist();
+  }
+
+  /**
+   * @brief Returns active highlight entries with non-empty search keys.
+   * @returns List of highlights to render.
+   */
+  function getActiveHighlights() {
+    return state.highlights
+      .filter((highlight) => highlight.normalizedKey)
+      .map((highlight) => ({ ...highlight, normalizedKey: highlight.normalizedKey }));
+  }
+
+  /**
+   * @brief Combines configured highlights with the current search term highlight.
+   * @returns List of highlight descriptors to render.
+   */
+  function getHighlightDescriptors() {
+    const highlights = getActiveHighlights();
+    const searchTerm = state.searchTerm.trim().toLowerCase();
+
+    if (searchTerm) {
+      highlights.push({
+        normalizedKey: searchTerm,
+        className: 'search-highlight',
+      });
+    }
+
+    return highlights;
+  }
+
+  /**
+   * @brief Restores persisted entries while enforcing the current maximum limit.
+   * @param savedEntries Entries captured from a previous Webview instance.
+   * @param maxEntries Maximum number of entries to retain.
+   * @returns Sanitized entries ready for rendering.
+   */
+  function restoreEntries(savedEntries, maxEntries) {
+    if (!Array.isArray(savedEntries) || !savedEntries.length) {
+      return [];
+    }
+
+    const sanitized = savedEntries
+      .filter((entry) => entry && typeof entry.rawLine === 'string')
+      .map((entry) => {
+        const timestamp = typeof entry.timestamp === 'number' ? entry.timestamp : Date.now();
+        const level = typeof entry.level === 'string' ? entry.level : parseLevel(entry.rawLine);
+        const id = typeof entry.id === 'number' ? entry.id : entryIdCounter++;
+        return {
+          id,
+          timestamp,
+          level,
+          rawLine: entry.rawLine,
+          className: typeof entry.className === 'string' ? entry.className : null,
+          bypassFilters: entry.bypassFilters === true,
+          isBookmark: entry.isBookmark === true,
+          bookmarkLabel: typeof entry.bookmarkLabel === 'string' ? entry.bookmarkLabel : '',
         };
-        vscode.setState(serializedState);
+      });
+
+    const limited = sanitized.slice(-maxEntries);
+    const maxId = limited.reduce((max, entry) => Math.max(max, entry.id || 0), -1);
+    entryIdCounter = Math.max(entryIdCounter, maxId + 1);
+    return limited;
+  }
+
+  /**
+   * @brief Restores the persisted Webview state when available.
+   * @param snapshot Serialized state captured via vscode.setState.
+   */
+  function restoreStateFromSnapshot(snapshot) {
+    if (!snapshot) {
+      return;
     }
 
-    let persistTimeout = null;
-
-    function schedulePersist() {
-        if (isRestoringState) {
-            return;
-        }
-        if (persistTimeout) {
-            return;
-        }
-        persistTimeout = setTimeout(() => {
-            persistTimeout = null;
-            persistState();
-        }, 300);
+    isRestoringState = true;
+    state.deviceId = snapshot.deviceId || state.deviceId;
+    state.presets = Array.isArray(snapshot.presets) ? snapshot.presets : state.presets;
+    state.minLevel = snapshot.minLevel || state.minLevel;
+    state.textFilter =
+      typeof snapshot.textFilter === 'string' ? snapshot.textFilter : state.textFilter;
+    state.wordWrapEnabled =
+      snapshot.wordWrapEnabled === true || snapshot.wordWrapEnabled === false
+        ? snapshot.wordWrapEnabled
+        : state.wordWrapEnabled;
+    state.autoScrollEnabled =
+      snapshot.autoScrollEnabled === false ? false : state.autoScrollEnabled;
+    state.highlights = Array.isArray(snapshot.highlights) ? snapshot.highlights : state.highlights;
+    state.nextHighlightId =
+      typeof snapshot.nextHighlightId === 'number'
+        ? snapshot.nextHighlightId
+        : state.nextHighlightId;
+    state.searchTerm =
+      typeof snapshot.searchTerm === 'string' ? snapshot.searchTerm : state.searchTerm;
+    state.isLiveLog = snapshot.isLiveLog === false ? false : state.isLiveLog;
+    state.autoReconnectEnabled =
+      snapshot.autoReconnectEnabled === false ? false : state.autoReconnectEnabled;
+    state.connectionState = snapshot.connectionState || state.connectionState;
+    state.maxEntries = Math.max(1, Number(snapshot.maxEntries) || state.maxEntries);
+    state.statusText = snapshot.statusText || state.statusText;
+    state.defaultConnectedStatus = snapshot.defaultConnectedStatus || state.defaultConnectedStatus;
+    if (
+      !state.defaultConnectedStatus &&
+      typeof state.statusText === 'string' &&
+      state.statusText.startsWith('Connected')
+    ) {
+      state.defaultConnectedStatus = state.statusText;
     }
+    state.secondaryStatus = snapshot.secondaryStatus || null;
+    state.autoSaveActive = snapshot.autoSaveActive === true;
+    state.activeBookmarkId =
+      typeof snapshot.activeBookmarkId === 'number' ? snapshot.activeBookmarkId : null;
 
-    const minLevelSelect = document.getElementById('minLevel');
-    const textFilterInput = document.getElementById('textFilter');
-    const presetSelect = document.getElementById('presetSelect');
-    const savePresetBtn = document.getElementById('savePreset');
-    const deletePresetBtn = document.getElementById('deletePreset');
-    const exportBtn = document.getElementById('exportLogs');
-    const editBtn = document.getElementById('editLogFile');
-    const refreshBtn = document.getElementById('refreshLogFile');
-    const clearLogsBtn = document.getElementById('clearLogs');
-    const wordWrapToggle = document.getElementById('wordWrapToggle');
-    const autoScrollToggle = document.getElementById('autoScrollToggle');
-    const autoScrollContainer = document.getElementById('autoScrollContainer');
-    const autoReconnectToggle = document.getElementById('autoReconnectToggle');
-    const autoReconnectContainer = document.getElementById('autoReconnectContainer');
-    const autoSaveToggle = document.getElementById('autoSaveToggle');
-    const editContainer = editBtn?.closest('.toolbar-actions__item');
-    const refreshContainer = refreshBtn?.closest('.toolbar-actions__item');
-    const autoSaveContainer = autoSaveToggle?.closest('.toolbar-actions__item');
-    const clearLogsContainer = clearLogsBtn?.closest('.toolbar-actions__item');
-    const logContainer = document.getElementById('logContainer');
-    const logContent = document.getElementById('logContent');
-    const statusEl = document.getElementById('status');
-    const reconnectButton = document.getElementById('reconnectButton');
-    const searchInput = document.getElementById('searchInput');
-    const searchClearBtn = document.getElementById('searchClear');
-    const searchPrevBtn = document.getElementById('searchPrev');
-    const searchNextBtn = document.getElementById('searchNext');
-    const searchCount = document.getElementById('searchCount');
-    const lineLimitNotice = document.getElementById('lineLimitNotice');
-    const highlightToggle = document.getElementById('highlightToggle');
-    const highlightPopover = document.getElementById('highlightPopover');
-    const highlightBackdrop = document.getElementById('highlightBackdrop');
-    const highlightRows = document.getElementById('highlightRows');
-    const highlightAddBtn = document.getElementById('highlightAdd');
-    const highlightClearBtn = document.getElementById('highlightClear');
-    const highlightStatus = document.getElementById('highlightStatus');
-    const bookmarkLabelDialog = createBookmarkLabelDialog();
-    const bookmarkContextMenu = createBookmarkContextMenu();
-    const statusContextMenu = createStatusContextMenu();
-    let contextMenuEntryId = null;
-    let contextMenuSelectedText = '';
-    const savedState = vscode.getState();
+    const restoredEntries = restoreEntries(snapshot.entries, state.maxEntries);
+    state.entries = restoredEntries;
+    entryIdCounter = restoredEntries.reduce((max, entry) => Math.max(max, entry.id || 0), -1) + 1;
+    state.lineLimitReached =
+      snapshot.lineLimitReached === true || state.entries.length >= state.maxEntries;
 
-    function setButtonLabel(button, label) {
-        if (!button || !label) {
-            return;
-        }
-        button.title = label;
-        button.setAttribute('aria-label', label);
-        const hiddenText = button.querySelector('.sr-only');
-        if (hiddenText) {
-            hiddenText.textContent = label;
-        }
-    }
-
-    function updateToggleLabel(button, active) {
-        if (!button || !button.dataset.label) {
-            return;
-        }
-        const baseLabel = button.dataset.label;
-        const label = `${baseLabel} (${active ? 'on' : 'off'})`;
-        setButtonLabel(button, label);
-    }
-
-    function setToggleState(button, active) {
-        if (!button) {
-            return;
-        }
-        button.dataset.active = active ? 'true' : 'false';
-        button.setAttribute('aria-pressed', String(active));
-        button.classList.toggle('toggle-button--active', active);
-        updateToggleLabel(button, active);
-    }
-
-    function isToggleActive(button) {
-        return button?.dataset.active === 'true';
-    }
-
-    setButtonLabel(savePresetBtn, 'Save preset');
-    setButtonLabel(deletePresetBtn, 'Delete preset');
-    setButtonLabel(exportBtn, 'Export logs');
-    setButtonLabel(autoSaveToggle, state.autoSaveActive ? 'Stop auto-save' : 'Start auto-save');
-    setButtonLabel(clearLogsBtn, 'Clear logs');
-    setButtonLabel(editBtn, 'Edit log file');
-    setButtonLabel(refreshBtn, 'Refresh log file');
-
+    minLevelSelect.value = state.minLevel;
+    textFilterInput.value = state.textFilter;
     setToggleState(wordWrapToggle, state.wordWrapEnabled);
     setToggleState(autoScrollToggle, state.autoScrollEnabled);
     setToggleState(autoReconnectToggle, state.autoReconnectEnabled);
+    searchInput.value = state.searchTerm;
 
-    let reconnectTimeoutId = null;
-    let reconnectIntervalId = null;
-    let reconnectCountdown = 0;
-    let highlightColorCursor = 0;
-    const AUTO_SCROLL_BOTTOM_THRESHOLD = 4;
+    setHighlights(state.highlights);
+    updatePresetDropdown();
+    applyFilters();
+    updateWordWrapClass();
+    setLineLimitReached(state.lineLimitReached);
+    setConnectionState(state.connectionState || (state.isLiveLog ? 'connecting' : 'disconnected'));
+    updateStatus(state.statusText, { preserveSecondary: true });
+    if (state.secondaryStatus?.source === 'autoSave') {
+      setAutoSaveStatus(state.secondaryStatus.text, state.secondaryStatus.fileName);
+    } else if (state.secondaryStatus?.text) {
+      setSecondaryStatus(state.secondaryStatus.text);
+    }
+    if (state.autoSaveActive) {
+      setAutoSaveActive(true);
+    }
+    isRestoringState = false;
+  }
+  /**
+   * @brief Builds a DOM fragment with highlighted matches for a log line.
+   * @param line The raw log line.
+   * @returns Document fragment containing text nodes and highlighted spans.
+   */
+  function buildHighlightedContent(line, highlights) {
+    const fragment = document.createDocumentFragment();
 
-    /**
-     * @brief Extracts the log level from a raw log line.
-     * @param line Log line emitted by the extension backend.
-     * @returns Normalized log level string.
-     */
-    function parseLevel(line) {
-        const match = line.match(/\b(DEBUG|INFO|NOTICE|WARN|WARNING|ERR|ERROR|CRIT|CRITICAL|ALERT|EMERG|FATAL)\b/i);
-        if (match && match[1]) {
-            const key = match[1].toUpperCase();
-            return levelAliases[key] || 'INFO';
+    if (line.length === 0) {
+      fragment.appendChild(document.createTextNode('\u00A0'));
+      return fragment;
+    }
+
+    if (!highlights.length) {
+      fragment.appendChild(document.createTextNode(line));
+      return fragment;
+    }
+
+    const lowerLine = line.toLowerCase();
+    let index = 0;
+
+    while (index < line.length) {
+      let nextMatch = null;
+
+      for (const highlight of highlights) {
+        const matchIndex = lowerLine.indexOf(highlight.normalizedKey, index);
+        if (matchIndex !== -1 && (nextMatch === null || matchIndex < nextMatch.position)) {
+          nextMatch = {
+            position: matchIndex,
+            end: matchIndex + highlight.normalizedKey.length,
+            highlight,
+          };
         }
-        return 'INFO';
+      }
+
+      if (!nextMatch) {
+        fragment.appendChild(document.createTextNode(line.slice(index)));
+        break;
+      }
+
+      if (nextMatch.position > index) {
+        fragment.appendChild(document.createTextNode(line.slice(index, nextMatch.position)));
+      }
+
+      const span = document.createElement('span');
+      span.textContent = line.slice(nextMatch.position, nextMatch.end);
+      span.className = 'highlighted-text';
+      if (nextMatch.highlight.className) {
+        span.classList.add(nextMatch.highlight.className);
+      }
+      if (nextMatch.highlight.color) {
+        span.style.color = nextMatch.highlight.color;
+        span.style.borderColor = nextMatch.highlight.color;
+      }
+      if (nextMatch.highlight.backgroundColor) {
+        span.style.backgroundColor = nextMatch.highlight.backgroundColor;
+      }
+      fragment.appendChild(span);
+
+      index = nextMatch.end;
     }
 
-    /**
-     * @brief Determines whether a log level passes the current filter threshold.
-     * @param level Normalized log level to evaluate.
-     * @returns True when the level is at or above the selected minimum.
-     */
-    function levelPasses(level) {
-        const selected = state.minLevel || 'ALL';
-        return levelOrder[level] >= levelOrder[selected];
+    return fragment;
+  }
+
+  /**
+   * @brief Replaces the highlight collection with updated entries.
+   * @param highlights Highlight definitions stored for the current panel.
+   */
+  function setHighlights(highlights) {
+    state.highlights = (highlights || []).map((highlight) => ({
+      ...highlight,
+      normalizedKey: (highlight.key || '').trim().toLowerCase(),
+    }));
+    state.nextHighlightId = state.highlights.reduce((max, h) => Math.max(max, h.id || 0), 0) + 1;
+    highlightColorCursor = state.highlights.length % highlightPalette.length;
+    renderHighlightRows();
+    applyFilters({ preserveScrollPosition: true });
+  }
+
+  function nextHighlightColor() {
+    const pair = highlightPalette[highlightColorCursor % highlightPalette.length];
+    highlightColorCursor = (highlightColorCursor + 1) % highlightPalette.length;
+    return pair;
+  }
+
+  function syncHighlightStatus(message = '') {
+    if (!highlightStatus) {
+      return;
+    }
+    if (message) {
+      highlightStatus.textContent = message;
+      return;
+    }
+    highlightStatus.textContent =
+      state.highlights.length >= 10 ? 'You can highlight up to 10 keys.' : '';
+  }
+
+  function pushHighlightChanges() {
+    vscode.postMessage({
+      type: 'highlightsChanged',
+      highlights: state.highlights.map((highlight) => ({
+        id: highlight.id,
+        key: highlight.key,
+        baseColor: highlight.baseColor,
+        color: highlight.color,
+        backgroundColor: highlight.backgroundColor,
+      })),
+    });
+  }
+
+  function renderHighlightRows() {
+    if (!highlightRows) {
+      return;
+    }
+    highlightRows.innerHTML = '';
+    const frag = document.createDocumentFragment();
+    state.highlights.forEach((highlight) => {
+      const row = document.createElement('div');
+      row.className = 'highlight-row';
+
+      const swatch = document.createElement('span');
+      swatch.className = 'color-swatch';
+      swatch.style.backgroundColor = highlight.baseColor;
+      swatch.style.borderColor = highlight.baseColor;
+      row.appendChild(swatch);
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = highlight.key;
+      input.placeholder = 'Key to highlight';
+      input.className = 'highlight-input';
+      input.addEventListener('input', () => {
+        highlight.key = input.value;
+        highlight.normalizedKey = (highlight.key || '').trim().toLowerCase();
+        applyFilters({ preserveScrollPosition: true });
+        pushHighlightChanges();
+        syncHighlightStatus();
+      });
+      row.appendChild(input);
+
+      const remove = document.createElement('button');
+      remove.className = 'highlight-remove';
+      remove.type = 'button';
+      remove.textContent = '✕';
+      remove.title = 'Remove highlight';
+      remove.addEventListener('click', () => {
+        state.highlights = state.highlights.filter((item) => item.id !== highlight.id);
+        renderHighlightRows();
+        pushHighlightChanges();
+        syncHighlightStatus();
+        applyFilters({ preserveScrollPosition: true });
+      });
+      row.appendChild(remove);
+
+      frag.appendChild(row);
+    });
+    highlightRows.appendChild(frag);
+    syncHighlightStatus();
+  }
+
+  function addHighlight() {
+    if (state.highlights.length >= 10) {
+      syncHighlightStatus();
+      return;
+    }
+    const { foreground, background } = nextHighlightColor();
+    state.highlights.push({
+      id: state.nextHighlightId++,
+      key: '',
+      normalizedKey: '',
+      baseColor: foreground,
+      color: foreground,
+      backgroundColor: background,
+    });
+    renderHighlightRows();
+    pushHighlightChanges();
+  }
+
+  function removeAllHighlights() {
+    if (!state.highlights.length) {
+      return;
+    }
+    state.highlights = [];
+    highlightColorCursor = 0;
+    renderHighlightRows();
+    pushHighlightChanges();
+    applyFilters({ preserveScrollPosition: true });
+  }
+
+  function toggleHighlightPopover(forceOpen) {
+    if (!highlightPopover || !highlightBackdrop) {
+      return;
+    }
+    const shouldOpen =
+      typeof forceOpen === 'boolean' ? forceOpen : highlightPopover.classList.contains('hidden');
+    highlightPopover.classList.toggle('hidden', !shouldOpen);
+    highlightBackdrop.classList.toggle('hidden', !shouldOpen);
+    if (shouldOpen) {
+      syncHighlightStatus();
+      const firstInput = highlightPopover.querySelector('.highlight-input');
+      if (firstInput) {
+        firstInput.focus();
+      }
+    }
+  }
+
+  /**
+   * @brief Renders the filtered entries into the log container.
+   */
+  function render(options = {}) {
+    const preserveScrollPosition = options.preserveScrollPosition === true;
+    const previousScrollTop = preserveScrollPosition ? logContainer.scrollTop : 0;
+    const previousScrollHeight = preserveScrollPosition ? logContainer.scrollHeight : 0;
+    const visible = state.filtered;
+    const highlights = getHighlightDescriptors();
+    state.activeSearchEntry = -1;
+    if (!logContent) {
+      return;
+    }
+    logContent.innerHTML = '';
+    const frag = document.createDocumentFragment();
+    for (const entry of visible) {
+      const div = createLogLineElement(entry, highlights);
+      frag.appendChild(div);
+    }
+    logContent.appendChild(frag);
+    if (preserveScrollPosition) {
+      const scrollDelta = logContainer.scrollHeight - previousScrollHeight;
+      logContainer.scrollTop = Math.max(0, previousScrollTop + scrollDelta);
+    } else if (state.searchIndex === -1 && state.autoScrollEnabled) {
+      logContainer.scrollTop = logContainer.scrollHeight;
+    }
+    updateActiveBookmarkHighlight();
+  }
+
+  /**
+   * @brief Populates the preset dropdown with available presets.
+   */
+  function updatePresetDropdown() {
+    presetSelect.innerHTML = '';
+    const base = document.createElement('option');
+    base.value = '';
+    base.textContent = '(no preset)';
+    presetSelect.appendChild(base);
+    state.presets.forEach((p) => {
+      const opt = document.createElement('option');
+      opt.value = p.name;
+      opt.textContent = p.name;
+      presetSelect.appendChild(opt);
+    });
+  }
+
+  /**
+   * @brief Applies a preset by name, synchronizing UI inputs.
+   * @param name Preset identifier selected by the user.
+   */
+  function applyPreset(name) {
+    const preset = state.presets.find((p) => p.name === name);
+    if (!preset) {
+      return;
+    }
+    state.minLevel = preset.minLevel;
+    state.textFilter = preset.textFilter;
+    minLevelSelect.value = state.minLevel;
+    textFilterInput.value = state.textFilter;
+    applyFilters();
+  }
+
+  /**
+   * @brief Identifies special line types that should bypass filters or have custom styling.
+   * @param line Raw log line to inspect.
+   * @returns An object containing optional className and bypassFilters flags.
+   */
+  function classifyLogLine(line) {
+    const normalized = line.trim().toLowerCase();
+    const bookmarkMatch = line.match(/^\s*---\s*bookmark\s*---\s*(.*)$/i);
+    if (bookmarkMatch) {
+      return {
+        className: 'bookmark-line',
+        bypassFilters: true,
+        isBookmark: true,
+        bookmarkLabel: (bookmarkMatch[1] || '').trim(),
+      };
+    }
+    if (normalized.startsWith('--- ssh session closed')) {
+      return { className: 'session-closed', bypassFilters: true };
+    }
+    return { className: null, bypassFilters: false, isBookmark: false, bookmarkLabel: '' };
+  }
+
+  /**
+   * @brief Generates a new log entry with a unique identifier.
+   * @param line Raw log line to store.
+   * @param options Additional entry options.
+   * @returns A populated log entry object.
+   */
+  function createEntry(line, options = {}) {
+    const classification = classifyLogLine(line);
+    const isBookmark = options.isBookmark === true || classification.isBookmark === true;
+    const bookmarkLabel = options.bookmarkLabel ?? classification.bookmarkLabel ?? '';
+    return {
+      id: entryIdCounter++,
+      timestamp: options.timestamp ?? Date.now(),
+      level: options.level ?? (isBookmark ? 'INFO' : parseLevel(line)),
+      rawLine: line,
+      className: options.className ?? classification.className,
+      bypassFilters: options.bypassFilters === true || classification.bypassFilters === true,
+      isBookmark,
+      bookmarkLabel,
+    };
+  }
+
+  /**
+   * @brief Builds the DOM element for a log entry.
+   * @param entry The entry to render.
+   * @param highlights Highlight descriptors to apply.
+   * @returns A configured DIV element for the log line.
+   */
+  function createLogLineElement(entry, highlights) {
+    const div = document.createElement('div');
+    const classes = [`log-line`, `level-${entry.level.toLowerCase()}`];
+    if (entry.className) {
+      classes.push(entry.className);
+    }
+    if (entry.isBookmark) {
+      classes.push('bookmark-line');
+    }
+    if (state.activeBookmarkId === entry.id) {
+      classes.push('active-bookmark');
+    }
+    div.className = classes.join(' ');
+    div.dataset.entryId = String(entry.id);
+    div.appendChild(buildHighlightedContent(entry.rawLine, highlights));
+    return div;
+  }
+
+  /**
+   * @brief Updates the active bookmark styling in the DOM.
+   */
+  function updateActiveBookmarkHighlight() {
+    const active = logContent?.querySelector('.log-line.active-bookmark');
+    if (active) {
+      active.classList.remove('active-bookmark');
+    }
+    if (state.activeBookmarkId === null) {
+      return;
+    }
+    const next = logContent?.querySelector(`[data-entry-id="${state.activeBookmarkId}"]`);
+    if (next) {
+      next.classList.add('active-bookmark');
+    }
+  }
+
+  /**
+   * @brief Handles incoming log lines from the extension host.
+   * @param line Raw log text to parse and display.
+   */
+  function handleLogLine(line, options = {}) {
+    const lowerLine = line.toLowerCase();
+    const entry = createEntry(line, options);
+    let trimmedEntries = false;
+    state.entries.push(entry);
+    if (state.entries.length > state.maxEntries) {
+      state.entries.shift();
+      trimmedEntries = true;
+    }
+    const searchTerm = state.searchTerm.trim().toLowerCase();
+    if (
+      entry.bypassFilters ||
+      (levelPasses(entry.level) &&
+        (!state.textFilter || lowerLine.includes(state.textFilter.toLowerCase())))
+    ) {
+      state.filtered.push(entry);
+      if (state.filtered.length > state.maxEntries) {
+        state.filtered.shift();
+        trimmedEntries = true;
+        if (logContent && logContent.firstChild) {
+          logContent.removeChild(logContent.firstChild);
+        }
+        state.searchMatches = state.searchMatches.map((idx) => idx - 1).filter((idx) => idx >= 0);
+        if (state.searchMatches.length === 0) {
+          state.searchIndex = -1;
+        } else if (state.searchIndex >= state.searchMatches.length) {
+          state.searchIndex = state.searchMatches.length - 1;
+        }
+      }
+      const highlights = getHighlightDescriptors();
+      const div = createLogLineElement(entry, highlights);
+      if (logContent) {
+        logContent.appendChild(div);
+      }
+      if (searchTerm && lowerLine.includes(searchTerm)) {
+        state.searchMatches.push(state.filtered.length - 1);
+        if (state.searchIndex === -1) {
+          state.searchIndex = 0;
+        }
+      }
+      if (state.searchIndex === -1 && state.autoScrollEnabled) {
+        logContainer.scrollTop = logContainer.scrollHeight;
+      } else if (state.searchIndex !== -1) {
+        scrollToActiveMatch();
+      }
+      updateSearchStatus();
+      updateActiveBookmarkHighlight();
+      if (trimmedEntries) {
+        setLineLimitReached(true);
+      }
+    }
+    schedulePersist();
+  }
+
+  /**
+   * @brief Handles bulk log lines sent during offline file loading.
+   * @param lines Collection of preloaded lines to add.
+   */
+  function handleInitialLogLines(lines) {
+    if (!Array.isArray(lines) || !lines.length) {
+      return;
     }
 
-    /**
-     * @brief Applies the active filters to all entries and re-renders the list.
-     */
-    function applyFilters(options = {}) {
-        const preserveScrollPosition = options.preserveScrollPosition === true;
-        const filterText = state.textFilter.toLowerCase();
-        state.filtered = state.entries.filter((entry) => {
-            if (entry.bypassFilters) {
-                return true;
-            }
+    const timestamp = Date.now();
+    const newEntries = lines.map((line) => createEntry(line, { timestamp }));
 
-            const textMatches = filterText ? entry.rawLine.toLowerCase().includes(filterText) : true;
-            return textMatches && levelPasses(entry.level);
+    state.entries = state.entries.concat(newEntries);
+    let trimmed = false;
+    if (state.entries.length > state.maxEntries) {
+      state.entries = state.entries.slice(-state.maxEntries);
+      trimmed = true;
+    }
+
+    applyFilters();
+    if (trimmed) {
+      setLineLimitReached(true);
+    }
+    schedulePersist();
+  }
+
+  /**
+   * @brief Clears all rendered and stored log entries while preserving filters.
+   */
+  function clearLogs() {
+    state.entries = [];
+    state.filtered = [];
+    state.searchMatches = [];
+    state.searchIndex = -1;
+    state.activeSearchEntry = -1;
+    state.activeBookmarkId = null;
+    entryIdCounter = 0;
+    render();
+    updateSearchStatus();
+    setLineLimitReached(false);
+    schedulePersist();
+  }
+
+  /**
+   * @brief Formats the bookmark line text with an optional label.
+   * @param label Label to append after the bookmark marker.
+   * @returns Formatted bookmark text.
+   */
+  function formatBookmarkText(label) {
+    const trimmedLabel = label.trim();
+    return trimmedLabel ? `--- Bookmark --- ${trimmedLabel}` : '--- Bookmark ---';
+  }
+
+  /**
+   * @brief Creates a reusable dialog for editing bookmark labels.
+   * @returns Object exposing an open method that resolves to the submitted label or null when cancelled.
+   */
+  function createBookmarkLabelDialog() {
+    const overlay = document.createElement('div');
+    overlay.className = 'bookmark-dialog hidden';
+
+    const dialog = document.createElement('div');
+    dialog.className = 'bookmark-dialog__content';
+
+    const title = document.createElement('h3');
+    title.textContent = 'Bookmark label';
+
+    const form = document.createElement('form');
+    form.className = 'bookmark-dialog__form';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.name = 'bookmarkLabel';
+    input.className = 'bookmark-dialog__input';
+    input.placeholder = 'Enter bookmark label';
+
+    const actions = document.createElement('div');
+    actions.className = 'bookmark-dialog__actions';
+
+    const cancelButton = document.createElement('button');
+    cancelButton.type = 'button';
+    cancelButton.className = 'secondary';
+    cancelButton.textContent = 'Cancel';
+
+    const saveButton = document.createElement('button');
+    saveButton.type = 'submit';
+    saveButton.textContent = 'Save';
+
+    actions.appendChild(cancelButton);
+    actions.appendChild(saveButton);
+    form.appendChild(input);
+    form.appendChild(actions);
+    dialog.appendChild(title);
+    dialog.appendChild(form);
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+
+    let resolver = null;
+
+    function closeDialog(value) {
+      overlay.classList.add('hidden');
+      resolver?.(value);
+      resolver = null;
+    }
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      closeDialog(input.value.trim());
+    });
+
+    cancelButton.addEventListener('click', () => closeDialog(null));
+
+    overlay.addEventListener('click', (event) => {
+      if (event.target === overlay) {
+        closeDialog(null);
+      }
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (overlay.classList.contains('hidden')) {
+        return;
+      }
+      if (event.key === 'Escape') {
+        closeDialog(null);
+      }
+    });
+
+    return {
+      open(initialLabel = '') {
+        if (resolver) {
+          return Promise.resolve(null);
+        }
+        input.value = initialLabel;
+        overlay.classList.remove('hidden');
+        input.focus();
+        input.select();
+        return new Promise((resolve) => {
+          resolver = resolve;
         });
-        render({ preserveScrollPosition });
-        updateSearchMatches();
-        schedulePersist();
+      },
+    };
+  }
+
+  /**
+   * @brief Creates a bookmark entry instance.
+   * @param label Optional label for the bookmark.
+   * @returns A bookmark entry object.
+   */
+  function createBookmarkEntry(label = '') {
+    const text = formatBookmarkText(label);
+    return createEntry(text, {
+      bypassFilters: true,
+      className: 'bookmark-line',
+      isBookmark: true,
+      bookmarkLabel: label.trim(),
+      level: 'INFO',
+    });
+  }
+
+  /**
+   * @brief Inserts a bookmark entry before the specified entry identifier.
+   * @param entryId Target entry identifier to insert before.
+   * @param label Optional bookmark label.
+   */
+  function insertBookmarkBefore(entryId, label = '') {
+    const targetIndex = state.entries.findIndex((entry) => entry.id === entryId);
+    if (targetIndex === -1) {
+      return;
+    }
+    const bookmarkEntry = createBookmarkEntry(label);
+    state.entries.splice(targetIndex, 0, bookmarkEntry);
+    applyFilters({ preserveScrollPosition: true });
+    scrollToEntryId(bookmarkEntry.id);
+  }
+
+  /**
+   * @brief Updates the label for an existing bookmark.
+   * @param entryId Identifier of the bookmark to update.
+   */
+  async function editBookmarkLabel(entryId) {
+    const entry = state.entries.find((item) => item.id === entryId);
+    if (!entry) {
+      return;
+    }
+    const classification = classifyLogLine(entry.rawLine);
+    if (!entry.isBookmark && !classification.isBookmark) {
+      return;
+    }
+    const bookmarkLabel = entry.bookmarkLabel || classification.bookmarkLabel || '';
+    const label = await bookmarkLabelDialog.open(bookmarkLabel);
+    if (label === null) {
+      return;
+    }
+    entry.bookmarkLabel = label.trim();
+    entry.isBookmark = true;
+    entry.className = 'bookmark-line';
+    entry.bypassFilters = true;
+    entry.rawLine = formatBookmarkText(entry.bookmarkLabel);
+    applyFilters({ preserveScrollPosition: true });
+    scrollToEntryId(entry.id);
+  }
+
+  /**
+   * @brief Removes a single bookmark entry.
+   * @param entryId Identifier of the bookmark to remove.
+   */
+  function removeBookmark(entryId) {
+    const index = state.entries.findIndex((entry) => entry.id === entryId && entry.isBookmark);
+    if (index === -1) {
+      return;
+    }
+    state.entries.splice(index, 1);
+    if (state.activeBookmarkId === entryId) {
+      state.activeBookmarkId = null;
+    }
+    applyFilters({ preserveScrollPosition: true });
+  }
+
+  /**
+   * @brief Removes all bookmark entries from the log list.
+   */
+  function removeAllBookmarks() {
+    if (!state.entries.some((entry) => entry.isBookmark)) {
+      return;
+    }
+    state.entries = state.entries.filter((entry) => !entry.isBookmark);
+    state.activeBookmarkId = null;
+    applyFilters({ preserveScrollPosition: true });
+  }
+
+  /**
+   * @brief Retrieves filtered bookmark indices.
+   * @returns An array of indices within the filtered list that are bookmarks.
+   */
+  function getFilteredBookmarkIndices() {
+    const indices = [];
+    for (let i = 0; i < state.filtered.length; i += 1) {
+      if (state.filtered[i].isBookmark) {
+        indices.push(i);
+      }
+    }
+    return indices;
+  }
+
+  /**
+   * @brief Finds the filtered index for a given entry identifier.
+   * @param entryId Entry identifier to locate.
+   * @returns Filtered index or -1 when missing.
+   */
+  function findFilteredIndexById(entryId) {
+    return state.filtered.findIndex((entry) => entry.id === entryId);
+  }
+
+  /**
+   * @brief Scrolls to the log line matching the specified entry id.
+   * @param entryId Entry identifier to scroll to.
+   */
+  function scrollToEntryId(entryId) {
+    const element = logContent?.querySelector(`[data-entry-id="${entryId}"]`);
+    const entry = state.entries.find((item) => item.id === entryId && item.isBookmark);
+    if (element && entry) {
+      element.scrollIntoView({ block: 'center' });
+      state.activeBookmarkId = entryId;
+      updateActiveBookmarkHighlight();
+    }
+  }
+
+  /**
+   * @brief Navigates to the next or previous bookmark relative to the current entry.
+   * @param entryId Current entry identifier.
+   * @param direction Direction to travel, either 'next' or 'previous'.
+   */
+  function navigateToBookmark(entryId, direction) {
+    const bookmarkIndices = getFilteredBookmarkIndices();
+    if (!bookmarkIndices.length) {
+      return;
+    }
+    const currentIndex = findFilteredIndexById(entryId);
+    if (currentIndex === -1) {
+      scrollToEntryId(state.filtered[bookmarkIndices[0]].id);
+      return;
+    }
+    if (direction === 'next') {
+      const target = bookmarkIndices.find((idx) => idx > currentIndex) ?? bookmarkIndices[0];
+      scrollToEntryId(state.filtered[target].id);
+      return;
+    }
+    const reversed = [...bookmarkIndices].reverse();
+    const target = reversed.find((idx) => idx < currentIndex) ?? reversed[0];
+    scrollToEntryId(state.filtered[target].id);
+  }
+
+  /**
+   * @brief Constructs the bookmark context menu DOM and wires event handlers.
+   * @returns The created context menu element.
+   */
+  function createBookmarkContextMenu() {
+    const menu = document.createElement('div');
+    menu.id = 'bookmarkContextMenu';
+    menu.className = 'bookmark-context-menu hidden';
+    const actions = [
+      { action: 'add', label: 'Add bookmark' },
+      { action: 'edit', label: 'Edit bookmark label' },
+      { action: 'remove', label: 'Remove bookmark' },
+      { action: 'removeAll', label: 'Remove all bookmarks' },
+      { action: 'next', label: 'Go to next bookmark' },
+      { action: 'previous', label: 'Go to previous bookmark' },
+    ];
+    const list = document.createElement('ul');
+    for (const item of actions) {
+      const li = document.createElement('li');
+      const button = document.createElement('button');
+      button.textContent = item.label;
+      button.dataset.action = item.action;
+      li.appendChild(button);
+      list.appendChild(li);
+    }
+    menu.appendChild(list);
+    menu.addEventListener('click', (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) {
+        return;
+      }
+      const action = target.dataset.action;
+      if (!action) {
+        return;
+      }
+      event.preventDefault();
+      handleBookmarkAction(action);
+      hideBookmarkContextMenu();
+    });
+    document.addEventListener('click', (event) => {
+      if (!menu.contains(event.target)) {
+        hideBookmarkContextMenu();
+      }
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        hideBookmarkContextMenu();
+      }
+    });
+    logContainer.addEventListener('scroll', hideBookmarkContextMenu);
+    window.addEventListener('resize', hideBookmarkContextMenu);
+    document.body.appendChild(menu);
+    return menu;
+  }
+
+  /**
+   * @brief Updates the context menu options based on the current text selection.
+   * @param selectedText Text currently selected in the document.
+   */
+  function updateBookmarkContextMenuOptions(selectedText) {
+    const existingCopyButton = bookmarkContextMenu.querySelector('button[data-action="copy"]');
+    if (existingCopyButton?.parentElement) {
+      existingCopyButton.parentElement.remove();
     }
 
-    /**
-     * @brief Toggles the visibility of the line limit notice.
-     * @param reached True when the maximum number of entries has been hit.
-     */
-    function setLineLimitReached(reached) {
-        state.lineLimitReached = reached;
-        if (lineLimitNotice) {
-            lineLimitNotice.textContent = state.isLiveLog
-                ? LINE_LIMIT_NOTICE_LIVE
-                : LINE_LIMIT_NOTICE_OFFLINE;
-            lineLimitNotice.classList.toggle('hidden', !reached);
-        }
-        schedulePersist();
+    const list = bookmarkContextMenu.querySelector('ul');
+    const hasSelection = selectedText && selectedText.trim() !== '';
+    contextMenuSelectedText = hasSelection ? selectedText : '';
+    if (!list || !hasSelection) {
+      return;
     }
 
-    /**
-     * @brief Returns active highlight entries with non-empty search keys.
-     * @returns List of highlights to render.
-     */
-    function getActiveHighlights() {
-        return state.highlights
-            .filter((highlight) => highlight.normalizedKey)
-            .map((highlight) => ({ ...highlight, normalizedKey: highlight.normalizedKey }));
+    const copyListItem = document.createElement('li');
+    const copyButton = document.createElement('button');
+    copyButton.textContent = 'Copy';
+    copyButton.dataset.action = 'copy';
+    copyListItem.appendChild(copyButton);
+    list.insertBefore(copyListItem, list.firstChild);
+  }
+
+  /**
+   * @brief Displays the bookmark context menu at the pointer location.
+   * @param event Context menu mouse event.
+   * @param entryId Target entry identifier.
+   */
+  function showBookmarkContextMenu(event, entryId) {
+    contextMenuEntryId = entryId;
+    const initialX = event.clientX;
+    const initialY = event.clientY;
+    bookmarkContextMenu.style.top = `${initialY}px`;
+    bookmarkContextMenu.style.left = `${initialX}px`;
+    const selection = window.getSelection();
+    const selectedText = selection && !selection.isCollapsed ? selection.toString() : '';
+    updateBookmarkContextMenuOptions(selectedText);
+    updateBookmarkMenuState(entryId);
+    bookmarkContextMenu.classList.remove('hidden');
+
+    const menuRect = bookmarkContextMenu.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const padding = 8;
+    let adjustedX = initialX;
+    let adjustedY = initialY;
+
+    if (menuRect.right > viewportWidth - padding) {
+      adjustedX = Math.max(padding, viewportWidth - menuRect.width - padding);
+    }
+    if (menuRect.bottom > viewportHeight - padding) {
+      adjustedY = Math.max(padding, viewportHeight - menuRect.height - padding);
     }
 
-    /**
-     * @brief Combines configured highlights with the current search term highlight.
-     * @returns List of highlight descriptors to render.
-     */
-    function getHighlightDescriptors() {
-        const highlights = getActiveHighlights();
-        const searchTerm = state.searchTerm.trim().toLowerCase();
+    bookmarkContextMenu.style.left = `${adjustedX}px`;
+    bookmarkContextMenu.style.top = `${adjustedY}px`;
+  }
 
-        if (searchTerm) {
-            highlights.push({
-                normalizedKey: searchTerm,
-                className: 'search-highlight',
-            });
+  /**
+   * @brief Hides the bookmark context menu.
+   */
+  function hideBookmarkContextMenu() {
+    bookmarkContextMenu.classList.add('hidden');
+    contextMenuEntryId = null;
+  }
+
+  /**
+   * @brief Enables or disables menu items based on the selected entry.
+   * @param entryId Currently selected entry id.
+   */
+  function updateBookmarkMenuState(entryId) {
+    const entry = state.entries.find((item) => item.id === entryId);
+    const classification = entry ? classifyLogLine(entry.rawLine) : { isBookmark: false };
+    const isBookmark = !!entry?.isBookmark || classification.isBookmark === true;
+    const editButton = bookmarkContextMenu.querySelector('button[data-action="edit"]');
+    const removeButton = bookmarkContextMenu.querySelector('button[data-action="remove"]');
+    if (editButton instanceof HTMLButtonElement) {
+      editButton.disabled = !isBookmark;
+    }
+    if (removeButton instanceof HTMLButtonElement) {
+      removeButton.disabled = !isBookmark;
+    }
+  }
+
+  /**
+   * @brief Executes a bookmark-related action from the context menu.
+   * @param action Action identifier to run.
+   */
+  function handleBookmarkAction(action) {
+    if (contextMenuEntryId === null && action !== 'removeAll') {
+      return;
+    }
+    switch (action) {
+      case 'copy':
+        if (contextMenuSelectedText) {
+          navigator.clipboard?.writeText(contextMenuSelectedText).catch((error) => {
+            console.error('Failed to copy selected text', error);
+          });
         }
+        break;
+      case 'add':
+        insertBookmarkBefore(contextMenuEntryId);
+        break;
+      case 'edit':
+        editBookmarkLabel(contextMenuEntryId);
+        break;
+      case 'remove':
+        removeBookmark(contextMenuEntryId);
+        break;
+      case 'removeAll':
+        removeAllBookmarks();
+        break;
+      case 'next':
+        navigateToBookmark(contextMenuEntryId, 'next');
+        break;
+      case 'previous':
+        navigateToBookmark(contextMenuEntryId, 'previous');
+        break;
+      default:
+        break;
+    }
+  }
 
-        return highlights;
+  /**
+   * @brief Builds the context menu for the status area.
+   * @returns The created context menu element.
+   */
+  function createStatusContextMenu() {
+    const menu = document.createElement('div');
+    menu.id = 'statusContextMenu';
+    menu.className = 'status-context-menu hidden';
+
+    const list = document.createElement('ul');
+    const resetItem = document.createElement('li');
+    const resetButton = document.createElement('button');
+    resetButton.textContent = 'Clear status message';
+    resetButton.dataset.action = 'resetStatus';
+    resetItem.appendChild(resetButton);
+    list.appendChild(resetItem);
+    menu.appendChild(list);
+
+    menu.addEventListener('click', (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLButtonElement) || target.disabled) {
+        return;
+      }
+      if (target.dataset.action === 'resetStatus') {
+        resetStatusToDefault();
+      }
+      hideStatusContextMenu();
+    });
+
+    document.addEventListener('click', (event) => {
+      if (!menu.contains(event.target)) {
+        hideStatusContextMenu();
+      }
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        hideStatusContextMenu();
+      }
+    });
+
+    window.addEventListener('resize', hideStatusContextMenu);
+    document.body.appendChild(menu);
+    return menu;
+  }
+
+  /**
+   * @brief Shows the status context menu anchored to the pointer position.
+   * @param event Context menu mouse event.
+   */
+  function showStatusContextMenu(event) {
+    const initialX = event.clientX;
+    const initialY = event.clientY;
+    statusContextMenu.style.left = `${initialX}px`;
+    statusContextMenu.style.top = `${initialY}px`;
+    updateStatusContextMenuState();
+    statusContextMenu.classList.remove('hidden');
+
+    const menuRect = statusContextMenu.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const padding = 8;
+    let adjustedX = initialX;
+    let adjustedY = initialY;
+
+    if (menuRect.right > viewportWidth - padding) {
+      adjustedX = Math.max(padding, viewportWidth - menuRect.width - padding);
+    }
+    if (menuRect.bottom > viewportHeight - padding) {
+      adjustedY = Math.max(padding, viewportHeight - menuRect.height - padding);
     }
 
-    /**
-     * @brief Restores persisted entries while enforcing the current maximum limit.
-     * @param savedEntries Entries captured from a previous Webview instance.
-     * @param maxEntries Maximum number of entries to retain.
-     * @returns Sanitized entries ready for rendering.
-     */
-    function restoreEntries(savedEntries, maxEntries) {
-        if (!Array.isArray(savedEntries) || !savedEntries.length) {
-            return [];
-        }
+    statusContextMenu.style.left = `${adjustedX}px`;
+    statusContextMenu.style.top = `${adjustedY}px`;
+  }
 
-        const sanitized = savedEntries
-            .filter((entry) => entry && typeof entry.rawLine === 'string')
-            .map((entry) => {
-                const timestamp = typeof entry.timestamp === 'number' ? entry.timestamp : Date.now();
-                const level = typeof entry.level === 'string' ? entry.level : parseLevel(entry.rawLine);
-                const id = typeof entry.id === 'number' ? entry.id : entryIdCounter++;
-                return {
-                    id,
-                    timestamp,
-                    level,
-                    rawLine: entry.rawLine,
-                    className: typeof entry.className === 'string' ? entry.className : null,
-                    bypassFilters: entry.bypassFilters === true,
-                    isBookmark: entry.isBookmark === true,
-                    bookmarkLabel: typeof entry.bookmarkLabel === 'string' ? entry.bookmarkLabel : '',
-                };
-            });
+  /**
+   * @brief Hides the status context menu.
+   */
+  function hideStatusContextMenu() {
+    statusContextMenu.classList.add('hidden');
+  }
 
-        const limited = sanitized.slice(-maxEntries);
-        const maxId = limited.reduce((max, entry) => Math.max(max, entry.id || 0), -1);
-        entryIdCounter = Math.max(entryIdCounter, maxId + 1);
-        return limited;
+  /**
+   * @brief Enables or disables the reset option based on connection state.
+   */
+  function updateStatusContextMenuState() {
+    const resetButton = statusContextMenu.querySelector('button[data-action="resetStatus"]');
+    if (!(resetButton instanceof HTMLButtonElement)) {
+      return;
+    }
+    const isConnected = state.isLiveLog && state.connectionState === 'connected';
+    resetButton.disabled = !isConnected;
+  }
+
+  /**
+   * @brief Clears custom status messages and restores the default connected text.
+   */
+  function resetStatusToDefault() {
+    if (!state.isLiveLog || state.connectionState !== 'connected') {
+      return;
+    }
+    const fallbackStatus = state.defaultConnectedStatus || DEFAULT_CONNECTED_STATUS;
+    state.secondaryStatus = null;
+    state.defaultConnectedStatus = fallbackStatus;
+    updateStatus(fallbackStatus, { disableButton: false });
+  }
+
+  /**
+   * @brief Clears any active reconnect countdown timers.
+   */
+  function clearReconnectTimers() {
+    if (reconnectTimeoutId) {
+      clearTimeout(reconnectTimeoutId);
+      reconnectTimeoutId = null;
+    }
+    if (reconnectIntervalId) {
+      clearInterval(reconnectIntervalId);
+      reconnectIntervalId = null;
+    }
+    reconnectCountdown = 0;
+  }
+
+  /**
+   * @brief Updates the connection action button visibility and state.
+   * @param options Additional options to control disabled behaviour.
+   */
+  function updateActionButton(options = {}) {
+    if (!state.isLiveLog) {
+      reconnectButton.hidden = true;
+      reconnectButton.classList.add('hidden');
+      return;
     }
 
-    /**
-     * @brief Restores the persisted Webview state when available.
-     * @param snapshot Serialized state captured via vscode.setState.
-     */
-    function restoreStateFromSnapshot(snapshot) {
-        if (!snapshot) {
-            return;
+    reconnectButton.classList.remove('hidden');
+    reconnectButton.hidden = false;
+    reconnectButton.textContent =
+      state.connectionState === 'connected' ? 'Disconnect' : 'Reconnect';
+
+    const shouldDisable = options.preserveDisabled
+      ? reconnectButton.disabled
+      : (options.disableButton ?? state.connectionState === 'connecting');
+    reconnectButton.disabled = shouldDisable;
+  }
+
+  /**
+   * @brief Updates the tracked connection state.
+   * @param connectionState New connection state string.
+   */
+  function setConnectionState(connectionState) {
+    state.connectionState = connectionState;
+    if (connectionState === 'connected') {
+      if (!state.defaultConnectedStatus) {
+        state.defaultConnectedStatus = state.statusText || DEFAULT_CONNECTED_STATUS;
+      }
+      clearReconnectTimers();
+    }
+    updateActionButton();
+    updateAutoSaveToggleState();
+    updateConnectionDecorations();
+    schedulePersist();
+  }
+
+  /**
+   * @brief Updates the status text shown in the UI.
+   * @param text Status message to display.
+   */
+  function updateStatus(text, options = {}) {
+    if (!options.preserveSecondary) {
+      state.secondaryStatus = null;
+    }
+
+    state.statusText = text || '';
+    renderStatusText();
+    updateActionButton(options);
+    schedulePersist();
+  }
+
+  /**
+   * @brief Updates the secondary status line reserved for auto-save and default log command messages.
+   * @param text Status message to display in the secondary line.
+   */
+  function setSecondaryStatus(text) {
+    if (text) {
+      state.secondaryStatus = { text, source: 'logCommand' };
+    } else {
+      state.secondaryStatus = null;
+    }
+    renderStatusText();
+    schedulePersist();
+  }
+
+  /**
+   * @brief Updates the status element by combining connection and auto-save messages.
+   */
+  function renderStatusText() {
+    if (!statusEl) {
+      return;
+    }
+
+    const isWaitingForPassword = (text) => text === 'Waiting for the user to enter the password…';
+
+    const appendStatusText = (container, text) => {
+      if (!text) {
+        return;
+      }
+      if (isWaitingForPassword(text)) {
+        const span = document.createElement('span');
+        span.classList.add('status-waiting');
+        span.textContent = text;
+        container.appendChild(span);
+      } else {
+        container.appendChild(document.createTextNode(text));
+      }
+    };
+
+    const lines = [];
+    if (state.statusText) {
+      lines.push({ text: state.statusText });
+    }
+    if (state.secondaryStatus && (state.secondaryStatus.text || state.secondaryStatus.fileName)) {
+      lines.push({
+        text: state.secondaryStatus.text || '',
+        fileName: state.secondaryStatus.fileName,
+      });
+    }
+
+    statusEl.textContent = '';
+
+    for (let i = 0; i < lines.length; i += 1) {
+      if (i > 0) {
+        statusEl.appendChild(document.createElement('br'));
+      }
+
+      const line = lines[i];
+      const trimmedText = line.text || '';
+
+      if (line.fileName) {
+        if (trimmedText) {
+          const textValue = trimmedText.endsWith(' ') ? trimmedText : `${trimmedText} `;
+          appendStatusText(statusEl, textValue);
         }
 
-        isRestoringState = true;
-        state.deviceId = snapshot.deviceId || state.deviceId;
-        state.presets = Array.isArray(snapshot.presets) ? snapshot.presets : state.presets;
-        state.minLevel = snapshot.minLevel || state.minLevel;
-        state.textFilter = typeof snapshot.textFilter === 'string' ? snapshot.textFilter : state.textFilter;
-        state.wordWrapEnabled = snapshot.wordWrapEnabled === true || snapshot.wordWrapEnabled === false
-            ? snapshot.wordWrapEnabled
-            : state.wordWrapEnabled;
-        state.autoScrollEnabled = snapshot.autoScrollEnabled === false ? false : state.autoScrollEnabled;
-        state.highlights = Array.isArray(snapshot.highlights) ? snapshot.highlights : state.highlights;
-        state.nextHighlightId = typeof snapshot.nextHighlightId === 'number' ? snapshot.nextHighlightId : state.nextHighlightId;
-        state.searchTerm = typeof snapshot.searchTerm === 'string' ? snapshot.searchTerm : state.searchTerm;
-        state.isLiveLog = snapshot.isLiveLog === false ? false : state.isLiveLog;
-        state.autoReconnectEnabled = snapshot.autoReconnectEnabled === false ? false : state.autoReconnectEnabled;
-        state.connectionState = snapshot.connectionState || state.connectionState;
-        state.maxEntries = Math.max(1, Number(snapshot.maxEntries) || state.maxEntries);
-        state.statusText = snapshot.statusText || state.statusText;
-        state.defaultConnectedStatus = snapshot.defaultConnectedStatus || state.defaultConnectedStatus;
-        if (!state.defaultConnectedStatus && typeof state.statusText === 'string' && state.statusText.startsWith('Connected')) {
-            state.defaultConnectedStatus = state.statusText;
+        const strong = document.createElement('strong');
+        strong.textContent = line.fileName;
+        statusEl.appendChild(strong);
+      } else if (trimmedText) {
+        appendStatusText(statusEl, trimmedText);
+      }
+    }
+  }
+
+  /**
+   * @brief Updates the auto-save status message and re-renders the status text.
+   * @param text Additional auto-save status message to display.
+   */
+  function setAutoSaveStatus(text, fileName) {
+    if (text || fileName) {
+      state.secondaryStatus = { text: text || '', fileName, source: 'autoSave' };
+    } else {
+      state.secondaryStatus = null;
+    }
+    renderStatusText();
+    schedulePersist();
+  }
+
+  /**
+   * @brief Updates the UI to reflect whether auto-save is active.
+   * @param active True when auto-save is currently writing to disk.
+   */
+  function setAutoSaveActive(active) {
+    state.autoSaveActive = active;
+    if (autoSaveToggle) {
+      const label = active ? 'Stop auto-save' : 'Start auto-save';
+      setButtonLabel(autoSaveToggle, label);
+      autoSaveToggle.classList.toggle('auto-save-active', active);
+      updateAutoSaveToggleState();
+    }
+    schedulePersist();
+  }
+
+  /**
+   * @brief Enables or disables the auto-save toggle based on connection and auto-save state.
+   */
+  function updateAutoSaveToggleState() {
+    if (!autoSaveToggle) {
+      return;
+    }
+
+    const isConnected = state.isLiveLog && state.connectionState === 'connected';
+    autoSaveToggle.disabled = state.autoSaveActive ? false : !isConnected;
+  }
+
+  /**
+   * @brief Adds or removes connection-state driven styling.
+   */
+  function updateConnectionDecorations() {
+    const isConnected = state.isLiveLog && state.connectionState === 'connected';
+    const isDisconnected = state.isLiveLog && state.connectionState === 'disconnected';
+    const isReconnecting = state.isLiveLog && state.connectionState === 'connecting';
+
+    logContainer.classList.toggle('connected', isConnected);
+    logContainer.classList.toggle('disconnected', isDisconnected);
+    logContainer.classList.toggle('reconnecting', isReconnecting);
+  }
+
+  /**
+   * @brief Starts a countdown and triggers a reconnect request after it elapses.
+   * @param baseMessage Message to prefix the countdown with.
+   */
+  function startReconnectCountdown(baseMessage = 'Connection closed.') {
+    if (!state.isLiveLog || !state.autoReconnectEnabled || reconnectTimeoutId) {
+      updateStatus(baseMessage, { disableButton: false });
+      return;
+    }
+
+    reconnectCountdown = 5;
+    const renderCountdown = () => `${baseMessage} Retrying in ${reconnectCountdown} seconds...`;
+    updateStatus(renderCountdown(), { disableButton: false });
+    reconnectIntervalId = window.setInterval(() => {
+      reconnectCountdown -= 1;
+      if (reconnectCountdown > 0) {
+        updateStatus(renderCountdown(), { disableButton: false });
+      }
+    }, 1000);
+
+    reconnectTimeoutId = window.setTimeout(() => {
+      clearReconnectTimers();
+      setConnectionState('connecting');
+      updateStatus('Reconnecting...', { disableButton: true });
+      vscode.postMessage({ type: 'requestReconnect' });
+    }, 5000);
+  }
+
+  /**
+   * @brief Handles connection losses by updating status and scheduling reconnects.
+   * @param message Status message provided by the extension host.
+   */
+  function handleConnectionLoss(message) {
+    setConnectionState('disconnected');
+    clearReconnectTimers();
+    if (state.autoReconnectEnabled && state.isLiveLog) {
+      startReconnectCountdown(message || 'Connection closed.');
+      return;
+    }
+
+    updateStatus(message || 'Connection closed.', { disableButton: false });
+  }
+
+  function handleHostKeyMismatch(expected, received) {
+    state.autoReconnectEnabled = false;
+    if (autoReconnectToggle) {
+      setToggleState(autoReconnectToggle, false);
+      autoReconnectToggle.disabled = true;
+    }
+    clearReconnectTimers();
+    setConnectionState('disconnected');
+    const message =
+      expected && received
+        ? `Host key verification failed. Expected ${expected} but received ${received}. Update the fingerprint to reconnect.`
+        : 'Host key verification failed. Update the stored fingerprint before reconnecting.';
+    updateStatus(message, { disableButton: false });
+  }
+
+  /**
+   * @brief Handles session closed notifications by updating status and appending a marker line.
+   * @param message Status message provided by the extension host.
+   * @param closedAt Timestamp value (string or number) to display in the marker line.
+   */
+  function handleSessionClosed(message, closedAt) {
+    const formattedTimestamp = formatLocalTimestamp(closedAt);
+    handleConnectionLoss(message || 'Session closed.');
+    handleLogLine('', { className: 'session-closed-buffer', bypassFilters: true });
+    handleLogLine(`--- SSH session closed on ${formattedTimestamp}`, {
+      className: 'session-closed',
+      bypassFilters: true,
+    });
+    handleLogLine('', { className: 'session-closed-buffer', bypassFilters: true });
+  }
+
+  /**
+   * @brief Formats a timestamp into a local ISO-like string without timezone conversion.
+   * @param value A timestamp value compatible with the Date constructor.
+   * @returns {string} Formatted timestamp like `2025-12-01 at 22:42:29`.
+   */
+  function formatLocalTimestamp(value) {
+    const timestamp = value ? new Date(value) : new Date();
+    const safeTimestamp = Number.isNaN(timestamp.valueOf()) ? new Date() : timestamp;
+    const pad = (num) => String(num).padStart(2, '0');
+    const datePart = `${safeTimestamp.getFullYear()}-${pad(safeTimestamp.getMonth() + 1)}-${pad(safeTimestamp.getDate())}`;
+    const timePart = `${pad(safeTimestamp.getHours())}:${pad(safeTimestamp.getMinutes())}:${pad(safeTimestamp.getSeconds())}`;
+    return `${datePart} at ${timePart}`;
+  }
+
+  /**
+   * @brief Determines whether a status message originates from the default log command.
+   * @param text Status message to inspect.
+   * @returns True when the message matches a known default command notice.
+   */
+  function isDefaultLogCommandMessage(text) {
+    if (!text) {
+      return false;
+    }
+
+    const normalized = text.toLowerCase();
+    return normalized.startsWith('tail:') && normalized.includes('/var/log/syslog');
+  }
+
+  /**
+   * @brief Interprets status messages from the extension host.
+   * @param text Status message to display.
+   */
+  function handleStatusMessage(text) {
+    if (!text) {
+      updateStatus('');
+      return;
+    }
+
+    if (isDefaultLogCommandMessage(text)) {
+      setSecondaryStatus(text);
+      return;
+    }
+
+    if (text.startsWith('Connected')) {
+      state.defaultConnectedStatus = text;
+      setConnectionState('connected');
+      updateStatus(text, { disableButton: false });
+      if (autoReconnectToggle) {
+        autoReconnectToggle.disabled = false;
+      }
+      return;
+    }
+
+    if (text.startsWith('Connecting') || text.startsWith('Reconnecting')) {
+      setConnectionState('connecting');
+      updateStatus(text, { disableButton: true });
+      return;
+    }
+
+    if (text.startsWith('Connection closed')) {
+      handleConnectionLoss('Connection closed.');
+      return;
+    }
+
+    updateStatus(text);
+  }
+
+  /**
+   * @brief Syncs the log container with the current word wrap setting.
+   */
+  function updateWordWrapClass() {
+    logContainer.classList.toggle('wrap-enabled', state.wordWrapEnabled);
+  }
+
+  /**
+   * @brief Updates auto-scroll state and keeps the toggle in sync.
+   * @param enabled Whether auto-scroll should be enabled.
+   */
+  function setAutoScrollEnabled(enabled) {
+    const changed = state.autoScrollEnabled !== enabled;
+    state.autoScrollEnabled = enabled;
+    setToggleState(autoScrollToggle, enabled);
+    if (changed) {
+      schedulePersist();
+    }
+  }
+
+  /**
+   * @brief Determines whether the log container is scrolled to the bottom.
+   * @returns True when the scroll position is within a threshold of the bottom.
+   */
+  function isAtLogBottom() {
+    const distanceFromBottom =
+      logContainer.scrollHeight - logContainer.scrollTop - logContainer.clientHeight;
+    return distanceFromBottom <= AUTO_SCROLL_BOTTOM_THRESHOLD;
+  }
+
+  /**
+   * @brief Updates the search status label and button states.
+   */
+  function updateSearchStatus() {
+    if (!state.searchMatches.length) {
+      searchCount.textContent = '0 / 0';
+      searchPrevBtn.disabled = true;
+      searchNextBtn.disabled = true;
+      return;
+    }
+
+    searchPrevBtn.disabled = false;
+    searchNextBtn.disabled = false;
+    searchCount.textContent = `${state.searchIndex + 1} / ${state.searchMatches.length}`;
+  }
+
+  /**
+   * @brief Enables or disables the clear button based on input content.
+   */
+  function updateSearchClearButton() {
+    if (!searchClearBtn) {
+      return;
+    }
+
+    searchClearBtn.disabled = !searchInput.value.trim();
+  }
+
+  /**
+   * @brief Removes the active search line styling, if present.
+   */
+  function clearActiveSearchLine() {
+    if (state.activeSearchEntry !== -1) {
+      const prev = logContent?.children[state.activeSearchEntry];
+      if (prev) {
+        prev.classList.remove('active-search-line');
+      }
+    }
+    state.activeSearchEntry = -1;
+  }
+
+  /**
+   * @brief Scrolls to and highlights the currently selected search match.
+   */
+  function scrollToActiveMatch() {
+    if (state.searchIndex === -1 || !state.searchMatches.length) {
+      clearActiveSearchLine();
+      updateSearchStatus();
+      return;
+    }
+
+    const entryIndex = state.searchMatches[state.searchIndex];
+    const node = logContent?.children[entryIndex];
+    if (!node) {
+      clearActiveSearchLine();
+      updateSearchStatus();
+      return;
+    }
+
+    clearActiveSearchLine();
+    state.activeSearchEntry = entryIndex;
+    node.classList.add('active-search-line');
+    node.scrollIntoView({ block: 'center' });
+    updateSearchStatus();
+  }
+
+  /**
+   * @brief Recomputes search matches based on the current filtered list.
+   */
+  function updateSearchMatches() {
+    const term = state.searchTerm.trim().toLowerCase();
+    state.searchMatches = [];
+
+    if (!term) {
+      state.searchIndex = -1;
+      clearActiveSearchLine();
+      updateSearchStatus();
+      updateSearchClearButton();
+      schedulePersist();
+      return;
+    }
+
+    state.filtered.forEach((entry, idx) => {
+      if (entry.rawLine.toLowerCase().includes(term)) {
+        state.searchMatches.push(idx);
+      }
+    });
+
+    if (!state.searchMatches.length) {
+      state.searchIndex = -1;
+      clearActiveSearchLine();
+      updateSearchStatus();
+      updateSearchClearButton();
+      schedulePersist();
+      return;
+    }
+
+    if (state.searchIndex === -1 || state.searchIndex >= state.searchMatches.length) {
+      state.searchIndex = 0;
+    }
+
+    scrollToActiveMatch();
+    updateSearchClearButton();
+    schedulePersist();
+  }
+
+  /**
+   * @brief Navigates between search results by the provided offset.
+   * @param delta Direction and magnitude to move within search matches.
+   */
+  function stepSearch(delta) {
+    if (!state.searchMatches.length) {
+      return;
+    }
+
+    if (state.searchIndex === -1) {
+      state.searchIndex = 0;
+    }
+
+    state.searchIndex =
+      (state.searchIndex + delta + state.searchMatches.length) % state.searchMatches.length;
+    scrollToActiveMatch();
+  }
+
+  /**
+   * @brief Debounces rapid calls to a function to limit execution.
+   * @param fn Function to debounce.
+   * @param delay Delay in milliseconds.
+   * @returns Wrapped function enforcing the debounce period.
+   */
+  function debounce(fn, delay) {
+    let handle;
+    return function (...args) {
+      clearTimeout(handle);
+      handle = setTimeout(() => fn.apply(null, args), delay);
+    };
+  }
+
+  restoreStateFromSnapshot(savedState);
+
+  // Event wiring
+  minLevelSelect.value = state.minLevel;
+
+  minLevelSelect.addEventListener('change', () => {
+    state.minLevel = minLevelSelect.value;
+    applyFilters();
+  });
+
+  textFilterInput.addEventListener(
+    'input',
+    debounce(() => {
+      state.textFilter = textFilterInput.value;
+      applyFilters();
+    }, 150)
+  );
+
+  logContent.addEventListener('contextmenu', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+    const line = target.closest('.log-line');
+    if (!line || !line.dataset.entryId) {
+      return;
+    }
+    event.preventDefault();
+    showBookmarkContextMenu(event, Number(line.dataset.entryId));
+  });
+
+  statusEl?.addEventListener('contextmenu', (event) => {
+    if (!state.isLiveLog) {
+      return;
+    }
+    event.preventDefault();
+    showStatusContextMenu(event);
+  });
+
+  presetSelect.addEventListener('change', () => {
+    const value = presetSelect.value;
+    if (value) {
+      applyPreset(value);
+    } else {
+      state.minLevel = minLevelSelect.value;
+      state.textFilter = textFilterInput.value;
+      applyFilters();
+    }
+  });
+
+  savePresetBtn.addEventListener('click', () => {
+    vscode.postMessage({
+      type: 'requestSavePreset',
+      deviceId: state.deviceId,
+      minLevel: minLevelSelect.value,
+      textFilter: textFilterInput.value,
+    });
+  });
+
+  deletePresetBtn.addEventListener('click', () => {
+    const value = presetSelect.value;
+    if (!value) {
+      return;
+    }
+    vscode.postMessage({ type: 'deletePreset', deviceId: state.deviceId, name: value });
+  });
+
+  exportBtn.addEventListener('click', () => {
+    const lines = state.filtered.map((e) => e.rawLine);
+    vscode.postMessage({ type: 'exportLogs', deviceId: state.deviceId, lines });
+  });
+
+  editBtn.addEventListener('click', () => {
+    vscode.postMessage({ type: 'openSourceFile' });
+  });
+
+  refreshBtn.addEventListener('click', () => {
+    vscode.postMessage({ type: 'refreshSourceFile' });
+  });
+
+  if (clearLogsBtn) {
+    clearLogsBtn.addEventListener('click', clearLogs);
+  }
+
+  wordWrapToggle.addEventListener('click', () => {
+    const next = !isToggleActive(wordWrapToggle);
+    setToggleState(wordWrapToggle, next);
+    state.wordWrapEnabled = next;
+    updateWordWrapClass();
+    schedulePersist();
+  });
+
+  autoScrollToggle.addEventListener('click', () => {
+    const next = !isToggleActive(autoScrollToggle);
+    setAutoScrollEnabled(next);
+    if (state.autoScrollEnabled && state.searchIndex === -1) {
+      logContainer.scrollTop = logContainer.scrollHeight;
+    }
+    schedulePersist();
+  });
+
+  autoReconnectToggle.addEventListener('click', () => {
+    const next = !isToggleActive(autoReconnectToggle);
+    state.autoReconnectEnabled = next;
+    setToggleState(autoReconnectToggle, next);
+    if (!state.autoReconnectEnabled) {
+      clearReconnectTimers();
+    } else if (state.connectionState === 'disconnected') {
+      startReconnectCountdown('Connection closed.');
+    }
+    schedulePersist();
+  });
+
+  logContainer.addEventListener('scroll', () => {
+    if (!state.isLiveLog) {
+      return;
+    }
+
+    const atBottom = isAtLogBottom();
+
+    if (state.autoScrollEnabled && !atBottom) {
+      setAutoScrollEnabled(false);
+      return;
+    }
+
+    if (!state.autoScrollEnabled && atBottom) {
+      setAutoScrollEnabled(true);
+      if (state.searchIndex === -1) {
+        logContainer.scrollTop = logContainer.scrollHeight;
+      }
+    }
+  });
+
+  logContainer.addEventListener('click', (event) => {
+    if (!state.searchMatches.length) {
+      return;
+    }
+
+    const logLine = event.target.closest('.log-line');
+    if (!logLine) {
+      return;
+    }
+
+    const entryIndex = Array.prototype.indexOf.call(logContent?.children || [], logLine);
+    if (entryIndex === -1) {
+      return;
+    }
+
+    const matchIndex = state.searchMatches.indexOf(entryIndex);
+    if (matchIndex === -1) {
+      return;
+    }
+
+    state.searchIndex = matchIndex;
+    scrollToActiveMatch();
+  });
+
+  reconnectButton.addEventListener('click', () => {
+    clearReconnectTimers();
+    if (state.connectionState === 'connected') {
+      state.autoReconnectEnabled = false;
+      if (autoReconnectToggle) {
+        setToggleState(autoReconnectToggle, false);
+      }
+      setConnectionState('connecting');
+      updateStatus('Disconnecting...', { disableButton: true });
+      vscode.postMessage({ type: 'requestDisconnect' });
+      return;
+    }
+
+    setConnectionState('connecting');
+    updateStatus('Reconnecting...', { disableButton: true, preserveDisabled: true });
+    vscode.postMessage({ type: 'requestReconnect' });
+  });
+
+  if (highlightToggle) {
+    highlightToggle.addEventListener('click', () => {
+      toggleHighlightPopover();
+    });
+  }
+
+  if (highlightBackdrop) {
+    highlightBackdrop.addEventListener('click', () => toggleHighlightPopover(false));
+  }
+
+  if (highlightAddBtn) {
+    highlightAddBtn.addEventListener('click', () => addHighlight());
+  }
+
+  if (highlightClearBtn) {
+    highlightClearBtn.addEventListener('click', () => removeAllHighlights());
+  }
+
+  searchInput.addEventListener(
+    'input',
+    debounce(() => {
+      state.searchTerm = searchInput.value;
+      render();
+      updateSearchMatches();
+    }, 150)
+  );
+
+  searchInput.addEventListener('input', updateSearchClearButton);
+
+  searchInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      stepSearch(event.shiftKey ? -1 : 1);
+    }
+  });
+
+  searchPrevBtn.addEventListener('click', () => stepSearch(-1));
+  searchNextBtn.addEventListener('click', () => stepSearch(1));
+
+  if (searchClearBtn) {
+    searchClearBtn.addEventListener('click', () => {
+      if (!searchInput.value) {
+        return;
+      }
+
+      searchInput.value = '';
+      state.searchTerm = '';
+      render();
+      updateSearchMatches();
+      updateSearchClearButton();
+      searchInput.focus();
+    });
+  }
+
+  if (autoSaveToggle) {
+    autoSaveToggle.addEventListener('click', () => {
+      autoSaveToggle.disabled = true;
+      if (state.autoSaveActive) {
+        vscode.postMessage({ type: 'stopAutoSave' });
+      } else {
+        vscode.postMessage({ type: 'startAutoSave' });
+      }
+    });
+  }
+
+  window.addEventListener('keydown', (event) => {
+    if (
+      event.key === 'Escape' &&
+      highlightPopover &&
+      !highlightPopover.classList.contains('hidden')
+    ) {
+      toggleHighlightPopover(false);
+      return;
+    }
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f') {
+      event.preventDefault();
+      searchInput.focus();
+      searchInput.select();
+    }
+  });
+
+  updateSearchClearButton();
+
+  window.addEventListener('message', (event) => {
+    const message = event.data;
+    switch (message.type) {
+      case 'initData':
+        state.deviceId = message.deviceId;
+        state.presets = message.presets || [];
+        state.isLiveLog = message.isLive !== false;
+        state.maxEntries = Math.max(1, Number(message.maxEntries) || state.maxEntries);
+        setLineLimitReached(state.lineLimitReached);
+        if (state.entries.length > state.maxEntries) {
+          state.entries = state.entries.slice(-state.maxEntries);
+          setLineLimitReached(true);
         }
-        state.secondaryStatus = snapshot.secondaryStatus || null;
-        state.autoSaveActive = snapshot.autoSaveActive === true;
-        state.activeBookmarkId = typeof snapshot.activeBookmarkId === 'number' ? snapshot.activeBookmarkId : null;
-
-        const restoredEntries = restoreEntries(snapshot.entries, state.maxEntries);
-        state.entries = restoredEntries;
-        entryIdCounter = restoredEntries.reduce((max, entry) => Math.max(max, entry.id || 0), -1) + 1;
-        state.lineLimitReached = snapshot.lineLimitReached === true || state.entries.length >= state.maxEntries;
-
-        minLevelSelect.value = state.minLevel;
-        textFilterInput.value = state.textFilter;
-        setToggleState(wordWrapToggle, state.wordWrapEnabled);
+        setConnectionState(state.isLiveLog ? 'connecting' : 'disconnected');
+        setHighlights(message.highlights || []);
+        if (!state.isLiveLog && autoScrollContainer) {
+          autoScrollContainer.classList.add('hidden');
+        }
+        if (!state.isLiveLog && autoReconnectContainer) {
+          autoReconnectContainer.classList.add('hidden');
+        }
+        const hideLiveOnlyControl = !state.isLiveLog;
+        if (clearLogsBtn) {
+          clearLogsBtn.classList.toggle('hidden', hideLiveOnlyControl);
+        }
+        if (clearLogsContainer) {
+          clearLogsContainer.classList.toggle('hidden', hideLiveOnlyControl);
+        }
+        const showImportedControls = !state.isLiveLog;
+        if (editContainer) {
+          editContainer.classList.toggle('hidden', !showImportedControls);
+        }
+        if (refreshContainer) {
+          refreshContainer.classList.toggle('hidden', !showImportedControls);
+        }
+        if (editBtn) {
+          editBtn.classList.toggle('hidden', !showImportedControls);
+        }
+        if (refreshBtn) {
+          refreshBtn.classList.toggle('hidden', !showImportedControls);
+        }
+        if (autoSaveToggle) {
+          autoSaveToggle.classList.toggle('hidden', hideLiveOnlyControl);
+          autoSaveToggle.disabled = !state.isLiveLog;
+        }
+        if (autoSaveContainer) {
+          autoSaveContainer.classList.toggle('hidden', hideLiveOnlyControl);
+        }
+        if (!state.isLiveLog && reconnectButton) {
+          reconnectButton.hidden = true;
+          reconnectButton.disabled = true;
+          reconnectButton.classList.add('hidden');
+        }
         setToggleState(autoScrollToggle, state.autoScrollEnabled);
         setToggleState(autoReconnectToggle, state.autoReconnectEnabled);
-        searchInput.value = state.searchTerm;
-
-        setHighlights(state.highlights);
         updatePresetDropdown();
         applyFilters();
-        updateWordWrapClass();
-        setLineLimitReached(state.lineLimitReached);
-        setConnectionState(state.connectionState || (state.isLiveLog ? 'connecting' : 'disconnected'));
-        updateStatus(state.statusText, { preserveSecondary: true });
-        if (state.secondaryStatus?.source === 'autoSave') {
-            setAutoSaveStatus(state.secondaryStatus.text, state.secondaryStatus.fileName);
-        } else if (state.secondaryStatus?.text) {
-            setSecondaryStatus(state.secondaryStatus.text);
+        break;
+      case 'initialLines':
+        handleInitialLogLines(message.lines);
+        break;
+      case 'logLine':
+        handleLogLine(message.line);
+        break;
+      case 'initPresets':
+      case 'presetsUpdated':
+        state.presets = message.presets || [];
+        updatePresetDropdown();
+        break;
+      case 'replaceLines':
+        clearLogs();
+        handleInitialLogLines(message.lines || []);
+        if (message.message) {
+          updateStatus(message.message, { preserveSecondary: true });
         }
-        if (state.autoSaveActive) {
-            setAutoSaveActive(true);
-        }
-        isRestoringState = false;
-    }
-    /**
-     * @brief Builds a DOM fragment with highlighted matches for a log line.
-     * @param line The raw log line.
-     * @returns Document fragment containing text nodes and highlighted spans.
-     */
-    function buildHighlightedContent(line, highlights) {
-        const fragment = document.createDocumentFragment();
-
-        if (line.length === 0) {
-            fragment.appendChild(document.createTextNode('\u00A0'));
-            return fragment;
-        }
-
-        if (!highlights.length) {
-            fragment.appendChild(document.createTextNode(line));
-            return fragment;
-        }
-
-        const lowerLine = line.toLowerCase();
-        let index = 0;
-
-        while (index < line.length) {
-            let nextMatch = null;
-
-            for (const highlight of highlights) {
-                const matchIndex = lowerLine.indexOf(highlight.normalizedKey, index);
-                if (matchIndex !== -1 && (nextMatch === null || matchIndex < nextMatch.position)) {
-                    nextMatch = {
-                        position: matchIndex,
-                        end: matchIndex + highlight.normalizedKey.length,
-                        highlight,
-                    };
-                }
-            }
-
-            if (!nextMatch) {
-                fragment.appendChild(document.createTextNode(line.slice(index)));
-                break;
-            }
-
-            if (nextMatch.position > index) {
-                fragment.appendChild(document.createTextNode(line.slice(index, nextMatch.position)));
-            }
-
-            const span = document.createElement('span');
-            span.textContent = line.slice(nextMatch.position, nextMatch.end);
-            span.className = 'highlighted-text';
-            if (nextMatch.highlight.className) {
-                span.classList.add(nextMatch.highlight.className);
-            }
-            if (nextMatch.highlight.color) {
-                span.style.color = nextMatch.highlight.color;
-                span.style.borderColor = nextMatch.highlight.color;
-            }
-            if (nextMatch.highlight.backgroundColor) {
-                span.style.backgroundColor = nextMatch.highlight.backgroundColor;
-            }
-            fragment.appendChild(span);
-
-            index = nextMatch.end;
-        }
-
-        return fragment;
-    }
-
-    /**
-     * @brief Replaces the highlight collection with updated entries.
-     * @param highlights Highlight definitions stored for the current panel.
-     */
-    function setHighlights(highlights) {
-        state.highlights = (highlights || []).map((highlight) => ({
-            ...highlight,
-            normalizedKey: (highlight.key || '').trim().toLowerCase(),
-        }));
-        state.nextHighlightId = state.highlights.reduce((max, h) => Math.max(max, h.id || 0), 0) + 1;
-        highlightColorCursor = state.highlights.length % highlightPalette.length;
-        renderHighlightRows();
-        applyFilters({ preserveScrollPosition: true });
-    }
-
-    function nextHighlightColor() {
-        const pair = highlightPalette[highlightColorCursor % highlightPalette.length];
-        highlightColorCursor = (highlightColorCursor + 1) % highlightPalette.length;
-        return pair;
-    }
-
-    function syncHighlightStatus(message = '') {
-        if (!highlightStatus) {
-            return;
-        }
-        if (message) {
-            highlightStatus.textContent = message;
-            return;
-        }
-        highlightStatus.textContent = state.highlights.length >= 10 ? 'You can highlight up to 10 keys.' : '';
-    }
-
-    function pushHighlightChanges() {
-        vscode.postMessage({
-            type: 'highlightsChanged',
-            highlights: state.highlights.map((highlight) => ({
-                id: highlight.id,
-                key: highlight.key,
-                baseColor: highlight.baseColor,
-                color: highlight.color,
-                backgroundColor: highlight.backgroundColor,
-            })),
-        });
-    }
-
-    function renderHighlightRows() {
-        if (!highlightRows) {
-            return;
-        }
-        highlightRows.innerHTML = '';
-        const frag = document.createDocumentFragment();
-        state.highlights.forEach((highlight) => {
-            const row = document.createElement('div');
-            row.className = 'highlight-row';
-
-            const swatch = document.createElement('span');
-            swatch.className = 'color-swatch';
-            swatch.style.backgroundColor = highlight.baseColor;
-            swatch.style.borderColor = highlight.baseColor;
-            row.appendChild(swatch);
-
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.value = highlight.key;
-            input.placeholder = 'Key to highlight';
-            input.className = 'highlight-input';
-            input.addEventListener('input', () => {
-                highlight.key = input.value;
-                highlight.normalizedKey = (highlight.key || '').trim().toLowerCase();
-                applyFilters({ preserveScrollPosition: true });
-                pushHighlightChanges();
-                syncHighlightStatus();
-            });
-            row.appendChild(input);
-
-            const remove = document.createElement('button');
-            remove.className = 'highlight-remove';
-            remove.type = 'button';
-            remove.textContent = '✕';
-            remove.title = 'Remove highlight';
-            remove.addEventListener('click', () => {
-                state.highlights = state.highlights.filter((item) => item.id !== highlight.id);
-                renderHighlightRows();
-                pushHighlightChanges();
-                syncHighlightStatus();
-                applyFilters({ preserveScrollPosition: true });
-            });
-            row.appendChild(remove);
-
-            frag.appendChild(row);
-        });
-        highlightRows.appendChild(frag);
-        syncHighlightStatus();
-    }
-
-    function addHighlight() {
-        if (state.highlights.length >= 10) {
-            syncHighlightStatus();
-            return;
-        }
-        const { foreground, background } = nextHighlightColor();
-        state.highlights.push({
-            id: state.nextHighlightId++,
-            key: '',
-            normalizedKey: '',
-            baseColor: foreground,
-            color: foreground,
-            backgroundColor: background,
-        });
-        renderHighlightRows();
-        pushHighlightChanges();
-    }
-
-    function removeAllHighlights() {
-        if (!state.highlights.length) {
-            return;
-        }
-        state.highlights = [];
-        highlightColorCursor = 0;
-        renderHighlightRows();
-        pushHighlightChanges();
-        applyFilters({ preserveScrollPosition: true });
-    }
-
-    function toggleHighlightPopover(forceOpen) {
-        if (!highlightPopover || !highlightBackdrop) {
-            return;
-        }
-        const shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : highlightPopover.classList.contains('hidden');
-        highlightPopover.classList.toggle('hidden', !shouldOpen);
-        highlightBackdrop.classList.toggle('hidden', !shouldOpen);
-        if (shouldOpen) {
-            syncHighlightStatus();
-            const firstInput = highlightPopover.querySelector('.highlight-input');
-            if (firstInput) {
-                firstInput.focus();
-            }
-        }
-    }
-
-    /**
-     * @brief Renders the filtered entries into the log container.
-     */
-    function render(options = {}) {
-        const preserveScrollPosition = options.preserveScrollPosition === true;
-        const previousScrollTop = preserveScrollPosition ? logContainer.scrollTop : 0;
-        const previousScrollHeight = preserveScrollPosition ? logContainer.scrollHeight : 0;
-        const visible = state.filtered;
-        const highlights = getHighlightDescriptors();
-        state.activeSearchEntry = -1;
-        if (!logContent) {
-            return;
-        }
-        logContent.innerHTML = '';
-        const frag = document.createDocumentFragment();
-        for (const entry of visible) {
-            const div = createLogLineElement(entry, highlights);
-            frag.appendChild(div);
-        }
-        logContent.appendChild(frag);
-        if (preserveScrollPosition) {
-            const scrollDelta = logContainer.scrollHeight - previousScrollHeight;
-            logContainer.scrollTop = Math.max(0, previousScrollTop + scrollDelta);
-        } else if (state.searchIndex === -1 && state.autoScrollEnabled) {
-            logContainer.scrollTop = logContainer.scrollHeight;
-        }
-        updateActiveBookmarkHighlight();
-    }
-
-    /**
-     * @brief Populates the preset dropdown with available presets.
-     */
-    function updatePresetDropdown() {
-        presetSelect.innerHTML = '';
-        const base = document.createElement('option');
-        base.value = '';
-        base.textContent = '(no preset)';
-        presetSelect.appendChild(base);
-        state.presets.forEach((p) => {
-            const opt = document.createElement('option');
-            opt.value = p.name;
-            opt.textContent = p.name;
-            presetSelect.appendChild(opt);
-        });
-    }
-
-    /**
-     * @brief Applies a preset by name, synchronizing UI inputs.
-     * @param name Preset identifier selected by the user.
-     */
-    function applyPreset(name) {
-        const preset = state.presets.find((p) => p.name === name);
-        if (!preset) {
-            return;
-        }
-        state.minLevel = preset.minLevel;
-        state.textFilter = preset.textFilter;
-        minLevelSelect.value = state.minLevel;
-        textFilterInput.value = state.textFilter;
-        applyFilters();
-    }
-
-    /**
-     * @brief Identifies special line types that should bypass filters or have custom styling.
-     * @param line Raw log line to inspect.
-     * @returns An object containing optional className and bypassFilters flags.
-     */
-    function classifyLogLine(line) {
-        const normalized = line.trim().toLowerCase();
-        const bookmarkMatch = line.match(/^\s*---\s*bookmark\s*---\s*(.*)$/i);
-        if (bookmarkMatch) {
-            return {
-                className: 'bookmark-line',
-                bypassFilters: true,
-                isBookmark: true,
-                bookmarkLabel: (bookmarkMatch[1] || '').trim(),
-            };
-        }
-        if (normalized.startsWith('--- ssh session closed')) {
-            return { className: 'session-closed', bypassFilters: true };
-        }
-        return { className: null, bypassFilters: false, isBookmark: false, bookmarkLabel: '' };
-    }
-
-    /**
-     * @brief Generates a new log entry with a unique identifier.
-     * @param line Raw log line to store.
-     * @param options Additional entry options.
-     * @returns A populated log entry object.
-     */
-    function createEntry(line, options = {}) {
-        const classification = classifyLogLine(line);
-        const isBookmark = options.isBookmark === true || classification.isBookmark === true;
-        const bookmarkLabel = options.bookmarkLabel ?? classification.bookmarkLabel ?? '';
-        return {
-            id: entryIdCounter++,
-            timestamp: options.timestamp ?? Date.now(),
-            level: options.level ?? (isBookmark ? 'INFO' : parseLevel(line)),
-            rawLine: line,
-            className: options.className ?? classification.className,
-            bypassFilters: options.bypassFilters === true || classification.bypassFilters === true,
-            isBookmark,
-            bookmarkLabel,
-        };
-    }
-
-    /**
-     * @brief Builds the DOM element for a log entry.
-     * @param entry The entry to render.
-     * @param highlights Highlight descriptors to apply.
-     * @returns A configured DIV element for the log line.
-     */
-    function createLogLineElement(entry, highlights) {
-        const div = document.createElement('div');
-        const classes = [`log-line`, `level-${entry.level.toLowerCase()}`];
-        if (entry.className) {
-            classes.push(entry.className);
-        }
-        if (entry.isBookmark) {
-            classes.push('bookmark-line');
-        }
-        if (state.activeBookmarkId === entry.id) {
-            classes.push('active-bookmark');
-        }
-        div.className = classes.join(' ');
-        div.dataset.entryId = String(entry.id);
-        div.appendChild(buildHighlightedContent(entry.rawLine, highlights));
-        return div;
-    }
-
-    /**
-     * @brief Updates the active bookmark styling in the DOM.
-     */
-    function updateActiveBookmarkHighlight() {
-        const active = logContent?.querySelector('.log-line.active-bookmark');
-        if (active) {
-            active.classList.remove('active-bookmark');
-        }
-        if (state.activeBookmarkId === null) {
-            return;
-        }
-        const next = logContent?.querySelector(`[data-entry-id="${state.activeBookmarkId}"]`);
-        if (next) {
-            next.classList.add('active-bookmark');
-        }
-    }
-
-    /**
-     * @brief Handles incoming log lines from the extension host.
-     * @param line Raw log text to parse and display.
-     */
-    function handleLogLine(line, options = {}) {
-        const lowerLine = line.toLowerCase();
-        const entry = createEntry(line, options);
-        let trimmedEntries = false;
-        state.entries.push(entry);
-        if (state.entries.length > state.maxEntries) {
-            state.entries.shift();
-            trimmedEntries = true;
-        }
-        const searchTerm = state.searchTerm.trim().toLowerCase();
-        if (
-            entry.bypassFilters ||
-            (levelPasses(entry.level) && (!state.textFilter || lowerLine.includes(state.textFilter.toLowerCase())))
-        ) {
-            state.filtered.push(entry);
-            if (state.filtered.length > state.maxEntries) {
-                state.filtered.shift();
-                trimmedEntries = true;
-                if (logContent && logContent.firstChild) {
-                    logContent.removeChild(logContent.firstChild);
-                }
-                state.searchMatches = state.searchMatches
-                    .map((idx) => idx - 1)
-                    .filter((idx) => idx >= 0);
-                if (state.searchMatches.length === 0) {
-                    state.searchIndex = -1;
-                } else if (state.searchIndex >= state.searchMatches.length) {
-                    state.searchIndex = state.searchMatches.length - 1;
-                }
-            }
-            const highlights = getHighlightDescriptors();
-            const div = createLogLineElement(entry, highlights);
-            if (logContent) {
-                logContent.appendChild(div);
-            }
-            if (searchTerm && lowerLine.includes(searchTerm)) {
-                state.searchMatches.push(state.filtered.length - 1);
-                if (state.searchIndex === -1) {
-                    state.searchIndex = 0;
-                }
-            }
-            if (state.searchIndex === -1 && state.autoScrollEnabled) {
-                logContainer.scrollTop = logContainer.scrollHeight;
-            } else if (state.searchIndex !== -1) {
-                scrollToActiveMatch();
-            }
-            updateSearchStatus();
-            updateActiveBookmarkHighlight();
-            if (trimmedEntries) {
-                setLineLimitReached(true);
-            }
-        }
-        schedulePersist();
-    }
-
-    /**
-     * @brief Handles bulk log lines sent during offline file loading.
-     * @param lines Collection of preloaded lines to add.
-     */
-    function handleInitialLogLines(lines) {
-        if (!Array.isArray(lines) || !lines.length) {
-            return;
-        }
-
-        const timestamp = Date.now();
-        const newEntries = lines.map((line) => createEntry(line, { timestamp }));
-
-        state.entries = state.entries.concat(newEntries);
-        let trimmed = false;
-        if (state.entries.length > state.maxEntries) {
-            state.entries = state.entries.slice(-state.maxEntries);
-            trimmed = true;
-        }
-
-        applyFilters();
-        if (trimmed) {
-            setLineLimitReached(true);
-        }
-        schedulePersist();
-    }
-
-    /**
-     * @brief Clears all rendered and stored log entries while preserving filters.
-     */
-    function clearLogs() {
-        state.entries = [];
-        state.filtered = [];
-        state.searchMatches = [];
-        state.searchIndex = -1;
-        state.activeSearchEntry = -1;
-        state.activeBookmarkId = null;
-        entryIdCounter = 0;
-        render();
-        updateSearchStatus();
-        setLineLimitReached(false);
-        schedulePersist();
-    }
-
-    /**
-     * @brief Formats the bookmark line text with an optional label.
-     * @param label Label to append after the bookmark marker.
-     * @returns Formatted bookmark text.
-     */
-    function formatBookmarkText(label) {
-        const trimmedLabel = label.trim();
-        return trimmedLabel ? `--- Bookmark --- ${trimmedLabel}` : '--- Bookmark ---';
-    }
-
-    /**
-     * @brief Creates a reusable dialog for editing bookmark labels.
-     * @returns Object exposing an open method that resolves to the submitted label or null when cancelled.
-     */
-    function createBookmarkLabelDialog() {
-        const overlay = document.createElement('div');
-        overlay.className = 'bookmark-dialog hidden';
-
-        const dialog = document.createElement('div');
-        dialog.className = 'bookmark-dialog__content';
-
-        const title = document.createElement('h3');
-        title.textContent = 'Bookmark label';
-
-        const form = document.createElement('form');
-        form.className = 'bookmark-dialog__form';
-
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.name = 'bookmarkLabel';
-        input.className = 'bookmark-dialog__input';
-        input.placeholder = 'Enter bookmark label';
-
-        const actions = document.createElement('div');
-        actions.className = 'bookmark-dialog__actions';
-
-        const cancelButton = document.createElement('button');
-        cancelButton.type = 'button';
-        cancelButton.className = 'secondary';
-        cancelButton.textContent = 'Cancel';
-
-        const saveButton = document.createElement('button');
-        saveButton.type = 'submit';
-        saveButton.textContent = 'Save';
-
-        actions.appendChild(cancelButton);
-        actions.appendChild(saveButton);
-        form.appendChild(input);
-        form.appendChild(actions);
-        dialog.appendChild(title);
-        dialog.appendChild(form);
-        overlay.appendChild(dialog);
-        document.body.appendChild(overlay);
-
-        let resolver = null;
-
-        function closeDialog(value) {
-            overlay.classList.add('hidden');
-            resolver?.(value);
-            resolver = null;
-        }
-
-        form.addEventListener('submit', (event) => {
-            event.preventDefault();
-            closeDialog(input.value.trim());
-        });
-
-        cancelButton.addEventListener('click', () => closeDialog(null));
-
-        overlay.addEventListener('click', (event) => {
-            if (event.target === overlay) {
-                closeDialog(null);
-            }
-        });
-
-        document.addEventListener('keydown', (event) => {
-            if (overlay.classList.contains('hidden')) {
-                return;
-            }
-            if (event.key === 'Escape') {
-                closeDialog(null);
-            }
-        });
-
-        return {
-            open(initialLabel = '') {
-                if (resolver) {
-                    return Promise.resolve(null);
-                }
-                input.value = initialLabel;
-                overlay.classList.remove('hidden');
-                input.focus();
-                input.select();
-                return new Promise((resolve) => {
-                    resolver = resolve;
-                });
-            },
-        };
-    }
-
-    /**
-     * @brief Creates a bookmark entry instance.
-     * @param label Optional label for the bookmark.
-     * @returns A bookmark entry object.
-     */
-    function createBookmarkEntry(label = '') {
-        const text = formatBookmarkText(label);
-        return createEntry(text, {
-            bypassFilters: true,
-            className: 'bookmark-line',
-            isBookmark: true,
-            bookmarkLabel: label.trim(),
-            level: 'INFO',
-        });
-    }
-
-    /**
-     * @brief Inserts a bookmark entry before the specified entry identifier.
-     * @param entryId Target entry identifier to insert before.
-     * @param label Optional bookmark label.
-     */
-    function insertBookmarkBefore(entryId, label = '') {
-        const targetIndex = state.entries.findIndex((entry) => entry.id === entryId);
-        if (targetIndex === -1) {
-            return;
-        }
-        const bookmarkEntry = createBookmarkEntry(label);
-        state.entries.splice(targetIndex, 0, bookmarkEntry);
-        applyFilters({ preserveScrollPosition: true });
-        scrollToEntryId(bookmarkEntry.id);
-    }
-
-    /**
-     * @brief Updates the label for an existing bookmark.
-     * @param entryId Identifier of the bookmark to update.
-     */
-    async function editBookmarkLabel(entryId) {
-        const entry = state.entries.find((item) => item.id === entryId);
-        if (!entry) {
-            return;
-        }
-        const classification = classifyLogLine(entry.rawLine);
-        if (!entry.isBookmark && !classification.isBookmark) {
-            return;
-        }
-        const bookmarkLabel = entry.bookmarkLabel || classification.bookmarkLabel || '';
-        const label = await bookmarkLabelDialog.open(bookmarkLabel);
-        if (label === null) {
-            return;
-        }
-        entry.bookmarkLabel = label.trim();
-        entry.isBookmark = true;
-        entry.className = 'bookmark-line';
-        entry.bypassFilters = true;
-        entry.rawLine = formatBookmarkText(entry.bookmarkLabel);
-        applyFilters({ preserveScrollPosition: true });
-        scrollToEntryId(entry.id);
-    }
-
-    /**
-     * @brief Removes a single bookmark entry.
-     * @param entryId Identifier of the bookmark to remove.
-     */
-    function removeBookmark(entryId) {
-        const index = state.entries.findIndex((entry) => entry.id === entryId && entry.isBookmark);
-        if (index === -1) {
-            return;
-        }
-        state.entries.splice(index, 1);
-        if (state.activeBookmarkId === entryId) {
-            state.activeBookmarkId = null;
-        }
-        applyFilters({ preserveScrollPosition: true });
-    }
-
-    /**
-     * @brief Removes all bookmark entries from the log list.
-     */
-    function removeAllBookmarks() {
-        if (!state.entries.some((entry) => entry.isBookmark)) {
-            return;
-        }
-        state.entries = state.entries.filter((entry) => !entry.isBookmark);
-        state.activeBookmarkId = null;
-        applyFilters({ preserveScrollPosition: true });
-    }
-
-    /**
-     * @brief Retrieves filtered bookmark indices.
-     * @returns An array of indices within the filtered list that are bookmarks.
-     */
-    function getFilteredBookmarkIndices() {
-        const indices = [];
-        for (let i = 0; i < state.filtered.length; i += 1) {
-            if (state.filtered[i].isBookmark) {
-                indices.push(i);
-            }
-        }
-        return indices;
-    }
-
-    /**
-     * @brief Finds the filtered index for a given entry identifier.
-     * @param entryId Entry identifier to locate.
-     * @returns Filtered index or -1 when missing.
-     */
-    function findFilteredIndexById(entryId) {
-        return state.filtered.findIndex((entry) => entry.id === entryId);
-    }
-
-    /**
-     * @brief Scrolls to the log line matching the specified entry id.
-     * @param entryId Entry identifier to scroll to.
-     */
-    function scrollToEntryId(entryId) {
-        const element = logContent?.querySelector(`[data-entry-id="${entryId}"]`);
-        const entry = state.entries.find((item) => item.id === entryId && item.isBookmark);
-        if (element && entry) {
-            element.scrollIntoView({ block: 'center' });
-            state.activeBookmarkId = entryId;
-            updateActiveBookmarkHighlight();
-        }
-    }
-
-    /**
-     * @brief Navigates to the next or previous bookmark relative to the current entry.
-     * @param entryId Current entry identifier.
-     * @param direction Direction to travel, either 'next' or 'previous'.
-     */
-    function navigateToBookmark(entryId, direction) {
-        const bookmarkIndices = getFilteredBookmarkIndices();
-        if (!bookmarkIndices.length) {
-            return;
-        }
-        const currentIndex = findFilteredIndexById(entryId);
-        if (currentIndex === -1) {
-            scrollToEntryId(state.filtered[bookmarkIndices[0]].id);
-            return;
-        }
-        if (direction === 'next') {
-            const target = bookmarkIndices.find((idx) => idx > currentIndex) ?? bookmarkIndices[0];
-            scrollToEntryId(state.filtered[target].id);
-            return;
-        }
-        const reversed = [...bookmarkIndices].reverse();
-        const target = reversed.find((idx) => idx < currentIndex) ?? reversed[0];
-        scrollToEntryId(state.filtered[target].id);
-    }
-
-    /**
-     * @brief Constructs the bookmark context menu DOM and wires event handlers.
-     * @returns The created context menu element.
-     */
-    function createBookmarkContextMenu() {
-        const menu = document.createElement('div');
-        menu.id = 'bookmarkContextMenu';
-        menu.className = 'bookmark-context-menu hidden';
-        const actions = [
-            { action: 'add', label: 'Add bookmark' },
-            { action: 'edit', label: 'Edit bookmark label' },
-            { action: 'remove', label: 'Remove bookmark' },
-            { action: 'removeAll', label: 'Remove all bookmarks' },
-            { action: 'next', label: 'Go to next bookmark' },
-            { action: 'previous', label: 'Go to previous bookmark' },
-        ];
-        const list = document.createElement('ul');
-        for (const item of actions) {
-            const li = document.createElement('li');
-            const button = document.createElement('button');
-            button.textContent = item.label;
-            button.dataset.action = item.action;
-            li.appendChild(button);
-            list.appendChild(li);
-        }
-        menu.appendChild(list);
-        menu.addEventListener('click', (event) => {
-            const target = event.target;
-            if (!(target instanceof HTMLElement)) {
-                return;
-            }
-            const action = target.dataset.action;
-            if (!action) {
-                return;
-            }
-            event.preventDefault();
-            handleBookmarkAction(action);
-            hideBookmarkContextMenu();
-        });
-        document.addEventListener('click', (event) => {
-            if (!menu.contains(event.target)) {
-                hideBookmarkContextMenu();
-            }
-        });
-        document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape') {
-                hideBookmarkContextMenu();
-            }
-        });
-        logContainer.addEventListener('scroll', hideBookmarkContextMenu);
-        window.addEventListener('resize', hideBookmarkContextMenu);
-        document.body.appendChild(menu);
-        return menu;
-    }
-
-    /**
-     * @brief Updates the context menu options based on the current text selection.
-     * @param selectedText Text currently selected in the document.
-     */
-    function updateBookmarkContextMenuOptions(selectedText) {
-        const existingCopyButton = bookmarkContextMenu.querySelector('button[data-action="copy"]');
-        if (existingCopyButton?.parentElement) {
-            existingCopyButton.parentElement.remove();
-        }
-
-        const list = bookmarkContextMenu.querySelector('ul');
-        const hasSelection = selectedText && selectedText.trim() !== '';
-        contextMenuSelectedText = hasSelection ? selectedText : '';
-        if (!list || !hasSelection) {
-            return;
-        }
-
-        const copyListItem = document.createElement('li');
-        const copyButton = document.createElement('button');
-        copyButton.textContent = 'Copy';
-        copyButton.dataset.action = 'copy';
-        copyListItem.appendChild(copyButton);
-        list.insertBefore(copyListItem, list.firstChild);
-    }
-
-    /**
-     * @brief Displays the bookmark context menu at the pointer location.
-     * @param event Context menu mouse event.
-     * @param entryId Target entry identifier.
-     */
-    function showBookmarkContextMenu(event, entryId) {
-        contextMenuEntryId = entryId;
-        const initialX = event.clientX;
-        const initialY = event.clientY;
-        bookmarkContextMenu.style.top = `${initialY}px`;
-        bookmarkContextMenu.style.left = `${initialX}px`;
-        const selection = window.getSelection();
-        const selectedText = selection && !selection.isCollapsed ? selection.toString() : '';
-        updateBookmarkContextMenuOptions(selectedText);
-        updateBookmarkMenuState(entryId);
-        bookmarkContextMenu.classList.remove('hidden');
-
-        const menuRect = bookmarkContextMenu.getBoundingClientRect();
-        const viewportWidth = window.innerWidth;
-        const viewportHeight = window.innerHeight;
-        const padding = 8;
-        let adjustedX = initialX;
-        let adjustedY = initialY;
-
-        if (menuRect.right > viewportWidth - padding) {
-            adjustedX = Math.max(padding, viewportWidth - menuRect.width - padding);
-        }
-        if (menuRect.bottom > viewportHeight - padding) {
-            adjustedY = Math.max(padding, viewportHeight - menuRect.height - padding);
-        }
-
-        bookmarkContextMenu.style.left = `${adjustedX}px`;
-        bookmarkContextMenu.style.top = `${adjustedY}px`;
-    }
-
-    /**
-     * @brief Hides the bookmark context menu.
-     */
-    function hideBookmarkContextMenu() {
-        bookmarkContextMenu.classList.add('hidden');
-        contextMenuEntryId = null;
-    }
-
-    /**
-     * @brief Enables or disables menu items based on the selected entry.
-     * @param entryId Currently selected entry id.
-     */
-    function updateBookmarkMenuState(entryId) {
-        const entry = state.entries.find((item) => item.id === entryId);
-        const classification = entry ? classifyLogLine(entry.rawLine) : { isBookmark: false };
-        const isBookmark = !!entry?.isBookmark || classification.isBookmark === true;
-        const editButton = bookmarkContextMenu.querySelector('button[data-action="edit"]');
-        const removeButton = bookmarkContextMenu.querySelector('button[data-action="remove"]');
-        if (editButton instanceof HTMLButtonElement) {
-            editButton.disabled = !isBookmark;
-        }
-        if (removeButton instanceof HTMLButtonElement) {
-            removeButton.disabled = !isBookmark;
-        }
-    }
-
-    /**
-     * @brief Executes a bookmark-related action from the context menu.
-     * @param action Action identifier to run.
-     */
-    function handleBookmarkAction(action) {
-        if (contextMenuEntryId === null && action !== 'removeAll') {
-            return;
-        }
-        switch (action) {
-            case 'copy':
-                if (contextMenuSelectedText) {
-                    navigator.clipboard?.writeText(contextMenuSelectedText).catch((error) => {
-                        console.error('Failed to copy selected text', error);
-                    });
-                }
-                break;
-            case 'add':
-                insertBookmarkBefore(contextMenuEntryId);
-                break;
-            case 'edit':
-                editBookmarkLabel(contextMenuEntryId);
-                break;
-            case 'remove':
-                removeBookmark(contextMenuEntryId);
-                break;
-            case 'removeAll':
-                removeAllBookmarks();
-                break;
-            case 'next':
-                navigateToBookmark(contextMenuEntryId, 'next');
-                break;
-            case 'previous':
-                navigateToBookmark(contextMenuEntryId, 'previous');
-                break;
-            default:
-                break;
-        }
-    }
-
-    /**
-     * @brief Builds the context menu for the status area.
-     * @returns The created context menu element.
-     */
-    function createStatusContextMenu() {
-        const menu = document.createElement('div');
-        menu.id = 'statusContextMenu';
-        menu.className = 'status-context-menu hidden';
-
-        const list = document.createElement('ul');
-        const resetItem = document.createElement('li');
-        const resetButton = document.createElement('button');
-        resetButton.textContent = 'Clear status message';
-        resetButton.dataset.action = 'resetStatus';
-        resetItem.appendChild(resetButton);
-        list.appendChild(resetItem);
-        menu.appendChild(list);
-
-        menu.addEventListener('click', (event) => {
-            const target = event.target;
-            if (!(target instanceof HTMLButtonElement) || target.disabled) {
-                return;
-            }
-            if (target.dataset.action === 'resetStatus') {
-                resetStatusToDefault();
-            }
-            hideStatusContextMenu();
-        });
-
-        document.addEventListener('click', (event) => {
-            if (!menu.contains(event.target)) {
-                hideStatusContextMenu();
-            }
-        });
-
-        document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape') {
-                hideStatusContextMenu();
-            }
-        });
-
-        window.addEventListener('resize', hideStatusContextMenu);
-        document.body.appendChild(menu);
-        return menu;
-    }
-
-    /**
-     * @brief Shows the status context menu anchored to the pointer position.
-     * @param event Context menu mouse event.
-     */
-    function showStatusContextMenu(event) {
-        const initialX = event.clientX;
-        const initialY = event.clientY;
-        statusContextMenu.style.left = `${initialX}px`;
-        statusContextMenu.style.top = `${initialY}px`;
-        updateStatusContextMenuState();
-        statusContextMenu.classList.remove('hidden');
-
-        const menuRect = statusContextMenu.getBoundingClientRect();
-        const viewportWidth = window.innerWidth;
-        const viewportHeight = window.innerHeight;
-        const padding = 8;
-        let adjustedX = initialX;
-        let adjustedY = initialY;
-
-        if (menuRect.right > viewportWidth - padding) {
-            adjustedX = Math.max(padding, viewportWidth - menuRect.width - padding);
-        }
-        if (menuRect.bottom > viewportHeight - padding) {
-            adjustedY = Math.max(padding, viewportHeight - menuRect.height - padding);
-        }
-
-        statusContextMenu.style.left = `${adjustedX}px`;
-        statusContextMenu.style.top = `${adjustedY}px`;
-    }
-
-    /**
-     * @brief Hides the status context menu.
-     */
-    function hideStatusContextMenu() {
-        statusContextMenu.classList.add('hidden');
-    }
-
-    /**
-     * @brief Enables or disables the reset option based on connection state.
-     */
-    function updateStatusContextMenuState() {
-        const resetButton = statusContextMenu.querySelector('button[data-action="resetStatus"]');
-        if (!(resetButton instanceof HTMLButtonElement)) {
-            return;
-        }
-        const isConnected = state.isLiveLog && state.connectionState === 'connected';
-        resetButton.disabled = !isConnected;
-    }
-
-    /**
-     * @brief Clears custom status messages and restores the default connected text.
-     */
-    function resetStatusToDefault() {
-        if (!state.isLiveLog || state.connectionState !== 'connected') {
-            return;
-        }
-        const fallbackStatus = state.defaultConnectedStatus || DEFAULT_CONNECTED_STATUS;
-        state.secondaryStatus = null;
-        state.defaultConnectedStatus = fallbackStatus;
-        updateStatus(fallbackStatus, { disableButton: false });
-    }
-
-    /**
-     * @brief Clears any active reconnect countdown timers.
-     */
-    function clearReconnectTimers() {
-        if (reconnectTimeoutId) {
-            clearTimeout(reconnectTimeoutId);
-            reconnectTimeoutId = null;
-        }
-        if (reconnectIntervalId) {
-            clearInterval(reconnectIntervalId);
-            reconnectIntervalId = null;
-        }
-        reconnectCountdown = 0;
-    }
-
-    /**
-     * @brief Updates the connection action button visibility and state.
-     * @param options Additional options to control disabled behaviour.
-     */
-    function updateActionButton(options = {}) {
-        if (!state.isLiveLog) {
-            reconnectButton.hidden = true;
-            reconnectButton.classList.add('hidden');
-            return;
-        }
-
-        reconnectButton.classList.remove('hidden');
-        reconnectButton.hidden = false;
-        reconnectButton.textContent = state.connectionState === 'connected' ? 'Disconnect' : 'Reconnect';
-
-        const shouldDisable = options.preserveDisabled
-            ? reconnectButton.disabled
-            : options.disableButton ?? state.connectionState === 'connecting';
-        reconnectButton.disabled = shouldDisable;
-    }
-
-    /**
-     * @brief Updates the tracked connection state.
-     * @param connectionState New connection state string.
-     */
-    function setConnectionState(connectionState) {
-        state.connectionState = connectionState;
-        if (connectionState === 'connected') {
-            if (!state.defaultConnectedStatus) {
-                state.defaultConnectedStatus = state.statusText || DEFAULT_CONNECTED_STATUS;
-            }
-            clearReconnectTimers();
-        }
-        updateActionButton();
-        updateAutoSaveToggleState();
-        updateConnectionDecorations();
-        schedulePersist();
-    }
-
-    /**
-     * @brief Updates the status text shown in the UI.
-     * @param text Status message to display.
-     */
-    function updateStatus(text, options = {}) {
-        if (!options.preserveSecondary) {
-            state.secondaryStatus = null;
-        }
-
-        state.statusText = text || '';
-        renderStatusText();
-        updateActionButton(options);
-        schedulePersist();
-    }
-
-    /**
-     * @brief Updates the secondary status line reserved for auto-save and default log command messages.
-     * @param text Status message to display in the secondary line.
-     */
-    function setSecondaryStatus(text) {
-        if (text) {
-            state.secondaryStatus = { text, source: 'logCommand' };
+        break;
+      case 'status':
+        handleStatusMessage(message.message);
+        break;
+      case 'error':
+        if (isDefaultLogCommandMessage(message.message)) {
+          setSecondaryStatus(message.message);
         } else {
-            state.secondaryStatus = null;
+          updateStatus(message.message);
         }
-        renderStatusText();
-        schedulePersist();
-    }
-
-    /**
-     * @brief Updates the status element by combining connection and auto-save messages.
-     */
-    function renderStatusText() {
-        if (!statusEl) {
-            return;
-        }
-
-        const isWaitingForPassword = (text) => text === 'Waiting for the user to enter the password…';
-
-        const appendStatusText = (container, text) => {
-            if (!text) {
-                return;
-            }
-            if (isWaitingForPassword(text)) {
-                const span = document.createElement('span');
-                span.classList.add('status-waiting');
-                span.textContent = text;
-                container.appendChild(span);
-            } else {
-                container.appendChild(document.createTextNode(text));
-            }
-        };
-
-        const lines = [];
-        if (state.statusText) {
-            lines.push({ text: state.statusText });
-        }
-        if (state.secondaryStatus && (state.secondaryStatus.text || state.secondaryStatus.fileName)) {
-            lines.push({
-                text: state.secondaryStatus.text || '',
-                fileName: state.secondaryStatus.fileName,
-            });
-        }
-
-        statusEl.textContent = '';
-
-        for (let i = 0; i < lines.length; i += 1) {
-            if (i > 0) {
-                statusEl.appendChild(document.createElement('br'));
-            }
-
-            const line = lines[i];
-            const trimmedText = line.text || '';
-
-            if (line.fileName) {
-                if (trimmedText) {
-                    const textValue = trimmedText.endsWith(' ')
-                        ? trimmedText
-                        : `${trimmedText} `;
-                    appendStatusText(statusEl, textValue);
-                }
-
-                const strong = document.createElement('strong');
-                strong.textContent = line.fileName;
-                statusEl.appendChild(strong);
-            } else if (trimmedText) {
-                appendStatusText(statusEl, trimmedText);
-            }
-        }
-    }
-
-    /**
-     * @brief Updates the auto-save status message and re-renders the status text.
-     * @param text Additional auto-save status message to display.
-     */
-    function setAutoSaveStatus(text, fileName) {
-        if (text || fileName) {
-            state.secondaryStatus = { text: text || '', fileName, source: 'autoSave' };
+        break;
+      case 'hostKeyMismatch':
+        handleHostKeyMismatch(message.expected, message.received);
+        break;
+      case 'sessionClosed':
+        handleSessionClosed(message.message, message.closedAt);
+        break;
+      case 'highlightsUpdated':
+        setHighlights(message.highlights || []);
+        break;
+      case 'autoSaveStarted':
+        setAutoSaveActive(true);
+        if (message.fileName) {
+          setAutoSaveStatus('Auto-saving to', message.fileName);
         } else {
-            state.secondaryStatus = null;
+          setAutoSaveStatus('Auto-save enabled.');
         }
-        renderStatusText();
-        schedulePersist();
+        break;
+      case 'autoSaveStopped':
+        setAutoSaveActive(false);
+        setAutoSaveStatus(message.message || '');
+        break;
+      case 'autoSaveError':
+        setAutoSaveActive(false);
+        setAutoSaveStatus(message.message || 'Auto-save failed.');
+        break;
     }
+  });
 
-    /**
-     * @brief Updates the UI to reflect whether auto-save is active.
-     * @param active True when auto-save is currently writing to disk.
-     */
-    function setAutoSaveActive(active) {
-        state.autoSaveActive = active;
-        if (autoSaveToggle) {
-            const label = active ? 'Stop auto-save' : 'Start auto-save';
-            setButtonLabel(autoSaveToggle, label);
-            autoSaveToggle.classList.toggle('auto-save-active', active);
-            updateAutoSaveToggleState();
-        }
-        schedulePersist();
-    }
+  window.addEventListener('beforeunload', persistState);
 
-    /**
-     * @brief Enables or disables the auto-save toggle based on connection and auto-save state.
-     */
-    function updateAutoSaveToggleState() {
-        if (!autoSaveToggle) {
-            return;
-        }
+  vscode.postMessage({ type: 'ready' });
 
-        const isConnected = state.isLiveLog && state.connectionState === 'connected';
-        autoSaveToggle.disabled = state.autoSaveActive ? false : !isConnected;
-    }
-
-    /**
-     * @brief Adds or removes connection-state driven styling.
-     */
-    function updateConnectionDecorations() {
-        const isConnected = state.isLiveLog && state.connectionState === 'connected';
-        const isDisconnected = state.isLiveLog && state.connectionState === 'disconnected';
-        const isReconnecting = state.isLiveLog && state.connectionState === 'connecting';
-
-        logContainer.classList.toggle('connected', isConnected);
-        logContainer.classList.toggle('disconnected', isDisconnected);
-        logContainer.classList.toggle('reconnecting', isReconnecting);
-    }
-
-    /**
-     * @brief Starts a countdown and triggers a reconnect request after it elapses.
-     * @param baseMessage Message to prefix the countdown with.
-     */
-    function startReconnectCountdown(baseMessage = 'Connection closed.') {
-        if (!state.isLiveLog || !state.autoReconnectEnabled || reconnectTimeoutId) {
-            updateStatus(baseMessage, { disableButton: false });
-            return;
-        }
-
-        reconnectCountdown = 5;
-        const renderCountdown = () => `${baseMessage} Retrying in ${reconnectCountdown} seconds...`;
-        updateStatus(renderCountdown(), { disableButton: false });
-        reconnectIntervalId = window.setInterval(() => {
-            reconnectCountdown -= 1;
-            if (reconnectCountdown > 0) {
-                updateStatus(renderCountdown(), { disableButton: false });
-            }
-        }, 1000);
-
-        reconnectTimeoutId = window.setTimeout(() => {
-            clearReconnectTimers();
-            setConnectionState('connecting');
-            updateStatus('Reconnecting...', { disableButton: true });
-            vscode.postMessage({ type: 'requestReconnect' });
-        }, 5000);
-    }
-
-    /**
-     * @brief Handles connection losses by updating status and scheduling reconnects.
-     * @param message Status message provided by the extension host.
-     */
-    function handleConnectionLoss(message) {
-        setConnectionState('disconnected');
-        clearReconnectTimers();
-        if (state.autoReconnectEnabled && state.isLiveLog) {
-            startReconnectCountdown(message || 'Connection closed.');
-            return;
-        }
-
-        updateStatus(message || 'Connection closed.', { disableButton: false });
-    }
-
-    function handleHostKeyMismatch(expected, received) {
-        state.autoReconnectEnabled = false;
-        if (autoReconnectToggle) {
-            setToggleState(autoReconnectToggle, false);
-            autoReconnectToggle.disabled = true;
-        }
-        clearReconnectTimers();
-        setConnectionState('disconnected');
-        const message = expected && received
-            ? `Host key verification failed. Expected ${expected} but received ${received}. Update the fingerprint to reconnect.`
-            : 'Host key verification failed. Update the stored fingerprint before reconnecting.';
-        updateStatus(message, { disableButton: false });
-    }
-
-    /**
-     * @brief Handles session closed notifications by updating status and appending a marker line.
-     * @param message Status message provided by the extension host.
-     * @param closedAt Timestamp value (string or number) to display in the marker line.
-     */
-    function handleSessionClosed(message, closedAt) {
-        const formattedTimestamp = formatLocalTimestamp(closedAt);
-        handleConnectionLoss(message || 'Session closed.');
-        handleLogLine('', { className: 'session-closed-buffer', bypassFilters: true });
-        handleLogLine(`--- SSH session closed on ${formattedTimestamp}`, {
-            className: 'session-closed',
-            bypassFilters: true,
-        });
-        handleLogLine('', { className: 'session-closed-buffer', bypassFilters: true });
-    }
-
-    /**
-     * @brief Formats a timestamp into a local ISO-like string without timezone conversion.
-     * @param value A timestamp value compatible with the Date constructor.
-     * @returns {string} Formatted timestamp like `2025-12-01 at 22:42:29`.
-     */
-    function formatLocalTimestamp(value) {
-        const timestamp = value ? new Date(value) : new Date();
-        const safeTimestamp = Number.isNaN(timestamp.valueOf()) ? new Date() : timestamp;
-        const pad = (num) => String(num).padStart(2, '0');
-        const datePart = `${safeTimestamp.getFullYear()}-${pad(safeTimestamp.getMonth() + 1)}-${pad(safeTimestamp.getDate())}`;
-        const timePart = `${pad(safeTimestamp.getHours())}:${pad(safeTimestamp.getMinutes())}:${pad(safeTimestamp.getSeconds())}`;
-        return `${datePart} at ${timePart}`;
-    }
-
-    /**
-     * @brief Determines whether a status message originates from the default log command.
-     * @param text Status message to inspect.
-     * @returns True when the message matches a known default command notice.
-     */
-    function isDefaultLogCommandMessage(text) {
-        if (!text) {
-            return false;
-        }
-
-        const normalized = text.toLowerCase();
-        return normalized.startsWith('tail:') && normalized.includes('/var/log/syslog');
-    }
-
-    /**
-     * @brief Interprets status messages from the extension host.
-     * @param text Status message to display.
-     */
-    function handleStatusMessage(text) {
-        if (!text) {
-            updateStatus('');
-            return;
-        }
-
-        if (isDefaultLogCommandMessage(text)) {
-            setSecondaryStatus(text);
-            return;
-        }
-
-        if (text.startsWith('Connected')) {
-            state.defaultConnectedStatus = text;
-            setConnectionState('connected');
-            updateStatus(text, { disableButton: false });
-            if (autoReconnectToggle) {
-                autoReconnectToggle.disabled = false;
-            }
-            return;
-        }
-
-        if (text.startsWith('Connecting') || text.startsWith('Reconnecting')) {
-            setConnectionState('connecting');
-            updateStatus(text, { disableButton: true });
-            return;
-        }
-
-        if (text.startsWith('Connection closed')) {
-            handleConnectionLoss('Connection closed.');
-            return;
-        }
-
-        updateStatus(text);
-    }
-
-    /**
-     * @brief Syncs the log container with the current word wrap setting.
-     */
-    function updateWordWrapClass() {
-        logContainer.classList.toggle('wrap-enabled', state.wordWrapEnabled);
-    }
-
-    /**
-     * @brief Updates auto-scroll state and keeps the toggle in sync.
-     * @param enabled Whether auto-scroll should be enabled.
-     */
-    function setAutoScrollEnabled(enabled) {
-        const changed = state.autoScrollEnabled !== enabled;
-        state.autoScrollEnabled = enabled;
-        setToggleState(autoScrollToggle, enabled);
-        if (changed) {
-            schedulePersist();
-        }
-    }
-
-    /**
-     * @brief Determines whether the log container is scrolled to the bottom.
-     * @returns True when the scroll position is within a threshold of the bottom.
-     */
-    function isAtLogBottom() {
-        const distanceFromBottom = logContainer.scrollHeight - logContainer.scrollTop - logContainer.clientHeight;
-        return distanceFromBottom <= AUTO_SCROLL_BOTTOM_THRESHOLD;
-    }
-
-    /**
-     * @brief Updates the search status label and button states.
-     */
-    function updateSearchStatus() {
-        if (!state.searchMatches.length) {
-            searchCount.textContent = '0 / 0';
-            searchPrevBtn.disabled = true;
-            searchNextBtn.disabled = true;
-            return;
-        }
-
-        searchPrevBtn.disabled = false;
-        searchNextBtn.disabled = false;
-        searchCount.textContent = `${state.searchIndex + 1} / ${state.searchMatches.length}`;
-    }
-
-    /**
-     * @brief Enables or disables the clear button based on input content.
-     */
-    function updateSearchClearButton() {
-        if (!searchClearBtn) {
-            return;
-        }
-
-        searchClearBtn.disabled = !searchInput.value.trim();
-    }
-
-    /**
-     * @brief Removes the active search line styling, if present.
-     */
-    function clearActiveSearchLine() {
-        if (state.activeSearchEntry !== -1) {
-            const prev = logContent?.children[state.activeSearchEntry];
-            if (prev) {
-                prev.classList.remove('active-search-line');
-            }
-        }
-        state.activeSearchEntry = -1;
-    }
-
-    /**
-     * @brief Scrolls to and highlights the currently selected search match.
-     */
-    function scrollToActiveMatch() {
-        if (state.searchIndex === -1 || !state.searchMatches.length) {
-            clearActiveSearchLine();
-            updateSearchStatus();
-            return;
-        }
-
-        const entryIndex = state.searchMatches[state.searchIndex];
-        const node = logContent?.children[entryIndex];
-        if (!node) {
-            clearActiveSearchLine();
-            updateSearchStatus();
-            return;
-        }
-
-        clearActiveSearchLine();
-        state.activeSearchEntry = entryIndex;
-        node.classList.add('active-search-line');
-        node.scrollIntoView({ block: 'center' });
-        updateSearchStatus();
-    }
-
-    /**
-     * @brief Recomputes search matches based on the current filtered list.
-     */
-    function updateSearchMatches() {
-        const term = state.searchTerm.trim().toLowerCase();
-        state.searchMatches = [];
-
-        if (!term) {
-            state.searchIndex = -1;
-            clearActiveSearchLine();
-            updateSearchStatus();
-            updateSearchClearButton();
-            schedulePersist();
-            return;
-        }
-
-        state.filtered.forEach((entry, idx) => {
-            if (entry.rawLine.toLowerCase().includes(term)) {
-                state.searchMatches.push(idx);
-            }
-        });
-
-        if (!state.searchMatches.length) {
-            state.searchIndex = -1;
-            clearActiveSearchLine();
-            updateSearchStatus();
-            updateSearchClearButton();
-            schedulePersist();
-            return;
-        }
-
-        if (state.searchIndex === -1 || state.searchIndex >= state.searchMatches.length) {
-            state.searchIndex = 0;
-        }
-
-        scrollToActiveMatch();
-        updateSearchClearButton();
-        schedulePersist();
-    }
-
-    /**
-     * @brief Navigates between search results by the provided offset.
-     * @param delta Direction and magnitude to move within search matches.
-     */
-    function stepSearch(delta) {
-        if (!state.searchMatches.length) {
-            return;
-        }
-
-        if (state.searchIndex === -1) {
-            state.searchIndex = 0;
-        }
-
-        state.searchIndex = (state.searchIndex + delta + state.searchMatches.length) % state.searchMatches.length;
-        scrollToActiveMatch();
-    }
-
-    /**
-     * @brief Debounces rapid calls to a function to limit execution.
-     * @param fn Function to debounce.
-     * @param delay Delay in milliseconds.
-     * @returns Wrapped function enforcing the debounce period.
-     */
-    function debounce(fn, delay) {
-        let handle;
-        return function (...args) {
-            clearTimeout(handle);
-            handle = setTimeout(() => fn.apply(null, args), delay);
-        };
-    }
-
-    restoreStateFromSnapshot(savedState);
-
-    // Event wiring
-    minLevelSelect.value = state.minLevel;
-
-    minLevelSelect.addEventListener('change', () => {
-        state.minLevel = minLevelSelect.value;
-        applyFilters();
-    });
-
-    textFilterInput.addEventListener(
-        'input',
-        debounce(() => {
-            state.textFilter = textFilterInput.value;
-            applyFilters();
-        }, 150)
-    );
-
-    logContent.addEventListener('contextmenu', (event) => {
-        const target = event.target;
-        if (!(target instanceof HTMLElement)) {
-            return;
-        }
-        const line = target.closest('.log-line');
-        if (!line || !line.dataset.entryId) {
-            return;
-        }
-        event.preventDefault();
-        showBookmarkContextMenu(event, Number(line.dataset.entryId));
-    });
-
-    statusEl?.addEventListener('contextmenu', (event) => {
-        if (!state.isLiveLog) {
-            return;
-        }
-        event.preventDefault();
-        showStatusContextMenu(event);
-    });
-
-    presetSelect.addEventListener('change', () => {
-        const value = presetSelect.value;
-        if (value) {
-            applyPreset(value);
-        } else {
-            state.minLevel = minLevelSelect.value;
-            state.textFilter = textFilterInput.value;
-            applyFilters();
-        }
-    });
-
-    savePresetBtn.addEventListener('click', () => {
-        vscode.postMessage({
-            type: 'requestSavePreset',
-            deviceId: state.deviceId,
-            minLevel: minLevelSelect.value,
-            textFilter: textFilterInput.value,
-        });
-    });
-
-    deletePresetBtn.addEventListener('click', () => {
-        const value = presetSelect.value;
-        if (!value) {
-            return;
-        }
-        vscode.postMessage({ type: 'deletePreset', deviceId: state.deviceId, name: value });
-    });
-
-    exportBtn.addEventListener('click', () => {
-        const lines = state.filtered.map((e) => e.rawLine);
-        vscode.postMessage({ type: 'exportLogs', deviceId: state.deviceId, lines });
-    });
-
-    editBtn.addEventListener('click', () => {
-        vscode.postMessage({ type: 'openSourceFile' });
-    });
-
-    refreshBtn.addEventListener('click', () => {
-        vscode.postMessage({ type: 'refreshSourceFile' });
-    });
-
-    if (clearLogsBtn) {
-        clearLogsBtn.addEventListener('click', clearLogs);
-    }
-
-    wordWrapToggle.addEventListener('click', () => {
-        const next = !isToggleActive(wordWrapToggle);
-        setToggleState(wordWrapToggle, next);
-        state.wordWrapEnabled = next;
-        updateWordWrapClass();
-        schedulePersist();
-    });
-
-    autoScrollToggle.addEventListener('click', () => {
-        const next = !isToggleActive(autoScrollToggle);
-        setAutoScrollEnabled(next);
-        if (state.autoScrollEnabled && state.searchIndex === -1) {
-            logContainer.scrollTop = logContainer.scrollHeight;
-        }
-        schedulePersist();
-    });
-
-    autoReconnectToggle.addEventListener('click', () => {
-        const next = !isToggleActive(autoReconnectToggle);
-        state.autoReconnectEnabled = next;
-        setToggleState(autoReconnectToggle, next);
-        if (!state.autoReconnectEnabled) {
-            clearReconnectTimers();
-        } else if (state.connectionState === 'disconnected') {
-            startReconnectCountdown('Connection closed.');
-        }
-        schedulePersist();
-    });
-
-    logContainer.addEventListener('scroll', () => {
-        if (!state.isLiveLog) {
-            return;
-        }
-
-        const atBottom = isAtLogBottom();
-
-        if (state.autoScrollEnabled && !atBottom) {
-            setAutoScrollEnabled(false);
-            return;
-        }
-
-        if (!state.autoScrollEnabled && atBottom) {
-            setAutoScrollEnabled(true);
-            if (state.searchIndex === -1) {
-                logContainer.scrollTop = logContainer.scrollHeight;
-            }
-        }
-    });
-
-    logContainer.addEventListener('click', (event) => {
-        if (!state.searchMatches.length) {
-            return;
-        }
-
-        const logLine = event.target.closest('.log-line');
-        if (!logLine) {
-            return;
-        }
-
-        const entryIndex = Array.prototype.indexOf.call(logContent?.children || [], logLine);
-        if (entryIndex === -1) {
-            return;
-        }
-
-        const matchIndex = state.searchMatches.indexOf(entryIndex);
-        if (matchIndex === -1) {
-            return;
-        }
-
-        state.searchIndex = matchIndex;
-        scrollToActiveMatch();
-    });
-
-    reconnectButton.addEventListener('click', () => {
-        clearReconnectTimers();
-        if (state.connectionState === 'connected') {
-            state.autoReconnectEnabled = false;
-            if (autoReconnectToggle) {
-                setToggleState(autoReconnectToggle, false);
-            }
-            setConnectionState('connecting');
-            updateStatus('Disconnecting...', { disableButton: true });
-            vscode.postMessage({ type: 'requestDisconnect' });
-            return;
-        }
-
-        setConnectionState('connecting');
-        updateStatus('Reconnecting...', { disableButton: true, preserveDisabled: true });
-        vscode.postMessage({ type: 'requestReconnect' });
-    });
-
-    if (highlightToggle) {
-        highlightToggle.addEventListener('click', () => {
-            toggleHighlightPopover();
-        });
-    }
-
-    if (highlightBackdrop) {
-        highlightBackdrop.addEventListener('click', () => toggleHighlightPopover(false));
-    }
-
-    if (highlightAddBtn) {
-        highlightAddBtn.addEventListener('click', () => addHighlight());
-    }
-
-    if (highlightClearBtn) {
-        highlightClearBtn.addEventListener('click', () => removeAllHighlights());
-    }
-
-    searchInput.addEventListener(
-        'input',
-        debounce(() => {
-            state.searchTerm = searchInput.value;
-            render();
-            updateSearchMatches();
-        }, 150)
-    );
-
-    searchInput.addEventListener('input', updateSearchClearButton);
-
-    searchInput.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            stepSearch(event.shiftKey ? -1 : 1);
-        }
-    });
-
-    searchPrevBtn.addEventListener('click', () => stepSearch(-1));
-    searchNextBtn.addEventListener('click', () => stepSearch(1));
-
-    if (searchClearBtn) {
-        searchClearBtn.addEventListener('click', () => {
-            if (!searchInput.value) {
-                return;
-            }
-
-            searchInput.value = '';
-            state.searchTerm = '';
-            render();
-            updateSearchMatches();
-            updateSearchClearButton();
-            searchInput.focus();
-        });
-    }
-
-    if (autoSaveToggle) {
-        autoSaveToggle.addEventListener('click', () => {
-            autoSaveToggle.disabled = true;
-            if (state.autoSaveActive) {
-                vscode.postMessage({ type: 'stopAutoSave' });
-            } else {
-                vscode.postMessage({ type: 'startAutoSave' });
-            }
-        });
-    }
-
-    window.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && highlightPopover && !highlightPopover.classList.contains('hidden')) {
-            toggleHighlightPopover(false);
-            return;
-        }
-        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f') {
-            event.preventDefault();
-            searchInput.focus();
-            searchInput.select();
-        }
-    });
-
-    updateSearchClearButton();
-
-    window.addEventListener('message', (event) => {
-        const message = event.data;
-        switch (message.type) {
-            case 'initData':
-                state.deviceId = message.deviceId;
-                state.presets = message.presets || [];
-                state.isLiveLog = message.isLive !== false;
-                state.maxEntries = Math.max(1, Number(message.maxEntries) || state.maxEntries);
-                setLineLimitReached(state.lineLimitReached);
-                if (state.entries.length > state.maxEntries) {
-                    state.entries = state.entries.slice(-state.maxEntries);
-                    setLineLimitReached(true);
-                }
-                setConnectionState(state.isLiveLog ? 'connecting' : 'disconnected');
-                setHighlights(message.highlights || []);
-                if (!state.isLiveLog && autoScrollContainer) {
-                    autoScrollContainer.classList.add('hidden');
-                }
-                if (!state.isLiveLog && autoReconnectContainer) {
-                    autoReconnectContainer.classList.add('hidden');
-                }
-                const hideLiveOnlyControl = !state.isLiveLog;
-                if (clearLogsBtn) {
-                    clearLogsBtn.classList.toggle('hidden', hideLiveOnlyControl);
-                }
-                if (clearLogsContainer) {
-                    clearLogsContainer.classList.toggle('hidden', hideLiveOnlyControl);
-                }
-                const showImportedControls = !state.isLiveLog;
-                if (editContainer) {
-                    editContainer.classList.toggle('hidden', !showImportedControls);
-                }
-                if (refreshContainer) {
-                    refreshContainer.classList.toggle('hidden', !showImportedControls);
-                }
-                if (editBtn) {
-                    editBtn.classList.toggle('hidden', !showImportedControls);
-                }
-                if (refreshBtn) {
-                    refreshBtn.classList.toggle('hidden', !showImportedControls);
-                }
-                if (autoSaveToggle) {
-                    autoSaveToggle.classList.toggle('hidden', hideLiveOnlyControl);
-                    autoSaveToggle.disabled = !state.isLiveLog;
-                }
-                if (autoSaveContainer) {
-                    autoSaveContainer.classList.toggle('hidden', hideLiveOnlyControl);
-                }
-                if (!state.isLiveLog && reconnectButton) {
-                    reconnectButton.hidden = true;
-                    reconnectButton.disabled = true;
-                    reconnectButton.classList.add('hidden');
-                }
-                setToggleState(autoScrollToggle, state.autoScrollEnabled);
-                setToggleState(autoReconnectToggle, state.autoReconnectEnabled);
-                updatePresetDropdown();
-                applyFilters();
-                break;
-            case 'initialLines':
-                handleInitialLogLines(message.lines);
-                break;
-            case 'logLine':
-                handleLogLine(message.line);
-                break;
-            case 'initPresets':
-            case 'presetsUpdated':
-                state.presets = message.presets || [];
-                updatePresetDropdown();
-                break;
-            case 'replaceLines':
-                clearLogs();
-                handleInitialLogLines(message.lines || []);
-                if (message.message) {
-                    updateStatus(message.message, { preserveSecondary: true });
-                }
-                break;
-            case 'status':
-                handleStatusMessage(message.message);
-                break;
-            case 'error':
-                if (isDefaultLogCommandMessage(message.message)) {
-                    setSecondaryStatus(message.message);
-                } else {
-                    updateStatus(message.message);
-                }
-                break;
-            case 'hostKeyMismatch':
-                handleHostKeyMismatch(message.expected, message.received);
-                break;
-            case 'sessionClosed':
-                handleSessionClosed(message.message, message.closedAt);
-                break;
-            case 'highlightsUpdated':
-                setHighlights(message.highlights || []);
-                break;
-            case 'autoSaveStarted':
-                setAutoSaveActive(true);
-                if (message.fileName) {
-                    setAutoSaveStatus('Auto-saving to', message.fileName);
-                } else {
-                    setAutoSaveStatus('Auto-save enabled.');
-                }
-                break;
-            case 'autoSaveStopped':
-                setAutoSaveActive(false);
-                setAutoSaveStatus(message.message || '');
-                break;
-            case 'autoSaveError':
-                setAutoSaveActive(false);
-                setAutoSaveStatus(message.message || 'Auto-save failed.');
-                break;
-        }
-    });
-
-    window.addEventListener('beforeunload', persistState);
-
-    vscode.postMessage({ type: 'ready' });
-
-    updatePresetDropdown();
-    updateWordWrapClass();
-    applyFilters();
+  updatePresetDropdown();
+  updateWordWrapClass();
+  applyFilters();
 })();
