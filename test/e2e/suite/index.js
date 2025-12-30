@@ -1,15 +1,44 @@
-/* global suite, test */
+const fs = require('fs');
+const path = require('path');
+const Mocha = require('mocha');
 
-const assert = require('assert');
-const vscode = require('vscode');
+async function collectTestFiles(directory) {
+  const entries = await fs.promises.readdir(directory, { withFileTypes: true });
+  const files = await Promise.all(
+    entries.map(async (entry) => {
+      const fullPath = path.join(directory, entry.name);
+      if (entry.isDirectory()) {
+        return collectTestFiles(fullPath);
+      }
+      return entry.isFile() && entry.name.endsWith('.test.js') ? [fullPath] : [];
+    })
+  );
 
-suite('VS Code Extension E2E Suite', () => {
-  test('activates the extension', async () => {
-    const extension = vscode.extensions.getExtension('Scallant.embedded-device-logger');
-    assert.ok(extension, 'Extension should be available');
+  return files.flat();
+}
 
-    await extension.activate();
-
-    assert.ok(extension.isActive, 'Extension should activate successfully');
+async function run() {
+  const mocha = new Mocha({
+    ui: 'tdd',
+    color: true,
   });
-});
+
+  const testsRoot = path.resolve(__dirname);
+  const testFiles = await collectTestFiles(testsRoot);
+
+  testFiles.forEach((file) => mocha.addFile(file));
+
+  return new Promise((resolve, reject) => {
+    mocha.run((failures) => {
+      if (failures) {
+        reject(new Error(`${failures} tests failed.`));
+        return;
+      }
+      resolve();
+    });
+  });
+}
+
+module.exports = {
+  run,
+};
