@@ -112,6 +112,11 @@ export class LogSession {
       let attempts = 0;
       let lastError: unknown;
 
+      // Connection attempts rotate through available endpoints (primary/secondary) so that
+      // transient network issues or asymmetric routing do not strand the session. Host key
+      // mismatches prompt the user to update the fingerprint and retry the same endpoint
+      // before moving on to the next candidate. A small attempt limit prevents infinite
+      // reconnect loops when every endpoint fails validation or authentication.
       while (!this.disposed && attempts < maxAttempts) {
         const endpoint = endpoints[endpointIndex];
         this.activeEndpoint = endpoint;
