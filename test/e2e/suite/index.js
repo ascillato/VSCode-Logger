@@ -1,5 +1,6 @@
 const assert = require('assert');
 const vscode = require('vscode');
+const { suite, test } = require('mocha');
 
 suite('VS Code Extension E2E Suite', () => {
   test('activates the extension', async () => {
