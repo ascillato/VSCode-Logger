@@ -409,6 +409,7 @@
     const disableSingleOnly = selectedCount !== 1;
     const selectedEntry = selectedCount === 1 ? selected[0] : undefined;
     const isRemoteLocation = location === 'remote';
+    const isLocalLocation = location === 'local';
 
     if (elements.contextRun) {
       const canRun = Boolean(
@@ -423,7 +424,9 @@
     }
 
     if (elements.contextViewContent) {
-      const canView = Boolean(selectedEntry && selectedEntry.type === 'file' && isRemoteLocation);
+      const canView = Boolean(
+        selectedEntry && selectedEntry.type === 'file' && (isRemoteLocation || isLocalLocation)
+      );
       elements.contextViewContent.disabled = !canView;
       elements.contextViewContent.classList.toggle('context-menu__item--disabled', !canView);
       elements.contextViewContent.classList.toggle('context-menu__item--hidden', !canView);
@@ -942,9 +945,6 @@
     resetStatus();
     const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
     const location = resolveLocationForSide(side, snapshot);
-    if (location !== 'remote') {
-      return;
-    }
     const selected = getSelectedEntries(snapshot);
     if (selected.length !== 1) {
       return;

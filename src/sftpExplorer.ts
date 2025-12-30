@@ -1061,30 +1061,34 @@ export class SftpExplorerPanel {
   }
 
   private async viewContent(location: 'remote' | 'local', targetPath: string): Promise<void> {
-    if (location !== 'remote') {
-      throw new Error('Viewing content is only supported for remote files.');
-    }
-
-    const normalizedTarget = this.normalizePath('remote', targetPath);
-    const stats = await this.getEntryStats('remote', normalizedTarget);
+    const normalizedTarget = this.normalizePath(location, targetPath);
+    const stats = await this.getEntryStats(location, normalizedTarget);
     if (!stats.isFile()) {
       throw new Error('Only files can be opened for viewing.');
     }
 
-    const tempDir = await this.ensureViewContentDirectory();
-    const baseName = path.posix.basename(normalizedTarget);
-    const extension = path.posix.extname(baseName);
-    const stem = extension ? baseName.slice(0, -extension.length) : baseName;
-    const uniqueSuffix = createHash('sha256').update(normalizedTarget).digest('hex').slice(0, 8);
-    const tempFileName = `${stem}-${uniqueSuffix}${extension}`;
-    const localPath = path.join(tempDir, tempFileName);
+    let localPath: string;
+    let baseName: string;
+    if (location === 'remote') {
+      const tempDir = await this.ensureViewContentDirectory();
+      baseName = path.posix.basename(normalizedTarget);
+      const extension = path.posix.extname(baseName);
+      const stem = extension ? baseName.slice(0, -extension.length) : baseName;
+      const uniqueSuffix = createHash('sha256').update(normalizedTarget).digest('hex').slice(0, 8);
+      const tempFileName = `${stem}-${uniqueSuffix}${extension}`;
+      localPath = path.join(tempDir, tempFileName);
 
-    await this.downloadFile(normalizedTarget, localPath);
-    this.viewedTempFiles.set(localPath, { remotePath: normalizedTarget });
+      await this.downloadFile(normalizedTarget, localPath);
+      this.viewedTempFiles.set(localPath, { remotePath: normalizedTarget });
+    } else {
+      baseName = path.basename(normalizedTarget);
+      localPath = normalizedTarget;
+    }
 
     const document = await vscode.workspace.openTextDocument(vscode.Uri.file(localPath));
     await vscode.window.showTextDocument(document, { preview: false });
-    this.postMessage({ type: 'status', message: `Opened ${baseName} from remote.` });
+    const sourceLabel = location === 'remote' ? 'remote' : 'local';
+    this.postMessage({ type: 'status', message: `Opened ${baseName} from ${sourceLabel}.` });
   }
 
   private async runEntry(location: 'remote' | 'local', targetPath: string): Promise<void> {
