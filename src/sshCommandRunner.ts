@@ -407,8 +407,7 @@ export class SshCommandRunner {
   }
 
   private createForwardingClient(): ForwardingClient {
-    return (this.dependencies.createForwardingClient?.() ??
-      (new Client() as ForwardingClient)) as ForwardingClient;
+    return this.dependencies.createForwardingClient?.() ?? new Client();
   }
 
   private async loadPrivateKey(filePath: string): Promise<Buffer> {

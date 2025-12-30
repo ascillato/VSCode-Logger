@@ -74,7 +74,7 @@ export default defineConfig([
       ecmaVersion: "latest",
       sourceType: "module",
       parserOptions: {
-        project: "./tsconfig.json",
+        project: "./tsconfig.eslint.json",
         tsconfigRootDir: __dirname,
       },
     },
@@ -86,6 +86,20 @@ export default defineConfig([
       "@typescript-eslint/consistent-type-imports": "error",
       "no-console": "off",
       "prettier/prettier": "error",
+    },
+  },
+
+  // -------------------------
+  // Tests (relaxed rules)
+  // -------------------------
+  {
+    files: ["tests/**/*.{ts,tsx}", "test/**/*.{ts,tsx}", "vitest.config.ts"],
+    rules: {
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/require-await": "off",
+      "@typescript-eslint/explicit-function-return-type": "off",
     },
   },
 ]);

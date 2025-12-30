@@ -12,7 +12,6 @@ import {
   setInputBoxResponse,
   setWarningMessageResponse,
   window,
-  workspace,
 } from '../mocks/vscode';
 
 const device: EmbeddedDevice = {

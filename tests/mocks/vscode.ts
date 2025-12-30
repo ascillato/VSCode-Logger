@@ -23,14 +23,16 @@ const createSecretStorage = (): MockSecretStorage => {
   const data = new Map<string, string>();
   return {
     __data: data,
-    async get(key: string): Promise<string | undefined> {
-      return data.get(key);
+    get(key: string): Promise<string | undefined> {
+      return Promise.resolve(data.get(key));
     },
-    async store(key: string, value: string): Promise<void> {
+    store(key: string, value: string): Promise<void> {
       data.set(key, value);
+      return Promise.resolve();
     },
-    async delete(key: string): Promise<void> {
+    delete(key: string): Promise<void> {
       data.delete(key);
+      return Promise.resolve();
     },
     onDidChange: () => ({ dispose: () => undefined }),
   } as unknown as MockSecretStorage;
@@ -41,8 +43,9 @@ const workspaceConfiguration = {
     const value = configurationState[key];
     return (value === undefined ? defaultValue : value) as T;
   },
-  update: async (key: string, value: unknown): Promise<void> => {
+  update: (key: string, value: unknown): Promise<void> => {
     configurationState[key] = value;
+    return Promise.resolve();
   },
   inspect: (key: string): ReturnType<NonNullable<vscode.WorkspaceConfiguration['inspect']>> =>
     ({
@@ -71,13 +74,14 @@ export const workspace: typeof vscode.workspace = {
 } as unknown as typeof vscode.workspace;
 
 export const window: typeof vscode.window = {
-  showInputBox: vi.fn(async () => inputBoxResponse),
+  showInputBox: vi.fn(() => Promise.resolve(inputBoxResponse)),
   showWarningMessage: vi.fn(
-    async (_message: string, _options: vscode.MessageOptions, ...items: string[]) => {
-      return warningMessageResponse && items.includes(warningMessageResponse)
-        ? (warningMessageResponse as typeof items[number])
-        : undefined;
-    }
+    (_message: string, _options: vscode.MessageOptions, ...items: string[]) =>
+      Promise.resolve(
+        warningMessageResponse && items.includes(warningMessageResponse)
+          ? warningMessageResponse
+          : undefined
+      )
   ),
 } as unknown as typeof vscode.window;
 
@@ -128,18 +132,19 @@ export const ViewColumn = {
 
 export const workspaceState = new Map<string, unknown>();
 
-export const createExtensionContext = (): vscode.ExtensionContext =>
-  ({
+export const createExtensionContext = (): vscode.ExtensionContext => {
+  return {
     secrets: createSecretStorage(),
     globalState: {
       get: (key: string, defaultValue?: unknown) => workspaceState.get(key) ?? defaultValue,
-      update: async (key: string, value: unknown) => workspaceState.set(key, value),
+      update: (key: string, value: unknown) => Promise.resolve(workspaceState.set(key, value)),
     },
     workspaceState: {
       get: (key: string, defaultValue?: unknown) => workspaceState.get(key) ?? defaultValue,
-      update: async (key: string, value: unknown) => workspaceState.set(key, value),
+      update: (key: string, value: unknown) => Promise.resolve(workspaceState.set(key, value)),
     },
-  } as unknown as vscode.ExtensionContext);
+  } as unknown as vscode.ExtensionContext;
+};
 
 export const resetWorkspaceConfiguration = (): void => {
   configurationState.devices = [];

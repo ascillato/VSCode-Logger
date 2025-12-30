@@ -789,7 +789,6 @@ export class LogSession {
   }
 
   private createForwardingClient(): ForwardingClient {
-    return (this.dependencies.createForwardingClient?.() ??
-      (new Client() as ForwardingClient)) as ForwardingClient;
+    return this.dependencies.createForwardingClient?.() ?? new Client();
   }
 }

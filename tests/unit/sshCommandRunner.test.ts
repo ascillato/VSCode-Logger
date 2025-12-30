@@ -11,7 +11,8 @@ vi.mock('../../src/passwordManager', () => ({
 import type { EmbeddedDevice } from '../../src/deviceTree';
 import { SshCommandError, SshCommandRunner } from '../../src/sshCommandRunner';
 import { createExtensionContext } from '../mocks/vscode';
-import { createMockClient, MockSshChannel } from '../mocks/ssh';
+import { createMockClient } from '../mocks/ssh';
+import type { MockSshChannel } from '../mocks/ssh';
 
 const baseDevice: EmbeddedDevice = {
   id: 'device-1',
@@ -25,7 +26,7 @@ describe('SshCommandRunner', () => {
     const context = createExtensionContext();
     const executed: string[] = [];
     const client = createMockClient({
-      onExec: (command, stream: MockSshChannel) => {
+      onExec: (command, stream: MockSshChannel): void => {
         executed.push(command);
         stream.emitData('hello world');
         stream.emitExit(0, null);
@@ -55,7 +56,7 @@ describe('SshCommandRunner', () => {
   it('bubbles up remote failures with stderr output', async () => {
     const context = createExtensionContext();
     const client = createMockClient({
-      onExec: (_command, stream: MockSshChannel) => {
+      onExec: (_command, stream: MockSshChannel): void => {
         stream.emitStderr('permission denied');
         stream.emitExit(1, null);
         stream.emitClose();

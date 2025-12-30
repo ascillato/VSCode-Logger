@@ -11,7 +11,8 @@ vi.mock('../../src/passwordManager', () => ({
 import type { EmbeddedDevice } from '../../src/deviceTree';
 import { LogSession } from '../../src/logSession';
 import { createExtensionContext, resetWorkspaceConfiguration, workspace } from '../mocks/vscode';
-import { createMockClient, MockSshChannel } from '../mocks/ssh';
+import { createMockClient } from '../mocks/ssh';
+import type { MockSshChannel } from '../mocks/ssh';
 
 describe('LogSession (integration)', () => {
   it('streams log lines and captures host fingerprints', async () => {
@@ -40,10 +41,18 @@ describe('LogSession (integration)', () => {
       device,
       context,
       {
-        onLine: (line) => lines.push(line),
-        onError: (msg) => statuses.push(`error:${msg}`),
-        onStatus: (msg) => statuses.push(msg),
-        onClose: () => closed++,
+        onLine: (line): void => {
+          lines.push(line);
+        },
+        onError: (msg): void => {
+          statuses.push(`error:${msg}`);
+        },
+        onStatus: (msg): void => {
+          statuses.push(msg);
+        },
+        onClose: (): void => {
+          closed += 1;
+        },
       },
       {
         createClient: () => client,
