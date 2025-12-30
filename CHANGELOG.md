@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Linter Checks.
 - Fix exit command behavior in SSH terminal.
+- Clear text filter on no preset select.
 
 ### Security
 - None.
