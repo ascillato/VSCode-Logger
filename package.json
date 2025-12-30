@@ -365,19 +365,27 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "docs:typedoc": "typedoc --options typedoc.json"
+    "docs:typedoc": "typedoc --options typedoc.json",
+    "test": "npm run test:unit && npm run test:integration && npm run test:e2e",
+    "test:unit": "vitest run --config vitest.config.ts tests/unit",
+    "test:integration": "vitest run --config vitest.config.ts tests/integration",
+    "test:e2e": "node ./test/e2e/runTest.js"
   },
   "devDependencies": {
     "@types/node": "^18.19.0",
     "@types/vscode": "^1.85.0",
+    "@types/mocha": "^10.0.7",
     "@typescript-eslint/eslint-plugin": "^8.50.0",
     "@typescript-eslint/parser": "^8.50.0",
+    "@vscode/test-electron": "^2.4.1",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
+    "mocha": "^10.8.2",
     "prettier": "^3.7.4",
     "typedoc": "^0.27.9",
-    "typescript": "^5.4.0"
+    "typescript": "^5.4.0",
+    "vitest": "^2.1.4"
   },
   "dependencies": {
     "ssh2": "^1.14.0"
