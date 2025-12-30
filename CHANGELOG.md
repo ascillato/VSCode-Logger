@@ -7,10 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
-## [1.4.9] - UNRELEASED []
+## [1.4.9] - UNRELEASED [SFTP-MORE-IMPROVEMENTS]
 
 ### Added
-- None.
+- Add view file content option to right panel.
 
 ### Changed
 - None.
