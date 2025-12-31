@@ -265,14 +265,15 @@ def _write_cloc_report(language_data: dict, file_data: dict) -> None:
             relative_path = path
         file_rows.append(
             [
-                f"`{relative_path}`",
+                relative_path,
                 stats.get("language", ""),
                 f"{stats.get('blank', 0):,}",
                 f"{stats.get('comment', 0):,}",
                 f"{stats.get('code', 0):,}",
             ]
         )
-    file_rows.sort(key=lambda row: int(row[4].replace(",", "")), reverse=True)
+    file_rows.sort(key=lambda row: row[0].lower())
+    file_rows = [[f"`{row[0]}`", *row[1:]] for row in file_rows]
 
     language_table = _format_cloc_table(
         ["Language", "Files", "Blank", "Comment", "Code"],
