@@ -599,7 +599,7 @@ export class LogPanel {
         <label class="stacked-field">Text Filter
             <input type="text" id="textFilter" placeholder="Filter substring" />
         </label>
-        <label class="stacked-field">Presets
+        <label class="stacked-field">Filter Presets
             <select id="presetSelect">
                 <option value="">(no preset)</option>
             </select>
