@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add unit test suite with mocks and integrations.
 
 ### Changed
-- None.
+- Updated dependencies to fix deprecations.
 
 ### Deprecated
 - None.
