@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Add unit test suite with mocks and integrations.
+- Add documentation for automated testing.
 - Code Overview Section in Architecture Document.
 
 ### Changed
