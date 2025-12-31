@@ -10,8 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.4.10] - UNRELEASED [QA]
 
 ### Added
-- Code Review Report.
 - Add unit test suite with mocks and integrations.
+- Code Overview Section in Architecture Document.
 
 ### Changed
 - Updated dependencies to fix deprecations.

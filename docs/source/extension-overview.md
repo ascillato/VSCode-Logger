@@ -49,37 +49,22 @@ graph TD
 6. **Configuration changes**: When any `embeddedLogger` setting changes, the sidebar refreshes device metadata (including defaults). Active panels continue streaming with their existing session until closed.
 7. **Security**: Password prompts rely on VS Code’s secure input. Secrets are never written to the Webview or logs; they remain in secret storage or transient prompts. SSH sessions close on disposal to avoid leaving hanging connections.
 
-## How to extend safely
-- Keep UI logic inside the Webview scripts and backend logic in the extension host files.
-- When adding device fields, update `EmbeddedDevice` and the contributed configuration schema so the tree view and Webview receive consistent data.
-- If altering log parsing or styling, adjust both `loggerPanel.js` and `loggerPanel.css` to ensure new levels or formats render correctly.
-- Preserve default behaviours (e.g., default log command, maximum retained lines) unless there is a clear reason to change them, and document new settings.
-
-## Security Overview
-
-### Strengths
-- Workspace trust gating prevents connections in untrusted workspaces before prompting for credentials. The log command is trimmed and checked for control characters to avoid obvious injection via newlines.
-- Secrets are stored in VS Code Secret Storage after prompting users, keeping interactive credentials off disk by default.
-- Webview UIs render log lines using `textContent` with a restrictive Content-Security-Policy that disallows remote scripts and limits styles to extension resources.
-- Webview CSPs block external scripts and restrict styles to bundled assets, reducing XSS risk. Log lines are inserted as text nodes, preventing HTML injection from streamed content.
-- Auto-reconnect logic includes visible status updates and timers
-
 ------------------------------------------------------------------------
 
-# Code Quality Review
-
-## Overview
+# Code Overview
 
 VSCode‑Logger is a Visual Studio Code extension designed to stream logs
 from embedded Linux devices over SSH, providing filtering, highlighting,
 bookmarking, search, and optional SSH command execution.
 
-This review evaluates the codebase in terms of architecture,
-maintainability, security, performance, and UI implementation.
+This codebase overview is made in terms of architecture,
+maintainability, security, performance, UI implementation and security.
+It is about the extension host code (TypeScript), Webview
+clients (JavaScript/CSS).
 
 ------------------------------------------------------------------------
 
-## Architecture Review
+## Architecture Overview
 
 ### Strengths
 
@@ -89,32 +74,34 @@ maintainability, security, performance, and UI implementation.
 -   **Good use of VS Code APIs**: Webview messaging, pseudoterminals,
     secrets API, configuration API, etc.
 -   **Consistent TypeScript typings** across modules.
-
-### Areas for Improvement
-
--   **Centralized error-handling strategy** could improve reliability.
--   **Refactor large modules** (e.g., `loggerPanel.js` and
-    `sidebarView.js`) into smaller logical chunks.
+-   **Clear trust and validation gates**: Both the log streamer and
+    command runner refuse to connect when the workspace is untrusted and
+    validate device host/username/port before running any SSH action.
+-   **Secret handling**: Passwords and passphrases are pulled from VS
+    Code Secret Storage with prompts and reuse confirmation, avoiding
+    persistence in settings or Webviews.
+-   **Connection hygiene**: Log streaming uses host key verification with
+    SHA-256 fingerprints, captures fingerprints back into settings when
+    missing, and disposes SSH clients on closure to avoid leaking
+    resources.
+-   **Webview safety**: Log rendering uses text nodes and a nonce-backed
+    CSP, preventing HTML injection even when log lines contain markup.
+-   **User-centric defaults**: Configuration helpers apply defaults for
+    ports, log commands, SSH terminal enablement, and shared commands
+    consistently across devices.
 
 ------------------------------------------------------------------------
 
-## Performance Review
+## Performance Overview
 
 ### Strengths
 
 -   Efficient incremental rendering of logs.
 -   Avoids expensive DOM operations by batching messages.
 
-### Bottlenecks & Opportunities
-
--   Large logs may exceed DOM performance limits --- consider
-    **virtualized lists**.
--   Syntax highlighting and dynamic search could benefit from **Web
-    Workers**.
-
 ------------------------------------------------------------------------
 
-## Maintainability Review
+## Maintainability Overview
 
 ### Strengths
 
@@ -123,7 +110,7 @@ maintainability, security, performance, and UI implementation.
 
 ------------------------------------------------------------------------
 
-## UI/UX Review
+## UI/UX Overview
 
 ### Strengths
 
@@ -131,22 +118,18 @@ maintainability, security, performance, and UI implementation.
 -   Highlight palette and bookmarks improve usability.
 -   Responsive layout.
 
-### Improvements
-
--   Make search controls collapsible.
-
 ------------------------------------------------------------------------
 
-## Security Review
+## Security Overview
 
-The **VSCode‑Logger** extension streams logs from remote embedded devices via SSH. It provides a webview panel for real‑time log viewing, filtering and highlighting, and exposes commands to run one‑off SSH commands or open an interactive terminal. Because it handles credentials and executes remote commands, security is critical. This review evaluates the repository’s security posture, highlighting strengths and potential weaknesses.
+The **VSCode‑Logger** extension streams logs from remote embedded devices via SSH. It provides a webview panel for real‑time log viewing, filtering and highlighting, and exposes commands to run one‑off SSH commands or open an interactive terminal. Because it handles credentials and executes remote commands, security is critical.
 
 ### Strengths
-
--   Uses **VS Code Secrets API** for storing passwords and passphrases
-    securely.
--   Sanitizes SSH commands to avoid injection risks.
--   Enforces workspace trust before connecting to devices.
+* **Workspace trust enforcement and SSH safety**: Workspace trust gating prevents connections in untrusted workspaces before prompting for credentials. Workspace trust enforcement and device validation guard all SSH operations. SSH commands are sanitized to avoid injection risks, and the log command is trimmed and checked for control characters to avoid obvious injection via newlines.
+* **Secure credential storage**: Secrets are stored in VS Code Secret Storage after prompting users, keeping interactive credentials off disk by default. The extension uses the **VS Code Secrets API** for storing passwords and passphrases securely. Secrets are scoped per workspace with metadata prompts before reuse, reducing accidental credential leakage.
+* **Webview security and XSS prevention**: Webview UIs render log lines using `textContent` rather than `innerHTML`. Log lines are inserted as text nodes, preventing HTML injection from streamed content. Webview CSPs block external scripts and restrict styles to bundled extension assets. A restrictive Content-Security-Policy disallows remote scripts and limits styles to extension resources, reducing XSS risk.
+* **Connection robustness**: Auto-reconnect logic includes visible status updates and timers.
+* **SSH integrity and tunnelling**: Log streaming uses host key verification with captured fingerprints, and bastion tunnelling preserves fingerprint checks when present.
 
 ### Workspace trust and configuration validation
 
@@ -171,9 +154,39 @@ The **VSCode‑Logger** extension streams logs from remote embedded devices via 
 * **Controlled file access.** When exporting logs or starting auto‑save, the extension prompts the user via `showSaveDialog` to pick a destination file. It writes logs using VS Code’s `workspace.fs.writeFile` or Node’s `fs.createWriteStream`, and errors are reported to the webview.
 * **Line limit enforcement.** The log panel enforces a maximum number of log entries (100 000 by default) to prevent excessive memory consumption and DOM size. When the limit is reached, older entries are discarded and the user is notified.
 
+### Keeping dependencies up-to-date
+
+The extension depends on the `ssh2` library. To ensure that this dependency is regularly updated to receive security patches, the dependency-bot is enabled in the repository. Also for every compilation, by default it is run `npm audit` to show the developer any new known vulnerability that needs to be fixed.
+
 ------------------------------------------------------------------------
 
-## Security Concerns and Recommendations
+# Future Improvements
+
+## Architecture Improvements
+
+-   **Centralized error-handling strategy** could improve reliability.
+    SSH command execution rethrows raw errors while log streaming wraps
+    them and surfaces host key mismatch context.
+    Normalizing error envelopes and telemetry (e.g., a shared
+    `handleSshError` helper) would simplify UI feedback and logging.
+-   **Refactor large module** `media/loggerPanel.js` into smaller logical
+    chunks (rendering, state management, messaging) to improve readability
+    and defect isolation.
+
+------------------------------------------------------------------------
+
+## Performance Improvements
+
+### Bottlenecks & Opportunities
+
+-   Large logs may exceed DOM performance limits --- consider
+    **virtualized lists**.
+-   Syntax highlighting and dynamic search could benefit from **Web
+    Workers**.
+
+------------------------------------------------------------------------
+
+## Security Improvements
 
 While the extension follows many best practices, several areas could be improved to reduce attack surface and harden the codebase:
 
@@ -205,12 +218,4 @@ The extension opens an SSH connection and executes commands, but there is no use
 
 * **Message origin verification.** The webview’s `onDidReceiveMessage` handlers check that `message.type` is a string but do not verify that the message originates from the extension’s own script. Although VS Code webviews isolate messages, adding an origin check (e.g., verifying a secret token) would further harden against spoofing.
 * **Highlight colour validation.** Highlight colours are pre‑defined, but future extensions allowing user‑selected colours should validate CSS values to prevent arbitrary injection into style attributes.
-
-### Dependency and supply‑chain considerations
-
-* **Keep dependencies up‑to‑date.** The extension depends on the `ssh2` library. Ensure that this dependency is regularly updated to receive security patches. Run `npm audit` and fix vulnerabilities.
 * **Binary file handling.** The extension streams logs as UTF‑8 text. If a log contains binary data or untrusted escape sequences, the UI could behave unexpectedly. Consider encoding binary output or filtering control characters.
-
-## Conclusion
-
-The VSCode‑Logger extension demonstrates strong security practices: it enforces workspace trust, validates configuration, uses secure secret storage, verifies SSH host keys and implements strict webview CSPs. Its UI avoids XSS by using text nodes and nonces. However, it currently trusts arbitrary commands in configuration, has limited SSH algorithm hardening and lacks expiration for stored credentials. By restricting command inputs, enhancing SSH settings, offering credential management and adding connection confirmations, the extension can further reduce risks while maintaining its powerful logging features.
