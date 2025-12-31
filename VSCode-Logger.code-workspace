@@ -57,6 +57,11 @@
         "label": "More Tools",
         "tasks": [
           {
+            "label": "$(test-view-icon) Run Tests",
+            "task": "Test_Extension",
+            "description": "",
+          },
+          {
             "label": "$(book) Generate Docs",
             "task": "Gen_Docs",
             "description": "",
@@ -69,11 +74,6 @@
           {
             "label": "$(check) Apply Linter Fixes when possible",
             "task": "Linter_fix",
-            "description": "",
-          },
-          {
-            "label": "$(test-view-icon) Run Tests",
-            "task": "Test_Extension",
             "description": "",
           },
         ],
