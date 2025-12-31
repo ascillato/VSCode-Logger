@@ -3,7 +3,7 @@
   "displayName": "Embedded Device Logger",
   "description": "Stream and filter embedded Linux device logs over SSH inside VS Code.",
   "icon": "media/icon.png",
-  "version": "1.4.9",
+  "version": "1.5.0",
   "publisher": "Scallant",
   "author": "A. Scillato",
   "engines": {
@@ -365,19 +365,28 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "docs:typedoc": "typedoc --options typedoc.json"
+    "docs:typedoc": "typedoc --options typedoc.json",
+    "test": "npm run test:unit && npm run test:integration && npm run test:e2e",
+    "test:unit": "vitest run --config vitest.config.ts tests/unit",
+    "test:integration": "vitest run --config vitest.config.ts tests/integration",
+    "test:e2e": "npm run compile && node ./test/e2e/runTest.js"
   },
   "devDependencies": {
-    "@types/node": "^18.19.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^22.19.3",
     "@types/vscode": "^1.85.0",
     "@typescript-eslint/eslint-plugin": "^8.50.0",
     "@typescript-eslint/parser": "^8.50.0",
+    "@vscode/test-electron": "^2.4.1",
+    "cloc": "^2.6.0-cloc",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
+    "mocha": "^11.7.5",
     "prettier": "^3.7.4",
     "typedoc": "^0.27.9",
-    "typescript": "^5.4.0"
+    "typescript": "^5.4.0",
+    "vitest": "^4.0.16"
   },
   "dependencies": {
     "ssh2": "^1.14.0"

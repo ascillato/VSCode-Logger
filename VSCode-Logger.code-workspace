@@ -57,6 +57,11 @@
         "label": "More Tools",
         "tasks": [
           {
+            "label": "$(test-view-icon) Run Tests",
+            "task": "Test_Extension",
+            "description": "",
+          },
+          {
             "label": "$(book) Generate Docs",
             "task": "Gen_Docs",
             "description": "",
@@ -190,6 +195,23 @@
         "label": "Linter_fix",
         "type": "shell",
         "command": "make linter-fix",
+        "options": {
+          "cwd": "${workspaceFolder}",
+        },
+        "group": {
+          "kind": "build",
+          "isDefault": false,
+        },
+        "presentation": {
+          "reveal": "always",
+          "panel": "new",
+          "focus": true,
+        },
+      },
+      {
+        "label": "Test_Extension",
+        "type": "shell",
+        "command": "make test",
         "options": {
           "cwd": "${workspaceFolder}",
         },

@@ -17,6 +17,11 @@ import type { HostEndpoint } from './hostEndpoints';
 import { getHostEndpoints } from './hostEndpoints';
 import { PasswordManager } from './passwordManager';
 
+interface LogSessionDependencies {
+  createClient?: () => Client;
+  createForwardingClient?: () => ForwardingClient;
+}
+
 type ForwardingClient = Client & {
   forwardOut(
     srcIP: string,
@@ -80,7 +85,8 @@ export class LogSession {
   constructor(
     private readonly device: EmbeddedDevice,
     private readonly context: vscode.ExtensionContext,
-    private readonly callbacks: LogSessionCallbacks
+    private readonly callbacks: LogSessionCallbacks,
+    private readonly dependencies: LogSessionDependencies = {}
   ) {
     this.passwordManager = new PasswordManager(this.context);
   }
@@ -352,7 +358,7 @@ export class LogSession {
     this.activeBastionEndpoint = bastionEndpoint;
 
     return new Promise((resolve, reject) => {
-      const bastionClient = new Client() as ForwardingClient;
+      const bastionClient = this.createForwardingClient();
       this.bastionClient = bastionClient;
       const bastionPort = bastion.port ?? 22;
 
@@ -429,7 +435,7 @@ export class LogSession {
     this.lastSeenHostFingerprint = undefined;
     this.activeEndpoint = endpoint;
     return new Promise((resolve, reject) => {
-      this.client = new Client();
+      this.client = this.createClient();
       const port = this.device.port ?? 22;
       const host = endpoint.host;
       const username = this.device.username.trim();
@@ -776,5 +782,13 @@ export class LogSession {
     }
     const message = this.getErrorMessage(err) || fallbackMessage;
     return new Error(message);
+  }
+
+  private createClient(): Client {
+    return this.dependencies.createClient?.() ?? new Client();
+  }
+
+  private createForwardingClient(): ForwardingClient {
+    return this.dependencies.createForwardingClient?.() ?? (new Client() as ForwardingClient);
   }
 }

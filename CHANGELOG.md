@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [1.5.0] - 2025-12-31 [QA]
+
+### Added
+- Add unit test suite with mocks and integrations.
+- Add documentation for automated testing.
+- Add Code Overview Section in Architecture Document.
+- Add Code Line Count Report to documentation build.
+
+### Changed
+- Updated dependencies to fix deprecations.
+- Updated documentation and images.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- None.
+
+### Security
+- None.
+
+----------------------------------------
+
 ## [1.4.9] - 2025-12-30 [SFTP-MORE-IMPROVEMENTS]
 
 ### Added

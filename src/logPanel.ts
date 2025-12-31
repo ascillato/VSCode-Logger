@@ -499,19 +499,20 @@ export class LogPanel {
     const hadAutoSave = !!(this.autoSaveStream || this.autoSavePath);
 
     if (this.autoSaveStream) {
-      await new Promise((resolve) => {
+      await new Promise<void>((resolve) => {
         const stream = this.autoSaveStream;
         if (!stream) {
-          resolve(undefined);
+          resolve();
           return;
         }
 
         if (stream.closed) {
-          resolve(undefined);
+          resolve();
           return;
         }
 
-        stream.once('close', resolve);
+        // 'close' listener takes no args, so wrap resolve() in a zero-arg callback
+        stream.once('close', () => resolve());
         stream.end();
       });
       this.autoSaveStream = undefined;
@@ -599,7 +600,7 @@ export class LogPanel {
         <label class="stacked-field">Text Filter
             <input type="text" id="textFilter" placeholder="Filter substring" />
         </label>
-        <label class="stacked-field">Presets
+        <label class="stacked-field">Filtering Presets
             <select id="presetSelect">
                 <option value="">(no preset)</option>
             </select>

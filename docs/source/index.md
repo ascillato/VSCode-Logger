@@ -12,6 +12,8 @@ Detailed Usage and Configuration <detailed-usage>
 Developer Setup and Workflow <developer-guide>
 Architecture Overview <extension-overview>
 Code Development <code-development>
+Automated Testing <automated-testing>
+Code Metrics <code-metrics>
 API <api/index>
 Documentation Generation <docgen>
 Changelog <changelog>
