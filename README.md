@@ -41,4 +41,4 @@ Visit the [Marketplace page](https://marketplace.visualstudio.com/items?itemName
 
 ## For developers
 
-Want to build from source or contribute? See the [Developer Setup and Workflow](https://ascillato.github.io/VSCode-Logger/developer-guide.html) for packaging, local installs, and contribution guidelines. The project is open to pull requests. Please, check the [CONTRIBUTING guide](https://ascillato.github.io/VSCode-Logger/code-development.html) before submitting.
+Want to build from source or contribute? See the [Developer Setup and Workflow](https://ascillato.github.io/VSCode-Logger/developer-guide.html) for packaging, local installs, and contribution guidelines. The project is open to pull requests. Please, check the [CONTRIBUTING guide](https://ascillato.github.io/VSCode-Logger/code-development.html) and the [Code Architecture Overview](https://ascillato.github.io/VSCode-Logger/extension-overview.html) before submitting.
