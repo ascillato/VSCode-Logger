@@ -145,6 +145,10 @@ _cloc_excluded_dirs = [
     ".venv",
     "dist",
     "coverage",
+    ".VSCodeCounter",
+    ".vscode-test",
+    ".github",
+    ".vscode",
 ]
 
 
@@ -261,7 +265,7 @@ def _write_cloc_report(language_data: dict, file_data: dict) -> None:
             relative_path = path
         file_rows.append(
             [
-                relative_path,
+                f"`{relative_path}`",
                 stats.get("language", ""),
                 f"{stats.get('blank', 0):,}",
                 f"{stats.get('comment', 0):,}",
