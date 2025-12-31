@@ -143,6 +143,9 @@ docs/html
 docs/build/
 docs/html/
 docs/typedoc/
+docs/source/_generated/*
+!docs/source/_generated/
+!docs/source/_generated/.gitkeep
 
 #compiled
 *.vsix

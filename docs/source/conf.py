@@ -77,7 +77,7 @@ myst_enable_extensions = _myst_extensions
 myst_fence_as_directive = ["mermaid"]
 
 templates_path = ["_templates"]
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "_generated/*"]
 
 # -- Options for TypeDoc -----------------------------------------------------
 _typedoc_output = PROJECT_ROOT / "docs" / "typedoc"
@@ -130,6 +130,213 @@ _typedoc_output.mkdir(parents=True, exist_ok=True)
 # language not being known to Pygments when rendering code fences.
 lexers["mermaid"] = TextLexer()
 
+# -- Options for cloc --------------------------------------------------------
+_cloc_generated_dir = Path(__file__).parent / "_generated"
+_cloc_generated_dir.mkdir(parents=True, exist_ok=True)
+_cloc_summary_json = _cloc_generated_dir / "cloc-summary.json"
+_cloc_files_json = _cloc_generated_dir / "cloc-files.json"
+_cloc_report_md = _cloc_generated_dir / "cloc-report.md"
+_cloc_excluded_dirs = [
+    "node_modules",
+    "build",
+    "typedoc",
+    "out",
+    ".git",
+    ".venv",
+    "dist",
+    "coverage",
+]
+
+
+def _cloc_command() -> Optional[List[str]]:
+    """Return the cloc command to run, or None if not available."""
+
+    local_cloc = PROJECT_ROOT / "node_modules" / ".bin" / "cloc"
+    if local_cloc.exists():
+        return [str(local_cloc)]
+    if shutil.which("cloc"):
+        return [str(shutil.which("cloc"))]
+    if shutil.which("npx"):
+        return ["npx", "--yes", "cloc"]
+    return None
+
+
+def _run_cloc(by_file: bool) -> Optional[dict]:
+    """Run cloc and return parsed JSON output."""
+
+    command = _cloc_command()
+    if not command:
+        return None
+
+    args = command + [
+        "--json",
+        "--quiet",
+        f"--exclude-dir={','.join(_cloc_excluded_dirs)}",
+    ]
+    if by_file:
+        args.append("--by-file")
+    args.append(str(PROJECT_ROOT))
+
+    try:
+        result = subprocess.run(
+            args,
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return None
+
+    output = result.stdout.strip()
+    if not output:
+        return None
+
+    try:
+        return json.loads(output)
+    except json.JSONDecodeError:
+        return None
+
+
+def _format_row(values: List[str]) -> str:
+    return "| " + " | ".join(values) + " |"
+
+
+def _format_cloc_table(
+    headers: List[str], rows: List[List[str]], numeric_columns: Optional[set[int]] = None
+) -> str:
+    """Build a Markdown table."""
+
+    numeric_columns = numeric_columns or set()
+    header_line = _format_row(headers)
+    separator_cells = []
+    for index, _ in enumerate(headers):
+        separator_cells.append("---:" if index in numeric_columns else "---")
+    separator = _format_row(separator_cells)
+    body = "\n".join(_format_row(row) for row in rows)
+    return "\n".join([header_line, separator, body])
+
+
+def _write_placeholder_report(message: str) -> None:
+    """Write a placeholder report when cloc data is unavailable."""
+
+    _cloc_report_md.write_text(
+        "\n".join(
+            [
+                "<!-- cloc data unavailable; generated placeholder. -->",
+                message,
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+
+def _write_cloc_report(language_data: dict, file_data: dict) -> None:
+    """Write the cloc Markdown report from parsed JSON data."""
+
+    language_rows = []
+    for language, stats in language_data.items():
+        if language in {"header", "SUM"} or not isinstance(stats, dict):
+            continue
+        language_rows.append(
+            [
+                language,
+                f"{stats.get('nFiles', 0):,}",
+                f"{stats.get('blank', 0):,}",
+                f"{stats.get('comment', 0):,}",
+                f"{stats.get('code', 0):,}",
+            ]
+        )
+    language_rows.sort(key=lambda row: int(row[4].replace(",", "")), reverse=True)
+
+    file_rows = []
+    for path, stats in file_data.items():
+        if path in {"header", "SUM"} or not isinstance(stats, dict):
+            continue
+        relative_path = path
+        try:
+            relative_path = str(Path(path).resolve().relative_to(PROJECT_ROOT))
+        except ValueError:
+            relative_path = path
+        file_rows.append(
+            [
+                relative_path,
+                stats.get("language", ""),
+                f"{stats.get('blank', 0):,}",
+                f"{stats.get('comment', 0):,}",
+                f"{stats.get('code', 0):,}",
+            ]
+        )
+    file_rows.sort(key=lambda row: int(row[4].replace(",", "")), reverse=True)
+
+    language_table = _format_cloc_table(
+        ["Language", "Files", "Blank", "Comment", "Code"],
+        language_rows,
+        numeric_columns={1, 2, 3, 4},
+    )
+    file_table = _format_cloc_table(
+        ["File", "Language", "Blank", "Comment", "Code"],
+        file_rows,
+        numeric_columns={2, 3, 4},
+    )
+
+    header = language_data.get("header", {})
+    version = header.get("cloc_version", "unknown")
+    elapsed = header.get("elapsed_seconds")
+    elapsed_text = (
+        f"in {elapsed:.2f} seconds" if isinstance(elapsed, (int, float)) else ""
+    )
+
+    _cloc_report_md.write_text(
+        "\n".join(
+            [
+                "<!-- Automatically generated by Sphinx; do not edit manually. -->",
+                f"Generated with `cloc` {version} {elapsed_text}.",
+                "",
+                "## Lines by language",
+                language_table,
+                "",
+                "## Lines by file",
+                file_table,
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+
+def _generate_cloc_reports() -> bool:
+    """Generate cloc reports used in the documentation."""
+
+    if os.environ.get("CLOC_SKIP"):
+        _write_placeholder_report("`cloc` was skipped because CLOC_SKIP is set.")
+        return False
+
+    language_data = _run_cloc(by_file=False)
+    file_data = _run_cloc(by_file=True)
+
+    if not language_data or not file_data:
+        _write_placeholder_report(
+            "Code metrics are unavailable because `cloc` could not produce data."
+        )
+        return False
+
+    _cloc_generated_dir.mkdir(parents=True, exist_ok=True)
+    _cloc_summary_json.write_text(
+        json.dumps(language_data, indent=2),
+        encoding="utf-8",
+    )
+    _cloc_files_json.write_text(
+        json.dumps(file_data, indent=2),
+        encoding="utf-8",
+    )
+    _write_cloc_report(language_data, file_data)
+    return True
+
+
+have_cloc_report = _generate_cloc_reports()
+
 
 def setup(app):
     """Register custom configuration values for Sphinx extensions."""
@@ -139,6 +346,8 @@ def setup(app):
     # from previous builds reload cleanly even when the value is new.
     app.add_config_value("have_typedoc", False, "env", types=[bool])
     app.config.have_typedoc = have_typedoc
+    app.add_config_value("have_cloc_report", False, "env", types=[bool])
+    app.config.have_cloc_report = have_cloc_report
     app.connect("build-finished", _copy_typedoc_output)
 
 
