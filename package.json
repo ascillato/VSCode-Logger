@@ -372,9 +372,9 @@
     "test:e2e": "npm run compile && node ./test/e2e/runTest.js"
   },
   "devDependencies": {
-    "@types/node": "^18.19.0",
-    "@types/vscode": "^1.85.0",
     "@types/mocha": "^10.0.10",
+    "@types/node": "^22.19.3",
+    "@types/vscode": "^1.85.0",
     "@typescript-eslint/eslint-plugin": "^8.50.0",
     "@typescript-eslint/parser": "^8.50.0",
     "@vscode/test-electron": "^2.4.1",
@@ -385,7 +385,7 @@
     "prettier": "^3.7.4",
     "typedoc": "^0.27.9",
     "typescript": "^5.4.0",
-    "vitest": "^2.1.4"
+    "vitest": "^4.0.16"
   },
   "dependencies": {
     "ssh2": "^1.14.0"
