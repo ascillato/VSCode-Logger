@@ -10,12 +10,13 @@ from datetime import datetime
 from pathlib import Path
 from sphinx.highlighting import lexers
 from pygments.lexers.special import TextLexer
-from coverage_report import generate_coverage_report
 
 # -- Path setup --------------------------------------------------------------
 # Add project root to sys.path if extensions or autodoc need it in the future.
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+DOCS_SOURCE = Path(__file__).resolve().parent
 sys.path.insert(0, str(PROJECT_ROOT))
+sys.path.insert(0, str(DOCS_SOURCE))
 
 # -- Project information -----------------------------------------------------
 project = "VSCode-Logger"
@@ -130,6 +131,7 @@ _typedoc_output.mkdir(parents=True, exist_ok=True)
 # Map Mermaid fenced blocks to a no-op lexer to silence warnings about the
 # language not being known to Pygments when rendering code fences.
 lexers["mermaid"] = TextLexer()
+from coverage_report import generate_coverage_report
 
 # -- Options for cloc --------------------------------------------------------
 _cloc_generated_dir = Path(__file__).parent / "_generated"
