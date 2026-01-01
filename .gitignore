@@ -155,6 +155,7 @@ docs/source/_generated/*
 
 #temp files
 temp_*.*
+*.pyc
 
 #vscode
 .vscode/settings.json

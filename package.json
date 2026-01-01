@@ -366,9 +366,11 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "docs:typedoc": "typedoc --options typedoc.json",
-    "test": "npm run test:unit && npm run test:integration && npm run test:e2e",
+    "test": "npm run test:coverage && npm run coverage:report && npm run test:e2e",
     "test:unit": "vitest run --config vitest.config.ts tests/unit",
     "test:integration": "vitest run --config vitest.config.ts tests/integration",
+    "test:coverage": "vitest run --config vitest.config.ts --coverage",
+    "coverage:report": "python3 docs/source/coverage_report.py || python docs/source/coverage_report.py",
     "test:e2e": "npm run compile && node ./test/e2e/runTest.js"
   },
   "devDependencies": {
@@ -378,6 +380,7 @@
     "@typescript-eslint/eslint-plugin": "^8.50.0",
     "@typescript-eslint/parser": "^8.50.0",
     "@vscode/test-electron": "^2.4.1",
+    "@vitest/coverage-v8": "^4.0.16",
     "cloc": "^2.6.0-cloc",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
