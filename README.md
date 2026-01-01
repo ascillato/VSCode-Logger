@@ -6,7 +6,7 @@ The Embedded Device Logger is a Visual Studio Code extension that can connect to
 
 ![Live Log panel screenshot](docs/images/screenshot_example_live.png)
 
-- **SFTP Panel view:**
+- **SFTP Panel view and SSH terminal:**
 
 ![SFTP panel screenshot](docs/images/screenshot_example_sftp.png)
 
