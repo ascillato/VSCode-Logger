@@ -10,6 +10,7 @@ from datetime import datetime
 from pathlib import Path
 from sphinx.highlighting import lexers
 from pygments.lexers.special import TextLexer
+from coverage_report import generate_coverage_report
 
 # -- Path setup --------------------------------------------------------------
 # Add project root to sys.path if extensions or autodoc need it in the future.
@@ -341,6 +342,10 @@ def _generate_cloc_reports() -> bool:
 
 
 have_cloc_report = _generate_cloc_reports()
+_coverage_report_md = _cloc_generated_dir / "coverage-report.md"
+have_coverage_report = generate_coverage_report(
+    PROJECT_ROOT, _coverage_report_md, fail_on_missing=False
+)
 
 
 def setup(app):
@@ -353,6 +358,8 @@ def setup(app):
     app.config.have_typedoc = have_typedoc
     app.add_config_value("have_cloc_report", False, "env", types=[bool])
     app.config.have_cloc_report = have_cloc_report
+    app.add_config_value("have_coverage_report", False, "env", types=[bool])
+    app.config.have_coverage_report = have_coverage_report
     app.connect("build-finished", _copy_typedoc_output)
 
 

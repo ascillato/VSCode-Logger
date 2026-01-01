@@ -5,5 +5,20 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     include: ['tests/**/*.test.ts'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json-summary', 'lcov'],
+      reportsDirectory: 'coverage',
+      include: ['src/**/*.ts'],
+      exclude: [
+        '**/*.test.*',
+        'tests/**',
+        'test/**',
+        'out/**',
+        'dist/**',
+        'docs/**',
+        'node_modules/**',
+      ],
+    },
   },
 });

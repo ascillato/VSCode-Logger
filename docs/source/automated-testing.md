@@ -28,6 +28,13 @@ This project uses a three-layer automated test suite to validate critical behavi
    npm run test:integration
    npm run test:e2e
    ```
+4. Collect coverage without running the end-to-end suite:
+   ```bash
+   npm run test:coverage
+   npm run coverage:report
+   ```
+
+The coverage run writes `coverage/coverage-summary.json` plus a Markdown summary at `docs/source/_generated/coverage-report.md` that feeds the Code Metrics page in the documentation.
 
 Notes:
 - The end-to-end tests compile the extension automatically before launching the VS Code test host (`npm run compile` is embedded in `npm run test:e2e`).
