@@ -26,8 +26,8 @@ This project was design from the start taking into account as principles the fol
 
 ### Strengths
 
--   **Clear modular structure**: Components such as `logSession` (now
-    split into authentication, host‑key verification, connection
+-   **Clear modular structure**: Components such as `logSession` (split
+    into authentication, host‑key verification, connection
     orchestration, and reconnection helpers), the `logPanel` host
     (split into lifecycle, HTML composition, messaging and persistence
     helpers), `sshCommandRunner`, `sshTerminal`, and the device
@@ -310,9 +310,6 @@ flowchart LR
     them and surfaces host key mismatch context.
     Normalizing error envelopes and telemetry (e.g., a shared
     `handleSshError` helper) would simplify UI feedback and logging.
--   **Refactor large module** `media/loggerPanel.js` into smaller logical
-    chunks (rendering, state management, messaging) to improve readability
-    and defect isolation.
 -   **Expand test coverage**: Add unit tests for LogSession and LogPanel, covering scenarios such as host‑key mismatches, reconnection logic, autosave failures and UI message routing. Integration tests could verify interactions among the sidebar, log session and command runner.
 
 ------------------------------------------------------------------------
