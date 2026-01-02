@@ -1,3 +1,10 @@
+/**
+ * Resolves device and bastion authentication for SSH connections.
+ *
+ * @copyright Copyright (c) 2025 A. Scillato
+ * @packageDocumentation
+ */
+
 import type * as vscode from 'vscode';
 import * as fs from 'fs/promises';
 import * as os from 'os';
@@ -13,6 +20,9 @@ export interface AuthenticationProviderOptions {
   onPrompt?: () => void;
 }
 
+/**
+ * Provides passwords or private keys for devices and optional bastion hosts.
+ */
 export class AuthenticationProvider {
   private readonly passwordManager: PasswordManager;
 
@@ -24,6 +34,9 @@ export class AuthenticationProvider {
     this.passwordManager = options.passwordManager ?? new PasswordManager(context);
   }
 
+  /**
+   * Returns authentication material for the target device, prompting if necessary.
+   */
   async getDeviceAuthentication(): Promise<AuthenticationResult> {
     const privateKeyPath = this.device.privateKeyPath?.trim();
     if (privateKeyPath) {
@@ -44,6 +57,9 @@ export class AuthenticationProvider {
     return { password };
   }
 
+  /**
+   * Returns normalized bastion configuration if present.
+   */
   getBastionConfig(): BastionConfig | undefined {
     const bastion = this.device.bastion;
     if (!bastion?.host?.trim() || !bastion.username?.trim()) {
@@ -81,6 +97,9 @@ export class AuthenticationProvider {
     return { password };
   }
 
+  /**
+   * Maps bastion configuration into a device-like shape for password storage.
+   */
   private getBastionDevice(bastion: BastionConfig): EmbeddedDevice {
     return {
       id: `${this.device.id}-bastion`,
@@ -90,6 +109,9 @@ export class AuthenticationProvider {
     };
   }
 
+  /**
+   * Loads and validates a private key from disk.
+   */
   private async loadPrivateKey(filePath: string): Promise<Buffer> {
     const expanded = this.expandPath(filePath);
     try {
@@ -104,6 +126,9 @@ export class AuthenticationProvider {
     }
   }
 
+  /**
+   * Expands environment and tilde tokens in file paths.
+   */
   private expandPath(value: string): string {
     const envExpanded = value.replace(
       /\$\{env:([^}]+)\}/g,

@@ -1,6 +1,16 @@
+/**
+ * Builds the HTML scaffold for the log panel Webview.
+ *
+ * @copyright Copyright (c) 2025 A. Scillato
+ * @packageDocumentation
+ */
+
 import * as path from 'path';
 import * as vscode from 'vscode';
 
+/**
+ * Creates the HTML document for the log panel, wiring assets with CSP-safe URIs.
+ */
 export function buildLogPanelHtml(
   context: vscode.ExtensionContext,
   webview: vscode.Webview,
@@ -165,6 +175,9 @@ export function buildLogPanelHtml(
 </html>`;
 }
 
+/**
+ * Produces a random nonce for the Webview CSP.
+ */
 function getNonce(): string {
   let text = '';
   const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';

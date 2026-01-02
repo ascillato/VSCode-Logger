@@ -1,7 +1,17 @@
+/**
+ * Persists SSH host fingerprints into workspace configuration and local device state.
+ *
+ * @copyright Copyright (c) 2025 A. Scillato
+ * @packageDocumentation
+ */
+
 import * as vscode from 'vscode';
 import type { BastionConfig, EmbeddedDevice } from '../deviceTree';
 import type { HostEndpoint } from '../hostEndpoints';
 
+/**
+ * Writes newly seen fingerprints back to configuration while keeping the in-memory device updated.
+ */
 export class FingerprintPersistence {
   constructor(
     private readonly device: EmbeddedDevice,
@@ -9,6 +19,9 @@ export class FingerprintPersistence {
     private readonly bastionConfigProvider: () => BastionConfig | undefined
   ) {}
 
+  /**
+   * Saves the fingerprint when none exists for the endpoint.
+   */
   async persistIfMissing(
     endpoint: HostEndpoint | undefined,
     lastSeen: { display: string; hex: string } | undefined
@@ -20,6 +33,9 @@ export class FingerprintPersistence {
     await this.updateDeviceHostFingerprint(lastSeen.display, endpoint);
   }
 
+  /**
+   * Updates the relevant device fingerprint in configuration and local state.
+   */
   async updateDeviceHostFingerprint(fingerprint: string, endpoint: HostEndpoint): Promise<void> {
     const config = vscode.workspace.getConfiguration('embeddedLogger');
     const inspected = config.inspect<EmbeddedDevice[]>('devices');
@@ -50,6 +66,9 @@ export class FingerprintPersistence {
     this.updateLocalDevice(endpoint, fingerprint, bastionConfig);
   }
 
+  /**
+   * Chooses the correct configuration scope for updating device fingerprints.
+   */
   private getConfigurationTarget(
     inspected:
       | {
@@ -71,6 +90,9 @@ export class FingerprintPersistence {
     return vscode.ConfigurationTarget.Workspace;
   }
 
+  /**
+   * Returns a device record updated with the new fingerprint for the provided endpoint.
+   */
   private mapDevice(
     device: EmbeddedDevice,
     endpoint: HostEndpoint,
@@ -91,6 +113,9 @@ export class FingerprintPersistence {
     } as EmbeddedDevice;
   }
 
+  /**
+   * Updates the cached device instance with the persisted fingerprint.
+   */
   private updateLocalDevice(
     endpoint: HostEndpoint,
     fingerprint: string,

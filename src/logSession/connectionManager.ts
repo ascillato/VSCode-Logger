@@ -1,3 +1,10 @@
+/**
+ * Establishes SSH connections (optionally through bastion hosts) and streams log data.
+ *
+ * @copyright Copyright (c) 2025 A. Scillato
+ * @packageDocumentation
+ */
+
 import type { Client, ClientChannel, ConnectConfig } from 'ssh2';
 import type { BastionConfig, EmbeddedDevice } from '../deviceTree';
 import type { HostEndpoint } from '../hostEndpoints';
@@ -43,6 +50,9 @@ export interface ActiveConnection {
   bastionClient?: Client;
 }
 
+/**
+ * Manages SSH client lifecycles and host-key verification for log streaming.
+ */
 export class ConnectionManager {
   constructor(
     private readonly callbacks: ConnectionCallbacks,
@@ -52,6 +62,9 @@ export class ConnectionManager {
     private readonly bastionVerifier?: HostKeyVerifier
   ) {}
 
+  /**
+   * Connects to the requested endpoint, optionally tunneling through a bastion.
+   */
   async connect(request: ConnectionRequest): Promise<ActiveConnection> {
     if (request.bastion && request.bastionAuthentication) {
       return this.connectThroughBastion(request);
@@ -60,6 +73,9 @@ export class ConnectionManager {
     return this.connectToEndpoint(request);
   }
 
+  /**
+   * Connects to the device via a bastion host and forwards the resulting stream.
+   */
   private connectThroughBastion(request: ConnectionRequest): Promise<ActiveConnection> {
     const bastion = request.bastion;
     if (!bastion) {
@@ -145,6 +161,9 @@ export class ConnectionManager {
     });
   }
 
+  /**
+   * Connects directly to the provided endpoint and starts the log command.
+   */
   private connectToEndpoint(
     request: ConnectionRequest,
     sock?: ClientChannel

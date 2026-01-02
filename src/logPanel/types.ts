@@ -1,6 +1,14 @@
+/**
+ * Shared types for the log panel host.
+ *
+ * @copyright Copyright (c) 2025 A. Scillato
+ * @packageDocumentation
+ */
+
 import type { EmbeddedDevice } from '../deviceTree';
 import type { HighlightDefinition } from '../highlights';
 
+/** Saved filter preset definition. */
 export interface FilterPreset {
   name: string;
   minLevel: string;

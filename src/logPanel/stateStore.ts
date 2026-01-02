@@ -1,3 +1,10 @@
+/**
+ * Persists log panel presets and highlight definitions in workspace state.
+ *
+ * @copyright Copyright (c) 2025 A. Scillato
+ * @packageDocumentation
+ */
+
 import type * as vscode from 'vscode';
 import type { HighlightDefinition } from '../highlights';
 import type { FilterPreset } from './types';
@@ -10,6 +17,9 @@ export interface StateStore {
   saveHighlights(values: HighlightDefinition[]): Promise<HighlightDefinition[]>;
 }
 
+/**
+ * Workspace-backed implementation of the log panel state store.
+ */
 export class WorkspaceStateStore implements StateStore {
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -17,10 +27,16 @@ export class WorkspaceStateStore implements StateStore {
     private readonly highlightsKey: string
   ) {}
 
+  /**
+   * Reads saved presets for the current target from workspace state.
+   */
   getStoredPresets(): FilterPreset[] {
     return this.context.workspaceState.get<FilterPreset[]>(this.presetsKey, []);
   }
 
+  /**
+   * Adds or replaces a preset and persists it to workspace state.
+   */
   async savePreset(preset: FilterPreset): Promise<FilterPreset[]> {
     const presets = this.getStoredPresets();
     const filtered = presets.filter((p) => p.name !== preset.name);
@@ -29,6 +45,9 @@ export class WorkspaceStateStore implements StateStore {
     return filtered;
   }
 
+  /**
+   * Deletes a preset by name and persists the updated list.
+   */
   async deletePreset(name: string): Promise<FilterPreset[]> {
     const presets = this.getStoredPresets();
     const filtered = presets.filter((p) => p.name !== name);
@@ -36,10 +55,16 @@ export class WorkspaceStateStore implements StateStore {
     return filtered;
   }
 
+  /**
+   * Reads highlight definitions stored for the current target.
+   */
   getStoredHighlights(): HighlightDefinition[] {
     return this.context.workspaceState.get<HighlightDefinition[]>(this.highlightsKey, []);
   }
 
+  /**
+   * Saves sanitized highlight definitions for the current target.
+   */
   async saveHighlights(values: HighlightDefinition[]): Promise<HighlightDefinition[]> {
     const sanitized = values
       .filter((highlight) => typeof highlight?.key === 'string')

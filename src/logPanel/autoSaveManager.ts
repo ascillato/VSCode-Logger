@@ -1,6 +1,16 @@
+/**
+ * Manages streaming log data to an on-disk file for the log panel.
+ *
+ * @copyright Copyright (c) 2025 A. Scillato
+ * @packageDocumentation
+ */
+
 import * as fs from 'fs';
 import * as path from 'path';
 
+/**
+ * Coordinates creation, writing, and disposal of the auto-save stream.
+ */
 export class AutoSaveManager {
   private stream?: fs.WriteStream;
   private filePath?: string;
@@ -19,6 +29,9 @@ export class AutoSaveManager {
     return this.filePath ? path.basename(this.filePath) : undefined;
   }
 
+  /**
+   * Opens a write stream for the provided file path and wires callbacks for lifecycle events.
+   */
   async start(
     filePath: string,
     onError: (message: string) => void,
@@ -36,6 +49,11 @@ export class AutoSaveManager {
     });
   }
 
+  /**
+   * Closes the active auto-save stream if present.
+   *
+   * @returns whether a notification should be sent to the Webview.
+   */
   async stop(options: { silent?: boolean; message?: string } = {}): Promise<boolean> {
     const { silent = false } = options;
     const hadAutoSave = !!(this.stream || this.filePath);
@@ -63,6 +81,9 @@ export class AutoSaveManager {
     return !silent && hadAutoSave;
   }
 
+  /**
+   * Writes a single line to the active auto-save stream and reports failures to the caller.
+   */
   writeLine(line: string, onError: (message: string) => void, onStop: () => void): void {
     if (!this.stream) {
       return;

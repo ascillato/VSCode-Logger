@@ -1,3 +1,10 @@
+/**
+ * Validates and narrows messages received from the log panel Webview.
+ *
+ * @copyright Copyright (c) 2025 A. Scillato
+ * @packageDocumentation
+ */
+
 import type { HighlightDefinition } from '../highlights';
 
 export type WebviewMessage =
@@ -13,6 +20,9 @@ export type WebviewMessage =
   | { type: 'startAutoSave' }
   | { type: 'stopAutoSave'; message?: string };
 
+/**
+ * Attempts to coerce an arbitrary message into a recognized Webview message shape.
+ */
 export function parseWebviewMessage(raw: unknown): WebviewMessage | undefined {
   if (!raw || typeof raw !== 'object') {
     return undefined;

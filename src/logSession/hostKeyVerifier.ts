@@ -1,3 +1,10 @@
+/**
+ * Computes and validates SSH host key fingerprints for devices and bastions.
+ *
+ * @copyright Copyright (c) 2025 A. Scillato
+ * @packageDocumentation
+ */
+
 import { createHash } from 'crypto';
 import type { HostEndpoint } from '../hostEndpoints';
 
@@ -6,6 +13,9 @@ export interface FingerprintDetails {
   hex: string;
 }
 
+/**
+ * Verifies host keys against expected fingerprints and captures the last seen value.
+ */
 export class HostKeyVerifier {
   private lastSeen: FingerprintDetails | undefined;
   private failure: { expected: string; received: string } | undefined;
@@ -21,14 +31,23 @@ export class HostKeyVerifier {
     this.lastSeen = undefined;
   }
 
+  /**
+   * Returns the most recently observed fingerprint.
+   */
   getLastSeen(): FingerprintDetails | undefined {
     return this.lastSeen;
   }
 
+  /**
+   * Returns the last mismatch if verification failed.
+   */
   getFailure(): { expected: string; received: string } | undefined {
     return this.failure;
   }
 
+  /**
+   * Normalizes a configured fingerprint string into details for comparison.
+   */
   getExpectedFingerprint(endpoint: HostEndpoint): FingerprintDetails | undefined {
     const fingerprint = endpoint.fingerprint;
     if (!fingerprint) {
@@ -37,6 +56,9 @@ export class HostKeyVerifier {
     return this.parseFingerprint(fingerprint);
   }
 
+  /**
+   * Validates the provided host key against the expected fingerprint.
+   */
   verify(key: string | Buffer, expected?: FingerprintDetails): boolean {
     const actual = this.computeHostKeyFingerprints(key);
     this.lastSeen = actual;

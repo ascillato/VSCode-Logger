@@ -1,3 +1,10 @@
+/**
+ * Manages SSH log streaming sessions, host-key verification, and reconnection logic.
+ *
+ * @copyright Copyright (c) 2025 A. Scillato
+ * @packageDocumentation
+ */
+
 import * as vscode from 'vscode';
 import { Client } from 'ssh2';
 import type { ClientChannel } from 'ssh2';
@@ -32,6 +39,9 @@ export interface LogSessionDependencies {
   authenticationProvider?: AuthenticationProvider;
 }
 
+/**
+ * Coordinates connection, streaming, and reconnection for a device log session.
+ */
 export class LogSession {
   private readonly callbacks: LogSessionCallbacks;
   private readonly authenticator: AuthenticationProvider;
@@ -98,6 +108,9 @@ export class LogSession {
     );
   }
 
+  /**
+   * Validates configuration, resolves authentication, and attempts to connect with retries.
+   */
   async start(): Promise<void> {
     try {
       if (!vscode.workspace.isTrusted) {
@@ -139,6 +152,9 @@ export class LogSession {
     }
   }
 
+  /**
+   * Releases SSH resources and stops active streams.
+   */
   dispose(): void {
     this.disposed = true;
     this.hasConnected = false;
@@ -189,6 +205,9 @@ export class LogSession {
     return command;
   }
 
+  /**
+   * Opens the SSH connection (with optional bastion) and wires the log stream callbacks.
+   */
   private async connect(
     endpoint: HostEndpoint,
     authentication: AuthenticationResult,
@@ -214,6 +233,9 @@ export class LogSession {
     this.attachStream(connection.stream);
   }
 
+  /**
+   * Prompts the user to update a fingerprint and returns whether to retry.
+   */
   private async handleHostKeyMismatch(error: HostKeyMismatchError): Promise<boolean> {
     const retry = await this.promptToUpdateFingerprint(
       error.expected,

@@ -1,3 +1,10 @@
+/**
+ * Orchestrates retries across endpoints when connecting to a device.
+ *
+ * @copyright Copyright (c) 2025 A. Scillato
+ * @packageDocumentation
+ */
+
 import type { HostEndpoint } from '../hostEndpoints';
 import { HostKeyMismatchError } from './errors';
 
@@ -9,9 +16,13 @@ export interface ReconnectOptions {
   onHostKeyMismatch: (error: HostKeyMismatchError) => Promise<boolean>;
 }
 
+/** Manages reconnection attempts with fingerprint prompts. */
 export class ReconnectionController {
   constructor(private readonly options: ReconnectOptions) {}
 
+  /**
+   * Attempts to connect through available endpoints, handling retries and host-key prompts.
+   */
   async connect(): Promise<void> {
     const { endpoints, maxAttempts } = this.options;
     if (endpoints.length === 0) {

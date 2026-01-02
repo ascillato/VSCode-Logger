@@ -1,3 +1,10 @@
+/**
+ * Hosts the log panel Webview and coordinates streaming, presets, and highlights.
+ *
+ * @copyright Copyright (c) 2025 A. Scillato
+ * @packageDocumentation
+ */
+
 import * as path from 'path';
 import * as vscode from 'vscode';
 import type { EmbeddedDevice } from '../deviceTree';
@@ -10,6 +17,9 @@ import { parseWebviewMessage } from './messageParser';
 import { WorkspaceStateStore } from './stateStore';
 import type { FilterPreset, LogPanelTarget } from './types';
 
+/**
+ * Lifecycle manager for a single log panel instance.
+ */
 export class LogPanel {
   private readonly panel: vscode.WebviewPanel;
   private session?: LogSession;
@@ -88,6 +98,9 @@ export class LogPanel {
     this.panel.webview.html = buildLogPanelHtml(this.context, this.panel.webview, this.targetName);
   }
 
+  /**
+   * Starts the log session (for remote targets) or loads initial lines (for files) once ready.
+   */
   async start(): Promise<void> {
     await this.webviewReady;
     if (this.session) {
@@ -97,10 +110,16 @@ export class LogPanel {
     this.sendInitialLines();
   }
 
+  /**
+   * Brings the panel to the foreground.
+   */
   reveal(): void {
     this.panel.reveal();
   }
 
+  /**
+   * Disposes the panel, session, and auto-save resources.
+   */
   dispose(): void {
     if (this.disposed) {
       return;
@@ -117,6 +136,9 @@ export class LogPanel {
     return this.panel.onDidChangeViewState(listener);
   }
 
+  /**
+   * Routes validated Webview messages to handlers for presets, exports, highlights, and session control.
+   */
   private async handleWebviewMessage(raw: unknown): Promise<void> {
     const message = parseWebviewMessage(raw);
     if (!message) {
@@ -162,6 +184,9 @@ export class LogPanel {
     }
   }
 
+  /**
+   * Builds a LogSession for the current device with Webview-facing callbacks.
+   */
   private createSession(): LogSession {
     if (!this.device) {
       throw new Error('Cannot create a log session without a device.');
@@ -194,6 +219,9 @@ export class LogPanel {
     });
   }
 
+  /**
+   * Sends initial log lines and status for imported files.
+   */
   private sendInitialLines(): void {
     this.panel.webview.postMessage({ type: 'initialLines', lines: this.initialLines });
     this.panel.webview.postMessage({
@@ -230,6 +258,9 @@ export class LogPanel {
     vscode.window.showInformationMessage(`Preset "${name}" removed for ${this.targetName}.`);
   }
 
+  /**
+   * Prompts the user for an export destination and writes the provided lines.
+   */
   private async exportLogs(lines: string[]): Promise<void> {
     const uri = await vscode.window.showSaveDialog({
       filters: { Logs: ['log', 'txt'] },
@@ -369,6 +400,9 @@ export class LogPanel {
     }
   }
 
+  /**
+   * Prompts for a destination and begins streaming incoming logs to disk.
+   */
   private async startAutoSave(): Promise<void> {
     if (!this.session) {
       await this.panel.webview.postMessage({
@@ -422,6 +456,9 @@ export class LogPanel {
     }
   }
 
+  /**
+   * Stops auto-save and notifies the Webview unless silenced.
+   */
   private async stopAutoSave(options: { silent?: boolean; message?: string } = {}): Promise<void> {
     const { silent = false, message } = options;
     const notify = await this.autoSaveManager.stop({ silent, message });
@@ -460,6 +497,9 @@ export class LogPanel {
     return vscode.Uri.file(path.join(workspaceUri.fsPath, defaultFileName));
   }
 
+  /**
+   * Relays host key mismatch details to the Webview and shows an error prompt.
+   */
   private async handleHostKeyMismatch(details: {
     expected: string;
     received: string;
