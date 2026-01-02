@@ -82,7 +82,14 @@ export function buildHighlightedContent(line, highlights) {
 
     const span = document.createElement('span');
     span.textContent = line.slice(nextIndex, nextIndex + nextLength);
-    span.className = `highlight ${nextMatch.className || ''}`;
+    span.className = `highlighted-text ${nextMatch.className || ''}`.trim();
+    if (nextMatch.color) {
+      span.style.color = nextMatch.color;
+      span.style.borderColor = nextMatch.color;
+    }
+    if (nextMatch.backgroundColor) {
+      span.style.backgroundColor = nextMatch.backgroundColor;
+    }
     fragment.appendChild(span);
 
     cursor = nextIndex + nextLength;
