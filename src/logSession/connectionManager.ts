@@ -34,6 +34,7 @@ export interface ConnectionRequest {
   device: EmbeddedDevice;
   bastion?: BastionConfig;
   bastionAuthentication?: AuthenticationResult;
+  onStreamReady?: (stream: ClientChannel) => void;
 }
 
 export interface ActiveConnection {
@@ -103,6 +104,7 @@ export class ConnectionManager {
                 return;
               }
 
+              request.onStreamReady?.(stream);
               void this.connectToEndpoint(request, stream)
                 .then((connection) => resolve({ ...connection, bastionClient }))
                 .catch((connectionError: unknown) => {
@@ -166,6 +168,7 @@ export class ConnectionManager {
               reject(err);
               return;
             }
+            request.onStreamReady?.(stream);
             resolve({ client, stream });
           });
         })

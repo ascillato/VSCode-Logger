@@ -44,6 +44,7 @@ export class LogSession {
     | { client: Client; bastionClient?: Client; stream?: ClientChannel }
     | undefined;
   private readonly buffer: { value: string } = { value: '' };
+  private readonly attachedStreams = new WeakSet<ClientChannel>();
   private disposed = false;
   private closedNotified = false;
   private hasConnected = false;
@@ -204,17 +205,13 @@ export class LogSession {
       device: this.device,
       bastion: this.bastionConfig,
       bastionAuthentication,
+      onStreamReady: (stream): void => this.attachStream(stream),
     });
 
     this.connection = connection;
     this.hasConnected = true;
 
-    connection.stream
-      .on('data', (data: Buffer) => this.handleData(data))
-      .on('close', () => this.handleClose())
-      .stderr.on('data', (data: Buffer) => {
-        this.callbacks.onError(data.toString());
-      });
+    this.attachStream(connection.stream);
   }
 
   private async handleHostKeyMismatch(error: HostKeyMismatchError): Promise<boolean> {
@@ -230,6 +227,19 @@ export class LogSession {
       return true;
     }
     return false;
+  }
+
+  private attachStream(stream: ClientChannel): void {
+    if (!stream || this.attachedStreams.has(stream)) {
+      return;
+    }
+    this.attachedStreams.add(stream);
+    stream
+      .on('data', (data: Buffer) => this.handleData(data))
+      .on('close', () => this.handleClose())
+      .stderr.on('data', (data: Buffer) => {
+        this.callbacks.onError(data.toString());
+      });
   }
 
   private handleData(data: Buffer): void {
