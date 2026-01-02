@@ -1,3 +1,9 @@
+/**
+ * Manages persistent and in-memory state for the log panel Webview.
+ *
+ * @copyright Copyright (c) 2025 A. Scillato
+ */
+
 export const highlightPalette = [
   { foreground: '#1b7f5f', background: '#d2f4e8' },
   { foreground: '#1f6fbf', background: '#d9e9ff' },
@@ -43,6 +49,9 @@ export const LINE_LIMIT_NOTICE_LIVE =
 export const LINE_LIMIT_NOTICE_OFFLINE =
   'Configured display line limit reached. Older lines are not shown.';
 
+/**
+ * Creates the state container and persistence helpers for the logger panel.
+ */
 export function createStateController(vscode) {
   let entryIdCounter = 0;
   let persistTimeout = null;
@@ -75,6 +84,9 @@ export function createStateController(vscode) {
     activeBookmarkId: null,
   };
 
+  /**
+   * Persists the current state snapshot to VS Code storage.
+   */
   function persistState() {
     const serializedState = {
       deviceId: state.deviceId,
@@ -101,6 +113,9 @@ export function createStateController(vscode) {
     vscode.setState(serializedState);
   }
 
+  /**
+   * Debounced persistence to avoid frequent VS Code API calls.
+   */
   function schedulePersist() {
     if (isRestoringState) {
       return;
@@ -114,6 +129,9 @@ export function createStateController(vscode) {
     }, 300);
   }
 
+  /**
+   * Restores entries from a serialized snapshot while respecting the configured max entries.
+   */
   function restoreEntries(savedEntries, maxEntries, parseLevelFn) {
     if (!Array.isArray(savedEntries) || !savedEntries.length) {
       return [];
@@ -146,6 +164,9 @@ export function createStateController(vscode) {
     return limited;
   }
 
+  /**
+   * Rehydrates the state object from a VS Code snapshot.
+   */
   function restoreStateFromSnapshot(snapshot, helpers) {
     if (!snapshot) {
       return;
@@ -226,10 +247,16 @@ export function createStateController(vscode) {
     isRestoringState = false;
   }
 
+  /**
+   * Returns the next entry identifier for log rendering.
+   */
   function nextEntryId() {
     return entryIdCounter++;
   }
 
+  /**
+   * Resets the entry identifier counter (used when replacing all entries).
+   */
   function resetEntryIds() {
     entryIdCounter = 0;
   }

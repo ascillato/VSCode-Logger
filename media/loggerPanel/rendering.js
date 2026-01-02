@@ -1,3 +1,12 @@
+/**
+ * Provides DOM helpers for buttons, toggles, and highlighted log content in the log panel Webview.
+ *
+ * @copyright Copyright (c) 2025 A. Scillato
+ */
+
+/**
+ * Updates the accessible label for a toolbar button.
+ */
 export function setButtonLabel(button, label) {
   if (!button || !label) {
     return;
@@ -19,6 +28,9 @@ export function updateToggleLabel(button, active) {
   setButtonLabel(button, label);
 }
 
+/**
+ * Sets toggle state attributes and styling for a toolbar button.
+ */
 export function setToggleState(button, active) {
   if (!button) {
     return;
@@ -33,6 +45,9 @@ export function isToggleActive(button) {
   return button?.dataset.active === 'true';
 }
 
+/**
+ * Builds a DocumentFragment containing highlighted spans for a log line.
+ */
 export function buildHighlightedContent(line, highlights) {
   const fragment = document.createDocumentFragment();
 

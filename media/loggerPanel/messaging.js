@@ -1,3 +1,12 @@
+/**
+ * Handles postMessage traffic between the log panel Webview and the extension host.
+ *
+ * @copyright Copyright (c) 2025 A. Scillato
+ */
+
+/**
+ * Registers handlers that react to messages from the extension host.
+ */
 export function registerMessageHandlers({
   state,
   elements,
@@ -5,6 +14,9 @@ export function registerMessageHandlers({
   setToggleState,
   isDefaultLogCommandMessage,
 }) {
+  /**
+   * Applies incoming messages to local state and UI elements.
+   */
   window.addEventListener('message', (event) => {
     const message = event.data;
     switch (message.type) {

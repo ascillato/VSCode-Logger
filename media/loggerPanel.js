@@ -1,3 +1,9 @@
+/**
+ * Drives the log panel Webview UI: wiring state, rendering helpers, and message routing.
+ *
+ * @copyright Copyright (c) 2025 A. Scillato
+ */
+
 import {
   createStateController,
   highlightPalette,
@@ -15,13 +21,7 @@ import {
 import { registerMessageHandlers } from './loggerPanel/messaging.js';
 
 /**
- * @file loggerPanel.js
- * @brief Manages the Webview UI for displaying and filtering streamed logs.
- * @copyright Copyright (c) 2025 A. Scillato
- */
-
-/**
- * @brief Initializes the logger panel UI and event wiring inside the Webview.
+ * Initializes the logger panel UI and event wiring inside the Webview.
  */
 (function () {
   const vscode = acquireVsCodeApi();

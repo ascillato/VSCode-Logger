@@ -1,3 +1,9 @@
+/**
+ * Renders the sidebar Webview listing devices and exposes device actions to the extension host.
+ *
+ * @copyright Copyright (c) 2025 A. Scillato
+ */
+
 (function () {
   const vscode = acquireVsCodeApi();
 
@@ -27,10 +33,16 @@
   window.addEventListener('scroll', hideContextMenu, true);
   document.body.appendChild(contextMenu);
 
+  /**
+   * Hides the context menu for device items.
+   */
   function hideContextMenu() {
     contextMenu.classList.add('hidden');
   }
 
+  /**
+   * Creates a button entry for the context menu.
+   */
   function createContextMenuItem(label, onClick) {
     const item = document.createElement('button');
     item.className = 'context-menu__item';
@@ -44,6 +56,9 @@
     return item;
   }
 
+  /**
+   * Opens the device context menu with copy actions.
+   */
   function openDeviceContextMenu(device, clientX, clientY) {
     const urlToCopy = device.webBrowserUrl || device.host;
     contextMenuList.innerHTML = '';
@@ -69,6 +84,9 @@
     contextMenu.style.top = `${Math.min(clientY, maxTop)}px`;
   }
 
+  /**
+   * Produces an icon span used in device rows.
+   */
   function createIconSpan(symbol) {
     const span = document.createElement('span');
     span.className = 'command-icon';
@@ -77,6 +95,9 @@
     return span;
   }
 
+  /**
+   * Renders the device list with action buttons and context menus.
+   */
   function renderDevices() {
     deviceList.innerHTML = '';
     if (!state.devices.length) {
