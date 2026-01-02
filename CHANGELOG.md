@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add coverage reporting to tests and surface metrics in docs.
 
 ### Changed
-- None.
+- Consolidate e2e tests under unified tests directory.
 
 ### Deprecated
 - None.
