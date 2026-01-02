@@ -26,8 +26,11 @@ This project was design from the start taking into account as principles the fol
 
 ### Strengths
 
--   **Clear modular structure**: Components such as `logSession`,
-    `logPanel`, `sshCommandRunner`, `sshTerminal`, and the device
+-   **Clear modular structure**: Components such as `logSession` (now
+    split into authentication, host‑key verification, connection
+    orchestration, and reconnection helpers), the `logPanel` host
+    (split into lifecycle, HTML composition, messaging and persistence
+    helpers), `sshCommandRunner`, `sshTerminal`, and the device
     tree/side panel are well separated.
 -   **Good use of VS Code APIs**: Webview messaging, pseudoterminals,
     secrets API, configuration API, etc.
@@ -132,10 +135,10 @@ This document explains how the VSCode-Logger extension streams logs from embedde
 - **Configuration helpers (`src/configuration.ts`)**: Centralizes reading extension settings and applying default SSH port, log command, terminal enablement, and shared SSH commands to each device, while surfacing the max-lines limit.
 - **Sidebar view (`src/sidebarView.ts` + `media/sidebarView.*`)**: Renders devices and highlight rows in a Webview. Users can open devices, run per-device SSH commands, open a dedicated SSH terminal when enabled, or manage highlight definitions that synchronize across log panels.
 - **Device tree (`src/deviceTree.ts`)**: Supplies device metadata to the sidebar view and tree interactions.
-- **Log panel (`src/logPanel.ts`)**: Creates a Webview panel per remote or local log source, injects assets, and wires callbacks for presets, exports, highlights, bookmarks, find/highlight rows, and status updates. It owns a `LogSession` for remote devices.
-- **`LogSession` (`src/logSession.ts`)**: Manages the SSH connection to a device, pulls credentials from secret storage or prompts the user, runs the log command, and forwards complete lines to the panel callbacks. It reports status changes and errors back to the Webview so the UI can react.
+- **Log panel host (`src/logPanel/`)**: `logPanel.ts` creates a Webview panel per remote or local log source, injects assets via `html.ts`, validates inbound Webview messages with `messageParser.ts`, persists presets/highlights through `stateStore.ts`, and manages auto-save streams through `autoSaveManager.ts`. It owns a `LogSession` for remote devices.
+- **`LogSession` pipeline (`src/logSession/`)**: `logSession.ts` orchestrates streaming using `authenticationProvider.ts` (secrets and key loading), `connectionManager.ts` (SSH clients, channels, stream lifecycle), `hostKeyVerifier.ts` and `fingerprintPersistence.ts` (verification and capture), and `reconnectionController.ts` (retry strategy). It reports status changes and errors back to the Webview so the UI can react.
 - **SSH helpers (`src/sshCommandRunner.ts`, `src/sshTerminal.ts`)**: Execute one-off SSH commands from the sidebar or spawn an interactive SSH terminal using stored or prompted credentials.
-- **Webview clients (`media/loggerPanel.js` + `media/loggerPanel.css`)**: Receive log lines, parse severity, apply filters, manage presets and bookmarks, enforce the max-lines cap, and render the terminal-like UI. They can request preset persistence, deletion, exports, bookmark toggles, and highlight updates via `postMessage` events.
+- **Webview clients (`media/loggerPanel/`, `media/loggerPanel.css`)**: The `loggerPanel.js` entrypoint composes `state.js` (state restoration/persistence), `rendering.js` (DOM utilities, highlight painting), and `messaging.js` (message dispatch). These receive log lines, parse severity, apply filters, manage presets and bookmarks, enforce the max-lines cap, and render the terminal-like UI. They can request preset persistence, deletion, exports, bookmark toggles, and highlight updates via `postMessage` events.
 
 ## Data and control flow
 
@@ -166,12 +169,12 @@ The extension follows a **device → credential → connection → stream → We
 
 - **`configuration`** resolves user settings, applies defaults (ports, log command, SSH command defaults) and feeds normalized devices to downstream components.
 - **`passwordManager`** mediates secret storage and prompts, ensuring no credentials are persisted in configuration or Webviews.
-- **`logSession`** owns the SSH client lifecycle for streaming logs, validates host keys, applies back-pressure, and surfaces status callbacks.
-- **`logPanel`** bridges the extension host and the Webview for a device, wiring callbacks for presets, exports, bookmarks and highlights.
+- **`logSession`** owns the SSH client lifecycle for streaming logs, validates host keys through a dedicated verifier, persists fingerprints when missing, and surfaces status callbacks via the connection manager and reconnection controller.
+- **`logPanel`** bridges the extension host and the Webview for a device, wiring callbacks for presets, exports, bookmarks and highlights, and delegating HTML composition and state storage to its helper modules.
 - **`deviceTree`** and **`sidebarView`** collect devices from configuration and expose user actions (open device, run command, open terminal) that map to backend handlers.
 - **`sshCommandRunner`** executes one-off commands with the same credential and validation pipeline as log streaming.
 - **`sshTerminal`** provides an interactive pseudoterminal session with the same authentication and host-key guarantees.
-- **Webview clients (`loggerPanel.js`, `sidebarView.js`)** manage UI state, apply filtering, and issue `postMessage` calls to request backend actions while rendering streamed data.
+- **Webview clients (`loggerPanel.js` + `state.js`/`rendering.js`/`messaging.js`, `sidebarView.js`)** manage UI state, apply filtering and highlighting, and issue `postMessage` calls to request backend actions while rendering streamed data.
 
 ### Data flow: device configuration to Webview rendering
 
