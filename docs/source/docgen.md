@@ -6,6 +6,17 @@ Welcome to the VSCode-Logger documentation site. This extension streams logs fro
 
 Mermaid diagrams in Markdown work with fenced code blocks. For example:
 
+<code>```mermaid</code>
+```
+graph LR
+    A[Device configured] --> B[Open log panel]
+    B --> C{SSH stream}
+    C --> D[Log lines rendered]
+```
+<code>```</code>
+
+will render as:
+
 ```mermaid
 graph LR
     A[Device configured] --> B[Open log panel]

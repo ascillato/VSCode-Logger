@@ -11,9 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Add coverage reporting to tests and surface metrics in docs.
+- Add git branches typical usage for this project in dev docs.
 
 ### Changed
 - Consolidate e2e tests under unified tests directory.
+- Improved Architecture Overview doc.
 
 ### Deprecated
 - None.

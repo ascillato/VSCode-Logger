@@ -12,12 +12,12 @@ Detailed Usage and Configuration <detailed-usage>
 Developer Setup and Workflow <developer-guide>
 Architecture Overview <extension-overview>
 Code Development <code-development>
-Automated Testing <automated-testing>
-Code Metrics <code-metrics>
 API <api/index>
-Documentation Generation <docgen>
+Code Metrics <code-metrics>
 Changelog <changelog>
+Automated Testing <automated-testing>
+Documentation Generation <docgen>
 Security Issues Report and Management <security-issues>
-License <license>
 Code of Conduct <code-of-conduct>
+License <license>
 ```
