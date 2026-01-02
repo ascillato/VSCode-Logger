@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [1.5.1] - 2026-01-02 [DOCS]
+
+### Added
+- Add coverage reporting to tests and surface metrics in docs.
+- Add git branches typical usage for this project in dev docs.
+
+### Changed
+- Consolidate e2e tests under unified tests directory.
+- Improved Architecture Overview doc.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- None.
+
+### Security
+- None.
+
+----------------------------------------
+
 ## [1.5.0] - 2025-12-31 [QA]
 
 ### Added

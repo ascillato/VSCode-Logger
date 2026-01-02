@@ -3,7 +3,7 @@
   "displayName": "Embedded Device Logger",
   "description": "Stream and filter embedded Linux device logs over SSH inside VS Code.",
   "icon": "media/icon.png",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "publisher": "Scallant",
   "author": "A. Scillato",
   "engines": {
@@ -366,10 +366,12 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "docs:typedoc": "typedoc --options typedoc.json",
-    "test": "npm run test:unit && npm run test:integration && npm run test:e2e",
+    "test": "npm run test:coverage && npm run coverage:report && npm run test:e2e",
     "test:unit": "vitest run --config vitest.config.ts tests/unit",
     "test:integration": "vitest run --config vitest.config.ts tests/integration",
-    "test:e2e": "npm run compile && node ./test/e2e/runTest.js"
+    "test:coverage": "vitest run --config vitest.config.ts --coverage",
+    "coverage:report": "python3 docs/source/coverage_report.py || python docs/source/coverage_report.py",
+    "test:e2e": "npm run compile && node ./tests/e2e/runTest.js"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
@@ -378,6 +380,7 @@
     "@typescript-eslint/eslint-plugin": "^8.50.0",
     "@typescript-eslint/parser": "^8.50.0",
     "@vscode/test-electron": "^2.4.1",
+    "@vitest/coverage-v8": "^4.0.16",
     "cloc": "^2.6.0-cloc",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
