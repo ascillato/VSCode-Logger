@@ -8,6 +8,7 @@ Mermaid diagrams in Markdown work with fenced code blocks. For example:
 
 <code>```mermaid</code>
 ```
+:zoom: 100%
 graph LR
     A[Device configured] --> B[Open log panel]
     B --> C{SSH stream}
@@ -18,6 +19,7 @@ graph LR
 will render as:
 
 ```mermaid
+:zoom: 100%
 graph LR
     A[Device configured] --> B[Open log panel]
     B --> C{SSH stream}

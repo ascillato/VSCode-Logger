@@ -160,6 +160,133 @@ graph TD
     F -- Status updates --> O
 ```
 
+## High-level design and data flow
+
+The extension follows a **device → credential → connection → stream → Webview** pipeline where the extension host orchestrates SSH operations and Webviews render stateful UI. Each class has a narrowly scoped role to keep concerns separated:
+
+- **`configuration`** resolves user settings, applies defaults (ports, log command, SSH command defaults) and feeds normalized devices to downstream components.
+- **`passwordManager`** mediates secret storage and prompts, ensuring no credentials are persisted in configuration or Webviews.
+- **`logSession`** owns the SSH client lifecycle for streaming logs, validates host keys, applies back-pressure, and surfaces status callbacks.
+- **`logPanel`** bridges the extension host and the Webview for a device, wiring callbacks for presets, exports, bookmarks and highlights.
+- **`deviceTree`** and **`sidebarView`** collect devices from configuration and expose user actions (open device, run command, open terminal) that map to backend handlers.
+- **`sshCommandRunner`** executes one-off commands with the same credential and validation pipeline as log streaming.
+- **`sshTerminal`** provides an interactive pseudoterminal session with the same authentication and host-key guarantees.
+- **Webview clients (`loggerPanel.js`, `sidebarView.js`)** manage UI state, apply filtering, and issue `postMessage` calls to request backend actions while rendering streamed data.
+
+### Data flow: device configuration to Webview rendering
+
+```mermaid
+:zoom: 100%
+sequenceDiagram
+    participant User
+    participant VSCode as VS Code Settings
+    participant Config as configuration.ts
+    participant DeviceTree as deviceTree.ts / sidebarView.ts
+    participant LogPanel as logPanel.ts
+    participant Session as logSession.ts
+    participant Secrets as passwordManager.ts
+    participant SSH as ssh2 Client
+    participant Webview as loggerPanel.js
+
+    User->>VSCode: Configure embeddedLogger.devices
+    VSCode-->>Config: Provide settings with defaults
+    Config-->>DeviceTree: Normalized devices
+    User->>DeviceTree: Select device (open panel)
+    DeviceTree->>LogPanel: Request panel for device
+    LogPanel->>Session: Start log session
+    Session->>Secrets: Retrieve credentials (prompt or secret store)
+    Secrets-->>Session: Password/passphrase/private key
+    Session->>SSH: Connect (host key verification)
+    SSH-->>Session: Secure channel ready
+    Session->>SSH: Execute logCommand
+    SSH-->>Session: Stream stdout/stderr chunks
+    Session-->>LogPanel: Emit complete log lines + statuses
+    LogPanel-->>Webview: postMessage lines, statuses, presets
+    Webview-->>User: Rendered logs, filters, highlights
+```
+
+### Log streaming sequence (status + reconnection aware)
+
+```mermaid
+:zoom: 100%
+sequenceDiagram
+    participant User
+    participant Panel as LogPanel
+    participant Session as LogSession
+    participant Secrets as PasswordManager
+    participant SSH as ssh2 Client
+    participant Webview as loggerPanel.js
+
+    User->>Panel: Open device panel
+    Panel->>Session: create(device)
+    Session->>Secrets: getSecret(device)
+    Secrets-->>Session: credentials or prompt result
+    Session->>SSH: connect(host, port, auth, hostVerifier)
+    SSH-->>Session: ready or error
+    Session-->>Panel: onStatus("connecting"/"streaming")
+    Panel-->>Webview: postMessage(status)
+    Session->>SSH: exec(logCommand)
+    SSH-->>Session: data chunks
+    Session-->>Panel: onData(lines)
+    Panel-->>Webview: postMessage(logEntries)
+    alt disconnect/error
+        Session-->>Panel: onError(reason)
+        Panel-->>Webview: postMessage(error)
+        Session-->>Session: schedule reconnect with backoff
+    end
+    User->>Panel: Close panel
+    Panel->>Session: dispose()
+    Session->>SSH: end()
+```
+
+### SSH command execution sequence
+
+```mermaid
+:zoom: 100%
+sequenceDiagram
+    participant User
+    participant Sidebar as SidebarView (Webview)
+    participant Extension as extension.ts
+    participant Runner as SshCommandRunner
+    participant Secrets as PasswordManager
+    participant SSH as ssh2 Client
+
+    User->>Sidebar: Click configured command
+    Sidebar-->>Extension: postMessage(runCommand)
+    Extension->>Runner: run(device, command)
+    Runner->>Secrets: getSecret(device)
+    Secrets-->>Runner: credentials
+    Runner->>SSH: connect(host, port, auth, hostVerifier)
+    SSH-->>Runner: ready
+    Runner->>SSH: exec(sanitizedCommand)
+    SSH-->>Runner: stdout/stderr
+    Runner-->>Extension: resolved output/errors
+    Extension-->>User: showInformationMessage / showErrorMessage
+```
+
+### SSH connection flow (primary/secondary hosts, bastion, and secret retrieval)
+
+```mermaid
+:zoom: 100%
+flowchart LR
+    A[Device config] -->|defaults applied| B[Normalized device]
+    B --> C{Bastion configured?}
+    C -- Yes --> D["Build bastion client config (host, port, username, fingerprint)"]
+    D --> E[Retrieve bastion secret via PasswordManager]
+    E --> F[Open SSH tunnel to bastion]
+    F --> G[Forward connection to target host/port]
+    C -- No --> H[Direct target client config]
+    B --> H
+    H --> I[Retrieve target secret via PasswordManager]
+    I --> J[Connect ssh2 client with hostVerifier]
+    J --> K{Connection established?}
+    K -- Yes --> L[Run logCommand or device command]
+    K -- No --> M[Surface error and retry/backoff]
+    L --> N[Stream stdout/stderr]
+    N --> O[Emit status/data to logPanel]
+    O --> P["Render in Webview (loggerPanel.js)"]
+```
+
 ## Lifecycle details
 1. **Panel creation**: Each device or imported log opens in its own Webview panel. Existing panels re-activate instead of spawning duplicates when the same source is selected again.
 2. **Session management**: `LogSession` tracks connection lifecycle events (connecting, streaming, disconnecting, error) and disposes of SSH resources when panels close or the extension deactivates.
