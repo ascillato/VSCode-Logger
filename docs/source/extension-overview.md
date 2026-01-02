@@ -310,6 +310,7 @@ flowchart LR
 -   **Refactor large module** `media/loggerPanel.js` into smaller logical
     chunks (rendering, state management, messaging) to improve readability
     and defect isolation.
+-   **Expand test coverage**: Add unit tests for LogSession and LogPanel, covering scenarios such as host‑key mismatches, reconnection logic, autosave failures and UI message routing. Integration tests could verify interactions among the sidebar, log session and command runner.
 
 ------------------------------------------------------------------------
 
