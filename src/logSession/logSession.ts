@@ -234,6 +234,7 @@ export class LogSession {
       return;
     }
     this.attachedStreams.add(stream);
+    this.hasConnected = true;
     stream
       .on('data', (data: Buffer) => this.handleData(data))
       .on('close', () => this.handleClose())
