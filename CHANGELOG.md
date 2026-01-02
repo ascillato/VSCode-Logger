@@ -13,7 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - None.
 
 ### Changed
-- None.
+- Refactor LogSession and LogPanel modules for testability.
+- Updated Docs with Refactor changes.
 
 ### Deprecated
 - None.
