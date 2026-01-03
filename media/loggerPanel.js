@@ -396,6 +396,7 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
     });
 
     updatePresetButtonLabels();
+    updatePresetActionVisibility();
   }
 
   function updatePresetButtonLabels() {
@@ -406,6 +407,20 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
     presetDropdownButton.title = label;
     presetDropdownButton.setAttribute('aria-label', label);
     presetDropdownButton.setAttribute('aria-expanded', isPresetDropdownOpen ? 'true' : 'false');
+  }
+
+  function updatePresetActionVisibility() {
+    const activePreset = state.presets.find((preset) => preset.name === activePresetName);
+    const filtersMatchActivePreset =
+      !!activePreset &&
+      activePreset.minLevel === state.minLevel &&
+      activePreset.textFilter === state.textFilter;
+
+    const shouldShowSavePreset = !activePreset || !filtersMatchActivePreset;
+    const shouldShowDeletePreset = textFilterInput.value.trim().length > 0;
+
+    savePresetBtn?.classList.toggle('hidden', !shouldShowSavePreset);
+    deletePresetBtn?.classList.toggle('hidden', !shouldShowDeletePreset);
   }
 
   function closePresetDropdown() {
@@ -473,6 +488,7 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
     minLevelSelect.value = state.minLevel;
     textFilterInput.value = state.textFilter;
     updatePresetDropdown();
+    updatePresetActionVisibility();
     applyFilters();
   }
 
@@ -492,6 +508,7 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
     textFilterInput.value = '';
     updatePresetDropdown();
     applyFilters();
+    updatePresetActionVisibility();
     closePresetDropdown();
   }
 
@@ -1752,10 +1769,12 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
 
   // Event wiring
   minLevelSelect.value = state.minLevel;
+  updatePresetActionVisibility();
 
   minLevelSelect.addEventListener('change', () => {
     state.minLevel = minLevelSelect.value;
     applyFilters();
+    updatePresetActionVisibility();
   });
 
   textFilterInput.addEventListener(
@@ -1768,6 +1787,7 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
         updatePresetDropdown();
       }
       closePresetDropdown();
+      updatePresetActionVisibility();
     }, 150)
   );
 
@@ -1816,16 +1836,20 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
   });
 
   deletePresetBtn.addEventListener('click', () => {
-    if (!activePresetName) {
-      return;
+    const shouldDeletePreset = !!activePresetName;
+    if (shouldDeletePreset) {
+      vscode.postMessage({
+        type: 'deletePreset',
+        deviceId: state.deviceId,
+        name: activePresetName,
+      });
     }
-    vscode.postMessage({
-      type: 'deletePreset',
-      deviceId: state.deviceId,
-      name: activePresetName,
-    });
     activePresetName = '';
+    state.textFilter = '';
+    textFilterInput.value = '';
     updatePresetDropdown();
+    applyFilters();
+    updatePresetActionVisibility();
     closePresetDropdown();
   });
 
