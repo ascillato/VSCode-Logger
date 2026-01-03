@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [1.6.0] - 2026-01-03 [SETTINGS-UI]
+
+### Added
+- Add unit and integration tests for logging components.
+- Add Device Manager UI for devices settings.
+- Add spelling check to linter.
+- Add spelling check for docs.
+
+### Changed
+- Refactor LogSession and LogPanel modules for testability.
+- Updated Docs with Refactor changes.
+- Sanitize log lines before rendering.
+- Change Filter Preset to dropdown button.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- Fix Highlights pop-up position on small screens.
+
+### Security
+- None.
+
+----------------------------------------
+
 ## [1.5.1] - 2026-01-02 [DOCS]
 
 ### Added

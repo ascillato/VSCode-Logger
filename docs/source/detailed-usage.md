@@ -57,7 +57,19 @@ For more information visit the [Embedded Device Logger extension](https://market
 
 ![Configuration screenshot](../images/screenshot_example_setup.png)
 
-Add devices in your VS Code settings under `embeddedLogger.devices`:
+You can configure everything from the **Device Manager** panel (click the pencil icon or run **Embedded Logger: Edit Devices Configuration**):
+
+- Add/remove devices in a table UI. Each row exposes every supported key:
+  - `id`, `name`, `host`, and optional `port` for addressing.
+  - `hostFingerprint`, `secondaryHost`, and `secondaryHostFingerprint` for host-key pinning and automatic fallback.
+  - `bastion.host`, `bastion.port`, `bastion.username`, `bastion.hostFingerprint`, `bastion.password`, `bastion.privateKeyPath`, and `bastion.privateKeyPassphrase` for jump-host tunnelling.
+  - `username`, `password`, `privateKeyPath`, and `privateKeyPassphrase` for authentication (password and passphrase values are migrated into Secret Storage on first use).
+  - `logCommand` plus feature toggles: `enableSshTerminal`, `enableSftpExplorer`, `enableWebBrowser`, and `webBrowserUrl`.
+  - `sshCommands` with per-command `name` and `command` values.
+- Adjust defaults without hand-editing JSON: `embeddedLogger.defaultPort`, `embeddedLogger.defaultLogCommand`, `embeddedLogger.defaultEnableSshTerminal`, `embeddedLogger.defaultEnableSftpExplorer`, `embeddedLogger.defaultEnableWebBrowser`, `embeddedLogger.defaultSshCommands`, and `embeddedLogger.maxLinesPerTab`.
+- Prefer raw JSON? Use **Edit in settings.json** from the Device Manager or paste the example below into `.vscode/settings.json`.
+
+Add devices in your VS Code settings under `embeddedLogger.devices` if you prefer to edit JSON directly:
 
 ```json
 "embeddedLogger.maxLinesPerTab": 100000,
@@ -125,6 +137,10 @@ All options are available through the VS Code Settings UI under **Embedded Devic
 
 - **Colorization of lines** is performed based on the log level (DEBUG, INFO, ERROR, etc). If these keys are not present in the log, no colorization is applied.
 - **Filtering presets** are stored per-device in the workspace state using the key `embeddedLogger.presets.<deviceId>`.
+  - Open the filter preset dropdown (caret button next to **Text Filter**) to pick an existing preset or clear the current selection. The dropdown supports keyboard navigation (ArrowDown to open; Escape to close).
+  - Saving a preset now uses the current text filter value as the preset name and stores the active min-level and filter text together. The **Save preset** button enables when the text filter is non-empty and differs from the active preset.
+  - Changing the text filter clears the active preset selection so you do not overwrite an existing preset unintentionally.
+  - Deleting a preset clears the text filter and list selection.
 - Exports only include log lines currently visible after applying filters.
 - When an SSH session closes, the log view appends `--- SSH session closed on <timestamp>` and offers a **Reconnect** button next to the status text to restart streaming.
 - Use the **Highlight** button in each log panel to manage up to ten highlight rows, each with its own colour and editable keyword that updates that panel instantly.

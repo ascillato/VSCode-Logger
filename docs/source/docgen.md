@@ -34,6 +34,7 @@ The API reference is generated with TypeDoc and surfaced inside Sphinx. When Sph
 
 1. Install doc tooling with `pip install -r docs/requirements.txt`.
 2. Install Node.js development dependencies with `npm install` to provide the bundled `typedoc` and `cloc` binaries used during the build.
-3. (Optional) Generate the TypeDoc HTML output with `npm run docs:typedoc` (outputs to `docs/typedoc`).
-4. Build the site with `sphinx-build -b html docs/source docs/build/html` (Sphinx runs TypeDoc and `cloc` when available; set `CLOC_SKIP=1` to skip the metrics report).
-5. GitHub Actions publishes the built HTML to the `gh-pages` branch on each push to `main` with tag.
+3. Run `npm run lint:docs` to spell-check the Markdown sources.
+4. (Optional) Generate the TypeDoc HTML output with `npm run docs:typedoc` (outputs to `docs/typedoc`).
+5. Build the site with `sphinx-build -b html docs/source docs/build/html` (Sphinx runs TypeDoc and `cloc` when available; set `CLOC_SKIP=1` to skip the metrics report).
+6. GitHub Actions publishes the built HTML to the `gh-pages` branch on each push to `main` with tag.

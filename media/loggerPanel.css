@@ -118,6 +118,70 @@ body {
     font-size: 12px;
 }
 
+.text-filter-with-presets {
+    display: flex;
+    align-items: stretch;
+    gap: 6px;
+    width: 100%;
+}
+
+.text-filter-input {
+    position: relative;
+    flex: 1 1 auto;
+}
+
+.text-filter-input input {
+    width: 100%;
+    min-width: 200px;
+}
+
+.preset-dropdown__trigger[aria-expanded='true'] {
+    background: color-mix(in srgb, var(--vscode-button-background) 90%, #0e639c);
+}
+
+.preset-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    width: 100%;
+    background: var(--vscode-dropdown-background);
+    color: var(--vscode-dropdown-foreground);
+    border: 1px solid var(--vscode-dropdown-border);
+    border-radius: 4px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+    display: flex;
+    flex-direction: column;
+    padding: 4px 0;
+    z-index: 15;
+}
+
+.preset-dropdown.hidden {
+    display: none;
+}
+
+.preset-dropdown__option {
+    background: transparent;
+    color: inherit;
+    border: none;
+    padding: 6px 10px;
+    text-align: left;
+    cursor: pointer;
+    font-size: 0.85rem;
+    line-height: 1.3;
+}
+
+.preset-dropdown__option:hover,
+.preset-dropdown__option:focus {
+    background: var(--vscode-list-hoverBackground, color-mix(in srgb, var(--vscode-dropdown-background) 90%, white));
+    color: var(--vscode-list-hoverForeground, inherit);
+    outline: none;
+}
+
+.preset-dropdown__option--active {
+    background: var(--vscode-list-activeSelectionBackground, var(--vscode-button-background));
+    color: var(--vscode-list-activeSelectionForeground, var(--vscode-button-foreground));
+}
+
 .toolbar-actions,
 .toggle-actions {
     display: flex;
@@ -167,22 +231,32 @@ body {
     min-height: 28px;
 }
 
+.log-area {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 200px;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
 .highlight-popover {
-    position: fixed;
-    top: 72px;
-    right: 16px;
+    position: absolute;
+    top: 12px;
+    right: 12px;
     background: var(--vscode-editorWidget-background);
     color: var(--vscode-editorWidget-foreground);
     border: 1px solid var(--vscode-panel-border);
     border-radius: 6px;
     box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3);
     padding: 8px;
-    width: min(360px, calc(100vw - 32px));
-    max-height: 320px;
+    width: min(360px, calc(100% - 24px));
+    max-width: calc(100% - 24px);
+    max-height: min(320px, calc(100% - 24px));
     display: flex;
     flex-direction: column;
     gap: 8px;
-    z-index: 20;
+    z-index: 2;
 }
 
 .highlight-popover.hidden {
@@ -190,9 +264,9 @@ body {
 }
 
 .highlight-backdrop {
-    position: fixed;
+    position: absolute;
     inset: 0;
-    z-index: 10;
+    z-index: 1;
 }
 
 .highlight-backdrop.hidden {

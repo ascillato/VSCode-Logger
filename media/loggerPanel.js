@@ -1,141 +1,45 @@
 /**
- * @file loggerPanel.js
- * @brief Manages the Webview UI for displaying and filtering streamed logs.
+ * Drives the log panel Webview UI: wiring state, rendering helpers, and message routing.
+ *
  * @copyright Copyright (c) 2025 A. Scillato
  */
 
+import {
+  createStateController,
+  highlightPalette,
+  levelAliases,
+  levelOrder,
+  LINE_LIMIT_NOTICE_LIVE,
+  LINE_LIMIT_NOTICE_OFFLINE,
+} from './loggerPanel/state.js';
+import {
+  buildHighlightedContent,
+  isToggleActive,
+  setButtonLabel,
+  setToggleState,
+} from './loggerPanel/rendering.js';
+import { registerMessageHandlers } from './loggerPanel/messaging.js';
+
 /**
- * @brief Initializes the logger panel UI and event wiring inside the Webview.
+ * Initializes the logger panel UI and event wiring inside the Webview.
  */
 (function () {
   const vscode = acquireVsCodeApi();
-
-  const highlightPalette = [
-    { foreground: '#1b7f5f', background: '#d2f4e8' },
-    { foreground: '#1f6fbf', background: '#d9e9ff' },
-    { foreground: '#8e44ad', background: '#efdef7' },
-    { foreground: '#c0392b', background: '#f8e0dd' },
-    { foreground: '#c27c0e', background: '#fff3ce' },
-    { foreground: '#117864', background: '#d5f5e3' },
-    { foreground: '#1e8449', background: '#d8f6e2' },
-    { foreground: '#884ea0', background: '#e9dff4' },
-    { foreground: '#b34700', background: '#fde0cc' },
-    { foreground: '#2c3e50', background: '#e2e6eb' },
-  ];
-
-  const levelOrder = {
-    ALL: 0,
-    DEBUG: 1,
-    INFO: 2,
-    NOTICE: 3,
-    WARNING: 4,
-    ERR: 5,
-    CRIT: 6,
-    ALERT: 7,
-    EMERG: 8,
-  };
-
-  const levelAliases = {
-    DEBUG: 'DEBUG',
-    INFO: 'INFO',
-    NOTICE: 'NOTICE',
-    WARN: 'WARNING',
-    WARNING: 'WARNING',
-    ERR: 'ERR',
-    ERROR: 'ERR',
-    CRIT: 'CRIT',
-    CRITICAL: 'CRIT',
-    ALERT: 'ALERT',
-    EMERG: 'EMERG',
-    FATAL: 'EMERG',
-  };
-
-  const LINE_LIMIT_NOTICE_LIVE =
-    'Configured display line limit reached. Older lines are being replaced with newer entries.';
-  const LINE_LIMIT_NOTICE_OFFLINE =
-    'Configured display line limit reached. Older lines are not shown.';
-
-  let entryIdCounter = 0;
-
-  const state = {
-    deviceId: '',
-    presets: [],
-    entries: [],
-    filtered: [],
-    minLevel: 'ALL',
-    textFilter: '',
-    wordWrapEnabled: false,
-    autoScrollEnabled: true,
-    highlights: [],
-    nextHighlightId: 1,
-    searchTerm: '',
-    searchMatches: [],
-    searchIndex: -1,
-    activeSearchEntry: -1,
-    isLiveLog: true,
-    autoReconnectEnabled: true,
-    connectionState: 'unknown',
-    maxEntries: 100000,
-    statusText: '',
-    defaultConnectedStatus: '',
-    secondaryStatus: null,
-    autoSaveActive: false,
-    lineLimitReached: false,
-    activeBookmarkId: null,
-  };
-
-  let isRestoringState = false;
+  const stateController = createStateController(vscode);
+  const { schedulePersist, restoreStateFromSnapshot, persistState, nextEntryId, resetEntryIds } =
+    stateController;
+  const state = stateController.state;
   const DEFAULT_CONNECTED_STATUS = 'Connected. Streaming logs...';
-
-  /**
-   * @brief Persists the current UI state so it can be restored if the Webview reloads.
-   */
-  function persistState() {
-    const serializedState = {
-      deviceId: state.deviceId,
-      presets: state.presets,
-      entries: state.entries,
-      minLevel: state.minLevel,
-      textFilter: state.textFilter,
-      wordWrapEnabled: state.wordWrapEnabled,
-      autoScrollEnabled: state.autoScrollEnabled,
-      highlights: state.highlights,
-      nextHighlightId: state.nextHighlightId,
-      searchTerm: state.searchTerm,
-      isLiveLog: state.isLiveLog,
-      autoReconnectEnabled: state.autoReconnectEnabled,
-      connectionState: state.connectionState,
-      maxEntries: state.maxEntries,
-      statusText: state.statusText,
-      defaultConnectedStatus: state.defaultConnectedStatus,
-      secondaryStatus: state.secondaryStatus,
-      autoSaveActive: state.autoSaveActive,
-      lineLimitReached: state.lineLimitReached,
-      activeBookmarkId: state.activeBookmarkId,
-    };
-    vscode.setState(serializedState);
-  }
-
-  let persistTimeout = null;
-
-  function schedulePersist() {
-    if (isRestoringState) {
-      return;
-    }
-    if (persistTimeout) {
-      return;
-    }
-    persistTimeout = setTimeout(() => {
-      persistTimeout = null;
-      persistState();
-    }, 300);
-  }
 
   const minLevelSelect = document.getElementById('minLevel');
   const textFilterInput = document.getElementById('textFilter');
-  const presetSelect = document.getElementById('presetSelect');
+  const presetDropdownButton = document.getElementById('presetDropdownButton');
+  const presetDropdown = document.getElementById('presetDropdown');
+  const textFilterContainer = document.getElementById('textFilterContainer');
   const savePresetBtn = document.getElementById('savePreset');
   const deletePresetBtn = document.getElementById('deletePreset');
+  const savePresetContainer = savePresetBtn?.closest('.toolbar-actions__item');
+  const deletePresetContainer = deletePresetBtn?.closest('.toolbar-actions__item');
   const exportBtn = document.getElementById('exportLogs');
   const editBtn = document.getElementById('editLogFile');
   const refreshBtn = document.getElementById('refreshLogFile');
@@ -174,41 +78,6 @@
   let contextMenuSelectedText = '';
   const savedState = vscode.getState();
 
-  function setButtonLabel(button, label) {
-    if (!button || !label) {
-      return;
-    }
-    button.title = label;
-    button.setAttribute('aria-label', label);
-    const hiddenText = button.querySelector('.sr-only');
-    if (hiddenText) {
-      hiddenText.textContent = label;
-    }
-  }
-
-  function updateToggleLabel(button, active) {
-    if (!button || !button.dataset.label) {
-      return;
-    }
-    const baseLabel = button.dataset.label;
-    const label = `${baseLabel} (${active ? 'on' : 'off'})`;
-    setButtonLabel(button, label);
-  }
-
-  function setToggleState(button, active) {
-    if (!button) {
-      return;
-    }
-    button.dataset.active = active ? 'true' : 'false';
-    button.setAttribute('aria-pressed', String(active));
-    button.classList.toggle('toggle-button--active', active);
-    updateToggleLabel(button, active);
-  }
-
-  function isToggleActive(button) {
-    return button?.dataset.active === 'true';
-  }
-
   setButtonLabel(savePresetBtn, 'Save preset');
   setButtonLabel(deletePresetBtn, 'Delete preset');
   setButtonLabel(exportBtn, 'Export logs');
@@ -225,6 +94,8 @@
   let reconnectIntervalId = null;
   let reconnectCountdown = 0;
   let highlightColorCursor = 0;
+  let activePresetName = '';
+  let isPresetDropdownOpen = false;
   const AUTO_SCROLL_BOTTOM_THRESHOLD = 4;
 
   /**
@@ -313,183 +184,6 @@
     }
 
     return highlights;
-  }
-
-  /**
-   * @brief Restores persisted entries while enforcing the current maximum limit.
-   * @param savedEntries Entries captured from a previous Webview instance.
-   * @param maxEntries Maximum number of entries to retain.
-   * @returns Sanitized entries ready for rendering.
-   */
-  function restoreEntries(savedEntries, maxEntries) {
-    if (!Array.isArray(savedEntries) || !savedEntries.length) {
-      return [];
-    }
-
-    const sanitized = savedEntries
-      .filter((entry) => entry && typeof entry.rawLine === 'string')
-      .map((entry) => {
-        const timestamp = typeof entry.timestamp === 'number' ? entry.timestamp : Date.now();
-        const level = typeof entry.level === 'string' ? entry.level : parseLevel(entry.rawLine);
-        const id = typeof entry.id === 'number' ? entry.id : entryIdCounter++;
-        return {
-          id,
-          timestamp,
-          level,
-          rawLine: entry.rawLine,
-          className: typeof entry.className === 'string' ? entry.className : null,
-          bypassFilters: entry.bypassFilters === true,
-          isBookmark: entry.isBookmark === true,
-          bookmarkLabel: typeof entry.bookmarkLabel === 'string' ? entry.bookmarkLabel : '',
-        };
-      });
-
-    const limited = sanitized.slice(-maxEntries);
-    const maxId = limited.reduce((max, entry) => Math.max(max, entry.id || 0), -1);
-    entryIdCounter = Math.max(entryIdCounter, maxId + 1);
-    return limited;
-  }
-
-  /**
-   * @brief Restores the persisted Webview state when available.
-   * @param snapshot Serialized state captured via vscode.setState.
-   */
-  function restoreStateFromSnapshot(snapshot) {
-    if (!snapshot) {
-      return;
-    }
-
-    isRestoringState = true;
-    state.deviceId = snapshot.deviceId || state.deviceId;
-    state.presets = Array.isArray(snapshot.presets) ? snapshot.presets : state.presets;
-    state.minLevel = snapshot.minLevel || state.minLevel;
-    state.textFilter =
-      typeof snapshot.textFilter === 'string' ? snapshot.textFilter : state.textFilter;
-    state.wordWrapEnabled =
-      snapshot.wordWrapEnabled === true || snapshot.wordWrapEnabled === false
-        ? snapshot.wordWrapEnabled
-        : state.wordWrapEnabled;
-    state.autoScrollEnabled =
-      snapshot.autoScrollEnabled === false ? false : state.autoScrollEnabled;
-    state.highlights = Array.isArray(snapshot.highlights) ? snapshot.highlights : state.highlights;
-    state.nextHighlightId =
-      typeof snapshot.nextHighlightId === 'number'
-        ? snapshot.nextHighlightId
-        : state.nextHighlightId;
-    state.searchTerm =
-      typeof snapshot.searchTerm === 'string' ? snapshot.searchTerm : state.searchTerm;
-    state.isLiveLog = snapshot.isLiveLog === false ? false : state.isLiveLog;
-    state.autoReconnectEnabled =
-      snapshot.autoReconnectEnabled === false ? false : state.autoReconnectEnabled;
-    state.connectionState = snapshot.connectionState || state.connectionState;
-    state.maxEntries = Math.max(1, Number(snapshot.maxEntries) || state.maxEntries);
-    state.statusText = snapshot.statusText || state.statusText;
-    state.defaultConnectedStatus = snapshot.defaultConnectedStatus || state.defaultConnectedStatus;
-    if (
-      !state.defaultConnectedStatus &&
-      typeof state.statusText === 'string' &&
-      state.statusText.startsWith('Connected')
-    ) {
-      state.defaultConnectedStatus = state.statusText;
-    }
-    state.secondaryStatus = snapshot.secondaryStatus || null;
-    state.autoSaveActive = snapshot.autoSaveActive === true;
-    state.activeBookmarkId =
-      typeof snapshot.activeBookmarkId === 'number' ? snapshot.activeBookmarkId : null;
-
-    const restoredEntries = restoreEntries(snapshot.entries, state.maxEntries);
-    state.entries = restoredEntries;
-    entryIdCounter = restoredEntries.reduce((max, entry) => Math.max(max, entry.id || 0), -1) + 1;
-    state.lineLimitReached =
-      snapshot.lineLimitReached === true || state.entries.length >= state.maxEntries;
-
-    minLevelSelect.value = state.minLevel;
-    textFilterInput.value = state.textFilter;
-    setToggleState(wordWrapToggle, state.wordWrapEnabled);
-    setToggleState(autoScrollToggle, state.autoScrollEnabled);
-    setToggleState(autoReconnectToggle, state.autoReconnectEnabled);
-    searchInput.value = state.searchTerm;
-
-    setHighlights(state.highlights);
-    updatePresetDropdown();
-    applyFilters();
-    updateWordWrapClass();
-    setLineLimitReached(state.lineLimitReached);
-    setConnectionState(state.connectionState || (state.isLiveLog ? 'connecting' : 'disconnected'));
-    updateStatus(state.statusText, { preserveSecondary: true });
-    if (state.secondaryStatus?.source === 'autoSave') {
-      setAutoSaveStatus(state.secondaryStatus.text, state.secondaryStatus.fileName);
-    } else if (state.secondaryStatus?.text) {
-      setSecondaryStatus(state.secondaryStatus.text);
-    }
-    if (state.autoSaveActive) {
-      setAutoSaveActive(true);
-    }
-    isRestoringState = false;
-  }
-  /**
-   * @brief Builds a DOM fragment with highlighted matches for a log line.
-   * @param line The raw log line.
-   * @returns Document fragment containing text nodes and highlighted spans.
-   */
-  function buildHighlightedContent(line, highlights) {
-    const fragment = document.createDocumentFragment();
-
-    if (line.length === 0) {
-      fragment.appendChild(document.createTextNode('\u00A0'));
-      return fragment;
-    }
-
-    if (!highlights.length) {
-      fragment.appendChild(document.createTextNode(line));
-      return fragment;
-    }
-
-    const lowerLine = line.toLowerCase();
-    let index = 0;
-
-    while (index < line.length) {
-      let nextMatch = null;
-
-      for (const highlight of highlights) {
-        const matchIndex = lowerLine.indexOf(highlight.normalizedKey, index);
-        if (matchIndex !== -1 && (nextMatch === null || matchIndex < nextMatch.position)) {
-          nextMatch = {
-            position: matchIndex,
-            end: matchIndex + highlight.normalizedKey.length,
-            highlight,
-          };
-        }
-      }
-
-      if (!nextMatch) {
-        fragment.appendChild(document.createTextNode(line.slice(index)));
-        break;
-      }
-
-      if (nextMatch.position > index) {
-        fragment.appendChild(document.createTextNode(line.slice(index, nextMatch.position)));
-      }
-
-      const span = document.createElement('span');
-      span.textContent = line.slice(nextMatch.position, nextMatch.end);
-      span.className = 'highlighted-text';
-      if (nextMatch.highlight.className) {
-        span.classList.add(nextMatch.highlight.className);
-      }
-      if (nextMatch.highlight.color) {
-        span.style.color = nextMatch.highlight.color;
-        span.style.borderColor = nextMatch.highlight.color;
-      }
-      if (nextMatch.highlight.backgroundColor) {
-        span.style.backgroundColor = nextMatch.highlight.backgroundColor;
-      }
-      fragment.appendChild(span);
-
-      index = nextMatch.end;
-    }
-
-    return fragment;
   }
 
   /**
@@ -667,17 +361,128 @@
    * @brief Populates the preset dropdown with available presets.
    */
   function updatePresetDropdown() {
-    presetSelect.innerHTML = '';
-    const base = document.createElement('option');
-    base.value = '';
-    base.textContent = '(no preset)';
-    presetSelect.appendChild(base);
-    state.presets.forEach((p) => {
-      const opt = document.createElement('option');
-      opt.value = p.name;
-      opt.textContent = p.name;
-      presetSelect.appendChild(opt);
+    if (!presetDropdown) {
+      return;
+    }
+    const existingPreset = state.presets.find((p) => p.name === activePresetName);
+    if (!existingPreset) {
+      activePresetName = '';
+    }
+    presetDropdown.innerHTML = '';
+    const options = [
+      { value: '', label: '(no preset)' },
+      ...state.presets.map((p) => ({
+        value: p.name,
+        label: p.name,
+      })),
+    ];
+
+    options.forEach((option) => {
+      const optionButton = document.createElement('button');
+      optionButton.type = 'button';
+      optionButton.className = 'preset-dropdown__option';
+      optionButton.dataset.value = option.value;
+      optionButton.textContent = option.label;
+      optionButton.setAttribute('role', 'option');
+      optionButton.setAttribute(
+        'aria-selected',
+        option.value === activePresetName ? 'true' : 'false'
+      );
+      if (option.value === activePresetName) {
+        optionButton.classList.add('preset-dropdown__option--active');
+      }
+      optionButton.addEventListener('click', () => {
+        handlePresetSelection(option.value);
+      });
+      presetDropdown.appendChild(optionButton);
     });
+
+    updatePresetButtonLabels();
+    updatePresetActionVisibility();
+  }
+
+  function updatePresetButtonLabels() {
+    if (!presetDropdownButton) {
+      return;
+    }
+    const label = activePresetName ? `Filter preset: ${activePresetName}` : 'Filter presets';
+    presetDropdownButton.title = label;
+    presetDropdownButton.setAttribute('aria-label', label);
+    presetDropdownButton.setAttribute('aria-expanded', isPresetDropdownOpen ? 'true' : 'false');
+  }
+
+  function updatePresetActionVisibility() {
+    const activePreset = state.presets.find((preset) => preset.name === activePresetName);
+    const hasFilterText = textFilterInput.value.trim().length > 0;
+    const filtersMatchActivePreset =
+      !!activePreset &&
+      activePreset.minLevel === state.minLevel &&
+      activePreset.textFilter === state.textFilter;
+
+    const shouldEnableSavePreset = hasFilterText && (!activePreset || !filtersMatchActivePreset);
+    const shouldEnableDeletePreset = hasFilterText;
+
+    savePresetBtn?.classList.toggle('hidden', false);
+    deletePresetBtn?.classList.toggle('hidden', false);
+    savePresetContainer?.classList.toggle('hidden', false);
+    deletePresetContainer?.classList.toggle('hidden', false);
+
+    if (savePresetBtn) {
+      savePresetBtn.disabled = !shouldEnableSavePreset;
+    }
+    if (deletePresetBtn) {
+      deletePresetBtn.disabled = !shouldEnableDeletePreset;
+    }
+  }
+
+  function closePresetDropdown() {
+    if (!presetDropdown || !presetDropdownButton) {
+      return;
+    }
+    isPresetDropdownOpen = false;
+    presetDropdown.classList.add('hidden');
+    updatePresetButtonLabels();
+    document.removeEventListener('click', handlePresetOutsideClick, true);
+    document.removeEventListener('keydown', handlePresetKeydown, true);
+  }
+
+  function openPresetDropdown() {
+    if (!presetDropdown || !presetDropdownButton) {
+      return;
+    }
+    isPresetDropdownOpen = true;
+    updatePresetDropdown();
+    presetDropdown.classList.remove('hidden');
+    updatePresetButtonLabels();
+    document.addEventListener('click', handlePresetOutsideClick, true);
+    document.addEventListener('keydown', handlePresetKeydown, true);
+  }
+
+  function togglePresetDropdown() {
+    if (isPresetDropdownOpen) {
+      closePresetDropdown();
+    } else {
+      openPresetDropdown();
+    }
+  }
+
+  function handlePresetOutsideClick(event) {
+    const target = event.target;
+    if (
+      presetDropdown?.contains(target) ||
+      presetDropdownButton?.contains(target) ||
+      textFilterContainer?.contains(target)
+    ) {
+      return;
+    }
+    closePresetDropdown();
+  }
+
+  function handlePresetKeydown(event) {
+    if (event.key === 'Escape') {
+      closePresetDropdown();
+      presetDropdownButton?.focus();
+    }
   }
 
   /**
@@ -689,11 +494,34 @@
     if (!preset) {
       return;
     }
+    activePresetName = name;
     state.minLevel = preset.minLevel;
     state.textFilter = preset.textFilter;
     minLevelSelect.value = state.minLevel;
     textFilterInput.value = state.textFilter;
+    updatePresetDropdown();
+    updatePresetActionVisibility();
     applyFilters();
+  }
+
+  /**
+   * @brief Handles selection from the preset dropdown trigger.
+   * @param value Selected preset name (empty to clear).
+   */
+  function handlePresetSelection(value) {
+    if (value) {
+      applyPreset(value);
+      closePresetDropdown();
+      return;
+    }
+    activePresetName = '';
+    state.minLevel = minLevelSelect.value;
+    state.textFilter = '';
+    textFilterInput.value = '';
+    updatePresetDropdown();
+    applyFilters();
+    updatePresetActionVisibility();
+    closePresetDropdown();
   }
 
   /**
@@ -729,7 +557,7 @@
     const isBookmark = options.isBookmark === true || classification.isBookmark === true;
     const bookmarkLabel = options.bookmarkLabel ?? classification.bookmarkLabel ?? '';
     return {
-      id: entryIdCounter++,
+      id: nextEntryId(),
       timestamp: options.timestamp ?? Date.now(),
       level: options.level ?? (isBookmark ? 'INFO' : parseLevel(line)),
       rawLine: line,
@@ -875,7 +703,7 @@
     state.searchIndex = -1;
     state.activeSearchEntry = -1;
     state.activeBookmarkId = null;
-    entryIdCounter = 0;
+    resetEntryIds();
     render();
     updateSearchStatus();
     setLineLimitReached(false);
@@ -1925,14 +1753,40 @@
     };
   }
 
-  restoreStateFromSnapshot(savedState);
+  restoreStateFromSnapshot(savedState, {
+    setFormValues: ({ minLevel, textFilter, searchTerm }) => {
+      if (minLevelSelect) {
+        minLevelSelect.value = minLevel;
+      }
+      textFilterInput.value = textFilter;
+      searchInput.value = searchTerm;
+    },
+    setToggles: ({ wordWrap, autoScroll, autoReconnect }) => {
+      setToggleState(wordWrapToggle, wordWrap);
+      setToggleState(autoScrollToggle, autoScroll);
+      setToggleState(autoReconnectToggle, autoReconnect);
+    },
+    setHighlights,
+    updatePresetDropdown,
+    applyFilters,
+    updateWordWrapClass,
+    setLineLimitReached,
+    setConnectionState,
+    updateStatus,
+    setAutoSaveStatus,
+    setSecondaryStatus,
+    setAutoSaveActive,
+    parseLevel,
+  });
 
   // Event wiring
   minLevelSelect.value = state.minLevel;
+  updatePresetActionVisibility();
 
   minLevelSelect.addEventListener('change', () => {
     state.minLevel = minLevelSelect.value;
     applyFilters();
+    updatePresetActionVisibility();
   });
 
   textFilterInput.addEventListener(
@@ -1940,9 +1794,12 @@
     debounce(() => {
       state.textFilter = textFilterInput.value;
       applyFilters();
-      if (presetSelect.value) {
-        presetSelect.value = '';
+      if (activePresetName) {
+        activePresetName = '';
+        updatePresetDropdown();
       }
+      closePresetDropdown();
+      updatePresetActionVisibility();
     }, 150)
   );
 
@@ -1967,33 +1824,52 @@
     showStatusContextMenu(event);
   });
 
-  presetSelect.addEventListener('change', () => {
-    const value = presetSelect.value;
-    if (value) {
-      applyPreset(value);
-    } else {
-      state.minLevel = minLevelSelect.value;
-      state.textFilter = '';
-      textFilterInput.value = '';
-      applyFilters();
-    }
-  });
+  if (presetDropdownButton) {
+    presetDropdownButton.addEventListener('click', togglePresetDropdown);
+    presetDropdownButton.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowDown' && !isPresetDropdownOpen) {
+        openPresetDropdown();
+        const firstOption = presetDropdown?.querySelector('.preset-dropdown__option');
+        if (firstOption instanceof HTMLElement) {
+          firstOption.focus();
+        }
+        event.preventDefault();
+      }
+    });
+  }
 
   savePresetBtn.addEventListener('click', () => {
+    const presetName = textFilterInput.value.trim();
+    if (!presetName) {
+      return;
+    }
+    activePresetName = presetName;
     vscode.postMessage({
       type: 'requestSavePreset',
       deviceId: state.deviceId,
       minLevel: minLevelSelect.value,
       textFilter: textFilterInput.value,
+      name: presetName,
     });
+    updatePresetActionVisibility();
   });
 
   deletePresetBtn.addEventListener('click', () => {
-    const value = presetSelect.value;
-    if (!value) {
-      return;
+    const shouldDeletePreset = !!activePresetName;
+    if (shouldDeletePreset) {
+      vscode.postMessage({
+        type: 'deletePreset',
+        deviceId: state.deviceId,
+        name: activePresetName,
+      });
     }
-    vscode.postMessage({ type: 'deletePreset', deviceId: state.deviceId, name: value });
+    activePresetName = '';
+    state.textFilter = '';
+    textFilterInput.value = '';
+    updatePresetDropdown();
+    applyFilters();
+    updatePresetActionVisibility();
+    closePresetDropdown();
   });
 
   exportBtn.addEventListener('click', () => {
@@ -2187,124 +2063,42 @@
 
   updateSearchClearButton();
 
-  window.addEventListener('message', (event) => {
-    const message = event.data;
-    switch (message.type) {
-      case 'initData':
-        state.deviceId = message.deviceId;
-        state.presets = message.presets || [];
-        state.isLiveLog = message.isLive !== false;
-        state.maxEntries = Math.max(1, Number(message.maxEntries) || state.maxEntries);
-        setLineLimitReached(state.lineLimitReached);
-        if (state.entries.length > state.maxEntries) {
-          state.entries = state.entries.slice(-state.maxEntries);
-          setLineLimitReached(true);
-        }
-        const initialConnectionState =
-          state.connectionState === 'unknown'
-            ? state.isLiveLog
-              ? 'connecting'
-              : 'disconnected'
-            : state.connectionState;
-        setConnectionState(initialConnectionState);
-        setHighlights(message.highlights || []);
-        if (!state.isLiveLog && autoScrollContainer) {
-          autoScrollContainer.classList.add('hidden');
-        }
-        if (!state.isLiveLog && autoReconnectContainer) {
-          autoReconnectContainer.classList.add('hidden');
-        }
-        const hideLiveOnlyControl = !state.isLiveLog;
-        if (clearLogsBtn) {
-          clearLogsBtn.classList.toggle('hidden', hideLiveOnlyControl);
-        }
-        if (clearLogsContainer) {
-          clearLogsContainer.classList.toggle('hidden', hideLiveOnlyControl);
-        }
-        const showImportedControls = !state.isLiveLog;
-        if (editContainer) {
-          editContainer.classList.toggle('hidden', !showImportedControls);
-        }
-        if (refreshContainer) {
-          refreshContainer.classList.toggle('hidden', !showImportedControls);
-        }
-        if (editBtn) {
-          editBtn.classList.toggle('hidden', !showImportedControls);
-        }
-        if (refreshBtn) {
-          refreshBtn.classList.toggle('hidden', !showImportedControls);
-        }
-        if (autoSaveToggle) {
-          autoSaveToggle.classList.toggle('hidden', hideLiveOnlyControl);
-          autoSaveToggle.disabled = !state.isLiveLog;
-        }
-        if (autoSaveContainer) {
-          autoSaveContainer.classList.toggle('hidden', hideLiveOnlyControl);
-        }
-        if (!state.isLiveLog && reconnectButton) {
-          reconnectButton.hidden = true;
-          reconnectButton.disabled = true;
-          reconnectButton.classList.add('hidden');
-        }
-        setToggleState(autoScrollToggle, state.autoScrollEnabled);
-        setToggleState(autoReconnectToggle, state.autoReconnectEnabled);
-        updatePresetDropdown();
-        applyFilters();
-        break;
-      case 'initialLines':
-        handleInitialLogLines(message.lines);
-        break;
-      case 'logLine':
-        handleLogLine(message.line);
-        break;
-      case 'initPresets':
-      case 'presetsUpdated':
-        state.presets = message.presets || [];
-        updatePresetDropdown();
-        break;
-      case 'replaceLines':
-        clearLogs();
-        handleInitialLogLines(message.lines || []);
-        if (message.message) {
-          updateStatus(message.message, { preserveSecondary: true });
-        }
-        break;
-      case 'status':
-        handleStatusMessage(message.message);
-        break;
-      case 'error':
-        if (isDefaultLogCommandMessage(message.message)) {
-          setSecondaryStatus(message.message);
-        } else {
-          updateStatus(message.message);
-        }
-        break;
-      case 'hostKeyMismatch':
-        handleHostKeyMismatch(message.expected, message.received);
-        break;
-      case 'sessionClosed':
-        handleSessionClosed(message.message, message.closedAt);
-        break;
-      case 'highlightsUpdated':
-        setHighlights(message.highlights || []);
-        break;
-      case 'autoSaveStarted':
-        setAutoSaveActive(true);
-        if (message.fileName) {
-          setAutoSaveStatus('Auto-saving to', message.fileName);
-        } else {
-          setAutoSaveStatus('Auto-save enabled.');
-        }
-        break;
-      case 'autoSaveStopped':
-        setAutoSaveActive(false);
-        setAutoSaveStatus(message.message || '');
-        break;
-      case 'autoSaveError':
-        setAutoSaveActive(false);
-        setAutoSaveStatus(message.message || 'Auto-save failed.');
-        break;
-    }
+  registerMessageHandlers({
+    state,
+    elements: {
+      autoScrollContainer,
+      autoReconnectContainer,
+      clearLogsBtn,
+      clearLogsContainer,
+      editContainer,
+      refreshContainer,
+      editBtn,
+      refreshBtn,
+      autoSaveToggle,
+      autoSaveContainer,
+      reconnectButton,
+      autoScrollToggle,
+      autoReconnectToggle,
+    },
+    handlers: {
+      setLineLimitReached,
+      setConnectionState,
+      setHighlights,
+      updatePresetDropdown,
+      applyFilters,
+      handleInitialLogLines,
+      handleLogLine,
+      clearLogs,
+      handleStatusMessage,
+      setSecondaryStatus,
+      updateStatus,
+      handleHostKeyMismatch,
+      handleSessionClosed,
+      setAutoSaveActive,
+      setAutoSaveStatus,
+    },
+    setToggleState,
+    isDefaultLogCommandMessage,
   });
 
   window.addEventListener('beforeunload', persistState);

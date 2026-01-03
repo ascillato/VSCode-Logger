@@ -1,3 +1,9 @@
+/**
+ * Implements the SFTP explorer Webview, handling directory listings, selections, and file actions.
+ *
+ * @copyright Copyright (c) 2025 A. Scillato
+ */
+
 (function () {
   const vscode = acquireVsCodeApi();
 
@@ -115,6 +121,9 @@
   const presetInputs = [];
   const presetLimit = 10;
 
+  /**
+   * Generates a unique identifier for correlating list requests.
+   */
   function createRequestId() {
     return typeof crypto !== 'undefined' && crypto.randomUUID
       ? crypto.randomUUID()
@@ -236,6 +245,9 @@
     return getSelectedEntries(snapshot).some((selectedEntry) => selectedEntry.name === entry.name);
   }
 
+  /**
+   * Renders both left and right explorer panes and updates toolbar state.
+   */
   function renderLists() {
     renderPane(elements.remoteList, state.remote, 'remote');
     renderPane(elements.localList, getActiveRightSnapshot(), 'right');
@@ -243,6 +255,9 @@
     updateButtons();
   }
 
+  /**
+   * Renders a single list pane using the provided snapshot and side identifier.
+   */
   function renderPane(container, snapshot, side) {
     container.innerHTML = '';
     const maxNameLength = snapshot.entries.reduce(
@@ -312,6 +327,9 @@
     container.appendChild(frag);
   }
 
+  /**
+   * Handles click selection logic for entries, supporting multi-select and range selection.
+   */
   function handleEntryClick(side, snapshot, entry, event) {
     hideContextMenu();
     if (state.connectionState !== 'connected') {
@@ -747,6 +765,9 @@
     }
   }
 
+  /**
+   * Requests a directory listing from the extension host.
+   */
   function requestList(location, path, requestId) {
     vscode.postMessage({ type: 'listEntries', location, path, requestId });
   }
@@ -791,6 +812,9 @@
     renderLists();
   }
 
+  /**
+   * Applies a list response to the appropriate snapshot and updates the UI.
+   */
   function handleListResponse(message) {
     const snapshot = { ...message.snapshot, selected: [] };
     if (message.requestId === requestIds.remote) {
@@ -804,6 +828,9 @@
     renderLists();
   }
 
+  /**
+   * Updates connection status banners and buttons based on host feedback.
+   */
   function applyConnectionStatus(payload) {
     state.connectionState = payload.state;
     setStatus(payload.message, false);

@@ -16,6 +16,7 @@ Makefile
 .prettierignore
 eslint.config.mjs
 typedoc.json
+cspell.json
 docs/build/**
 docs/html/**
 docs/xml/**
