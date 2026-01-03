@@ -9,7 +9,7 @@ import type { HighlightDefinition } from '../highlights';
 
 export type WebviewMessage =
   | { type: 'ready' }
-  | { type: 'requestSavePreset'; minLevel: string; textFilter: string }
+  | { type: 'requestSavePreset'; minLevel: string; textFilter: string; name: string }
   | { type: 'deletePreset'; name: string }
   | { type: 'exportLogs'; lines: string[] }
   | { type: 'highlightsChanged'; highlights: HighlightDefinition[] }
@@ -38,6 +38,7 @@ export function parseWebviewMessage(raw: unknown): WebviewMessage | undefined {
           type: 'requestSavePreset',
           minLevel: message.minLevel,
           textFilter: message.textFilter,
+          name: message.name,
         };
       }
       return undefined;
@@ -74,9 +75,14 @@ export function parseWebviewMessage(raw: unknown): WebviewMessage | undefined {
 
 function isValidPresetPayload(
   message: unknown
-): message is { minLevel: string; textFilter: string } {
-  const candidate = message as { minLevel?: unknown; textFilter?: unknown };
-  return typeof candidate?.minLevel === 'string' && typeof candidate?.textFilter === 'string';
+): message is { minLevel: string; textFilter: string; name: string } {
+  const candidate = message as { minLevel?: unknown; textFilter?: unknown; name?: unknown };
+  return (
+    typeof candidate?.minLevel === 'string' &&
+    typeof candidate?.textFilter === 'string' &&
+    typeof candidate?.name === 'string' &&
+    candidate.name.trim().length > 0
+  );
 }
 
 function isStringArray(value: unknown): value is string[] {

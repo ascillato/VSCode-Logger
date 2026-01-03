@@ -38,6 +38,8 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
   const textFilterContainer = document.getElementById('textFilterContainer');
   const savePresetBtn = document.getElementById('savePreset');
   const deletePresetBtn = document.getElementById('deletePreset');
+  const savePresetContainer = savePresetBtn?.closest('.toolbar-actions__item');
+  const deletePresetContainer = deletePresetBtn?.closest('.toolbar-actions__item');
   const exportBtn = document.getElementById('exportLogs');
   const editBtn = document.getElementById('editLogFile');
   const refreshBtn = document.getElementById('refreshLogFile');
@@ -411,14 +413,17 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
 
   function updatePresetActionVisibility() {
     const activePreset = state.presets.find((preset) => preset.name === activePresetName);
+    const hasFilterText = textFilterInput.value.trim().length > 0;
     const filtersMatchActivePreset =
       !!activePreset &&
       activePreset.minLevel === state.minLevel &&
       activePreset.textFilter === state.textFilter;
 
-    const shouldShowSavePreset = !activePreset || !filtersMatchActivePreset;
-    const shouldShowDeletePreset = textFilterInput.value.trim().length > 0;
+    const shouldShowSavePreset = hasFilterText && (!activePreset || !filtersMatchActivePreset);
+    const shouldShowDeletePreset = hasFilterText;
 
+    savePresetContainer?.classList.toggle('hidden', !shouldShowSavePreset);
+    deletePresetContainer?.classList.toggle('hidden', !shouldShowDeletePreset);
     savePresetBtn?.classList.toggle('hidden', !shouldShowSavePreset);
     deletePresetBtn?.classList.toggle('hidden', !shouldShowDeletePreset);
   }
@@ -1827,12 +1832,19 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
   }
 
   savePresetBtn.addEventListener('click', () => {
+    const presetName = textFilterInput.value.trim();
+    if (!presetName) {
+      return;
+    }
+    activePresetName = presetName;
     vscode.postMessage({
       type: 'requestSavePreset',
       deviceId: state.deviceId,
       minLevel: minLevelSelect.value,
       textFilter: textFilterInput.value,
+      name: presetName,
     });
+    updatePresetActionVisibility();
   });
 
   deletePresetBtn.addEventListener('click', () => {

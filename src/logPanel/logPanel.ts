@@ -233,15 +233,12 @@ export class LogPanel {
   private async savePresetFromWebview(message: {
     minLevel: string;
     textFilter: string;
+    name: string;
   }): Promise<void> {
-    const name = await vscode.window.showInputBox({
-      prompt: 'Preset name',
-      ignoreFocusOut: true,
-    });
+    const name = message.name.trim();
     if (!name) {
       return;
     }
-
     const preset: FilterPreset = {
       name,
       minLevel: message.minLevel,
