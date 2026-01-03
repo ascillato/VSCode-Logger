@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Add unit and integration tests for logging components.
+- Add Device Manager UI for devices settings.
 
 ### Changed
 - Refactor LogSession and LogPanel modules for testability.
