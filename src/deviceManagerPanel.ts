@@ -24,7 +24,7 @@ interface DefaultsPayload {
   defaultEnableSshTerminal: boolean;
   defaultEnableSftpExplorer: boolean;
   defaultEnableWebBrowser: boolean;
-  defaultSshCommandsText: string;
+  defaultSshCommands: SshCommand[];
   maxLinesPerTab: number;
 }
 
@@ -45,7 +45,7 @@ interface DevicePayload {
   enableSftpExplorer?: boolean;
   enableWebBrowser?: boolean;
   webBrowserUrl?: string;
-  sshCommandsText?: string;
+  sshCommands?: SshCommand[];
   bastionHost?: string;
   bastionHostFingerprint?: string;
   bastionPort?: number | string;
@@ -161,14 +161,14 @@ export class DeviceManagerPanel {
       </header>
 
       <section class="card">
-        <h2>Defaults</h2>
+        <h2>Default values for all devices</h2>
         <div class="grid grid-3">
           <label class="field">
-            <span>Default port</span>
+            <span>Port</span>
             <input type="number" id="defaultPort" min="1" />
           </label>
           <label class="field">
-            <span>Default log command</span>
+            <span>Log command</span>
             <input type="text" id="defaultLogCommand" />
           </label>
           <label class="field">
@@ -179,21 +179,21 @@ export class DeviceManagerPanel {
         <div class="grid grid-3">
           <label class="field checkbox">
             <input type="checkbox" id="defaultEnableSshTerminal" />
-            <span>Default enable SSH terminal</span>
+            <span>Enable SSH terminal</span>
           </label>
           <label class="field checkbox">
             <input type="checkbox" id="defaultEnableSftpExplorer" />
-            <span>Default enable SFTP explorer</span>
+            <span>Enable SFTP explorer</span>
           </label>
           <label class="field checkbox">
             <input type="checkbox" id="defaultEnableWebBrowser" />
-            <span>Default enable web browser</span>
+            <span>Enable web browser</span>
           </label>
         </div>
-        <label class="field">
-          <span>Default SSH commands (JSON array)</span>
-          <textarea id="defaultSshCommands" rows="4" spellcheck="false"></textarea>
-        </label>
+        <div class="field">
+          <span>SSH commands</span>
+          <div id="defaultSshCommands"></div>
+        </div>
       </section>
 
       <section class="card">
@@ -227,7 +227,7 @@ export class DeviceManagerPanel {
                 <th>Private key path</th>
                 <th>Private key passphrase</th>
                 <th>Password (legacy)</th>
-                <th>SSH commands (JSON array)</th>
+                <th>SSH commands</th>
                 <th>Bastion host</th>
                 <th>Bastion port</th>
                 <th>Bastion user</th>
@@ -260,7 +260,7 @@ export class DeviceManagerPanel {
       defaultEnableSshTerminal: config.get<boolean>('defaultEnableSshTerminal', true) ?? true,
       defaultEnableSftpExplorer: config.get<boolean>('defaultEnableSftpExplorer', true) ?? true,
       defaultEnableWebBrowser: config.get<boolean>('defaultEnableWebBrowser', false) ?? false,
-      defaultSshCommandsText: JSON.stringify(config.get('defaultSshCommands', []), null, 2),
+      defaultSshCommands: config.get<SshCommand[]>('defaultSshCommands', []) ?? [],
       maxLinesPerTab: config.get<number>('maxLinesPerTab', 100000) ?? 100000,
     };
 
@@ -339,7 +339,7 @@ export class DeviceManagerPanel {
     const defaultEnableSshTerminal = Boolean(defaults.defaultEnableSshTerminal);
     const defaultEnableSftpExplorer = Boolean(defaults.defaultEnableSftpExplorer);
     const defaultEnableWebBrowser = Boolean(defaults.defaultEnableWebBrowser);
-    const defaultSshCommands = this.parseSshCommands(defaults.defaultSshCommandsText);
+    const defaultSshCommands = this.normalizeSshCommands(defaults.defaultSshCommands);
 
     return {
       defaultPort,
@@ -353,7 +353,7 @@ export class DeviceManagerPanel {
   }
 
   private normalizeDevice(device: DevicePayload): EmbeddedDevice {
-    const sshCommands = this.parseSshCommands(device.sshCommandsText);
+    const sshCommands = this.normalizeSshCommands(device.sshCommands);
     const bastion = this.buildBastion(device);
 
     return {
@@ -403,16 +403,19 @@ export class DeviceManagerPanel {
     };
   }
 
-  private parseSshCommands(value: string | undefined): SshCommand[] {
-    if (!value || !value.trim()) {
+  private normalizeSshCommands(value: SshCommand[] | string | undefined): SshCommand[] {
+    if (!value || (typeof value === 'string' && !value.trim())) {
       return [];
     }
 
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(value);
-    } catch {
-      throw new Error('SSH commands must be valid JSON (array of {name, command}).');
+    let parsed: unknown = value;
+
+    if (typeof value === 'string') {
+      try {
+        parsed = JSON.parse(value);
+      } catch {
+        throw new Error('SSH commands must be valid JSON (array of {name, command}).');
+      }
     }
 
     if (!Array.isArray(parsed)) {

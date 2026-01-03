@@ -8,7 +8,7 @@ const state = {
     defaultEnableSshTerminal: true,
     defaultEnableSftpExplorer: true,
     defaultEnableWebBrowser: false,
-    defaultSshCommandsText: '[]',
+    defaultSshCommands: [],
     maxLinesPerTab: 100000,
   },
 };
@@ -30,7 +30,7 @@ const deviceColumns = [
   { key: 'privateKeyPath', label: 'Private key path', type: 'text' },
   { key: 'privateKeyPassphrase', label: 'Key passphrase (legacy)', type: 'text' },
   { key: 'password', label: 'Password (legacy)', type: 'text' },
-  { key: 'sshCommandsText', label: 'SSH commands (JSON array)', type: 'textarea' },
+  { key: 'sshCommands', label: 'SSH commands', type: 'sshCommands' },
   { key: 'bastionHost', label: 'Bastion host', type: 'text' },
   { key: 'bastionPort', label: 'Bastion port', type: 'number', min: 1 },
   { key: 'bastionUsername', label: 'Bastion user', type: 'text' },
@@ -51,7 +51,9 @@ function handleInit(message) {
   state.defaults = {
     ...state.defaults,
     ...defaults,
-    defaultSshCommandsText: defaults?.defaultSshCommandsText ?? '[]',
+    defaultSshCommands: Array.isArray(defaults?.defaultSshCommands)
+      ? defaults.defaultSshCommands.map((command) => ({ ...command }))
+      : [],
   };
   state.devices = devices.map(toViewDevice);
   render();
@@ -75,7 +77,9 @@ function toViewDevice(device) {
     privateKeyPath: device.privateKeyPath ?? '',
     privateKeyPassphrase: device.privateKeyPassphrase ?? '',
     password: device.password ?? '',
-    sshCommandsText: JSON.stringify(device.sshCommands ?? [], null, 2),
+    sshCommands: Array.isArray(device.sshCommands)
+      ? device.sshCommands.map((command) => ({ ...command }))
+      : [],
     bastionHost: device.bastion?.host ?? '',
     bastionPort: device.bastion?.port ?? '',
     bastionUsername: device.bastion?.username ?? '',
@@ -102,8 +106,16 @@ function renderDefaults() {
     !!state.defaults.defaultEnableSftpExplorer;
   document.getElementById('defaultEnableWebBrowser').checked =
     !!state.defaults.defaultEnableWebBrowser;
-  document.getElementById('defaultSshCommands').value =
-    state.defaults.defaultSshCommandsText ?? '[]';
+  renderSshCommandsEditor(
+    state.defaults.defaultSshCommands,
+    document.getElementById('defaultSshCommands'),
+    (next, options = {}) => {
+      state.defaults.defaultSshCommands = next;
+      if (options.rebuild) {
+        renderDefaults();
+      }
+    }
+  );
 }
 
 function renderDevices() {
@@ -129,6 +141,95 @@ function renderDevices() {
   });
 }
 
+function renderSshCommandsEditor(commands, mountPoint, onChange) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'ssh-commands-editor';
+
+  const table = document.createElement('table');
+  table.className = 'ssh-commands-table';
+
+  const thead = document.createElement('thead');
+  const headerRow = document.createElement('tr');
+  ['Name', 'Command', ''].forEach((label) => {
+    const th = document.createElement('th');
+    th.textContent = label;
+    headerRow.appendChild(th);
+  });
+  thead.appendChild(headerRow);
+  table.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+  const list = Array.isArray(commands) ? commands : [];
+
+  list.forEach((item, idx) => {
+    const row = document.createElement('tr');
+    row.className = 'ssh-commands-row';
+
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.placeholder = 'Name';
+    nameInput.value = item?.name ?? '';
+    nameInput.addEventListener('input', (event) => {
+      const updated = [...list];
+      updated[idx] = { ...updated[idx], name: event.target.value };
+      onChange(updated, { rebuild: false });
+    });
+    const nameCell = document.createElement('td');
+    nameCell.appendChild(nameInput);
+
+    const commandInput = document.createElement('input');
+    commandInput.type = 'text';
+    commandInput.placeholder = 'Command';
+    commandInput.value = item?.command ?? '';
+    commandInput.addEventListener('input', (event) => {
+      const updated = [...list];
+      updated[idx] = { ...updated[idx], command: event.target.value };
+      onChange(updated, { rebuild: false });
+    });
+    const commandCell = document.createElement('td');
+    commandCell.appendChild(commandInput);
+
+    const removeButton = document.createElement('button');
+    removeButton.type = 'button';
+    removeButton.className = 'button button-danger button-icon';
+    removeButton.title = 'Remove command';
+    removeButton.textContent = '✕';
+    removeButton.addEventListener('click', () => {
+      const updated = [...list.slice(0, idx), ...list.slice(idx + 1)];
+      onChange(updated, { rebuild: true });
+    });
+    const removeCell = document.createElement('td');
+    removeCell.className = 'ssh-command-remove';
+    removeCell.appendChild(removeButton);
+
+    row.appendChild(nameCell);
+    row.appendChild(commandCell);
+    row.appendChild(removeCell);
+    tbody.appendChild(row);
+  });
+
+  table.appendChild(tbody);
+
+  const addButton = document.createElement('button');
+  addButton.type = 'button';
+  addButton.className = 'button';
+  addButton.textContent = '+ Add command';
+  addButton.addEventListener('click', () => {
+    const updated = [...list, { name: '', command: '' }];
+    onChange(updated, { rebuild: true });
+  });
+
+  wrapper.appendChild(table);
+  wrapper.appendChild(addButton);
+
+  if (mountPoint) {
+    mountPoint.innerHTML = '';
+    mountPoint.appendChild(wrapper);
+  }
+
+  return wrapper;
+}
+
 function measureWidth(value) {
   const probe = document.createElement('div');
   probe.style.position = 'absolute';
@@ -148,6 +249,9 @@ function getInitialWidthValue(col) {
   if (col.type === 'number') {
     return '20ch';
   }
+  if (col.type === 'sshCommands') {
+    return '24ch';
+  }
   if (col.type === 'textarea') {
     return '24ch';
   }
@@ -165,7 +269,11 @@ function setupTableColumns() {
     const colElement = document.createElement('col');
     const widthValue = getInitialWidthValue(col);
     const minWidthValue =
-      col.type === 'checkbox' ? '12ch' : col.type === 'textarea' ? '24ch' : '20ch';
+      col.type === 'checkbox'
+        ? '12ch'
+        : col.type === 'textarea' || col.type === 'sshCommands'
+          ? '24ch'
+          : '20ch';
     colElement.style.width = widthValue;
     colElement.style.minWidth = minWidthValue;
     colElement.dataset.minWidthPx = String(measureWidth(minWidthValue));
@@ -236,6 +344,14 @@ function addColumnResizers() {
 }
 
 function createInput(col, value, index, key) {
+  if (col.type === 'sshCommands') {
+    return renderSshCommandsEditor(value || [], null, (next, options = {}) => {
+      state.devices[index][key] = next;
+      if (options.rebuild) {
+        renderDevices();
+      }
+    });
+  }
   if (col.type === 'checkbox') {
     const input = document.createElement('input');
     input.type = 'checkbox';
@@ -287,7 +403,7 @@ function addDevice() {
     privateKeyPath: '',
     privateKeyPassphrase: '',
     password: '',
-    sshCommandsText: '[]',
+    sshCommands: [],
     bastionHost: '',
     bastionPort: '',
     bastionUsername: '',
@@ -312,7 +428,7 @@ function collectDefaults() {
     defaultEnableSshTerminal: document.getElementById('defaultEnableSshTerminal').checked,
     defaultEnableSftpExplorer: document.getElementById('defaultEnableSftpExplorer').checked,
     defaultEnableWebBrowser: document.getElementById('defaultEnableWebBrowser').checked,
-    defaultSshCommandsText: document.getElementById('defaultSshCommands').value,
+    defaultSshCommands: state.defaults.defaultSshCommands,
   };
 }
 
