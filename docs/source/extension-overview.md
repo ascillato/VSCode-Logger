@@ -21,7 +21,7 @@ This project was design from the start taking into account as principles the fol
 - **Robust asynchronous logic**
 - **User experience considerations**
 - **Testing practice**
-- **Linting and formatting**
+- **Linting, type-checking, formatting and spelling**
 - **Extensibility and configuration**
 
 ### Strengths

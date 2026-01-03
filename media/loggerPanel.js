@@ -33,9 +33,13 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
 
   const minLevelSelect = document.getElementById('minLevel');
   const textFilterInput = document.getElementById('textFilter');
-  const presetSelect = document.getElementById('presetSelect');
+  const presetDropdownButton = document.getElementById('presetDropdownButton');
+  const presetDropdown = document.getElementById('presetDropdown');
+  const textFilterContainer = document.getElementById('textFilterContainer');
   const savePresetBtn = document.getElementById('savePreset');
   const deletePresetBtn = document.getElementById('deletePreset');
+  const savePresetContainer = savePresetBtn?.closest('.toolbar-actions__item');
+  const deletePresetContainer = deletePresetBtn?.closest('.toolbar-actions__item');
   const exportBtn = document.getElementById('exportLogs');
   const editBtn = document.getElementById('editLogFile');
   const refreshBtn = document.getElementById('refreshLogFile');
@@ -90,6 +94,8 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
   let reconnectIntervalId = null;
   let reconnectCountdown = 0;
   let highlightColorCursor = 0;
+  let activePresetName = '';
+  let isPresetDropdownOpen = false;
   const AUTO_SCROLL_BOTTOM_THRESHOLD = 4;
 
   /**
@@ -355,17 +361,128 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
    * @brief Populates the preset dropdown with available presets.
    */
   function updatePresetDropdown() {
-    presetSelect.innerHTML = '';
-    const base = document.createElement('option');
-    base.value = '';
-    base.textContent = '(no preset)';
-    presetSelect.appendChild(base);
-    state.presets.forEach((p) => {
-      const opt = document.createElement('option');
-      opt.value = p.name;
-      opt.textContent = p.name;
-      presetSelect.appendChild(opt);
+    if (!presetDropdown) {
+      return;
+    }
+    const existingPreset = state.presets.find((p) => p.name === activePresetName);
+    if (!existingPreset) {
+      activePresetName = '';
+    }
+    presetDropdown.innerHTML = '';
+    const options = [
+      { value: '', label: '(no preset)' },
+      ...state.presets.map((p) => ({
+        value: p.name,
+        label: p.name,
+      })),
+    ];
+
+    options.forEach((option) => {
+      const optionButton = document.createElement('button');
+      optionButton.type = 'button';
+      optionButton.className = 'preset-dropdown__option';
+      optionButton.dataset.value = option.value;
+      optionButton.textContent = option.label;
+      optionButton.setAttribute('role', 'option');
+      optionButton.setAttribute(
+        'aria-selected',
+        option.value === activePresetName ? 'true' : 'false'
+      );
+      if (option.value === activePresetName) {
+        optionButton.classList.add('preset-dropdown__option--active');
+      }
+      optionButton.addEventListener('click', () => {
+        handlePresetSelection(option.value);
+      });
+      presetDropdown.appendChild(optionButton);
     });
+
+    updatePresetButtonLabels();
+    updatePresetActionVisibility();
+  }
+
+  function updatePresetButtonLabels() {
+    if (!presetDropdownButton) {
+      return;
+    }
+    const label = activePresetName ? `Filter preset: ${activePresetName}` : 'Filter presets';
+    presetDropdownButton.title = label;
+    presetDropdownButton.setAttribute('aria-label', label);
+    presetDropdownButton.setAttribute('aria-expanded', isPresetDropdownOpen ? 'true' : 'false');
+  }
+
+  function updatePresetActionVisibility() {
+    const activePreset = state.presets.find((preset) => preset.name === activePresetName);
+    const hasFilterText = textFilterInput.value.trim().length > 0;
+    const filtersMatchActivePreset =
+      !!activePreset &&
+      activePreset.minLevel === state.minLevel &&
+      activePreset.textFilter === state.textFilter;
+
+    const shouldEnableSavePreset = hasFilterText && (!activePreset || !filtersMatchActivePreset);
+    const shouldEnableDeletePreset = hasFilterText;
+
+    savePresetBtn?.classList.toggle('hidden', false);
+    deletePresetBtn?.classList.toggle('hidden', false);
+    savePresetContainer?.classList.toggle('hidden', false);
+    deletePresetContainer?.classList.toggle('hidden', false);
+
+    if (savePresetBtn) {
+      savePresetBtn.disabled = !shouldEnableSavePreset;
+    }
+    if (deletePresetBtn) {
+      deletePresetBtn.disabled = !shouldEnableDeletePreset;
+    }
+  }
+
+  function closePresetDropdown() {
+    if (!presetDropdown || !presetDropdownButton) {
+      return;
+    }
+    isPresetDropdownOpen = false;
+    presetDropdown.classList.add('hidden');
+    updatePresetButtonLabels();
+    document.removeEventListener('click', handlePresetOutsideClick, true);
+    document.removeEventListener('keydown', handlePresetKeydown, true);
+  }
+
+  function openPresetDropdown() {
+    if (!presetDropdown || !presetDropdownButton) {
+      return;
+    }
+    isPresetDropdownOpen = true;
+    updatePresetDropdown();
+    presetDropdown.classList.remove('hidden');
+    updatePresetButtonLabels();
+    document.addEventListener('click', handlePresetOutsideClick, true);
+    document.addEventListener('keydown', handlePresetKeydown, true);
+  }
+
+  function togglePresetDropdown() {
+    if (isPresetDropdownOpen) {
+      closePresetDropdown();
+    } else {
+      openPresetDropdown();
+    }
+  }
+
+  function handlePresetOutsideClick(event) {
+    const target = event.target;
+    if (
+      presetDropdown?.contains(target) ||
+      presetDropdownButton?.contains(target) ||
+      textFilterContainer?.contains(target)
+    ) {
+      return;
+    }
+    closePresetDropdown();
+  }
+
+  function handlePresetKeydown(event) {
+    if (event.key === 'Escape') {
+      closePresetDropdown();
+      presetDropdownButton?.focus();
+    }
   }
 
   /**
@@ -377,11 +494,34 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
     if (!preset) {
       return;
     }
+    activePresetName = name;
     state.minLevel = preset.minLevel;
     state.textFilter = preset.textFilter;
     minLevelSelect.value = state.minLevel;
     textFilterInput.value = state.textFilter;
+    updatePresetDropdown();
+    updatePresetActionVisibility();
     applyFilters();
+  }
+
+  /**
+   * @brief Handles selection from the preset dropdown trigger.
+   * @param value Selected preset name (empty to clear).
+   */
+  function handlePresetSelection(value) {
+    if (value) {
+      applyPreset(value);
+      closePresetDropdown();
+      return;
+    }
+    activePresetName = '';
+    state.minLevel = minLevelSelect.value;
+    state.textFilter = '';
+    textFilterInput.value = '';
+    updatePresetDropdown();
+    applyFilters();
+    updatePresetActionVisibility();
+    closePresetDropdown();
   }
 
   /**
@@ -1641,10 +1781,12 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
 
   // Event wiring
   minLevelSelect.value = state.minLevel;
+  updatePresetActionVisibility();
 
   minLevelSelect.addEventListener('change', () => {
     state.minLevel = minLevelSelect.value;
     applyFilters();
+    updatePresetActionVisibility();
   });
 
   textFilterInput.addEventListener(
@@ -1652,9 +1794,12 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
     debounce(() => {
       state.textFilter = textFilterInput.value;
       applyFilters();
-      if (presetSelect.value) {
-        presetSelect.value = '';
+      if (activePresetName) {
+        activePresetName = '';
+        updatePresetDropdown();
       }
+      closePresetDropdown();
+      updatePresetActionVisibility();
     }, 150)
   );
 
@@ -1679,33 +1824,52 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
     showStatusContextMenu(event);
   });
 
-  presetSelect.addEventListener('change', () => {
-    const value = presetSelect.value;
-    if (value) {
-      applyPreset(value);
-    } else {
-      state.minLevel = minLevelSelect.value;
-      state.textFilter = '';
-      textFilterInput.value = '';
-      applyFilters();
-    }
-  });
+  if (presetDropdownButton) {
+    presetDropdownButton.addEventListener('click', togglePresetDropdown);
+    presetDropdownButton.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowDown' && !isPresetDropdownOpen) {
+        openPresetDropdown();
+        const firstOption = presetDropdown?.querySelector('.preset-dropdown__option');
+        if (firstOption instanceof HTMLElement) {
+          firstOption.focus();
+        }
+        event.preventDefault();
+      }
+    });
+  }
 
   savePresetBtn.addEventListener('click', () => {
+    const presetName = textFilterInput.value.trim();
+    if (!presetName) {
+      return;
+    }
+    activePresetName = presetName;
     vscode.postMessage({
       type: 'requestSavePreset',
       deviceId: state.deviceId,
       minLevel: minLevelSelect.value,
       textFilter: textFilterInput.value,
+      name: presetName,
     });
+    updatePresetActionVisibility();
   });
 
   deletePresetBtn.addEventListener('click', () => {
-    const value = presetSelect.value;
-    if (!value) {
-      return;
+    const shouldDeletePreset = !!activePresetName;
+    if (shouldDeletePreset) {
+      vscode.postMessage({
+        type: 'deletePreset',
+        deviceId: state.deviceId,
+        name: activePresetName,
+      });
     }
-    vscode.postMessage({ type: 'deletePreset', deviceId: state.deviceId, name: value });
+    activePresetName = '';
+    state.textFilter = '';
+    textFilterInput.value = '';
+    updatePresetDropdown();
+    applyFilters();
+    updatePresetActionVisibility();
+    closePresetDropdown();
   });
 
   exportBtn.addEventListener('click', () => {
