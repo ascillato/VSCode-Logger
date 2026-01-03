@@ -317,7 +317,8 @@ td textarea {
 }
 
 #status {
-  margin-top: 8px;
+  margin-top: 4px;
+  margin-bottom: 12px;
   font-size: 13px;
 }
 
