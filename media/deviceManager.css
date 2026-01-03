@@ -207,20 +207,6 @@ td textarea {
   box-sizing: border-box;
 }
 
-.table-scrollbar {
-  position: sticky;
-  bottom: 0;
-  height: 12px;
-  background: var(--vscode-editor-background);
-  border-top: 1px solid var(--vscode-editorGroup-border);
-  overflow-x: auto;
-  overflow-y: hidden;
-}
-
-.table-scrollbar__inner {
-  height: 1px;
-}
-
 .ssh-commands-editor {
   display: flex;
   flex-direction: column;

@@ -45,8 +45,6 @@ let helpModal;
 let helpContent;
 let helpCopyButton;
 let helpCloseButton;
-let horizontalScrollbar;
-let horizontalScrollbarInner;
 let isSyncingScroll = false;
 
 function postReady() {
@@ -100,7 +98,6 @@ function toViewDevice(device) {
 function render() {
   renderDefaults();
   renderDevices();
-  updateScrollbar();
   setStatus('');
 }
 
@@ -149,7 +146,6 @@ function renderDevices() {
   });
 
   addColumnResizers();
-  updateScrollbar();
 }
 
 function renderSshCommandsEditor(commands, mountPoint, onChange) {
@@ -331,7 +327,6 @@ function handleColumnResize(event) {
   const delta = event.clientX - activeColumnResize.startX;
   const newWidth = Math.max(activeColumnResize.minWidth, activeColumnResize.startWidth + delta);
   activeColumnResize.col.style.width = `${newWidth}px`;
-  updateScrollbar();
 }
 
 function stopColumnResize() {
@@ -359,43 +354,6 @@ function addColumnResizers() {
     resizer.addEventListener('mousedown', (event) => startColumnResize(event, index));
     th.appendChild(resizer);
   });
-}
-
-function setupScrollbarSync() {
-  const wrapper = document.querySelector('.table-wrapper');
-  horizontalScrollbar = document.getElementById('devicesScrollbar');
-  horizontalScrollbarInner = document.getElementById('devicesScrollbarInner');
-
-  if (!wrapper || !horizontalScrollbar || !horizontalScrollbarInner) {
-    return;
-  }
-
-  if (!horizontalScrollbar.dataset.bound) {
-    wrapper.addEventListener('scroll', () => syncScrollbars(wrapper, horizontalScrollbar));
-    horizontalScrollbar.addEventListener('scroll', () => syncScrollbars(horizontalScrollbar, wrapper));
-    horizontalScrollbar.dataset.bound = 'true';
-  }
-}
-
-function syncScrollbars(source, target) {
-  if (isSyncingScroll) {
-    return;
-  }
-  isSyncingScroll = true;
-  target.scrollLeft = source.scrollLeft;
-  isSyncingScroll = false;
-}
-
-function updateScrollbar() {
-  setupScrollbarSync();
-  const wrapper = document.querySelector('.table-wrapper');
-  const table = document.getElementById('devicesTable');
-  if (!wrapper || !table || !horizontalScrollbar || !horizontalScrollbarInner) {
-    return;
-  }
-  const width = Math.max(table.scrollWidth, wrapper.clientWidth);
-  horizontalScrollbarInner.style.width = `${width}px`;
-  syncScrollbars(wrapper, horizontalScrollbar);
 }
 
 function createInput(col, value, index, key) {
@@ -652,7 +610,6 @@ function init() {
   window.addEventListener('resize', () => {
     setupTableColumns();
     addColumnResizers();
-    updateScrollbar();
   });
   setupHelpModal();
   postReady();

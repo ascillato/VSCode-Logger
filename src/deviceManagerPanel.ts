@@ -241,9 +241,6 @@ export class DeviceManagerPanel {
             </thead>
             <tbody id="devicesBody"></tbody>
           </table>
-          <div class="table-scrollbar" id="devicesScrollbar">
-            <div class="table-scrollbar__inner" id="devicesScrollbarInner"></div>
-          </div>
         </div>
       </section>
       <div id="status" aria-live="polite"></div>
