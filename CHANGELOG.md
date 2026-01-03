@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Refactor LogSession and LogPanel modules for testability.
 - Updated Docs with Refactor changes.
 - Sanitize log lines before rendering.
+- Change Filter Preset to dropdown button.
 
 ### Deprecated
 - None.
