@@ -168,20 +168,6 @@ export class DeviceManagerPanel {
             <p>Default values for all devices. Each device can change it in devices table if desired.</p>
           </div>
         </div>
-        <div class="grid grid-3">
-          <label class="field">
-            <span>Port</span>
-            <input type="number" id="defaultPort" min="1" />
-          </label>
-          <label class="field">
-            <span>Log command</span>
-            <input type="text" id="defaultLogCommand" />
-          </label>
-          <label class="field">
-            <span>Max lines per tab</span>
-            <input type="number" id="maxLinesPerTab" min="1" />
-          </label>
-        </div>
         <div class="divider" aria-hidden="true"></div>
         <div class="grid grid-3">
           <label class="field checkbox">
@@ -197,6 +183,22 @@ export class DeviceManagerPanel {
             <span>Enable web browser</span>
           </label>
         </div>
+        <div class="divider" aria-hidden="true"></div>
+        <div class="grid grid-3">
+          <label class="field">
+            <span>Port</span>
+            <input type="number" id="defaultPort" min="1" />
+          </label>
+          <label class="field">
+            <span>Log command</span>
+            <input type="text" id="defaultLogCommand" />
+          </label>
+          <label class="field">
+            <span>Max lines per tab</span>
+            <input type="number" id="maxLinesPerTab" min="1" />
+          </label>
+        </div>
+        <div class="divider" aria-hidden="true"></div>
         <div class="field">
           <span>SSH commands</span>
           <div id="defaultSshCommands"></div>

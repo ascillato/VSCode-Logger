@@ -62,9 +62,8 @@ body {
 
 .card-header-text {
   display: flex;
-  flex-direction: row;
-  align-items: baseline;
-  gap: 8px;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .card-header-text p {
@@ -128,7 +127,7 @@ body {
 .divider {
   height: 1px;
   background: var(--vscode-editorGroup-border);
-  margin: 8px 0 4px;
+  margin: 8px 0 8px;
   border: 0;
 }
 
@@ -261,7 +260,7 @@ td textarea {
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.75);
+  background: rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
