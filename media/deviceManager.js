@@ -544,8 +544,7 @@ function buildHelpJson() {
   const defaults = state.defaults;
   const example = {
     'embeddedLogger.defaultPort': defaults.defaultPort ?? 22,
-    'embeddedLogger.defaultLogCommand':
-      defaults.defaultLogCommand ?? 'tail -F /var/log/syslog',
+    'embeddedLogger.defaultLogCommand': defaults.defaultLogCommand ?? 'tail -F /var/log/syslog',
     'embeddedLogger.defaultEnableSshTerminal': !!defaults.defaultEnableSshTerminal,
     'embeddedLogger.defaultEnableSftpExplorer': !!defaults.defaultEnableSftpExplorer,
     'embeddedLogger.defaultEnableWebBrowser': !!defaults.defaultEnableWebBrowser,
