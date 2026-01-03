@@ -332,3 +332,7 @@ td textarea {
 .status.info {
   color: var(--vscode-descriptionForeground);
 }
+.status.align-end {
+  display: flex;
+  justify-content: flex-end;
+}

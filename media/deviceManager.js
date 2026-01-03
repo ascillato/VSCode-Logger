@@ -577,7 +577,8 @@ function buildHelpJson() {
 function setStatus(message, variant = '') {
   const el = document.getElementById('status');
   el.textContent = message || '';
-  el.className = variant ? `status ${variant}` : 'status';
+  const base = 'status align-end';
+  el.className = variant ? `${base} ${variant}` : base;
 }
 
 function handleSaveResult(message) {
