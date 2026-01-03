@@ -287,41 +287,13 @@ export class DeviceManagerPanel {
       const normalizedDevices = devices.map((device) => this.normalizeDevice(device));
 
       await Promise.all([
-        config.update(
-          'defaultPort',
-          normalizedDefaults.defaultPort,
-          target
-        ),
-        config.update(
-          'defaultLogCommand',
-          normalizedDefaults.defaultLogCommand,
-          target
-        ),
-        config.update(
-          'defaultEnableSshTerminal',
-          normalizedDefaults.defaultEnableSshTerminal,
-          target
-        ),
-        config.update(
-          'defaultEnableSftpExplorer',
-          normalizedDefaults.defaultEnableSftpExplorer,
-          target
-        ),
-        config.update(
-          'defaultEnableWebBrowser',
-          normalizedDefaults.defaultEnableWebBrowser,
-          target
-        ),
-        config.update(
-          'defaultSshCommands',
-          normalizedDefaults.defaultSshCommands,
-          target
-        ),
-        config.update(
-          'maxLinesPerTab',
-          normalizedDefaults.maxLinesPerTab,
-          target
-        ),
+        config.update('defaultPort', normalizedDefaults.defaultPort, target),
+        config.update('defaultLogCommand', normalizedDefaults.defaultLogCommand, target),
+        config.update('defaultEnableSshTerminal', normalizedDefaults.defaultEnableSshTerminal, target),
+        config.update('defaultEnableSftpExplorer', normalizedDefaults.defaultEnableSftpExplorer, target),
+        config.update('defaultEnableWebBrowser', normalizedDefaults.defaultEnableWebBrowser, target),
+        config.update('defaultSshCommands', normalizedDefaults.defaultSshCommands, target),
+        config.update('maxLinesPerTab', normalizedDefaults.maxLinesPerTab, target),
         config.update('devices', normalizedDevices, target),
       ]);
 
@@ -351,7 +323,7 @@ export class DeviceManagerPanel {
     for (const folder of workspaceFolders) {
       const folderConfig = vscode.workspace.getConfiguration('embeddedLogger', folder.uri);
       const hasFolderScopedSetting = settingsToInspect.some((setting) => {
-        const inspection = folderConfig.inspect<EmbeddedDevice[] | unknown>(setting);
+        const inspection = folderConfig.inspect<unknown>(setting);
         return inspection?.workspaceFolderValue !== undefined;
       });
 
@@ -362,7 +334,7 @@ export class DeviceManagerPanel {
 
     const workspaceConfig = vscode.workspace.getConfiguration('embeddedLogger');
     const workspaceHasSetting = settingsToInspect.some((setting) => {
-      const inspection = workspaceConfig.inspect<EmbeddedDevice[] | unknown>(setting);
+      const inspection = workspaceConfig.inspect<unknown>(setting);
       return inspection?.workspaceValue !== undefined;
     });
 
@@ -371,7 +343,7 @@ export class DeviceManagerPanel {
     }
 
     const globalHasSetting = settingsToInspect.some((setting) => {
-      const inspection = workspaceConfig.inspect<EmbeddedDevice[] | unknown>(setting);
+      const inspection = workspaceConfig.inspect<unknown>(setting);
       return inspection?.globalValue !== undefined;
     });
 
