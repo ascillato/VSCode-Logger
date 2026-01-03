@@ -41,6 +41,13 @@ const deviceColumns = [
 ];
 
 let activeColumnResize = null;
+let helpModal;
+let helpContent;
+let helpCopyButton;
+let helpCloseButton;
+let horizontalScrollbar;
+let horizontalScrollbarInner;
+let isSyncingScroll = false;
 
 function postReady() {
   vscode.postMessage({ type: 'requestState' });
@@ -93,6 +100,7 @@ function toViewDevice(device) {
 function render() {
   renderDefaults();
   renderDevices();
+  updateScrollbar();
   setStatus('');
 }
 
@@ -139,6 +147,9 @@ function renderDevices() {
     row.appendChild(removeCell);
     tbody.appendChild(row);
   });
+
+  addColumnResizers();
+  updateScrollbar();
 }
 
 function renderSshCommandsEditor(commands, mountPoint, onChange) {
@@ -150,11 +161,27 @@ function renderSshCommandsEditor(commands, mountPoint, onChange) {
 
   const thead = document.createElement('thead');
   const headerRow = document.createElement('tr');
-  ['Name', 'Command', ''].forEach((label) => {
-    const th = document.createElement('th');
-    th.textContent = label;
-    headerRow.appendChild(th);
+  const nameTh = document.createElement('th');
+  nameTh.textContent = 'Name';
+  nameTh.title = 'Command names support emojis from https://emojidb.org/';
+  headerRow.appendChild(nameTh);
+
+  const commandTh = document.createElement('th');
+  commandTh.textContent = 'Command';
+  headerRow.appendChild(commandTh);
+
+  const addTh = document.createElement('th');
+  const addButton = document.createElement('button');
+  addButton.type = 'button';
+  addButton.className = 'button button-icon';
+  addButton.textContent = '+';
+  addButton.title = 'Add command';
+  addButton.addEventListener('click', () => {
+    const updated = [...list, { name: '', command: '' }];
+    onChange(updated, { rebuild: true });
   });
+  addTh.appendChild(addButton);
+  headerRow.appendChild(addTh);
   thead.appendChild(headerRow);
   table.appendChild(thead);
 
@@ -210,17 +237,7 @@ function renderSshCommandsEditor(commands, mountPoint, onChange) {
 
   table.appendChild(tbody);
 
-  const addButton = document.createElement('button');
-  addButton.type = 'button';
-  addButton.className = 'button';
-  addButton.textContent = '+ Add command';
-  addButton.addEventListener('click', () => {
-    const updated = [...list, { name: '', command: '' }];
-    onChange(updated, { rebuild: true });
-  });
-
   wrapper.appendChild(table);
-  wrapper.appendChild(addButton);
 
   if (mountPoint) {
     mountPoint.innerHTML = '';
@@ -314,6 +331,7 @@ function handleColumnResize(event) {
   const delta = event.clientX - activeColumnResize.startX;
   const newWidth = Math.max(activeColumnResize.minWidth, activeColumnResize.startWidth + delta);
   activeColumnResize.col.style.width = `${newWidth}px`;
+  updateScrollbar();
 }
 
 function stopColumnResize() {
@@ -341,6 +359,43 @@ function addColumnResizers() {
     resizer.addEventListener('mousedown', (event) => startColumnResize(event, index));
     th.appendChild(resizer);
   });
+}
+
+function setupScrollbarSync() {
+  const wrapper = document.querySelector('.table-wrapper');
+  horizontalScrollbar = document.getElementById('devicesScrollbar');
+  horizontalScrollbarInner = document.getElementById('devicesScrollbarInner');
+
+  if (!wrapper || !horizontalScrollbar || !horizontalScrollbarInner) {
+    return;
+  }
+
+  if (!horizontalScrollbar.dataset.bound) {
+    wrapper.addEventListener('scroll', () => syncScrollbars(wrapper, horizontalScrollbar));
+    horizontalScrollbar.addEventListener('scroll', () => syncScrollbars(horizontalScrollbar, wrapper));
+    horizontalScrollbar.dataset.bound = 'true';
+  }
+}
+
+function syncScrollbars(source, target) {
+  if (isSyncingScroll) {
+    return;
+  }
+  isSyncingScroll = true;
+  target.scrollLeft = source.scrollLeft;
+  isSyncingScroll = false;
+}
+
+function updateScrollbar() {
+  setupScrollbarSync();
+  const wrapper = document.querySelector('.table-wrapper');
+  const table = document.getElementById('devicesTable');
+  if (!wrapper || !table || !horizontalScrollbar || !horizontalScrollbarInner) {
+    return;
+  }
+  const width = Math.max(table.scrollWidth, wrapper.clientWidth);
+  horizontalScrollbarInner.style.width = `${width}px`;
+  syncScrollbars(wrapper, horizontalScrollbar);
 }
 
 function createInput(col, value, index, key) {
@@ -451,6 +506,108 @@ function clearStoredPasswords() {
   vscode.postMessage({ type: 'clearPasswords' });
 }
 
+function setupHelpModal() {
+  helpModal = document.createElement('div');
+  helpModal.className = 'modal hidden';
+
+  const dialog = document.createElement('div');
+  dialog.className = 'modal__dialog';
+
+  const title = document.createElement('h3');
+  title.textContent = 'Configuration example';
+
+  const description = document.createElement('p');
+  description.textContent = 'Copy and paste these defaults into your settings.json.';
+
+  helpContent = document.createElement('pre');
+  helpContent.className = 'modal__code';
+
+  const actions = document.createElement('div');
+  actions.className = 'modal__actions';
+
+  helpCopyButton = document.createElement('button');
+  helpCopyButton.className = 'button';
+  helpCopyButton.textContent = 'Copy';
+  helpCopyButton.addEventListener('click', copyHelpJson);
+
+  helpCloseButton = document.createElement('button');
+  helpCloseButton.className = 'button button-secondary';
+  helpCloseButton.textContent = 'Close';
+  helpCloseButton.addEventListener('click', closeHelp);
+
+  actions.appendChild(helpCopyButton);
+  actions.appendChild(helpCloseButton);
+
+  dialog.appendChild(title);
+  dialog.appendChild(description);
+  dialog.appendChild(helpContent);
+  dialog.appendChild(actions);
+  helpModal.appendChild(dialog);
+
+  helpModal.addEventListener('click', (event) => {
+    if (event.target === helpModal) {
+      closeHelp();
+    }
+  });
+
+  document.body.appendChild(helpModal);
+}
+
+function openHelp() {
+  if (!helpModal) {
+    setupHelpModal();
+  }
+  helpContent.textContent = buildHelpJson();
+  helpModal.classList.remove('hidden');
+}
+
+function closeHelp() {
+  if (helpModal) {
+    helpModal.classList.add('hidden');
+  }
+}
+
+async function copyHelpJson() {
+  try {
+    await navigator.clipboard.writeText(helpContent.textContent || '');
+    setStatus('Copied configuration example.', 'success');
+  } catch (error) {
+    setStatus('Failed to copy configuration example.', 'error');
+    console.error(error);
+  }
+}
+
+function buildHelpJson() {
+  const defaults = state.defaults;
+  const example = {
+    'embeddedLogger.defaultPort': defaults.defaultPort ?? 22,
+    'embeddedLogger.defaultLogCommand':
+      defaults.defaultLogCommand ?? 'tail -F /var/log/syslog',
+    'embeddedLogger.defaultEnableSshTerminal': !!defaults.defaultEnableSshTerminal,
+    'embeddedLogger.defaultEnableSftpExplorer': !!defaults.defaultEnableSftpExplorer,
+    'embeddedLogger.defaultEnableWebBrowser': !!defaults.defaultEnableWebBrowser,
+    'embeddedLogger.maxLinesPerTab': defaults.maxLinesPerTab ?? 100000,
+    'embeddedLogger.defaultSshCommands': defaults.defaultSshCommands ?? [],
+    'embeddedLogger.devices': [
+      {
+        id: 'device-1',
+        name: 'My device',
+        host: '192.168.0.10',
+        port: defaults.defaultPort ?? 22,
+        username: 'root',
+        logCommand: defaults.defaultLogCommand ?? 'tail -F /var/log/syslog',
+        enableSshTerminal: !!defaults.defaultEnableSshTerminal,
+        enableSftpExplorer: !!defaults.defaultEnableSftpExplorer,
+        enableWebBrowser: !!defaults.defaultEnableWebBrowser,
+        webBrowserUrl: 'http://192.168.0.10',
+        sshCommands: defaults.defaultSshCommands ?? [],
+      },
+    ],
+  };
+
+  return JSON.stringify(example, null, 2);
+}
+
 function setStatus(message, variant = '') {
   const el = document.getElementById('status');
   el.textContent = message || '';
@@ -481,12 +638,18 @@ function handleMessage(event) {
 
 function init() {
   setupTableColumns();
-  addColumnResizers();
   document.getElementById('addDevice').addEventListener('click', addDevice);
   document.getElementById('editJson').addEventListener('click', editJson);
+  document.getElementById('helpButton').addEventListener('click', openHelp);
   document.getElementById('clearPasswords').addEventListener('click', clearStoredPasswords);
   document.getElementById('saveChanges').addEventListener('click', save);
   window.addEventListener('message', handleMessage);
+  window.addEventListener('resize', () => {
+    setupTableColumns();
+    addColumnResizers();
+    updateScrollbar();
+  });
+  setupHelpModal();
   postReady();
 }
 

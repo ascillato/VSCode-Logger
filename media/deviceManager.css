@@ -160,6 +160,7 @@ table {
   border-collapse: collapse;
   font-size: 13px;
   table-layout: fixed;
+  border: 1px solid var(--vscode-editorGroup-border);
 }
 
 th,
@@ -205,6 +206,20 @@ td textarea {
   box-sizing: border-box;
 }
 
+.table-scrollbar {
+  position: sticky;
+  bottom: 0;
+  height: 12px;
+  background: var(--vscode-editor-background);
+  border-top: 1px solid var(--vscode-editorGroup-border);
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.table-scrollbar__inner {
+  height: 1px;
+}
+
 .ssh-commands-editor {
   display: flex;
   flex-direction: column;
@@ -242,6 +257,48 @@ td textarea {
 .button-icon {
   padding: 6px 8px;
   min-width: 28px;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal__dialog {
+  background: var(--vscode-editor-widget-background);
+  border: 1px solid var(--vscode-widget-border);
+  border-radius: 6px;
+  padding: 16px;
+  max-width: 700px;
+  width: 90%;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.modal__code {
+  background: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-editorGroup-border);
+  padding: 12px;
+  border-radius: 4px;
+  max-height: 320px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
 }
 
 #status {

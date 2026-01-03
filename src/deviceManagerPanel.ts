@@ -156,6 +156,7 @@ export class DeviceManagerPanel {
         <div class="header-actions">
           <button class="button button-danger" id="clearPasswords">Remove Stored Passwords</button>
           <button class="button" id="editJson">Edit in JSON</button>
+          <button class="button button-icon" id="helpButton" title="View configuration example">?</button>
           <button class="button button-primary" id="saveChanges">Save changes</button>
         </div>
       </header>
@@ -240,6 +241,9 @@ export class DeviceManagerPanel {
             </thead>
             <tbody id="devicesBody"></tbody>
           </table>
+          <div class="table-scrollbar" id="devicesScrollbar">
+            <div class="table-scrollbar__inner" id="devicesScrollbarInner"></div>
+          </div>
         </div>
       </section>
       <div id="status" aria-live="polite"></div>
