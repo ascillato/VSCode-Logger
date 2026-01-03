@@ -21,6 +21,17 @@ import type { FilterPreset, LogPanelTarget } from './types';
  * Lifecycle manager for a single log panel instance.
  */
 export class LogPanel {
+  /* eslint-disable no-control-regex */
+  private static readonly ESCAPE_SEQUENCE_PATTERN = new RegExp(
+    '\\u001B(?:[@-Z\\\\-_]|\\[[0-?]*[ -/]*[@-~]|\\][^\\u0007]*(?:\\u0007|\\u001B\\\\))',
+    'g'
+  );
+  private static readonly CONTROL_CHARACTER_PATTERN = new RegExp(
+    '[\\u0000-\\u0008\\u000B-\\u000C\\u000E-\\u001F\\u007F-\\u009F]',
+    'g'
+  );
+  /* eslint-enable no-control-regex */
+
   private readonly panel: vscode.WebviewPanel;
   private session?: LogSession;
   private readonly presetsKey: string;
@@ -520,11 +531,8 @@ export class LogPanel {
       return '';
     }
 
-    const withoutEscapeSequences = line.replace(
-      /\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~]|\][^\x07]*(?:\x07|\x1B\\))/g,
-      ''
-    );
+    const withoutEscapeSequences = line.replace(LogPanel.ESCAPE_SEQUENCE_PATTERN, '');
 
-    return withoutEscapeSequences.replace(/[\0-\x08\x0B-\x0C\x0E-\x1F\x7F-\x9F]/g, '�');
+    return withoutEscapeSequences.replace(LogPanel.CONTROL_CHARACTER_PATTERN, '�');
   }
 }
