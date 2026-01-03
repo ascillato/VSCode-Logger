@@ -162,7 +162,12 @@ export class DeviceManagerPanel {
       </header>
 
       <section class="card">
-        <h2>Default values for all devices</h2>
+        <div class="card-header">
+          <div class="card-header-text">
+            <h2>Defaults</h2>
+            <p>Default values for all devices. Each device can change it in devices table if desired.</p>
+          </div>
+        </div>
         <div class="grid grid-3">
           <label class="field">
             <span>Port</span>
@@ -177,6 +182,7 @@ export class DeviceManagerPanel {
             <input type="number" id="maxLinesPerTab" min="1" />
           </label>
         </div>
+        <div class="divider" aria-hidden="true"></div>
         <div class="grid grid-3">
           <label class="field checkbox">
             <input type="checkbox" id="defaultEnableSshTerminal" />

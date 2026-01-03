@@ -65,7 +65,12 @@ body {
   flex-direction: row;
   align-items: baseline;
   gap: 8px;
-  }
+}
+
+.card-header-text p {
+  margin: 0;
+  color: var(--vscode-descriptionForeground);
+}
 
 .card-header-actions {
   display: flex;
@@ -118,6 +123,13 @@ body {
   flex-direction: row;
   align-items: center;
   gap: 8px;
+}
+
+.divider {
+  height: 1px;
+  background: var(--vscode-editorGroup-border);
+  margin: 8px 0 4px;
+  border: 0;
 }
 
 .button {
