@@ -11,10 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Add unit and integration tests for logging components.
+- Add Device Manager UI for devices settings.
+- Add spelling check to linter.
+- Add spelling check for docs.
 
 ### Changed
 - Refactor LogSession and LogPanel modules for testability.
 - Updated Docs with Refactor changes.
+- Sanitize log lines before rendering.
 
 ### Deprecated
 - None.
