@@ -231,22 +231,32 @@ body {
     min-height: 28px;
 }
 
+.log-area {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 200px;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
 .highlight-popover {
-    position: fixed;
-    top: 72px;
-    right: 16px;
+    position: absolute;
+    top: 12px;
+    right: 12px;
     background: var(--vscode-editorWidget-background);
     color: var(--vscode-editorWidget-foreground);
     border: 1px solid var(--vscode-panel-border);
     border-radius: 6px;
     box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3);
     padding: 8px;
-    width: min(360px, calc(100vw - 32px));
-    max-height: 320px;
+    width: min(360px, calc(100% - 24px));
+    max-width: calc(100% - 24px);
+    max-height: min(320px, calc(100% - 24px));
     display: flex;
     flex-direction: column;
     gap: 8px;
-    z-index: 20;
+    z-index: 2;
 }
 
 .highlight-popover.hidden {
@@ -254,9 +264,9 @@ body {
 }
 
 .highlight-backdrop {
-    position: fixed;
+    position: absolute;
     inset: 0;
-    z-index: 10;
+    z-index: 1;
 }
 
 .highlight-backdrop.hidden {

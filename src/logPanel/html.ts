@@ -162,21 +162,23 @@ export function buildLogPanelHtml(
             <button id="reconnectButton" class="toolbar-button status-action" hidden>Reconnect</button>
         </div>
     </div>
-    <div id="highlightPopover" class="highlight-popover hidden" role="dialog" aria-label="Highlight keywords">
-        <div class="highlight-header">
-            <span class="highlight-title">Highlights</span>
-            <div class="highlight-actions">
-                <button id="highlightAdd" class="toolbar-button">add</button>
-                <button id="highlightClear" class="toolbar-button">remove all</button>
+    <div class="log-area">
+        <div id="highlightPopover" class="highlight-popover hidden" role="dialog" aria-label="Highlight keywords">
+            <div class="highlight-header">
+                <span class="highlight-title">Highlights</span>
+                <div class="highlight-actions">
+                    <button id="highlightAdd" class="toolbar-button">add</button>
+                    <button id="highlightClear" class="toolbar-button">remove all</button>
+                </div>
             </div>
+            <div id="highlightStatus" class="highlight-status"></div>
+            <div id="highlightRows" class="highlight-rows"></div>
         </div>
-        <div id="highlightStatus" class="highlight-status"></div>
-        <div id="highlightRows" class="highlight-rows"></div>
-    </div>
-    <div id="highlightBackdrop" class="highlight-backdrop hidden" aria-hidden="true"></div>
-    <div id="logContainer">
-        <div id="lineLimitNotice" class="line-limit-notice hidden">Configured display line limit reached. Older lines are being replaced with newer entries.</div>
-        <div id="logContent"></div>
+        <div id="highlightBackdrop" class="highlight-backdrop hidden" aria-hidden="true"></div>
+        <div id="logContainer">
+            <div id="lineLimitNotice" class="line-limit-notice hidden">Configured display line limit reached. Older lines are being replaced with newer entries.</div>
+            <div id="logContent"></div>
+        </div>
     </div>
     <script nonce="${nonce}" type="module" src="${scriptUriString}"></script>
 </body>
