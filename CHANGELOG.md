@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
-## [1.5.2] - UNRELEASED [TBD]
+## [1.6.0] - 2026-01-03 [SETTINGS-UI]
 
 ### Added
 - Add unit and integration tests for logging components.
