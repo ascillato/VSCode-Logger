@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Add unit and integration tests for logging components.
 - Add spelling check to linter.
+- Add spelling check for docs.
 
 ### Changed
 - Refactor LogSession and LogPanel modules for testability.
