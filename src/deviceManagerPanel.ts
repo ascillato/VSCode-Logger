@@ -161,6 +161,8 @@ export class DeviceManagerPanel {
         </div>
       </header>
 
+      <div id="status" aria-live="polite"></div>
+
       <section class="card">
         <div class="card-header">
           <div class="card-header-text">
@@ -204,6 +206,8 @@ export class DeviceManagerPanel {
           <div id="defaultSshCommands"></div>
         </div>
       </section>
+
+      <br>
 
       <section class="card">
         <div class="card-header">
@@ -251,7 +255,6 @@ export class DeviceManagerPanel {
           </table>
         </div>
       </section>
-      <div id="status" aria-live="polite"></div>
     </main>
     <script nonce="${nonce}" src="${scriptUri}"></script>
   </body>
@@ -281,48 +284,32 @@ export class DeviceManagerPanel {
     devices: DevicePayload[]
   ): Promise<void> {
     try {
-      const config = vscode.workspace.getConfiguration('embeddedLogger');
+      const { config, target } = this.getUpdateConfiguration();
 
       const normalizedDefaults = this.normalizeDefaults(defaults);
       const normalizedDevices = devices.map((device) => this.normalizeDevice(device));
 
       await Promise.all([
-        config.update(
-          'defaultPort',
-          normalizedDefaults.defaultPort,
-          vscode.ConfigurationTarget.Workspace
-        ),
-        config.update(
-          'defaultLogCommand',
-          normalizedDefaults.defaultLogCommand,
-          vscode.ConfigurationTarget.Workspace
-        ),
+        config.update('defaultPort', normalizedDefaults.defaultPort, target),
+        config.update('defaultLogCommand', normalizedDefaults.defaultLogCommand, target),
         config.update(
           'defaultEnableSshTerminal',
           normalizedDefaults.defaultEnableSshTerminal,
-          vscode.ConfigurationTarget.Workspace
+          target
         ),
         config.update(
           'defaultEnableSftpExplorer',
           normalizedDefaults.defaultEnableSftpExplorer,
-          vscode.ConfigurationTarget.Workspace
+          target
         ),
         config.update(
           'defaultEnableWebBrowser',
           normalizedDefaults.defaultEnableWebBrowser,
-          vscode.ConfigurationTarget.Workspace
+          target
         ),
-        config.update(
-          'defaultSshCommands',
-          normalizedDefaults.defaultSshCommands,
-          vscode.ConfigurationTarget.Workspace
-        ),
-        config.update(
-          'maxLinesPerTab',
-          normalizedDefaults.maxLinesPerTab,
-          vscode.ConfigurationTarget.Workspace
-        ),
-        config.update('devices', normalizedDevices, vscode.ConfigurationTarget.Workspace),
+        config.update('defaultSshCommands', normalizedDefaults.defaultSshCommands, target),
+        config.update('maxLinesPerTab', normalizedDefaults.maxLinesPerTab, target),
+        config.update('devices', normalizedDevices, target),
       ]);
 
       this.panel.webview.postMessage({ type: 'saveResult', success: true });
@@ -330,6 +317,60 @@ export class DeviceManagerPanel {
       const message = error instanceof Error ? error.message : String(error);
       this.panel.webview.postMessage({ type: 'saveResult', success: false, message });
     }
+  }
+
+  private getUpdateConfiguration(): {
+    config: vscode.WorkspaceConfiguration;
+    target: vscode.ConfigurationTarget;
+  } {
+    const workspaceFolders = vscode.workspace.workspaceFolders ?? [];
+    const settingsToInspect = [
+      'defaultPort',
+      'defaultLogCommand',
+      'defaultEnableSshTerminal',
+      'defaultEnableSftpExplorer',
+      'defaultEnableWebBrowser',
+      'defaultSshCommands',
+      'maxLinesPerTab',
+      'devices',
+    ] as const;
+
+    for (const folder of workspaceFolders) {
+      const folderConfig = vscode.workspace.getConfiguration('embeddedLogger', folder.uri);
+      const hasFolderScopedSetting = settingsToInspect.some((setting) => {
+        const inspection = folderConfig.inspect<unknown>(setting);
+        return inspection?.workspaceFolderValue !== undefined;
+      });
+
+      if (hasFolderScopedSetting) {
+        return { config: folderConfig, target: vscode.ConfigurationTarget.WorkspaceFolder };
+      }
+    }
+
+    const workspaceConfig = vscode.workspace.getConfiguration('embeddedLogger');
+    const workspaceHasSetting = settingsToInspect.some((setting) => {
+      const inspection = workspaceConfig.inspect<unknown>(setting);
+      return inspection?.workspaceValue !== undefined;
+    });
+
+    if (workspaceHasSetting) {
+      return { config: workspaceConfig, target: vscode.ConfigurationTarget.Workspace };
+    }
+
+    const globalHasSetting = settingsToInspect.some((setting) => {
+      const inspection = workspaceConfig.inspect<unknown>(setting);
+      return inspection?.globalValue !== undefined;
+    });
+
+    if (globalHasSetting) {
+      return { config: workspaceConfig, target: vscode.ConfigurationTarget.Global };
+    }
+
+    if (workspaceFolders.length > 0 || vscode.workspace.workspaceFile) {
+      return { config: workspaceConfig, target: vscode.ConfigurationTarget.Workspace };
+    }
+
+    return { config: workspaceConfig, target: vscode.ConfigurationTarget.Global };
   }
 
   private normalizeDefaults(defaults: DefaultsPayload): {
