@@ -1,4 +1,3 @@
-// eslint-disable-next-line no-undef
 const vscode = acquireVsCodeApi();
 
 const state = {
@@ -95,10 +94,14 @@ function renderDefaults() {
   document.getElementById('defaultPort').value = state.defaults.defaultPort ?? '';
   document.getElementById('defaultLogCommand').value = state.defaults.defaultLogCommand ?? '';
   document.getElementById('maxLinesPerTab').value = state.defaults.maxLinesPerTab ?? '';
-  document.getElementById('defaultEnableSshTerminal').checked = !!state.defaults.defaultEnableSshTerminal;
-  document.getElementById('defaultEnableSftpExplorer').checked = !!state.defaults.defaultEnableSftpExplorer;
-  document.getElementById('defaultEnableWebBrowser').checked = !!state.defaults.defaultEnableWebBrowser;
-  document.getElementById('defaultSshCommands').value = state.defaults.defaultSshCommandsText ?? '[]';
+  document.getElementById('defaultEnableSshTerminal').checked =
+    !!state.defaults.defaultEnableSshTerminal;
+  document.getElementById('defaultEnableSftpExplorer').checked =
+    !!state.defaults.defaultEnableSftpExplorer;
+  document.getElementById('defaultEnableWebBrowser').checked =
+    !!state.defaults.defaultEnableWebBrowser;
+  document.getElementById('defaultSshCommands').value =
+    state.defaults.defaultSshCommandsText ?? '[]';
 }
 
 function renderDevices() {

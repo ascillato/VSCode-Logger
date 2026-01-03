@@ -5,7 +5,16 @@
  */
 
 import * as vscode from 'vscode';
-import { EmbeddedDevice } from './deviceTree';
+import type { EmbeddedDevice } from './deviceTree';
+
+type IncomingMessage =
+  | { type: 'requestState' }
+  | { type: 'save'; defaults: DefaultsPayload; devices: DevicePayload[] };
+
+interface SshCommand {
+  name: string;
+  command: string;
+}
 
 interface DefaultsPayload {
   defaultPort: number;
@@ -51,18 +60,21 @@ export class DeviceManagerPanel {
   private readonly panel: vscode.WebviewPanel;
   private readonly disposables: vscode.Disposable[] = [];
 
-  private constructor(private readonly extensionUri: vscode.Uri, panel: vscode.WebviewPanel) {
+  private constructor(
+    private readonly extensionUri: vscode.Uri,
+    panel: vscode.WebviewPanel
+  ) {
     this.panel = panel;
     this.panel.iconPath = vscode.Uri.joinPath(extensionUri, 'resources', 'terminal.svg');
     this.panel.onDidDispose(() => this.dispose(), null, this.disposables);
     this.panel.webview.onDidReceiveMessage(
-      (message) => {
+      (message: IncomingMessage) => {
         switch (message.type) {
           case 'requestState':
             this.postInitialState();
             break;
           case 'save':
-            void this.saveConfiguration(message.defaults as DefaultsPayload, message.devices as DevicePayload[]);
+            void this.saveConfiguration(message.defaults, message.devices);
             break;
           default:
             break;
@@ -109,8 +121,12 @@ export class DeviceManagerPanel {
   }
 
   private buildHtml(webview: vscode.Webview): string {
-    const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'deviceManager.js'));
-    const stylesUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'deviceManager.css'));
+    const scriptUri = webview
+      .asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'deviceManager.js'))
+      .toString();
+    const stylesUri = webview
+      .asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'deviceManager.css'))
+      .toString();
     const nonce = getNonce();
 
     return `<!DOCTYPE html>
@@ -218,12 +234,14 @@ export class DeviceManagerPanel {
 </html>`;
   }
 
-  private async postInitialState(): Promise<void> {
+  private postInitialState(): void {
     const config = vscode.workspace.getConfiguration('embeddedLogger');
     const devices = config.get<EmbeddedDevice[]>('devices', []);
     const defaults = {
       defaultPort: config.get<number>('defaultPort', 22) ?? 22,
-      defaultLogCommand: config.get<string>('defaultLogCommand', 'tail -F /var/log/syslog') ?? 'tail -F /var/log/syslog',
+      defaultLogCommand:
+        config.get<string>('defaultLogCommand', 'tail -F /var/log/syslog') ??
+        'tail -F /var/log/syslog',
       defaultEnableSshTerminal: config.get<boolean>('defaultEnableSshTerminal', true) ?? true,
       defaultEnableSftpExplorer: config.get<boolean>('defaultEnableSftpExplorer', true) ?? true,
       defaultEnableWebBrowser: config.get<boolean>('defaultEnableWebBrowser', false) ?? false,
@@ -234,7 +252,10 @@ export class DeviceManagerPanel {
     this.panel.webview.postMessage({ type: 'init', devices, defaults });
   }
 
-  private async saveConfiguration(defaults: DefaultsPayload, devices: DevicePayload[]): Promise<void> {
+  private async saveConfiguration(
+    defaults: DefaultsPayload,
+    devices: DevicePayload[]
+  ): Promise<void> {
     try {
       const config = vscode.workspace.getConfiguration('embeddedLogger');
 
@@ -242,8 +263,16 @@ export class DeviceManagerPanel {
       const normalizedDevices = devices.map((device) => this.normalizeDevice(device));
 
       await Promise.all([
-        config.update('defaultPort', normalizedDefaults.defaultPort, vscode.ConfigurationTarget.Workspace),
-        config.update('defaultLogCommand', normalizedDefaults.defaultLogCommand, vscode.ConfigurationTarget.Workspace),
+        config.update(
+          'defaultPort',
+          normalizedDefaults.defaultPort,
+          vscode.ConfigurationTarget.Workspace
+        ),
+        config.update(
+          'defaultLogCommand',
+          normalizedDefaults.defaultLogCommand,
+          vscode.ConfigurationTarget.Workspace
+        ),
         config.update(
           'defaultEnableSshTerminal',
           normalizedDefaults.defaultEnableSshTerminal,
@@ -259,8 +288,16 @@ export class DeviceManagerPanel {
           normalizedDefaults.defaultEnableWebBrowser,
           vscode.ConfigurationTarget.Workspace
         ),
-        config.update('defaultSshCommands', normalizedDefaults.defaultSshCommands, vscode.ConfigurationTarget.Workspace),
-        config.update('maxLinesPerTab', normalizedDefaults.maxLinesPerTab, vscode.ConfigurationTarget.Workspace),
+        config.update(
+          'defaultSshCommands',
+          normalizedDefaults.defaultSshCommands,
+          vscode.ConfigurationTarget.Workspace
+        ),
+        config.update(
+          'maxLinesPerTab',
+          normalizedDefaults.maxLinesPerTab,
+          vscode.ConfigurationTarget.Workspace
+        ),
         config.update('devices', normalizedDevices, vscode.ConfigurationTarget.Workspace),
       ]);
 
@@ -282,7 +319,8 @@ export class DeviceManagerPanel {
   } {
     const defaultPort = this.toNumberOrDefault(defaults.defaultPort, 22);
     const maxLinesPerTab = this.toNumberOrDefault(defaults.maxLinesPerTab, 100000);
-    const defaultLogCommand = (defaults.defaultLogCommand ?? '').trim() || 'tail -F /var/log/syslog';
+    const defaultLogCommand =
+      (defaults.defaultLogCommand ?? '').trim() || 'tail -F /var/log/syslog';
     const defaultEnableSshTerminal = Boolean(defaults.defaultEnableSshTerminal);
     const defaultEnableSftpExplorer = Boolean(defaults.defaultEnableSftpExplorer);
     const defaultEnableWebBrowser = Boolean(defaults.defaultEnableWebBrowser);
@@ -350,7 +388,7 @@ export class DeviceManagerPanel {
     };
   }
 
-  private parseSshCommands(value: string | undefined): { name: string; command: string }[] {
+  private parseSshCommands(value: string | undefined): SshCommand[] {
     if (!value || !value.trim()) {
       return [];
     }
@@ -358,7 +396,7 @@ export class DeviceManagerPanel {
     let parsed: unknown;
     try {
       parsed = JSON.parse(value);
-    } catch (err) {
+    } catch {
       throw new Error('SSH commands must be valid JSON (array of {name, command}).');
     }
 
@@ -367,11 +405,9 @@ export class DeviceManagerPanel {
     }
 
     return parsed
-      .map((item) => ({
-        name: typeof item.name === 'string' ? item.name : '',
-        command: typeof item.command === 'string' ? item.command : '',
-      }))
-      .filter((item) => item.name.trim() && item.command.trim());
+      .filter(isSshCommand)
+      .map((item) => ({ name: item.name.trim(), command: item.command.trim() }))
+      .filter((item) => item.name && item.command);
   }
 
   private toOptionalNumber(value: number | string | undefined): number | undefined {
@@ -393,4 +429,12 @@ function getNonce(): string {
   return Array.from({ length: 16 })
     .map(() => possible.charAt(Math.floor(Math.random() * possible.length)))
     .join('');
+}
+
+function isSshCommand(value: unknown): value is SshCommand {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  const candidate = value as Partial<SshCommand>;
+  return typeof candidate.name === 'string' && typeof candidate.command === 'string';
 }

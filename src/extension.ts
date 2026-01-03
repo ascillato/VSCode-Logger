@@ -385,7 +385,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('embeddedLogger.editDevicesConfig', async () => {
+    vscode.commands.registerCommand('embeddedLogger.editDevicesConfig', () => {
       DeviceManagerPanel.createOrShow(context.extensionUri);
     })
   );
