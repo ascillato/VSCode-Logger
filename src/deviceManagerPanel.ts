@@ -161,6 +161,8 @@ export class DeviceManagerPanel {
         </div>
       </header>
 
+      <div id="status" aria-live="polite"></div>
+
       <section class="card">
         <div class="card-header">
           <div class="card-header-text">
@@ -251,7 +253,6 @@ export class DeviceManagerPanel {
           </table>
         </div>
       </section>
-      <div id="status" aria-live="polite"></div>
     </main>
     <script nonce="${nonce}" src="${scriptUri}"></script>
   </body>

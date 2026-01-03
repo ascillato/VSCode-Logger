@@ -174,6 +174,7 @@ function renderSshCommandsEditor(commands, mountPoint, onChange) {
   addButton.title = 'Add command';
   addButton.addEventListener('click', () => {
     const updated = [...list, { name: '', command: '' }];
+    list = updated;
     onChange(updated, { rebuild: true });
   });
   addTh.appendChild(addButton);
@@ -182,7 +183,7 @@ function renderSshCommandsEditor(commands, mountPoint, onChange) {
   table.appendChild(thead);
 
   const tbody = document.createElement('tbody');
-  const list = Array.isArray(commands) ? commands : [];
+  let list = Array.isArray(commands) ? commands : [];
 
   list.forEach((item, idx) => {
     const row = document.createElement('tr');
@@ -195,6 +196,7 @@ function renderSshCommandsEditor(commands, mountPoint, onChange) {
     nameInput.addEventListener('input', (event) => {
       const updated = [...list];
       updated[idx] = { ...updated[idx], name: event.target.value };
+      list = updated;
       onChange(updated, { rebuild: false });
     });
     const nameCell = document.createElement('td');
@@ -207,6 +209,7 @@ function renderSshCommandsEditor(commands, mountPoint, onChange) {
     commandInput.addEventListener('input', (event) => {
       const updated = [...list];
       updated[idx] = { ...updated[idx], command: event.target.value };
+      list = updated;
       onChange(updated, { rebuild: false });
     });
     const commandCell = document.createElement('td');
@@ -219,6 +222,7 @@ function renderSshCommandsEditor(commands, mountPoint, onChange) {
     removeButton.textContent = '✕';
     removeButton.addEventListener('click', () => {
       const updated = [...list.slice(0, idx), ...list.slice(idx + 1)];
+      list = updated;
       onChange(updated, { rebuild: true });
     });
     const removeCell = document.createElement('td');
