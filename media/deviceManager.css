@@ -62,9 +62,10 @@ body {
 
 .card-header-text {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
+  flex-direction: row;
+  align-items: baseline;
+  gap: 8px;
+  }
 
 .card-header-actions {
   display: flex;
