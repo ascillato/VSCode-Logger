@@ -97,6 +97,16 @@ const spellcheckSkipWords = [
   "passwd",
   "Scallant",
   "Zabcdefghijklmnopqrstuvwxyz0123456789",
+  "checkbox",
+  "thead",
+  "tbody",
+  "textarea",
+  "mousemove",
+  "mouseup",
+  "mousedown",
+  "resizer",
+  "resizable",
+  "31mred",
 ];
 
 export default defineConfig([
@@ -131,7 +141,7 @@ export default defineConfig([
     rules: {
       "prettier/prettier": "error",
       "spellcheck/spell-checker": [
-        "warn",
+        "error",
         {
           lang: "en_US",
           identifiers: false,
