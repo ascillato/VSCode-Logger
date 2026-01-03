@@ -207,6 +207,8 @@ export class DeviceManagerPanel {
         </div>
       </section>
 
+      <br>
+
       <section class="card">
         <div class="card-header">
           <div class="card-header-text">
@@ -290,9 +292,21 @@ export class DeviceManagerPanel {
       await Promise.all([
         config.update('defaultPort', normalizedDefaults.defaultPort, target),
         config.update('defaultLogCommand', normalizedDefaults.defaultLogCommand, target),
-        config.update('defaultEnableSshTerminal', normalizedDefaults.defaultEnableSshTerminal, target),
-        config.update('defaultEnableSftpExplorer', normalizedDefaults.defaultEnableSftpExplorer, target),
-        config.update('defaultEnableWebBrowser', normalizedDefaults.defaultEnableWebBrowser, target),
+        config.update(
+          'defaultEnableSshTerminal',
+          normalizedDefaults.defaultEnableSshTerminal,
+          target
+        ),
+        config.update(
+          'defaultEnableSftpExplorer',
+          normalizedDefaults.defaultEnableSftpExplorer,
+          target
+        ),
+        config.update(
+          'defaultEnableWebBrowser',
+          normalizedDefaults.defaultEnableWebBrowser,
+          target
+        ),
         config.update('defaultSshCommands', normalizedDefaults.defaultSshCommands, target),
         config.update('maxLinesPerTab', normalizedDefaults.maxLinesPerTab, target),
         config.update('devices', normalizedDevices, target),
