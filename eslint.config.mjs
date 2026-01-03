@@ -2,6 +2,7 @@ import { defineConfig, globalIgnores } from "eslint/config";
 import typescriptEslint from "@typescript-eslint/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
 import prettier from "eslint-plugin-prettier";
+import spellcheck from "eslint-plugin-spellcheck";
 import globals from "globals";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -17,6 +18,87 @@ const compat = new FlatCompat({
   allConfig: js.configs.all,
 });
 
+const spellcheckSkipWords = [
+  "ssh",
+  "webview",
+  "logger",
+  "vscode",
+  "ssh2",
+  "tsconfig",
+  "prepublish",
+  "bastion",
+  "websocket",
+  "sudo",
+  "syslog",
+  "changelog",
+  "readonly",
+  "globals",
+  "compat",
+  "Compat",
+  "vsix",
+  "mjs",
+  "cjs",
+  "ecma",
+  "lang",
+  "tsx",
+  "vitest",
+  "Scillato",
+  "Dropdown",
+  "dataset",
+  "idx",
+  "keydown",
+  "contextmenu",
+  "beforeunload",
+  "Rect",
+  "behaviour",
+  "debounce",
+  "Debounces",
+  "num",
+  "cancelled",
+  "resize",
+  "Debounced",
+  "Rehydrates",
+  "Passphrase",
+  "Passphrases",
+  "Workspace",
+  "workspace",
+  "stderr",
+  "whoami",
+  "uri",
+  "Uri",
+  "Uint8",
+  "Webviews",
+  "sftp",
+  "Sftp",
+  "cmd",
+  "tooltip",
+  "Verifier",
+  "homedir",
+  "keygen",
+  "svg",
+  "csp",
+  "href",
+  "checksum",
+  "journalctl",
+  "msg",
+  "readdir",
+  "tdd",
+  "Microtask",
+  "pseudoterminal",
+  "Pseudoterminal",
+  "dst",
+  "stdout",
+  "treeitem",
+  "txt",
+  "utf8",
+  "lifecycles",
+  "reconnection",
+  "getent",
+  "passwd",
+  "Scallant",
+  "Zabcdefghijklmnopqrstuvwxyz0123456789",
+];
+
 export default defineConfig([
   globalIgnores([
     "**/node_modules/",
@@ -30,6 +112,7 @@ export default defineConfig([
     "**/*.md",
     "**/*.css",
     "**/*.json",
+    "eslint.config.mjs",
   ]),
 
   // -------------------------
@@ -44,9 +127,20 @@ export default defineConfig([
       ecmaVersion: "latest",
       sourceType: "module",
     },
-    plugins: { prettier },
+    plugins: { prettier, spellcheck },
     rules: {
       "prettier/prettier": "error",
+      "spellcheck/spell-checker": [
+        "warn",
+        {
+          lang: "en_US",
+          identifiers: false,
+          templates: true,
+          skipWords: spellcheckSkipWords,
+          skipIfMatch: ["https?:\\\/\\\/[^\\s]+", "^[A-Za-z0-9]{10,}$"],
+          minLength: 3,
+        },
+      ],
       "no-console": "off",
     },
   },
@@ -65,6 +159,7 @@ export default defineConfig([
     plugins: {
       "@typescript-eslint": typescriptEslint,
       prettier,
+      spellcheck,
     },
     languageOptions: {
       globals: {
@@ -86,6 +181,17 @@ export default defineConfig([
       "@typescript-eslint/consistent-type-imports": "error",
       "no-console": "off",
       "prettier/prettier": "error",
+      "spellcheck/spell-checker": [
+        "warn",
+        {
+          lang: "en_US",
+          identifiers: false,
+          templates: true,
+          skipWords: spellcheckSkipWords,
+          skipIfMatch: ["https?:\\\/\\\/[^\\s]+", "^[A-Za-z0-9]{10,}$"],
+          minLength: 3,
+        },
+      ],
     },
   },
 
