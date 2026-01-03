@@ -26,6 +26,8 @@ import {
   getCreatedWebviews,
   resetCreatedWebviews,
   resetWindowResponses,
+  Uri,
+  workspace,
   setSaveDialogResponse,
 } from '../mocks/vscode';
 import { __logSessionInstances as logSessionInstances } from '../../src/logSession';
@@ -89,6 +91,48 @@ describe('LogPanel (unit)', () => {
     expect(firstDispose).toHaveBeenCalled();
     expect(postMessage).toHaveBeenCalledWith({ type: 'status', message: 'Reconnecting...' });
     expect(secondSession.start).toHaveBeenCalled();
+
+    panel.dispose();
+  });
+
+  it('sanitizes incoming log lines before posting to the webview', () => {
+    const context = createExtensionContext();
+    const panel = new LogPanel(context, { type: 'remote', device }, () => undefined);
+    const webviewPanel = getCreatedWebviews()[0];
+    const postMessage = webviewPanel.webview.postMessage as unknown as vi.Mock;
+
+    (panel as unknown as { handleIncomingLine: (line: string) => void }).handleIncomingLine(
+      'binary \u001b[31mred\u001b[0m end\u0000'
+    );
+
+    expect(postMessage).toHaveBeenCalledWith({ type: 'logLine', line: 'binary red end�' });
+
+    panel.dispose();
+  });
+
+  it('sanitizes refreshed local log file lines before sending them to the webview', async () => {
+    const context = createExtensionContext();
+    const panel = new LogPanel(
+      context,
+      { type: 'local', id: 'local-1', name: 'Local file', lines: [], filePath: '/tmp/log' },
+      () => undefined
+    );
+    const webviewPanel = getCreatedWebviews()[0];
+    const postMessage = webviewPanel.webview.postMessage as unknown as vi.Mock;
+
+    await workspace.fs.writeFile(
+      Uri.file('/tmp/log'),
+      Buffer.from('line1\u001b[32mOK\u001b[0m\x07', 'utf8')
+    );
+
+    webviewPanel.__fireMessage({ type: 'refreshSourceFile' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(postMessage).toHaveBeenCalledWith({
+      type: 'replaceLines',
+      lines: ['line1OK�'],
+      message: 'Reloaded 1 lines from log.',
+    });
 
     panel.dispose();
   });
