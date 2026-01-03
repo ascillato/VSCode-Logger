@@ -513,11 +513,17 @@ function setupHelpModal() {
   const dialog = document.createElement('div');
   dialog.className = 'modal__dialog';
 
+  const header = document.createElement('div');
+  header.className = 'modal__header';
+
   const title = document.createElement('h3');
   title.textContent = 'Configuration example';
 
   const description = document.createElement('p');
   description.textContent = 'Copy and paste these defaults into your settings.json.';
+
+  header.appendChild(title);
+  header.appendChild(description);
 
   helpContent = document.createElement('pre');
   helpContent.className = 'modal__code';
@@ -538,8 +544,7 @@ function setupHelpModal() {
   actions.appendChild(helpCopyButton);
   actions.appendChild(helpCloseButton);
 
-  dialog.appendChild(title);
-  dialog.appendChild(description);
+  dialog.appendChild(header);
   dialog.appendChild(helpContent);
   dialog.appendChild(actions);
   helpModal.appendChild(dialog);

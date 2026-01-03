@@ -284,6 +284,23 @@ td textarea {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
+.modal__header {
+  background: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-editorGroup-border);
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+}
+
+.modal__header h3 {
+  margin: 0 0 4px;
+}
+
+.modal__header p {
+  margin: 0;
+  color: var(--vscode-descriptionForeground);
+}
+
 .modal__code {
   background: var(--vscode-editor-background);
   border: 1px solid var(--vscode-editorGroup-border);
