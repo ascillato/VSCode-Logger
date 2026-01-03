@@ -57,7 +57,19 @@ For more information visit the [Embedded Device Logger extension](https://market
 
 ![Configuration screenshot](../images/screenshot_example_setup.png)
 
-Add devices in your VS Code settings under `embeddedLogger.devices`:
+You can configure everything from the **Device Manager** panel (click the pencil icon or run **Embedded Logger: Edit Devices Configuration**):
+
+- Add/remove devices in a table UI. Each row exposes every supported key:
+  - `id`, `name`, `host`, and optional `port` for addressing.
+  - `hostFingerprint`, `secondaryHost`, and `secondaryHostFingerprint` for host-key pinning and automatic fallback.
+  - `bastion.host`, `bastion.port`, `bastion.username`, `bastion.hostFingerprint`, `bastion.password`, `bastion.privateKeyPath`, and `bastion.privateKeyPassphrase` for jump-host tunnelling.
+  - `username`, `password`, `privateKeyPath`, and `privateKeyPassphrase` for authentication (password and passphrase values are migrated into Secret Storage on first use).
+  - `logCommand` plus feature toggles: `enableSshTerminal`, `enableSftpExplorer`, `enableWebBrowser`, and `webBrowserUrl`.
+  - `sshCommands` with per-command `name` and `command` values.
+- Adjust defaults without hand-editing JSON: `embeddedLogger.defaultPort`, `embeddedLogger.defaultLogCommand`, `embeddedLogger.defaultEnableSshTerminal`, `embeddedLogger.defaultEnableSftpExplorer`, `embeddedLogger.defaultEnableWebBrowser`, `embeddedLogger.defaultSshCommands`, and `embeddedLogger.maxLinesPerTab`.
+- Prefer raw JSON? Use **Edit in settings.json** from the Device Manager or paste the example below into `.vscode/settings.json`.
+
+Add devices in your VS Code settings under `embeddedLogger.devices` if you prefer to edit JSON directly:
 
 ```json
 "embeddedLogger.maxLinesPerTab": 100000,

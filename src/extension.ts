@@ -15,6 +15,7 @@ import { SshTerminalSession } from './sshTerminal';
 import { SftpExplorerPanel } from './sftpExplorer';
 import { getEmbeddedLoggerConfiguration } from './configuration';
 import { PasswordManager } from './passwordManager';
+import { DeviceManagerPanel } from './deviceManagerPanel';
 
 // Map of deviceId to existing log panels so multiple clicks reuse tabs.
 const panelMap: Map<string, LogPanel> = new Map();
@@ -385,7 +386,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   context.subscriptions.push(
     vscode.commands.registerCommand('embeddedLogger.editDevicesConfig', async () => {
-      await vscode.commands.executeCommand('workbench.action.openSettings', 'embeddedLogger');
+      DeviceManagerPanel.createOrShow(context.extensionUri);
     })
   );
 
