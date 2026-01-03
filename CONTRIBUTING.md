@@ -45,6 +45,7 @@ The log session and log panel are intentionally modular: keep SSH orchestration 
    * Build: `npm run compile`
    * Tests: `npm run test:unit`, `npm run test:integration`, `npm run test:e2e` (or `npm test` to run all)
    * Lint: `npm run lint`
+   * Docs: `npm run lint:docs`
 7. **Documentation**: run TypeDoc (`npm run docs:typedoc`) from the repository root. The generated HTML lives at `docs/typedoc/index.html`. Keep `README.md`, this file `CONTRIBUTING.md` and `AGENTS.md` up to date when introducing new behaviour.
 
 ## Contribution guidelines

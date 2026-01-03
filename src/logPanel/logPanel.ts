@@ -21,6 +21,17 @@ import type { FilterPreset, LogPanelTarget } from './types';
  * Lifecycle manager for a single log panel instance.
  */
 export class LogPanel {
+  /* eslint-disable no-control-regex */
+  private static readonly ESCAPE_SEQUENCE_PATTERN = new RegExp(
+    '\\u001B(?:[@-Z\\\\-_]|\\[[0-?]*[ -/]*[@-~]|\\][^\\u0007]*(?:\\u0007|\\u001B\\\\))',
+    'g'
+  );
+  private static readonly CONTROL_CHARACTER_PATTERN = new RegExp(
+    '[\\u0000-\\u0008\\u000B-\\u000C\\u000E-\\u001F\\u007F-\\u009F]',
+    'g'
+  );
+  /* eslint-enable no-control-regex */
+
   private readonly panel: vscode.WebviewPanel;
   private session?: LogSession;
   private readonly presetsKey: string;
@@ -50,7 +61,7 @@ export class LogPanel {
     } else {
       this.targetName = target.name;
       this.targetId = target.id;
-      this.initialLines = target.lines;
+      this.initialLines = target.lines.map((line) => this.sanitizeLogLine(line));
       this.sourcePath = target.filePath;
     }
 
@@ -323,7 +334,7 @@ export class LogPanel {
     }
 
     const decoded = Buffer.from(content).toString('utf8');
-    const lines = decoded.split(/\r?\n/);
+    const lines = decoded.split(/\r?\n/).map((line) => this.sanitizeLogLine(line));
     this.initialLines.length = 0;
     this.initialLines.push(...lines);
 
@@ -335,8 +346,9 @@ export class LogPanel {
   }
 
   private handleIncomingLine(line: string): void {
+    const sanitizedLine = this.sanitizeLogLine(line);
     this.writeAutoSaveLine(line);
-    this.panel.webview.postMessage({ type: 'logLine', line });
+    this.panel.webview.postMessage({ type: 'logLine', line: sanitizedLine });
   }
 
   private writeAutoSaveLine(line: string): void {
@@ -512,5 +524,15 @@ export class LogPanel {
 
   private getErrorMessage(err: unknown): string {
     return err instanceof Error ? err.message : typeof err === 'string' ? err : String(err);
+  }
+
+  private sanitizeLogLine(line: string): string {
+    if (!line) {
+      return '';
+    }
+
+    const withoutEscapeSequences = line.replace(LogPanel.ESCAPE_SEQUENCE_PATTERN, '');
+
+    return withoutEscapeSequences.replace(LogPanel.CONTROL_CHARACTER_PATTERN, '�');
   }
 }

@@ -89,7 +89,7 @@ docs: ## Build documentation (TypeDoc + Sphinx HTML)
 	printf "$(YELLOW)\n\nStart building docs at %s\n\n$(RESET)\n" "$$ts"
 
 	@ts=""; \
-	if npm install && sphinx-build -b html docs/source docs/build/html; then \
+	if npm install && npm run lint:docs && sphinx-build -b html docs/source docs/build/html; then \
 		ts="$$(date +"%Y-%m-%dT%H:%M:%S%z")"; \
 		printf "$(BLUE)\n\nDocs Build finished at %s\n\n$(RESET)\n" "$$ts"; \
 	else \
