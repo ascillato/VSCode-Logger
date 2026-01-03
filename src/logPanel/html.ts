@@ -51,12 +51,20 @@ export function buildLogPanelHtml(
             </select>
         </label>
         <label class="stacked-field">Text Filter
-            <input type="text" id="textFilter" placeholder="Filter substring" />
-        </label>
-        <label class="stacked-field">Filtering Presets
-            <select id="presetSelect">
-                <option value="">(no preset)</option>
-            </select>
+            <div class="text-filter-with-presets" id="textFilterContainer">
+                <div class="text-filter-input">
+                    <input type="text" id="textFilter" placeholder="Filter substring" />
+                    <div id="presetDropdown" class="preset-dropdown hidden" role="listbox" aria-label="Filtering Presets"></div>
+                </div>
+                <button id="presetDropdownButton" class="toolbar-button toolbar-button--icon preset-dropdown__trigger" type="button" title="Filter presets" aria-label="Filter presets" aria-haspopup="listbox" aria-expanded="false" aria-controls="presetDropdown">
+                    <span class="toolbar-button__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+                            <path d="M7 10l5 5 5-5z" />
+                        </svg>
+                    </span>
+                    <span class="sr-only">Filter presets</span>
+                </button>
+            </div>
         </label>
         <div class="toolbar-actions">
             <div class="toolbar-actions__item">
