@@ -419,13 +419,20 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
       activePreset.minLevel === state.minLevel &&
       activePreset.textFilter === state.textFilter;
 
-    const shouldShowSavePreset = hasFilterText && (!activePreset || !filtersMatchActivePreset);
-    const shouldShowDeletePreset = hasFilterText;
+    const shouldEnableSavePreset = hasFilterText && (!activePreset || !filtersMatchActivePreset);
+    const shouldEnableDeletePreset = hasFilterText;
 
-    savePresetContainer?.classList.toggle('hidden', !shouldShowSavePreset);
-    deletePresetContainer?.classList.toggle('hidden', !shouldShowDeletePreset);
-    savePresetBtn?.classList.toggle('hidden', !shouldShowSavePreset);
-    deletePresetBtn?.classList.toggle('hidden', !shouldShowDeletePreset);
+    savePresetBtn?.classList.toggle('hidden', false);
+    deletePresetBtn?.classList.toggle('hidden', false);
+    savePresetContainer?.classList.toggle('hidden', false);
+    deletePresetContainer?.classList.toggle('hidden', false);
+
+    if (savePresetBtn) {
+      savePresetBtn.disabled = !shouldEnableSavePreset;
+    }
+    if (deletePresetBtn) {
+      deletePresetBtn.disabled = !shouldEnableDeletePreset;
+    }
   }
 
   function closePresetDropdown() {
