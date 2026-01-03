@@ -36,6 +36,8 @@ body {
 .header-actions {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .card {
@@ -55,11 +57,33 @@ body {
   align-items: baseline;
   justify-content: space-between;
   gap: 8px;
+  flex-wrap: wrap;
+}
+
+.card-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.card-header-text p {
+  margin: 0;
+  color: var(--vscode-descriptionForeground);
+}
+
+.card-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .card-header p {
   margin: 0;
   color: var(--vscode-descriptionForeground);
+}
+
+.card-header + .table-wrapper {
+  margin-top: 12px;
 }
 
 .grid {
@@ -100,6 +124,13 @@ body {
   gap: 8px;
 }
 
+.divider {
+  height: 1px;
+  background: var(--vscode-editorGroup-border);
+  margin: 8px 0 8px;
+  border: 0;
+}
+
 .button {
   padding: 6px 12px;
   border: 1px solid var(--vscode-button-border, transparent);
@@ -129,13 +160,19 @@ body {
 }
 
 .table-wrapper {
-  overflow-x: auto;
+  overflow: auto;
+  scrollbar-gutter: stable both-edges;
+  max-height: 70vh;
+  margin-top: 12px;
 }
 
 table {
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
   font-size: 13px;
+  table-layout: fixed;
+  border: 1px solid var(--vscode-editorGroup-border);
 }
 
 th,
@@ -143,6 +180,8 @@ td {
   border: 1px solid var(--vscode-editorGroup-border);
   padding: 6px;
   vertical-align: top;
+  white-space: nowrap;
+  min-width: 20ch;
 }
 
 th {
@@ -150,12 +189,131 @@ th {
   position: sticky;
   top: 0;
   z-index: 1;
+  padding-right: 12px;
+}
+
+th:last-child,
+td:last-child {
+  min-width: 12ch;
+  width: 12ch;
+}
+
+th.resizable {
+  position: sticky;
+}
+
+.col-resizer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  user-select: none;
 }
 
 td input,
 td textarea {
   width: 100%;
   box-sizing: border-box;
+}
+
+.ssh-commands-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ssh-commands-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+.ssh-commands-table th,
+.ssh-commands-table td {
+  border: 1px solid var(--vscode-editorGroup-border);
+  padding: 4px 6px;
+  vertical-align: middle;
+}
+
+.ssh-commands-table th:last-child,
+.ssh-commands-table td:last-child {
+  width: 64px;
+  min-width: 64px;
+}
+
+.ssh-commands-table input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ssh-command-remove {
+  text-align: center;
+}
+
+.button-icon {
+  padding: 6px 8px;
+  min-width: 28px;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal__dialog {
+  background: var(--vscode-editor-widget-background);
+  border: 1px solid var(--vscode-widget-border);
+  border-radius: 6px;
+  padding: 16px;
+  max-width: 700px;
+  width: 90%;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.modal__header {
+  background: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-editorGroup-border);
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+}
+
+.modal__header h3 {
+  margin: 0 0 4px;
+}
+
+.modal__header p {
+  margin: 0;
+  color: var(--vscode-descriptionForeground);
+}
+
+.modal__code {
+  background: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-editorGroup-border);
+  padding: 12px;
+  border-radius: 4px;
+  max-height: 320px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
 }
 
 #status {

@@ -9,7 +9,9 @@ import type { EmbeddedDevice } from './deviceTree';
 
 type IncomingMessage =
   | { type: 'requestState' }
-  | { type: 'save'; defaults: DefaultsPayload; devices: DevicePayload[] };
+  | { type: 'save'; defaults: DefaultsPayload; devices: DevicePayload[] }
+  | { type: 'editJson' }
+  | { type: 'clearPasswords' };
 
 interface SshCommand {
   name: string;
@@ -22,7 +24,7 @@ interface DefaultsPayload {
   defaultEnableSshTerminal: boolean;
   defaultEnableSftpExplorer: boolean;
   defaultEnableWebBrowser: boolean;
-  defaultSshCommandsText: string;
+  defaultSshCommands: SshCommand[];
   maxLinesPerTab: number;
 }
 
@@ -43,7 +45,7 @@ interface DevicePayload {
   enableSftpExplorer?: boolean;
   enableWebBrowser?: boolean;
   webBrowserUrl?: string;
-  sshCommandsText?: string;
+  sshCommands?: SshCommand[];
   bastionHost?: string;
   bastionHostFingerprint?: string;
   bastionPort?: number | string;
@@ -75,6 +77,12 @@ export class DeviceManagerPanel {
             break;
           case 'save':
             void this.saveConfiguration(message.defaults, message.devices);
+            break;
+          case 'editJson':
+            void vscode.commands.executeCommand('workbench.action.openSettingsJson');
+            break;
+          case 'clearPasswords':
+            void vscode.commands.executeCommand('embeddedLogger.clearStoredPasswords');
             break;
           default:
             break;
@@ -143,23 +151,46 @@ export class DeviceManagerPanel {
       <header class="header">
         <div>
           <h1>Embedded Device Logger</h1>
-          <p>Manage devices and defaults without editing settings.json.</p>
+          <p>Manage devices and default configuration.</p>
         </div>
         <div class="header-actions">
-          <button class="button" id="addDevice">Add device</button>
+          <button class="button button-danger" id="clearPasswords">Remove Stored Passwords</button>
+          <button class="button" id="editJson">Edit in JSON</button>
+          <button class="button button-icon" id="helpButton" title="View configuration example">?</button>
           <button class="button button-primary" id="saveChanges">Save changes</button>
         </div>
       </header>
 
       <section class="card">
-        <h2>Defaults</h2>
+        <div class="card-header">
+          <div class="card-header-text">
+            <h2>Defaults</h2>
+            <p>Default values for all devices. Each device can change it in devices table if desired.</p>
+          </div>
+        </div>
+        <div class="divider" aria-hidden="true"></div>
+        <div class="grid grid-3">
+          <label class="field checkbox">
+            <input type="checkbox" id="defaultEnableSshTerminal" />
+            <span>Enable SSH terminal</span>
+          </label>
+          <label class="field checkbox">
+            <input type="checkbox" id="defaultEnableSftpExplorer" />
+            <span>Enable SFTP explorer</span>
+          </label>
+          <label class="field checkbox">
+            <input type="checkbox" id="defaultEnableWebBrowser" />
+            <span>Enable web browser</span>
+          </label>
+        </div>
+        <div class="divider" aria-hidden="true"></div>
         <div class="grid grid-3">
           <label class="field">
-            <span>Default port</span>
+            <span>Port</span>
             <input type="number" id="defaultPort" min="1" />
           </label>
           <label class="field">
-            <span>Default log command</span>
+            <span>Log command</span>
             <input type="text" id="defaultLogCommand" />
           </label>
           <label class="field">
@@ -167,33 +198,26 @@ export class DeviceManagerPanel {
             <input type="number" id="maxLinesPerTab" min="1" />
           </label>
         </div>
-        <div class="grid grid-3">
-          <label class="field checkbox">
-            <input type="checkbox" id="defaultEnableSshTerminal" />
-            <span>Default enable SSH terminal</span>
-          </label>
-          <label class="field checkbox">
-            <input type="checkbox" id="defaultEnableSftpExplorer" />
-            <span>Default enable SFTP explorer</span>
-          </label>
-          <label class="field checkbox">
-            <input type="checkbox" id="defaultEnableWebBrowser" />
-            <span>Default enable web browser</span>
-          </label>
+        <div class="divider" aria-hidden="true"></div>
+        <div class="field">
+          <span>SSH commands</span>
+          <div id="defaultSshCommands"></div>
         </div>
-        <label class="field">
-          <span>Default SSH commands (JSON array)</span>
-          <textarea id="defaultSshCommands" rows="4" spellcheck="false"></textarea>
-        </label>
       </section>
 
       <section class="card">
         <div class="card-header">
-          <h2>Devices</h2>
-          <p>Add or remove rows, then edit fields inline.</p>
+          <div class="card-header-text">
+            <h2>Devices</h2>
+            <p>Add or remove rows, then edit fields inline.</p>
+          </div>
+          <div class="card-header-actions">
+            <button class="button" id="addDevice">Add device</button>
+          </div>
         </div>
         <div class="table-wrapper">
           <table id="devicesTable">
+            <colgroup id="devicesColGroup"></colgroup>
             <thead>
               <tr>
                 <th>ID</th>
@@ -212,7 +236,7 @@ export class DeviceManagerPanel {
                 <th>Private key path</th>
                 <th>Private key passphrase</th>
                 <th>Password (legacy)</th>
-                <th>SSH commands (JSON array)</th>
+                <th>SSH commands</th>
                 <th>Bastion host</th>
                 <th>Bastion port</th>
                 <th>Bastion user</th>
@@ -245,7 +269,7 @@ export class DeviceManagerPanel {
       defaultEnableSshTerminal: config.get<boolean>('defaultEnableSshTerminal', true) ?? true,
       defaultEnableSftpExplorer: config.get<boolean>('defaultEnableSftpExplorer', true) ?? true,
       defaultEnableWebBrowser: config.get<boolean>('defaultEnableWebBrowser', false) ?? false,
-      defaultSshCommandsText: JSON.stringify(config.get('defaultSshCommands', []), null, 2),
+      defaultSshCommands: config.get<SshCommand[]>('defaultSshCommands', []) ?? [],
       maxLinesPerTab: config.get<number>('maxLinesPerTab', 100000) ?? 100000,
     };
 
@@ -324,7 +348,7 @@ export class DeviceManagerPanel {
     const defaultEnableSshTerminal = Boolean(defaults.defaultEnableSshTerminal);
     const defaultEnableSftpExplorer = Boolean(defaults.defaultEnableSftpExplorer);
     const defaultEnableWebBrowser = Boolean(defaults.defaultEnableWebBrowser);
-    const defaultSshCommands = this.parseSshCommands(defaults.defaultSshCommandsText);
+    const defaultSshCommands = this.normalizeSshCommands(defaults.defaultSshCommands);
 
     return {
       defaultPort,
@@ -338,7 +362,7 @@ export class DeviceManagerPanel {
   }
 
   private normalizeDevice(device: DevicePayload): EmbeddedDevice {
-    const sshCommands = this.parseSshCommands(device.sshCommandsText);
+    const sshCommands = this.normalizeSshCommands(device.sshCommands);
     const bastion = this.buildBastion(device);
 
     return {
@@ -388,16 +412,19 @@ export class DeviceManagerPanel {
     };
   }
 
-  private parseSshCommands(value: string | undefined): SshCommand[] {
-    if (!value || !value.trim()) {
+  private normalizeSshCommands(value: SshCommand[] | string | undefined): SshCommand[] {
+    if (!value || (typeof value === 'string' && !value.trim())) {
       return [];
     }
 
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(value);
-    } catch {
-      throw new Error('SSH commands must be valid JSON (array of {name, command}).');
+    let parsed: unknown = value;
+
+    if (typeof value === 'string') {
+      try {
+        parsed = JSON.parse(value);
+      } catch {
+        throw new Error('SSH commands must be valid JSON (array of {name, command}).');
+      }
     }
 
     if (!Array.isArray(parsed)) {
