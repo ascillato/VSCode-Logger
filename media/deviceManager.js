@@ -40,6 +40,8 @@ const deviceColumns = [
   { key: 'bastionPassword', label: 'Bastion password (legacy)', type: 'text' },
 ];
 
+let activeColumnResize = null;
+
 function postReady() {
   vscode.postMessage({ type: 'requestState' });
 }
@@ -124,6 +126,112 @@ function renderDevices() {
     removeCell.appendChild(removeButton);
     row.appendChild(removeCell);
     tbody.appendChild(row);
+  });
+}
+
+function measureWidth(value) {
+  const probe = document.createElement('div');
+  probe.style.position = 'absolute';
+  probe.style.visibility = 'hidden';
+  probe.style.height = '0';
+  probe.style.width = value;
+  document.body.appendChild(probe);
+  const width = probe.getBoundingClientRect().width || 0;
+  document.body.removeChild(probe);
+  return width;
+}
+
+function getInitialWidthValue(col) {
+  if (col.type === 'checkbox') {
+    return '12ch';
+  }
+  if (col.type === 'number') {
+    return '20ch';
+  }
+  if (col.type === 'textarea') {
+    return '24ch';
+  }
+  return '20ch';
+}
+
+function setupTableColumns() {
+  const colgroup = document.getElementById('devicesColGroup');
+  if (!colgroup) {
+    return;
+  }
+
+  colgroup.innerHTML = '';
+  deviceColumns.forEach((col) => {
+    const colElement = document.createElement('col');
+    const widthValue = getInitialWidthValue(col);
+    const minWidthValue =
+      col.type === 'checkbox' ? '12ch' : col.type === 'textarea' ? '24ch' : '20ch';
+    colElement.style.width = widthValue;
+    colElement.style.minWidth = minWidthValue;
+    colElement.dataset.minWidthPx = String(measureWidth(minWidthValue));
+    colgroup.appendChild(colElement);
+  });
+
+  const actionCol = document.createElement('col');
+  actionCol.style.width = '12ch';
+  actionCol.style.minWidth = '10ch';
+  actionCol.dataset.minWidthPx = String(measureWidth('10ch'));
+  colgroup.appendChild(actionCol);
+}
+
+function startColumnResize(event, index) {
+  event.preventDefault();
+  const colgroup = document.getElementById('devicesColGroup');
+  const col = colgroup?.children[index];
+  if (!col) {
+    return;
+  }
+
+  const startWidth = col.getBoundingClientRect().width || measureWidth(col.style.width || '0px');
+  const minWidth = Number(col.dataset.minWidthPx || '80');
+  activeColumnResize = {
+    startX: event.clientX,
+    startWidth,
+    minWidth,
+    col,
+  };
+  document.addEventListener('mousemove', handleColumnResize);
+  document.addEventListener('mouseup', stopColumnResize);
+}
+
+function handleColumnResize(event) {
+  if (!activeColumnResize) {
+    return;
+  }
+  const delta = event.clientX - activeColumnResize.startX;
+  const newWidth = Math.max(activeColumnResize.minWidth, activeColumnResize.startWidth + delta);
+  activeColumnResize.col.style.width = `${newWidth}px`;
+}
+
+function stopColumnResize() {
+  if (!activeColumnResize) {
+    return;
+  }
+  document.removeEventListener('mousemove', handleColumnResize);
+  document.removeEventListener('mouseup', stopColumnResize);
+  activeColumnResize = null;
+}
+
+function addColumnResizers() {
+  const headers = Array.from(document.querySelectorAll('#devicesTable thead th'));
+  headers.forEach((th, index) => {
+    if (index === headers.length - 1) {
+      return;
+    }
+    if (th.querySelector('.col-resizer')) {
+      return;
+    }
+    th.classList.add('resizable');
+    const resizer = document.createElement('span');
+    resizer.className = 'col-resizer';
+    resizer.title = 'Drag to resize';
+    resizer.addEventListener('mousedown', (event) => startColumnResize(event, index));
+    th.appendChild(resizer);
   });
 }
 
@@ -217,6 +325,16 @@ function save() {
   });
 }
 
+function editJson() {
+  setStatus('Opening settings.json...', 'info');
+  vscode.postMessage({ type: 'editJson' });
+}
+
+function clearStoredPasswords() {
+  setStatus('Removing stored passwords...', 'info');
+  vscode.postMessage({ type: 'clearPasswords' });
+}
+
 function setStatus(message, variant = '') {
   const el = document.getElementById('status');
   el.textContent = message || '';
@@ -246,7 +364,11 @@ function handleMessage(event) {
 }
 
 function init() {
+  setupTableColumns();
+  addColumnResizers();
   document.getElementById('addDevice').addEventListener('click', addDevice);
+  document.getElementById('editJson').addEventListener('click', editJson);
+  document.getElementById('clearPasswords').addEventListener('click', clearStoredPasswords);
   document.getElementById('saveChanges').addEventListener('click', save);
   window.addEventListener('message', handleMessage);
   postReady();

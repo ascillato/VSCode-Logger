@@ -9,7 +9,9 @@ import type { EmbeddedDevice } from './deviceTree';
 
 type IncomingMessage =
   | { type: 'requestState' }
-  | { type: 'save'; defaults: DefaultsPayload; devices: DevicePayload[] };
+  | { type: 'save'; defaults: DefaultsPayload; devices: DevicePayload[] }
+  | { type: 'editJson' }
+  | { type: 'clearPasswords' };
 
 interface SshCommand {
   name: string;
@@ -75,6 +77,12 @@ export class DeviceManagerPanel {
             break;
           case 'save':
             void this.saveConfiguration(message.defaults, message.devices);
+            break;
+          case 'editJson':
+            void vscode.commands.executeCommand('workbench.action.openSettingsJson');
+            break;
+          case 'clearPasswords':
+            void vscode.commands.executeCommand('embeddedLogger.clearStoredPasswords');
             break;
           default:
             break;
@@ -143,10 +151,11 @@ export class DeviceManagerPanel {
       <header class="header">
         <div>
           <h1>Embedded Device Logger</h1>
-          <p>Manage devices and defaults without editing settings.json.</p>
+          <p>Manage devices and default configuration.</p>
         </div>
         <div class="header-actions">
-          <button class="button" id="addDevice">Add device</button>
+          <button class="button button-danger" id="clearPasswords">Remove Stored Passwords</button>
+          <button class="button" id="editJson">Edit in JSON</button>
           <button class="button button-primary" id="saveChanges">Save changes</button>
         </div>
       </header>
@@ -189,11 +198,17 @@ export class DeviceManagerPanel {
 
       <section class="card">
         <div class="card-header">
-          <h2>Devices</h2>
-          <p>Add or remove rows, then edit fields inline.</p>
+          <div class="card-header-text">
+            <h2>Devices</h2>
+            <p>Add or remove rows, then edit fields inline.</p>
+          </div>
+          <div class="card-header-actions">
+            <button class="button" id="addDevice">Add device</button>
+          </div>
         </div>
         <div class="table-wrapper">
           <table id="devicesTable">
+            <colgroup id="devicesColGroup"></colgroup>
             <thead>
               <tr>
                 <th>ID</th>

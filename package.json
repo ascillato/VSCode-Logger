@@ -385,11 +385,6 @@
           "group": "navigation@1"
         },
         {
-          "command": "embeddedLogger.clearStoredPasswords",
-          "when": "view == embeddedLogger.devicesView",
-          "group": "navigation@1"
-        },
-        {
           "command": "embeddedLogger.editDevicesConfig",
           "when": "view == embeddedLogger.devicesView",
           "group": "navigation@2"

@@ -36,6 +36,8 @@ body {
 .header-actions {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .card {
@@ -54,6 +56,19 @@ body {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.card-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.card-header-actions {
+  display: flex;
+  align-items: center;
   gap: 8px;
 }
 
@@ -129,13 +144,17 @@ body {
 }
 
 .table-wrapper {
-  overflow-x: auto;
+  overflow: auto;
+  scrollbar-gutter: stable both-edges;
+  max-height: 70vh;
 }
 
 table {
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
   font-size: 13px;
+  table-layout: fixed;
 }
 
 th,
@@ -143,6 +162,8 @@ td {
   border: 1px solid var(--vscode-editorGroup-border);
   padding: 6px;
   vertical-align: top;
+  white-space: nowrap;
+  min-width: 20ch;
 }
 
 th {
@@ -150,6 +171,27 @@ th {
   position: sticky;
   top: 0;
   z-index: 1;
+  padding-right: 12px;
+}
+
+th:last-child,
+td:last-child {
+  min-width: 12ch;
+  width: 12ch;
+}
+
+th.resizable {
+  position: sticky;
+}
+
+.col-resizer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  user-select: none;
 }
 
 td input,
