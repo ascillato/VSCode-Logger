@@ -111,7 +111,7 @@ docs: ## Build documentation (TypeDoc + Sphinx HTML)
 
 docs-clean: ## Remove generated documentation outputs
 	@ts=""; \
-	if rm -rf docs/build docs/typedoc coverage docs/source/__pycache__ docs/source/_generated/*.md docs/source/_generated/*.json;; then \
+	if rm -rf docs/build docs/typedoc coverage docs/source/__pycache__ docs/source/_generated/*.md docs/source/_generated/*.json; then \
 		ts="$$(date +"%Y-%m-%dT%H:%M:%S%z")"; \
 		printf "$(GREEN)\n\nDocs-clean completed at %s\n\n$(RESET)\n" "$$ts"; \
 	else \
