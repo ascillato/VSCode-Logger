@@ -251,3 +251,7 @@ It consists of v[VERSION_NUMBER]
     - Core Version is the current iteration of the project of the actual roadmap
     - Major is the milestone achieved that comprises in a predefined set of features of the roadmap
     - Patch is the number of major changes applied to the Software.
+
+## Repository Template
+
+If you are interested on making a new VSCode Extension, you can use the repository template which contains all the tools and features of this repository at https://github.com/ascillato/full-template-for-typescript-vscode-extension-repository
