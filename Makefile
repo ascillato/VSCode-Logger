@@ -6,7 +6,7 @@ GREEN=\033[1;32m
 BLUE=\033[1;34m
 RESET=\033[0m
 
-.PHONY: all clean install help check package force-install package-clean linter-fix docs docs-clean test
+.PHONY: all clean install help check package force-install package-clean linter-fix docs docs-clean test tests-clean
 
 all: clean package install ## Clean, then build VSIX package and installs it
 
@@ -57,6 +57,17 @@ test: ## Run unit, integration, and E2E tests
 		exit 1; \
 	fi
 
+tests-clean: ## Remove generated tests reports
+	@ts=""; \
+	if rm -rf .vscode-test; then \
+		ts="$$(date +"%Y-%m-%dT%H:%M:%S%z")"; \
+		printf "$(GREEN)\n\nTests-clean completed at %s\n\n$(RESET)\n" "$$ts"; \
+	else \
+		ts="$$(date +"%Y-%m-%dT%H:%M:%S%z")"; \
+		printf "$(RED)\n\nError running Tests-clean. %s\n\n$(RESET)\n" "$$ts"; \
+		exit 1; \
+	fi
+
 package: ## Install deps, compile, and create the .vsix package
 	@ts=""; \
 	ts="$$(date +"%Y-%m-%dT%H:%M:%S%z")"; \
@@ -100,7 +111,7 @@ docs: ## Build documentation (TypeDoc + Sphinx HTML)
 
 docs-clean: ## Remove generated documentation outputs
 	@ts=""; \
-	if rm -rf docs/build docs/html docs/typedoc; then \
+	if rm -rf docs/build docs/typedoc coverage docs/source/__pycache__ docs/source/_generated/*.md docs/source/_generated/*.json;; then \
 		ts="$$(date +"%Y-%m-%dT%H:%M:%S%z")"; \
 		printf "$(GREEN)\n\nDocs-clean completed at %s\n\n$(RESET)\n" "$$ts"; \
 	else \
