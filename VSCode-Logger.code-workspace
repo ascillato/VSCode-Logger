@@ -67,6 +67,11 @@
             "description": "",
           },
           {
+            "label": "$(trash) Clean Tests Results",
+            "task": "Clean_Tests",
+            "description": "",
+          },
+          {
             "label": "$(trash) Clean Built Docs",
             "task": "Clean_Docs",
             "description": "",
@@ -161,6 +166,23 @@
         "label": "Gen_Docs",
         "type": "shell",
         "command": "make docs",
+        "options": {
+          "cwd": "${workspaceFolder}",
+        },
+        "group": {
+          "kind": "build",
+          "isDefault": false,
+        },
+        "presentation": {
+          "reveal": "always",
+          "panel": "new",
+          "focus": true,
+        },
+      },
+      {
+        "label": "Clean_Tests",
+        "type": "shell",
+        "command": "make tests-clean",
         "options": {
           "cwd": "${workspaceFolder}",
         },
