@@ -9,9 +9,9 @@ function getNonce(): string {
 
 function getWelcomeHtml(webview: vscode.Webview, extensionUri: vscode.Uri): string {
   const nonce = getNonce();
-  const stylesheet = webview.asWebviewUri(
-    vscode.Uri.joinPath(extensionUri, 'media', 'welcomePanel.css')
-  );
+  const stylesheet = webview
+    .asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'welcomePanel.css'))
+    .toString();
 
   return /* html */ `
     <!DOCTYPE html>
@@ -93,7 +93,7 @@ export class WelcomePanel {
       WelcomePanel.instance = undefined;
     });
 
-    this.panel.webview.onDidReceiveMessage((message) => {
+    this.panel.webview.onDidReceiveMessage((message: { type?: string }) => {
       if (message?.type === 'ready') {
         this.panel.webview.postMessage({
           payload: {
