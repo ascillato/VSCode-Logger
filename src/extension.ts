@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { buildGreeting } from './greeting';
 import { WelcomePanel } from './welcomePanel';
 
-export async function activate(context: vscode.ExtensionContext): Promise<void> {
+export function activate(context: vscode.ExtensionContext): void {
   const sayHello = vscode.commands.registerCommand('extension-template.sayHello', () => {
     const greeting = buildGreeting('Developer', vscode.workspace.getConfiguration());
     void vscode.window.showInformationMessage(greeting);
