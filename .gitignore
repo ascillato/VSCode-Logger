@@ -151,7 +151,7 @@ docs/source/_generated/*
 *.vsix
 
 #vscode counter
-.VSCodeCounter/**
+.VSCodeCounter
 
 #temp files
 temp_*.*
