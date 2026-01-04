@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [1.6.1] - UNRELEASED [TBD]
+
+### Added
+- Add Clean Tests to makefile and to code-workspace (VSCode UI - bottom bar).
+
+### Changed
+- Bump @types/node from 22.19.3 to 25.0.3
+- Bump typescript from 5.8.3 to 5.9.3
+- Bump typedoc from 0.27.9 to 0.28.15
+- Updated developer-guide.md with URL of repository template.
+
+### Deprecated
+- None.
+
+### Removed
+- Remove from CI unneeded concurrency check for build docs.
+
+### Fixed
+- Make docs build to have access to test report.
+
+### Security
+- Enable npm version updates in dependabot configuration.
+
+----------------------------------------
+
 ## [1.6.0] - 2026-01-03 [SETTINGS-UI]
 
 ### Added
