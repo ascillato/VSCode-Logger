@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - None.
 
 ### Removed
-- None.
+- Remove from CI unneeded concurrency check for build docs.
 
 ### Fixed
 - Make docs build to have access to test report.
@@ -50,7 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - None.
 
 ### Removed
-- Remove from CI unneeded concurrency check for build docs.
+- None.
 
 ### Fixed
 - Fix Highlights pop-up position on small screens.
