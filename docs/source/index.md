@@ -7,7 +7,7 @@
 :hidden:
 :caption: Contents
 
-Embedded Device Logger <self>
+Extension Name <self>
 Detailed Usage and Configuration <detailed-usage>
 Developer Setup and Workflow <developer-guide>
 Architecture Overview <extension-overview>

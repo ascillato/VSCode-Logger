@@ -115,14 +115,14 @@ jobs:
       - name: Build VSIX
         run: |
           npm run compile
-          vsce package --out embedded-device-logger-${{ github.ref_name }}.vsix
+          vsce package --out vscode-extension-template-${{ github.ref_name }}.vsix
 
       # Optional: keep workflow run artifact too (visible under Actions run)
       - name: Upload VSIX artifact (Actions)
         uses: actions/upload-artifact@v4
         with:
-          name: embedded-device-logger-${{ github.ref_name }}
-          path: embedded-device-logger-${{ github.ref_name }}.vsix
+          name: vscode-extension-template-${{ github.ref_name }}
+          path: vscode-extension-template-${{ github.ref_name }}.vsix
 
       # Create a release for this tag and upload the VSIX as a release asset
       - name: Create GitHub Release + upload VSIX
@@ -133,7 +133,7 @@ jobs:
           draft: false
           make_latest: true
           generate_release_notes: true
-          files: embedded-device-logger-${{ github.ref_name }}.vsix
+          files: vscode-extension-template-${{ github.ref_name }}.vsix
 
       # Publish the release to VSCode Market Place
       - name: Publish extension to VSCode Market Place

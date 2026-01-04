@@ -15,7 +15,7 @@ This extension welcomes contributions from the community. Please review the [CON
    npm install
    npm run compile
    ```
-3. Launch the Extension Development Host with `F5` in VS Code and open the **Embedded Logger** view.
+3. Launch the Extension Development Host with `F5` in VS Code and open the **Extension** view.
 
 ## Packaging and installation
 

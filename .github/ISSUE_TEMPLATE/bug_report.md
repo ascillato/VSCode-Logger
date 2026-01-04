@@ -25,7 +25,7 @@ If applicable, add screenshots to help explain your problem.
 
 **Desktop (please complete the following information):**
  - OS: [e.g. iOS]
- - Embedded Logger Version [e.g. 0.2.0]
+ - Extension Version [e.g. 0.2.0]
 
 **Additional context**
 Add any other context about the problem here.
