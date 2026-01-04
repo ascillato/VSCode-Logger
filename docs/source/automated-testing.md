@@ -39,7 +39,7 @@ This project uses a three-layer automated test suite to validate critical behavi
    npm run coverage:report
    ```
 
-The coverage run writes `coverage/coverage-summary.json` plus a Markdown summary at `docs/source/_generated/coverage-report.md` that feeds the Code Metrics page in the documentation.
+The coverage run writes `docs/build/coverage/coverage-summary.json` plus a Markdown summary at `docs/source/_generated/coverage-report.md` that feeds the Code Metrics page in the documentation.
 If your system does not expose Python as `python`, ensure `python3` is available in PATH; the coverage script will try `python3` first.
 
 Notes:

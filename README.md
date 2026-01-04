@@ -38,7 +38,7 @@ These scripts are defined in `package.json`:
 - `npm test` – run coverage, generate the coverage summary, and execute E2E tests.
 - `npm run lint` / `npm run lint:fix` – lint the codebase.
 - `npm run format` / `npm run format:check` – apply or verify Prettier formatting.
-- `npm run docs:typedoc` – generate API documentation into `docs/typedoc`.
+- `npm run docs:typedoc` – generate API documentation into `docs/build/typedoc`.
 - `npm run lint:docs` – spell-check Markdown files and docs sources.
 - `npm run test:e2e` – run the VS Code integration tests via `@vscode/test-electron`.
 

@@ -82,7 +82,7 @@ templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "_generated/*"]
 
 # -- Options for TypeDoc -----------------------------------------------------
-_typedoc_output = PROJECT_ROOT / "docs" / "typedoc"
+_typedoc_output = PROJECT_ROOT / "docs" / "build" / "typedoc"
 _typedoc_index = _typedoc_output / "index.html"
 _typedoc_config = PROJECT_ROOT / "typedoc.json"
 

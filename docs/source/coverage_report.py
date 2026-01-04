@@ -77,7 +77,7 @@ def generate_coverage_report(
         True when coverage data was written, False when a placeholder was emitted.
     """
 
-    summary_path = project_root / "coverage" / "coverage-summary.json"
+    summary_path = project_root / "docs" / "build" / "coverage" / "coverage-summary.json"
     try:
         summary = json.loads(summary_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
@@ -135,7 +135,7 @@ def generate_coverage_report(
         "\n".join(
             [
                 "<!-- Automatically generated coverage summary; do not edit manually. -->",
-                "Generated from `coverage/coverage-summary.json`.",
+                "Generated from `docs/build/coverage/coverage-summary.json`.",
                 "",
                 "## Overall coverage",
                 overview_table,
