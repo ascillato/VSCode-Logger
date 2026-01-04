@@ -15,6 +15,6 @@ API Reference
 
    .. note::
 
-      TypeDoc output was not found at ``docs/typedoc``. Run
+      TypeDoc output was not found at ``docs/build/typedoc``. Run
       ``npm run docs:typedoc`` (or ensure Sphinx can run TypeDoc) before
       building the docs to generate the API reference.

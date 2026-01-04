@@ -2,7 +2,7 @@
   "entryPoints": ["src/**/*.ts"],
   "entryPointStrategy": "expand",
   "tsconfig": "tsconfig.json",
-  "out": "docs/typedoc",
+  "out": "docs/build/typedoc",
   "readme": "none",
   "name": "VS Code Extension Template API",
   "includeVersion": true,
