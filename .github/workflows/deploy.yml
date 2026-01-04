@@ -152,10 +152,6 @@ jobs:
       pages: write
       id-token: write
 
-    concurrency:
-      group: "pages"
-      cancel-in-progress: true
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
