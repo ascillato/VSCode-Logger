@@ -1,16 +1,16 @@
-import { describe, expect, it } from "vitest";
-import { buildGreeting } from "../../src/greeting";
+import { describe, expect, it } from 'vitest';
+import { buildGreeting } from '../../src/greeting';
 
-describe("buildGreeting", () => {
-  it("returns a greeting with the default prefix", () => {
-    expect(buildGreeting("Developer")).toBe("Hello, Developer!");
+describe('buildGreeting', () => {
+  it('returns a greeting with the default prefix', () => {
+    expect(buildGreeting('Developer')).toBe('Hello, Developer!');
   });
 
-  it("uses the prefix provided by configuration", () => {
+  it('uses the prefix provided by configuration', () => {
     const fakeConfig = {
-      get: (key: string) => (key === "template.greetingPrefix" ? "Welcome" : undefined),
-    } as unknown as ReturnType<typeof import("vscode")["workspace"]["getConfiguration"]>;
+      get: (key: string) => (key === 'template.greetingPrefix' ? 'Welcome' : undefined),
+    } as unknown as ReturnType<(typeof import('vscode'))['workspace']['getConfiguration']>;
 
-    expect(buildGreeting("Developer", fakeConfig)).toBe("Welcome, Developer!");
+    expect(buildGreeting('Developer', fakeConfig)).toBe('Welcome, Developer!');
   });
 });

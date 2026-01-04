@@ -1,7 +1,14 @@
 # Security Policy
 
-This template does not ship with networked features or secret handling, but security reports are still welcome.
-
 ## Reporting a Vulnerability
 
-If you spot a vulnerability in the template itself, please open a private issue or contact the maintainers at `security@example.com`. When you adapt this template for your own extension, replace this address with your preferred security contact and update any downstream documentation.
+If you discover a security vulnerability, please do not open a public issue. Instead, please report it by emailing `security@example.com`. We will be highly responsive to all security concerns and ask that you give us sufficient time to investigate and address the vulnerability before disclosing it publicly.
+
+Please include the following details in your report:
+    A description of the vulnerability
+    Steps to reproduce the issue
+    Your assessment of the potential impact
+    Any possible mitigations
+
+## Contact
+For any other questions or concerns related to security, please contact us at `security@example.com`.

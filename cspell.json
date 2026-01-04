@@ -25,6 +25,7 @@
     "typedoc",
     "vscode",
     "webview",
-    "webviews"
+    "webviews",
+    "hotfixes"
   ]
 }

@@ -3,19 +3,20 @@
 ```
 
 ```{toctree}
-:maxdepth: 2
+:maxdepth: 3
 :hidden:
 :caption: Contents
 
-Template Overview <extension-overview>
-Working on the Codebase <code-development>
-Developer Workflow <developer-guide>
-Usage Examples <detailed-usage>
-Automated Testing <automated-testing>
-Documentation Generation <docgen>
+Embedded Device Logger <self>
+Detailed Usage and Configuration <detailed-usage>
+Developer Setup and Workflow <developer-guide>
+Architecture Overview <extension-overview>
+Code Development <code-development>
 API <api/index>
 Code Metrics <code-metrics>
 Changelog <changelog>
+Automated Testing <automated-testing>
+Documentation Generation <docgen>
 Security Issues Report and Management <security-issues>
 Code of Conduct <code-of-conduct>
 License <license>

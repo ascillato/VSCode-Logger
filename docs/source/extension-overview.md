@@ -1,4 +1,4 @@
-# Template Overview
+# Architecture Overview
 
 This template keeps only the minimal pieces you need to bootstrap a TypeScript VS Code extension. The shipped code is intentionally small so you can replace it with your own logic.
 

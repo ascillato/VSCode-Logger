@@ -1,19 +1,23 @@
 # Code Metrics
 
-This template keeps optional helpers for generating code statistics so you can track growth as you build your extension.
+The following repository-wide code line count report is generated automatically during the documentation build using [`cloc`](https://github.com/AlDanial/cloc). The report excludes generated outputs and dependency directories to keep the results focused on source and documentation files. Both a language-level summary and a per-file breakdown are produced.
 
-## cloc reports
+This report is refreshed automatically on every docs build.
 
-If `cloc` is installed (either globally or via `npm install`), running the Sphinx build will generate summary files in `docs/source/_generated/`:
+```{include} _generated/cloc-report.md
+:relative-images:
+```
 
-- `cloc-summary.json`
-- `cloc-files.json`
-- `cloc-report.md`
+## Test coverage
 
-These files are ignored by version control and regenerated on demand.
+The coverage summary is generated automatically when running the test suite (for example, via `npm test` or `make test`) and exported into the documentation metrics.
 
-## Coverage summary
+:::{ifconfig} have_coverage_report
+```{include} _generated/coverage-report.md
+:relative-images:
+```
+:::
 
-`npm run coverage:report` creates `docs/source/_generated/coverage-report.md` from the Vitest coverage output. Link to this file from your docs or CI reports to keep an eye on test completeness.
-
-Feel free to remove or extend this section depending on the metrics you want to track in your project.
+:::{ifconfig} not have_coverage_report
+Coverage results are not available yet. Run `npm test` locally to refresh coverage data before rebuilding the docs.
+:::

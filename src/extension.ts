@@ -1,21 +1,18 @@
-import * as vscode from "vscode";
-import { buildGreeting } from "./greeting";
-import { WelcomePanel } from "./welcomePanel";
+import * as vscode from 'vscode';
+import { buildGreeting } from './greeting';
+import { WelcomePanel } from './welcomePanel';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-  const sayHello = vscode.commands.registerCommand(
-    "extension-template.sayHello",
-    () => {
-      const greeting = buildGreeting("Developer", vscode.workspace.getConfiguration());
-      void vscode.window.showInformationMessage(greeting);
-    },
-  );
+  const sayHello = vscode.commands.registerCommand('extension-template.sayHello', () => {
+    const greeting = buildGreeting('Developer', vscode.workspace.getConfiguration());
+    void vscode.window.showInformationMessage(greeting);
+  });
 
   const showWelcomePanel = vscode.commands.registerCommand(
-    "extension-template.showWelcomePanel",
+    'extension-template.showWelcomePanel',
     () => {
       WelcomePanel.createOrShow(context);
-    },
+    }
   );
 
   context.subscriptions.push(sayHello, showWelcomePanel);

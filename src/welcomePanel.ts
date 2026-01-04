@@ -1,16 +1,16 @@
-import * as vscode from "vscode";
+import * as vscode from 'vscode';
 
 function getNonce(): string {
-  const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   return Array.from({ length: 32 }, () =>
-    possible.charAt(Math.floor(Math.random() * possible.length)),
-  ).join("");
+    possible.charAt(Math.floor(Math.random() * possible.length))
+  ).join('');
 }
 
 function getWelcomeHtml(webview: vscode.Webview, extensionUri: vscode.Uri): string {
   const nonce = getNonce();
   const stylesheet = webview.asWebviewUri(
-    vscode.Uri.joinPath(extensionUri, "media", "welcomePanel.css"),
+    vscode.Uri.joinPath(extensionUri, 'media', 'welcomePanel.css')
   );
 
   return /* html */ `
@@ -70,14 +70,14 @@ export class WelcomePanel {
     }
 
     const panel = vscode.window.createWebviewPanel(
-      "extensionTemplateWelcome",
-      "Extension Template",
+      'extensionTemplateWelcome',
+      'Extension Template',
       vscode.ViewColumn.One,
       {
         enableScripts: true,
         retainContextWhenHidden: false,
-        localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, "media")],
-      },
+        localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, 'media')],
+      }
     );
 
     WelcomePanel.instance = new WelcomePanel(panel, context.extensionUri);
@@ -85,7 +85,7 @@ export class WelcomePanel {
 
   private constructor(
     private readonly panel: vscode.WebviewPanel,
-    private readonly extensionUri: vscode.Uri,
+    private readonly extensionUri: vscode.Uri
   ) {
     this.panel.webview.html = getWelcomeHtml(this.panel.webview, this.extensionUri);
 
@@ -94,10 +94,10 @@ export class WelcomePanel {
     });
 
     this.panel.webview.onDidReceiveMessage((message) => {
-      if (message?.type === "ready") {
+      if (message?.type === 'ready') {
         this.panel.webview.postMessage({
           payload: {
-            message: "Replace me with data from your extension host!",
+            message: 'Replace me with data from your extension host!',
             timestamp: new Date().toISOString(),
           },
         });
@@ -107,8 +107,8 @@ export class WelcomePanel {
 }
 
 export function getWelcomeMarkupForTesting(
-  webview: Pick<vscode.Webview, "cspSource" | "asWebviewUri">,
-  extensionUri: vscode.Uri,
+  webview: Pick<vscode.Webview, 'cspSource' | 'asWebviewUri'>,
+  extensionUri: vscode.Uri
 ): string {
   return getWelcomeHtml(webview as vscode.Webview, extensionUri);
 }

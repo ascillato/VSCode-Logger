@@ -1,4 +1,4 @@
-import type { WorkspaceConfiguration } from "vscode";
+import type { WorkspaceConfiguration } from 'vscode';
 
 /**
  * Build a friendly greeting used by the template commands.
@@ -8,10 +8,10 @@ import type { WorkspaceConfiguration } from "vscode";
  * defaults.
  */
 export function buildGreeting(
-  name: string = "VS Code",
-  configuration?: WorkspaceConfiguration,
+  name: string = 'VS Code',
+  configuration?: WorkspaceConfiguration
 ): string {
-  const prefix = configuration?.get<string>("template.greetingPrefix") ?? "Hello";
-  const subject = name.trim() || "VS Code";
+  const prefix = configuration?.get<string>('template.greetingPrefix') ?? 'Hello';
+  const subject = name.trim() || 'VS Code';
   return `${prefix}, ${subject}!`;
 }

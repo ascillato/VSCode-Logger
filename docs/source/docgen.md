@@ -1,22 +1,40 @@
 # Documentation Generation
 
-The template provides two documentation paths:
+Documentation site.
 
-1. **Sphinx site** — built from the Markdown files under `docs/source/`.
-2. **TypeDoc API docs** — generated from the TypeScript sources using `typedoc.json`.
+## Diagrams
 
-## Building docs locally
+Mermaid diagrams in Markdown work with fenced code blocks. For example:
 
-```bash
-pip install -r docs/requirements.txt
-npm install
-make docs
+<code>```mermaid</code>
+```
+:zoom: 100%
+graph LR
+    A[Device configured] --> B[Open log panel]
+    B --> C{SSH stream}
+    C --> D[Log lines rendered]
+```
+<code>```</code>
+
+will render as:
+
+```mermaid
+:zoom: 100%
+graph LR
+    A[Device configured] --> B[Open log panel]
+    B --> C{SSH stream}
+    C --> D[Log lines rendered]
 ```
 
-This runs `cspell` for spell checking, builds the Sphinx site into `docs/build/html`, and writes TypeDoc output to `docs/typedoc`.
+## API reference
 
-## Customizing
+The API reference is generated with TypeDoc and surfaced inside Sphinx. When Sphinx builds the site, it runs TypeDoc (when available) to refresh the `docs/typedoc` output so the `api/` section stays up to date.
 
-- Edit `docs/source/*.md` to describe your extension’s features and workflows.
-- Update `typedoc.json` to adjust the API doc title or entry points.
-- Configure deployment (e.g., GitHub Pages) in your own CI pipeline to publish the generated HTML.
+## Building this documentation
+
+1. Install doc tooling with `pip install -r docs/requirements.txt`.
+2. Install Node.js development dependencies with `npm install` to provide the bundled `typedoc` and `cloc` binaries used during the build.
+3. Run `npm run lint:docs` to spell-check the Markdown sources.
+4. (Optional) Generate the TypeDoc HTML output with `npm run docs:typedoc` (outputs to `docs/typedoc`).
+5. Build the site with `sphinx-build -b html docs/source docs/build/html` (Sphinx runs TypeDoc and `cloc` when available; set `CLOC_SKIP=1` to skip the metrics report).
+6. GitHub Actions publishes the built HTML to the `gh-pages` branch on each push to `main` with tag.

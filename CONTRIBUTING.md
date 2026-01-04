@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for considering a contribution to the VS Code Extension Template! This repository is designed to be customized, so feel free to adapt these guidelines to fit your own project once you fork or duplicate the template.
+This document provides guidelines with the intention of making informed, safe and high‑quality contributions to the repository. Follow these instructions to maintain coherence with the existing architecture and to avoid breaking functionality.
 
 ## Development workflow
 
@@ -11,15 +11,33 @@ Thanks for considering a contribution to the VS Code Extension Template! This re
 
 ## Coding standards
 
-- Keep the extension entry point lean—avoid heavy work during activation.
+- Keep the extension entry point lean. Avoid heavy work during activation like network calls, etc.
 - Prefer TypeScript with explicit return types.
-- Follow the existing ESLint and Prettier rules; run `npm run lint` and `npm run format` before opening a pull request.
-- Add or update tests alongside your changes.
+- Prefer small, testable helpers and export them for unit tests.
+- Follow the existing ESLint and Prettier rules; run `npm run lint` and `npm run format` before before committing.
+- Avoid storing secrets in the repository. Use VS Code Secret Storage in your own code when needed.
+
+## Project layout
+
+- `src/` holds TypeScript sources.
+- `media/` is served by Webviews; only reference files with `webview.asWebviewUri`.
+- `tests/` contains unit, integration, and end-to-end suites.
+- `docs/` stores Sphinx sources and generated artifacts.
+
+## Adding configuration
+
+Use `contributes.configuration` in `package.json` as a template. Add your settings there and read them through `workspace.getConfiguration()` in your code.
+
+## Extending commands
+
+Commands are registered in `src/extension.ts`. Create new commands, export helpers for testing, and document them in `README.md` and `docs/source/detailed-usage.md`.
+
+### Versioning and publishing
+
+* Increment the version in `package.json` following semantic versioning: bump the patch version for bug fixes, minor for backward‑compatible feature additions and major for breaking changes.
+* Update the changelog or release notes (if present) whenever you release a new version. Summarize notable changes and migration steps.
+* Before publishing to the VS Code Marketplace, run `npm run compile` and ensure the extension packages successfully (e.g., using `vsce package`). Test that all contributed settings and commands appear in the VS Code UI and that secrets are handled correctly.
 
 ## Documentation
 
 Documentation lives in `docs/source/`. Each page includes template sections you can replace with information about your extension. Generate the HTML docs with `make docs` or `npm run docs:typedoc` for API docs.
-
-## Reporting issues
-
-If you discover a problem with the template, open an issue with clear steps to reproduce. Replace this process with your own when building an extension from the template.

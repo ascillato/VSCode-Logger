@@ -1,38 +1,57 @@
 {
   "folders": [
     {
-      "path": "."
-    }
+      "path": ".",
+    },
   ],
   "extensions": {
     "recommendations": [
-      "dbaeumer.vscode-eslint",
+      "spencerwmiles.vscode-task-buttons",
+      "ritwickdey.LiveServer",
+      "uctakeoff.vscode-counter",
+      "aaron-bond.better-comments",
+      "streetsidesoftware.code-spell-checker",
+      "alefragnani.Bookmarks",
+      "tahabasri.snippets",
+      "ikoamu.side-clipboard",
+      "assisrMatheus.sidebar-markdown-notes",
+      "mayonnaize.multiple-search",
+      "amodio.restore-editors",
+      "searKing.preview-vscode",
+      "bierner.markdown-mermaid",
+      "bpruitt-goddard.mermaid-markdown-syntax-highlighting",
+      "hediet.vscode-drawio",
+      "nopeslide.vscode-drawio-plugin-mermaid",
+      "mechatroner.rainbow-csv",
+      "PKief.material-icon-theme",
       "esbenp.prettier-vscode",
-      "streetsidesoftware.code-spell-checker"
-    ]
+      "dbaeumer.vscode-eslint",
+      "Scallant.embedded-device-logger",
+    ],
   },
   "settings": {
     "VsCodeTaskButtons.showCounter": false,
     "VsCodeTaskButtons.tasks": [
+      // Icons at: https://code.visualstudio.com/api/references/icons-in-labels#icon-listing
       {
         "label": "$(symbol-text)",
         "task": "Linter",
-        "tooltip": "Linter Checks"
+        "tooltip": "Linter Checks",
       },
       {
         "label": "$(check)",
         "task": "Compile_Ext",
-        "tooltip": "Compile and Package Extension"
+        "tooltip": "Compile and Package Extension",
       },
       {
         "label": "$(check-all)",
         "task": "Install_Ext",
-        "tooltip": "Install Extension"
+        "tooltip": "Install Extension",
       },
       {
         "label": "$(trash)",
         "task": "Clean_Compile",
-        "tooltip": "Clean Compiled Files"
+        "tooltip": "Clean Compiled Files",
       },
       {
         "label": "More Tools",
@@ -40,32 +59,32 @@
           {
             "label": "$(test-view-icon) Run Tests",
             "task": "Test_Extension",
-            "description": ""
+            "description": "",
           },
           {
             "label": "$(book) Generate Docs",
             "task": "Gen_Docs",
-            "description": ""
+            "description": "",
           },
           {
             "label": "$(trash) Clean Built Docs",
             "task": "Clean_Docs",
-            "description": ""
+            "description": "",
           },
           {
             "label": "$(check) Apply Linter Fixes when possible",
             "task": "Linter_fix",
-            "description": ""
-          }
-        ]
+            "description": "",
+          },
+        ],
       },
       {
         "label": "$(terminal)",
         "task": "NewTerminal",
-        "tooltip": "New Terminal"
-      }
+        "tooltip": "New Terminal",
+      },
     ],
-    "makefile.configureOnOpen": false
+    "makefile.configureOnOpen": false,
   },
   "tasks": {
     "version": "2.0.0",
@@ -75,136 +94,136 @@
         "type": "shell",
         "command": "make check",
         "options": {
-          "cwd": "${workspaceFolder}"
+          "cwd": "${workspaceFolder}",
         },
         "group": {
           "kind": "build",
-          "isDefault": false
+          "isDefault": false,
         },
         "presentation": {
           "reveal": "always",
           "panel": "new",
-          "focus": true
-        }
+          "focus": true,
+        },
       },
       {
         "label": "Compile_Ext",
         "type": "shell",
         "command": "make package",
         "options": {
-          "cwd": "${workspaceFolder}"
+          "cwd": "${workspaceFolder}",
         },
         "group": {
           "kind": "build",
-          "isDefault": false
+          "isDefault": false,
         },
         "presentation": {
           "reveal": "always",
           "panel": "new",
-          "focus": true
-        }
+          "focus": true,
+        },
       },
       {
         "label": "Install_Ext",
         "type": "shell",
         "command": "make all",
         "options": {
-          "cwd": "${workspaceFolder}"
+          "cwd": "${workspaceFolder}",
         },
         "group": {
           "kind": "build",
-          "isDefault": false
+          "isDefault": false,
         },
         "presentation": {
           "reveal": "always",
           "panel": "new",
-          "focus": true
-        }
+          "focus": true,
+        },
       },
       {
         "label": "Clean_Compile",
         "type": "shell",
         "command": "make package-clean",
         "options": {
-          "cwd": "${workspaceFolder}"
+          "cwd": "${workspaceFolder}",
         },
         "group": {
           "kind": "build",
-          "isDefault": false
+          "isDefault": false,
         },
         "presentation": {
           "reveal": "always",
           "panel": "new",
-          "focus": true
-        }
+          "focus": true,
+        },
       },
       {
         "label": "Gen_Docs",
         "type": "shell",
         "command": "make docs",
         "options": {
-          "cwd": "${workspaceFolder}"
+          "cwd": "${workspaceFolder}",
         },
         "group": {
           "kind": "build",
-          "isDefault": false
+          "isDefault": false,
         },
         "presentation": {
           "reveal": "always",
           "panel": "new",
-          "focus": true
-        }
+          "focus": true,
+        },
       },
       {
         "label": "Clean_Docs",
         "type": "shell",
         "command": "make docs-clean",
         "options": {
-          "cwd": "${workspaceFolder}"
+          "cwd": "${workspaceFolder}",
         },
         "group": {
           "kind": "build",
-          "isDefault": false
+          "isDefault": false,
         },
         "presentation": {
           "reveal": "always",
           "panel": "new",
-          "focus": true
-        }
+          "focus": true,
+        },
       },
       {
         "label": "Linter_fix",
         "type": "shell",
         "command": "make linter-fix",
         "options": {
-          "cwd": "${workspaceFolder}"
+          "cwd": "${workspaceFolder}",
         },
         "group": {
           "kind": "build",
-          "isDefault": false
+          "isDefault": false,
         },
         "presentation": {
           "reveal": "always",
           "panel": "new",
-          "focus": true
-        }
+          "focus": true,
+        },
       },
       {
         "label": "Test_Extension",
         "type": "shell",
         "command": "make test",
         "options": {
-          "cwd": "${workspaceFolder}"
+          "cwd": "${workspaceFolder}",
         },
         "group": {
           "kind": "build",
-          "isDefault": false
+          "isDefault": false,
         },
         "presentation": {
           "reveal": "always",
           "panel": "new",
-          "focus": true
-        }
+          "focus": true,
+        },
       },
       {
         "label": "NewTerminal",
@@ -213,10 +232,10 @@
         "problemMatcher": [],
         "group": {
           "kind": "build",
-          "isDefault": true
+          "isDefault": true,
         },
-        "detail": "This task opens a new bash terminal."
-      }
-    ]
-  }
+        "detail": "This task opens a new bash terminal.",
+      },
+    ],
+  },
 }

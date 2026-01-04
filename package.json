@@ -2,7 +2,7 @@
   "name": "vscode-extension-template",
   "displayName": "VS Code Extension Template",
   "description": "Starter repository for building VS Code extensions with TypeScript.",
-  "icon": "resources/terminal.svg",
+  "icon": "media/icon.png",
   "version": "0.1.0",
   "publisher": "template",
   "author": "Extension Template Maintainers",
