@@ -48,3 +48,7 @@ These scripts are defined in `package.json`:
 - Update the docs under `docs/source/` to describe your extension’s features. Each file includes template sections you can replace.
 - Adjust the tests in `tests/unit`, `tests/integration`, and `tests/e2e` to cover your extension behavior.
 - Swap the sample settings under `contributes.configuration` with your own configuration schema.
+
+## Example using this
+
+https://github.com/ascillato/VSCode-Logger
