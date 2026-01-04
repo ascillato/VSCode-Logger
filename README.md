@@ -1,78 +1,54 @@
-# Embedded Device Logger
+# VS Code Extension Template
 
-The Embedded Device Logger is a Visual Studio Code extension that can connect to your devices over SSH, tail their logs, and help you analyze the data with loglevel colorization, quick filters, custom keywords highlights and filtered export. It provides also an SFTP client, SSH terminals and one-off SSH commands to help you develop, debug and maintain your Linux-based devices.
+This repository is a minimal, batteries-included starting point for building Visual Studio Code extensions with TypeScript. It keeps the build pipeline, linting, automated tests, and documentation wiring in place while leaving the extension logic intentionally small so you can replace it with your own features.
 
-- **Live logs view:**
+## What is included?
 
-![Live Log panel screenshot](docs/images/screenshot_example_live.png)
-
-- **SFTP Panel view and SSH terminal:**
-
-![SFTP panel screenshot](docs/images/screenshot_example_sftp.png)
-
-- **Offline logs view:**
-
-![Offline Log panel screenshot](docs/images/screenshot_example_log.png)
-
-If you like the extension, please [rate it](https://marketplace.visualstudio.com/items?itemName=Scallant.embedded-device-logger&ssr=false#review-details). We welcome issue reports and feature requests.
-
-## Key Features
-
-- Stream device **logs over SSH** with real-time **log-level parsing** and **colorization**.
-- **Search**, **filter**, **bookmark**, and **export** the exact lines you need.
-- **Highlight** up to 10 keywords per panel to spot critical events fast.
-- Run **one-off SSH commands**.
-- Open **SSH terminals**.
-- Browse files with the built-in **SFTP explorer**.
-- **Secure by default**: passwords and key passphrases live in VS Code Secret Storage.
-- **Privacy focused**. **No telemetry**. Everything **runs locally**.
+- **Sample commands** (`extension-template.sayHello` and `extension-template.showWelcomePanel`) that demonstrate command registration and a basic Webview panel.
+- **TypeScript toolchain** with ESLint, Prettier, Vitest, and TypeDoc ready to run.
+- **End-to-end harness** powered by `@vscode/test-electron` to validate activation.
+- **Documentation pipeline** using Sphinx and TypeDoc so you can publish API docs and project guides.
+- **CI helpers and Makefile** to keep formatting, linting, packaging, and docs generation repeatable.
 
 ## Getting started
 
-1. **Install** the extension (see below).
-2. Open the **Embedded Logger** view from the Activity Bar (terminal icon).
-3. Open the configuration with the edit icon (🖍) to launch the Device Manager, add your devices in the table UI (or edit the JSON) under `embeddedLogger.devices`, and start streaming logs.
+1. **Install dependencies**
 
-For the full setup and configuration reference, see the [Detailed Usage and Configuration guide](https://ascillato.github.io/VSCode-Logger/detailed-usage.html).
+   ```bash
+   npm install
+   ```
 
-## Installation
+2. **Run the sample extension**
 
-- From the VS Code Extensions view, search for **Embedded Device Logger** (Publisher: Scallant).
-- From Quick Open (Ctrl/Cmd+P): `ext install Scallant.embedded-device-logger`.
-- From a terminal: `code --install-extension Scallant.embedded-device-logger`.
+   - Press `F5` in VS Code to launch a development host.
+   - Run the `Extension Template: Say Hello` command from the Command Palette.
+   - Open the `Extension Template: Open Welcome Panel` command to see the sample Webview content.
 
-Visit the [Marketplace page](https://marketplace.visualstudio.com/items?itemName=Scallant.embedded-device-logger) for more details.
+3. **Replace the template code**
 
-## Motivation behind the development of this VSCode Extension
+   - Update `src/extension.ts` with your activation logic and commands.
+   - Swap out `src/welcomePanel.ts` and the assets under `media/` to build your own UI.
+   - Change `package.json` fields (name, display name, publisher, repository, activation events, and contributed settings) to match your project.
 
-When you develop, debug, or audit software for **embedded Linux devices**, logs are everything.
+## Scripts
 
-They tell you *what happened*, *when it happened*, and often *why it happened*.
+These scripts are defined in `package.json`:
 
-Yet in practice, working with logs on embedded systems is still surprisingly awkward.
+- `npm run compile` – build the extension into `out/`.
+- `npm test` – run coverage, generate the coverage summary, and execute E2E tests.
+- `npm run lint` / `npm run lint:fix` – lint the codebase.
+- `npm run format` / `npm run format:check` – apply or verify Prettier formatting.
+- `npm run docs:typedoc` – generate API documentation into `docs/typedoc`.
+- `npm run lint:docs` – spell-check Markdown files and docs sources.
+- `npm run test:e2e` – run the VS Code integration tests via `@vscode/test-electron`.
 
-Most of us rely on:
+## Contributing your own extension
 
-- SSH into the device
-- Running `tail -f`, `journalctl`, or custom scripts
-- Copy-pasting outputs
-- Repeating the same commands again and again
+- Use `typedoc.json` to customize API doc output for your project.
+- Update the docs under `docs/source/` to describe your extension’s features. Each file includes template sections you can replace.
+- Adjust the tests in `tests/unit`, `tests/integration`, and `tests/e2e` to cover your extension behavior.
+- Swap the sample settings under `contributes.configuration` with your own configuration schema.
 
-And while VS Code has become the de-facto development environment for many engineers, log inspection still lives mostly **outside** the editor.
+## License
 
-I tried to find a VS Code extension that was:
-
-- Fast
-- Simple
-- Designed for **embedded Linux**, not servers
-- Capable of real-time and offline log analysis
-
-I couldn’t find one that fully fit that workflow.
-
-So I built it.
-
-More about this story at [Medium Article](https://medium.com/@ascillato/debugging-embedded-linux-devices-from-vs-code-without-living-in-the-terminal-3c93d9342ab8?source=friends_link&sk=dd4fc69407ac03fd81c42f304855cdcf)
-
-## For developers
-
-Want to build from source or contribute? See the [Developer Setup and Workflow](https://ascillato.github.io/VSCode-Logger/developer-guide.html) for packaging, local installs, and contribution guidelines. The project is open to pull requests. Please, check the [CONTRIBUTING guide](https://ascillato.github.io/VSCode-Logger/code-development.html) and the [Code Architecture Overview](https://ascillato.github.io/VSCode-Logger/extension-overview.html) before submitting.
+MIT — see [LICENSE](LICENSE).

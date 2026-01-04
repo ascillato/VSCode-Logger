@@ -4,7 +4,7 @@
   "tsconfig": "tsconfig.json",
   "out": "docs/typedoc",
   "readme": "none",
-  "name": "VSCode-Logger API",
+  "name": "VS Code Extension Template API",
   "includeVersion": true,
   "excludePrivate": true,
   "excludeProtected": true,

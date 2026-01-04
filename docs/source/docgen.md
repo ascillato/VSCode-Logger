@@ -1,40 +1,22 @@
-# VSCode-Logger Documentation Generation
+# Documentation Generation
 
-Welcome to the VSCode-Logger documentation site. This extension streams logs from embedded Linux devices over SSH into Visual Studio Code, providing filtering, highlighting, presets, and exporting. These pages collect architecture notes, user guidance, and generated API references.
+The template provides two documentation paths:
 
-## Diagrams
+1. **Sphinx site** — built from the Markdown files under `docs/source/`.
+2. **TypeDoc API docs** — generated from the TypeScript sources using `typedoc.json`.
 
-Mermaid diagrams in Markdown work with fenced code blocks. For example:
+## Building docs locally
 
-<code>```mermaid</code>
-```
-:zoom: 100%
-graph LR
-    A[Device configured] --> B[Open log panel]
-    B --> C{SSH stream}
-    C --> D[Log lines rendered]
-```
-<code>```</code>
-
-will render as:
-
-```mermaid
-:zoom: 100%
-graph LR
-    A[Device configured] --> B[Open log panel]
-    B --> C{SSH stream}
-    C --> D[Log lines rendered]
+```bash
+pip install -r docs/requirements.txt
+npm install
+make docs
 ```
 
-## API reference
+This runs `cspell` for spell checking, builds the Sphinx site into `docs/build/html`, and writes TypeDoc output to `docs/typedoc`.
 
-The API reference is generated with TypeDoc and surfaced inside Sphinx. When Sphinx builds the site, it runs TypeDoc (when available) to refresh the `docs/typedoc` output so the `api/` section stays up to date.
+## Customizing
 
-## Building this documentation
-
-1. Install doc tooling with `pip install -r docs/requirements.txt`.
-2. Install Node.js development dependencies with `npm install` to provide the bundled `typedoc` and `cloc` binaries used during the build.
-3. Run `npm run lint:docs` to spell-check the Markdown sources.
-4. (Optional) Generate the TypeDoc HTML output with `npm run docs:typedoc` (outputs to `docs/typedoc`).
-5. Build the site with `sphinx-build -b html docs/source docs/build/html` (Sphinx runs TypeDoc and `cloc` when available; set `CLOC_SKIP=1` to skip the metrics report).
-6. GitHub Actions publishes the built HTML to the `gh-pages` branch on each push to `main` with tag.
+- Edit `docs/source/*.md` to describe your extension’s features and workflows.
+- Update `typedoc.json` to adjust the API doc title or entry points.
+- Configure deployment (e.g., GitHub Pages) in your own CI pipeline to publish the generated HTML.

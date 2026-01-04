@@ -6,7 +6,7 @@ API Reference
    .. raw:: html
 
       <div class="typedoc-embed">
-        <iframe src="../typedoc/index.html" title="VSCode-Logger API reference"></iframe>
+        <iframe src="../typedoc/index.html" title="VS Code Extension Template API reference"></iframe>
       </div>
 
    `Open the TypeDoc API reference in a new tab <../typedoc/index.html>`_.

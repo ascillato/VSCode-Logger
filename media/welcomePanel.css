@@ -1,0 +1,38 @@
+:root {
+  color-scheme: light dark;
+  --text-color: var(--vscode-editor-foreground, #1e1e1e);
+  --background: var(--vscode-editor-background, #fff);
+  --card: var(--vscode-editorWidget-background, #f5f5f5);
+}
+
+body {
+  margin: 0;
+  padding: 1.5rem;
+  font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+  background: var(--background);
+  color: var(--text-color);
+}
+
+header {
+  margin-bottom: 1rem;
+}
+
+main {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+section {
+  padding: 1rem;
+  border-radius: 8px;
+  background: var(--card);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+pre {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 6px;
+  padding: 0.75rem;
+  overflow: auto;
+}

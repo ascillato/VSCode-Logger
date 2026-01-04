@@ -4,8 +4,8 @@ const assert = require('assert');
 const vscode = require('vscode');
 
 suite('VS Code Extension E2E Suite', () => {
-  test('activates the extension', async () => {
-    const extension = vscode.extensions.getExtension('Scallant.embedded-device-logger');
+  test('activates the template extension', async () => {
+    const extension = vscode.extensions.getExtension('template.vscode-extension-template');
     assert.ok(extension, 'Extension should be available');
 
     await extension.activate();
