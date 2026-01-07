@@ -85,7 +85,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-artifacts
-          path: coverage/coverage-summary.json
+          path: |
+            coverage/coverage-summary.json
 
   # 4. Package VSIX + Draft GitHub Release (tag pushes only)
   release:
