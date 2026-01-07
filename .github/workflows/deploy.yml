@@ -158,6 +158,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Clean documentation outputs
+        run: make docs-clean
+
       - name: Download test artifacts
         uses: actions/download-artifact@v4
         with:
@@ -174,7 +177,6 @@ jobs:
 
       - name: Build docs via Makefile
         run: |
-          make docs-clean
           make docs
 
       # Deploy condition: push to main OR workflow_dispatch, but NEVER pull_request
