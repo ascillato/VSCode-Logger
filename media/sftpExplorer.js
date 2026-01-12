@@ -49,6 +49,8 @@
     localOpenTerminal: document.getElementById('localOpenTerminal'),
     remoteList: document.getElementById('remoteList'),
     localList: document.getElementById('localList'),
+    remoteQuickSearch: document.getElementById('remoteQuickSearch'),
+    localQuickSearch: document.getElementById('localQuickSearch'),
     remoteHome: document.getElementById('remoteHome'),
     remoteUp: document.getElementById('remoteUp'),
     remoteRefresh: document.getElementById('remoteRefresh'),
@@ -120,6 +122,20 @@
 
   const presetInputs = [];
   const presetLimit = 10;
+
+  const quickSearch = {
+    delay: 1200,
+    remote: {
+      term: '',
+      timer: undefined,
+      lastInput: 0,
+    },
+    right: {
+      term: '',
+      timer: undefined,
+      lastInput: 0,
+    },
+  };
 
   /**
    * Generates a unique identifier for correlating list requests.
@@ -210,6 +226,121 @@
     return snapshot.selected ?? [];
   }
 
+  function getQuickSearchState(side) {
+    return side === 'remote' ? quickSearch.remote : quickSearch.right;
+  }
+
+  function getQuickSearchLabel(side) {
+    return side === 'remote' ? elements.remoteQuickSearch : elements.localQuickSearch;
+  }
+
+  function setQuickSearchLabel(side, term) {
+    const label = getQuickSearchLabel(side);
+    if (!label) {
+      return;
+    }
+    label.textContent = term;
+    const isVisible = term.length > 0;
+    label.classList.toggle('quick-search--visible', isVisible);
+    label.setAttribute('aria-hidden', isVisible ? 'false' : 'true');
+  }
+
+  function clearQuickSearch(side) {
+    const stateForSide = getQuickSearchState(side);
+    if (stateForSide.timer) {
+      clearTimeout(stateForSide.timer);
+      stateForSide.timer = undefined;
+    }
+    stateForSide.term = '';
+    stateForSide.lastInput = 0;
+    setQuickSearchLabel(side, '');
+  }
+
+  function scheduleQuickSearchClear(side) {
+    const stateForSide = getQuickSearchState(side);
+    if (stateForSide.timer) {
+      clearTimeout(stateForSide.timer);
+    }
+    stateForSide.timer = setTimeout(() => {
+      clearQuickSearch(side);
+    }, quickSearch.delay);
+  }
+
+  function getFocusedListSide() {
+    const active = document.activeElement;
+    if (active === elements.remoteList) {
+      return 'remote';
+    }
+    if (active === elements.localList) {
+      return 'right';
+    }
+    return undefined;
+  }
+
+  function isEditableTarget(target) {
+    if (!target || !(target instanceof HTMLElement)) {
+      return false;
+    }
+    if (target.closest('input, textarea, select')) {
+      return true;
+    }
+    let current = target;
+    while (current) {
+      if (current.isContentEditable) {
+        return true;
+      }
+      current = current.parentElement;
+    }
+    return false;
+  }
+
+  function isQuickSearchKey(event) {
+    if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) {
+      return false;
+    }
+    if (event.key === ' ' || event.code === 'Space') {
+      return false;
+    }
+    return event.key.length === 1;
+  }
+
+  function getCssSafeValue(value) {
+    if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') {
+      return CSS.escape(value);
+    }
+    return value.replace(/["\\]/g, '\\$&');
+  }
+
+  function selectEntryAndReveal(side, entry) {
+    setSingleSelection(side, entry);
+    requestAnimationFrame(() => {
+      const list = side === 'remote' ? elements.remoteList : elements.localList;
+      const selector = `.entry[data-name="${getCssSafeValue(entry.name)}"]`;
+      const row = list?.querySelector(selector);
+      row?.scrollIntoView({ block: 'nearest' });
+    });
+  }
+
+  function performQuickSearch(side, key) {
+    const stateForSide = getQuickSearchState(side);
+    const now = Date.now();
+    if (now - stateForSide.lastInput > quickSearch.delay) {
+      stateForSide.term = '';
+    }
+    stateForSide.lastInput = now;
+    stateForSide.term += key.toLowerCase();
+    setQuickSearchLabel(side, stateForSide.term);
+    scheduleQuickSearchClear(side);
+
+    const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
+    const match = snapshot.entries.find((entry) =>
+      entry.name.toLowerCase().startsWith(stateForSide.term)
+    );
+    if (match) {
+      selectEntryAndReveal(side, match);
+    }
+  }
+
   function getSelectionAnchorKey(side) {
     if (side === 'remote') {
       return 'remote';
@@ -280,6 +411,7 @@
       row.className = 'entry';
       row.setAttribute('role', 'treeitem');
       row.dataset.type = entry.type;
+      row.dataset.name = entry.name;
       if (entry.type === 'file' && entry.isExecutable) {
         row.classList.add('entry--executable');
       }
@@ -1213,6 +1345,22 @@
     }
   });
 
+  window.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      clearQuickSearch('remote');
+      clearQuickSearch('right');
+      return;
+    }
+    if (!isQuickSearchKey(event) || isEditableTarget(event.target)) {
+      return;
+    }
+    const side = getFocusedListSide();
+    if (!side || state.connectionState !== 'connected') {
+      return;
+    }
+    performQuickSearch(side, event.key);
+  });
+
   elements.confirmYes.addEventListener('click', () => hideConfirmation(true));
   elements.confirmCancel.addEventListener('click', () => hideConfirmation(false));
   elements.confirmDismiss.addEventListener('click', () => hideConfirmation(false));
@@ -1284,6 +1432,13 @@
     if (!elements.contextMenu.contains(target)) {
       hideContextMenu();
     }
+  });
+
+  elements.remoteList.addEventListener('click', () => {
+    elements.remoteList.focus();
+  });
+  elements.localList.addEventListener('click', () => {
+    elements.localList.focus();
   });
 
   [elements.remoteList, elements.localList].forEach((list) => {

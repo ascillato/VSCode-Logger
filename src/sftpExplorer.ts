@@ -2745,7 +2745,16 @@ export class SftpExplorerPanel {
                         <button id="remotePresetManage" class="action" type="button" title="Manage remote presets">PRESETS</button>
                     </div>
                 </div>
-                <div id="remoteList" class="list" role="tree"></div>
+                <div class="list-wrapper">
+                    <div
+                        id="remoteList"
+                        class="list"
+                        role="tree"
+                        tabindex="0"
+                        aria-label="Remote file list"
+                    ></div>
+                    <div class="quick-search" id="remoteQuickSearch" aria-live="polite" aria-hidden="true"></div>
+                </div>
             </section>
             <section class="pane" id="rightPane" aria-label="Local files">
                 <div class="pane__controls">
@@ -2948,7 +2957,16 @@ export class SftpExplorerPanel {
                         <button id="rightPresetManage" class="action" type="button" title="Manage presets for right pane">PRESETS</button>
                     </div>
                 </div>
-                <div id="localList" class="list" role="tree"></div>
+                <div class="list-wrapper">
+                    <div
+                        id="localList"
+                        class="list"
+                        role="tree"
+                        tabindex="0"
+                        aria-label="Right file list"
+                    ></div>
+                    <div class="quick-search" id="localQuickSearch" aria-live="polite" aria-hidden="true"></div>
+                </div>
             </section>
         </div>
         <div class="context-menu" id="contextMenu" role="menu" aria-hidden="true">
