@@ -97,8 +97,16 @@ export class LogSession {
     };
     this.connectionManager = new ConnectionManager(
       {
-        onStatus: (message): void => this.callbacks.onStatus(message),
-        onError: (message): void => this.callbacks.onError(message),
+        onStatus: (message): void => {
+          if (!this.disposed) {
+            this.callbacks.onStatus(message);
+          }
+        },
+        onError: (message): void => {
+          if (!this.disposed) {
+            this.callbacks.onError(message);
+          }
+        },
         onClose: (): void => this.handleClose(),
       },
       this.fingerprintPersistence,
@@ -261,11 +269,17 @@ export class LogSession {
       .on('data', (data: Buffer) => this.handleData(data))
       .on('close', () => this.handleClose())
       .stderr.on('data', (data: Buffer) => {
+        if (this.disposed) {
+          return;
+        }
         this.callbacks.onError(data.toString());
       });
   }
 
   private handleData(data: Buffer): void {
+    if (this.disposed) {
+      return;
+    }
     this.buffer.value += data.toString();
     let idx: number;
     while ((idx = this.buffer.value.indexOf('\n')) !== -1) {
