@@ -13,9 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add Clean Tests to makefile and to code-workspace (VSCode UI - bottom bar).
 
 ### Changed
-- Bump @types/node from 22.19.3 to 25.0.3
+- Bump @types/node from 22.19.3 to 25.0.9
 - Bump typescript from 5.8.3 to 5.9.3
 - Bump typedoc from 0.27.9 to 0.28.15
+- Bump vitest from 4.0.16 to 4.0.17
+- Bump coverage-v8 to 4.0.17
+- Bump @types/vscode from 1.107.0 to 1.108.1
+- Bump @typescript-eslint/eslint-plugin from 8.51.0 to 8.53.0
+- Bump @typescript-eslint/parser from 8.51.0 to 8.53.0
 - Updated developer-guide.md with URL of repository template.
 
 ### Deprecated
