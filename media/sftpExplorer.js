@@ -26,6 +26,8 @@
     presetsDialogLocation: 'remote',
   };
 
+  const isTestMode = document.body?.dataset.testMode === 'true';
+
   const selectionAnchors = {
     remote: undefined,
     rightLocal: undefined,
@@ -136,6 +138,10 @@
       lastInput: 0,
     },
   };
+
+  if (isTestMode) {
+    quickSearch.delay = 10000;
+  }
 
   const pendingAutoSelect = new Set();
 
@@ -266,6 +272,105 @@
     stateForSide.timer = setTimeout(() => {
       clearQuickSearch(side);
     }, quickSearch.delay);
+  }
+
+  function postTestMessage(type, payload) {
+    if (!isTestMode) {
+      return;
+    }
+    vscode.postMessage({ type, ...payload });
+  }
+
+  function buildTestState() {
+    const rightSnapshot = getActiveRightSnapshot();
+    return {
+      connectionState: state.connectionState,
+      focusedSide: getFocusedListSide(),
+      quickSearch: {
+        remote: quickSearch.remote.term,
+        right: quickSearch.right.term,
+      },
+      remote: {
+        path: state.remote.path,
+        selected: getSelectedEntries(state.remote).map((entry) => entry.name),
+      },
+      right: {
+        path: rightSnapshot.path,
+        selected: getSelectedEntries(rightSnapshot).map((entry) => entry.name),
+        mode: state.rightMode,
+      },
+    };
+  }
+
+  function postTestState(requestId) {
+    postTestMessage('testState', { requestId, state: buildTestState() });
+  }
+
+  function selectEntryByName(side, name) {
+    const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
+    const match = snapshot.entries.find((entry) => entry.name === name);
+    if (match) {
+      selectEntryAndReveal(side, match);
+    }
+  }
+
+  function performContextSelect(side) {
+    hideContextMenu();
+    const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
+    const selected = getSelectedEntries(snapshot);
+    if (selected.length) {
+      setSelection(side, [...selected], selected[selected.length - 1]);
+      focusList(side);
+      requestAnimationFrame(() => focusList(side));
+    }
+  }
+
+  function simulateTestKey(payload) {
+    const side = payload.side || 'remote';
+    focusList(side);
+    const event = new KeyboardEvent('keydown', {
+      key: payload.key,
+      code: payload.code || payload.key,
+      ctrlKey: Boolean(payload.ctrlKey),
+      metaKey: Boolean(payload.metaKey),
+      altKey: Boolean(payload.altKey),
+      shiftKey: Boolean(payload.shiftKey),
+      bubbles: true,
+      cancelable: true,
+    });
+    window.dispatchEvent(event);
+  }
+
+  function handleTestCommand(message) {
+    if (!isTestMode) {
+      return;
+    }
+    const side = message.side || 'remote';
+    switch (message.command) {
+      case 'simulateKey':
+        simulateTestKey(message);
+        break;
+      case 'selectEntry':
+        selectEntryByName(side, message.name);
+        break;
+      case 'clearQuickSearch':
+        clearQuickSearch(side);
+        break;
+      case 'getState':
+        postTestState(message.requestId);
+        break;
+      case 'confirmDialog':
+        hideConfirmation(message.confirmed !== false);
+        break;
+      case 'contextSelect':
+        performContextSelect(side);
+        break;
+      case 'focusSide':
+        focusList(side);
+        break;
+      default:
+        break;
+    }
   }
 
   function scheduleAutoSelect(requestId) {
@@ -1042,6 +1147,9 @@
     );
     resetSelectionAnchors();
     renderLists();
+    if (isTestMode) {
+      postTestMessage('testReady', {});
+    }
   }
 
   /**
@@ -1068,6 +1176,9 @@
       }
     }
     renderLists();
+    if (isTestMode) {
+      postTestMessage('testListResponse', { requestId: message.requestId, path: snapshot.path });
+    }
   }
 
   /**
@@ -1468,13 +1579,7 @@
   });
 
   elements.contextSelect.addEventListener('click', () => {
-    hideContextMenu();
-    const snapshot = contextMenuState.side === 'remote' ? state.remote : getActiveRightSnapshot();
-    const selected = getSelectedEntries(snapshot);
-    if (selected.length) {
-      setSelection(contextMenuState.side, [...selected], selected[selected.length - 1]);
-      requestAnimationFrame(() => focusList(contextMenuState.side));
-    }
+    performContextSelect(contextMenuState.side);
   });
 
   window.addEventListener('keydown', (event) => {
@@ -1754,6 +1859,9 @@
           elements.rightPresetMenu,
           state.rightMode === 'local' ? state.sftpPresetsLocal : state.sftpPresetsRemote
         );
+        break;
+      case 'testCommand':
+        handleTestCommand(message);
         break;
     }
   });

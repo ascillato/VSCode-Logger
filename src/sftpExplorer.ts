@@ -287,6 +287,9 @@ export class SftpExplorerPanel {
   private readonly viewedTempFiles = new Map<string, { remotePath: string }>();
   private readonly sftpPresetsKey: string;
   private readonly sftpLocalPresetsKey: string;
+  private readonly isTestMode: boolean;
+  private readonly testEntries: Map<string, ExplorerEntry[]> = new Map();
+  private readonly testInputQueue: string[] = [];
 
   readonly onDidDispose = this.onDidDisposeEmitter.event;
 
@@ -304,6 +307,10 @@ export class SftpExplorerPanel {
     this.localHome = os.homedir();
     this.sftpPresetsKey = `embeddedLogger.sftpPresets.${device.id}`;
     this.sftpLocalPresetsKey = `embeddedLogger.sftpPresets.local.${device.id}`;
+    this.isTestMode = context.extensionMode === vscode.ExtensionMode.Test;
+    if (this.isTestMode) {
+      this.seedTestEntries();
+    }
 
     this.panel = vscode.window.createWebviewPanel(
       'embeddedLoggerSftpExplorer',
@@ -380,8 +387,127 @@ export class SftpExplorerPanel {
     this.panel.dispose();
   }
 
+  getWebview(): vscode.Webview {
+    return this.panel.webview;
+  }
+
+  enqueueTestInput(value: string): void {
+    if (!this.isTestMode) {
+      return;
+    }
+    this.testInputQueue.push(value);
+  }
+
+  private seedTestEntries(): void {
+    const rootEntries: ExplorerEntry[] = [
+      { name: 'alpha', type: 'directory', size: 0 },
+      { name: 'alpha-file.txt', type: 'file', size: 1234 },
+      { name: 'alpha-two.log', type: 'file', size: 5678 },
+      { name: 'bravo', type: 'directory', size: 0 },
+      { name: 'charlie.txt', type: 'file', size: 901 },
+    ];
+    const alphaEntries: ExplorerEntry[] = [
+      { name: 'alpha-child.txt', type: 'file', size: 42 },
+      { name: 'alpha-sub', type: 'directory', size: 0 },
+    ];
+    const alphaSubEntries: ExplorerEntry[] = [{ name: 'nested.txt', type: 'file', size: 7 }];
+    const bravoEntries: ExplorerEntry[] = [{ name: 'bravo.txt', type: 'file', size: 17 }];
+
+    this.testEntries.set('/', rootEntries);
+    this.testEntries.set('/alpha', alphaEntries);
+    this.testEntries.set('/alpha/alpha-sub', alphaSubEntries);
+    this.testEntries.set('/bravo', bravoEntries);
+  }
+
+  private normalizeTestPath(dirPath: string): string {
+    const normalized = path.posix.normalize(dirPath || '/');
+    return normalized.startsWith('/') ? normalized : `/${normalized}`;
+  }
+
+  private buildTestSnapshot(
+    location: 'remote' | 'local',
+    dirPath: string,
+    context: 'left' | 'right' | undefined = undefined
+  ): DirectorySnapshot {
+    const normalized = this.normalizeTestPath(dirPath);
+    const entries = this.testEntries.get(normalized) ?? [];
+    if (location === 'remote') {
+      if (context === 'right') {
+        this.remotePaths.right = normalized;
+      } else {
+        this.remotePaths.left = normalized;
+      }
+    }
+    return {
+      path: normalized,
+      parentPath: normalized === '/' ? '/' : path.posix.dirname(normalized),
+      isRoot: normalized === '/',
+      entries,
+      location,
+    };
+  }
+
+  private getNextTestInput(): string {
+    return this.testInputQueue.shift() ?? 'test-value';
+  }
+
+  private buildTestPermissionsInfo(
+    pathValue: string,
+    location: 'remote' | 'local'
+  ): PermissionsInfo {
+    return {
+      path: pathValue,
+      location,
+      name: path.posix.basename(pathValue),
+      type: 'file',
+      mode: 0o644,
+      owner: 1000,
+      group: 1000,
+      ownerName: 'tester',
+      groupName: 'tester',
+    };
+  }
+
+  private handleTestMessage(message: WebviewRequest): boolean {
+    switch (message.type) {
+      case 'requestInput': {
+        const value = this.getNextTestInput();
+        this.postMessage({ type: 'inputResult', requestId: message.requestId, value });
+        return true;
+      }
+      case 'requestPermissionsInfo': {
+        const info = this.buildTestPermissionsInfo(message.path, message.location);
+        this.postMessage({ type: 'permissionsInfo', requestId: message.requestId, info });
+        return true;
+      }
+      case 'deleteEntry':
+      case 'deleteEntries':
+      case 'renameEntry':
+      case 'duplicateEntry':
+      case 'createDirectory':
+      case 'createFile':
+      case 'copyEntry':
+      case 'copyEntries':
+      case 'updatePermissions':
+      case 'updatePermissionsBatch':
+      case 'runEntry':
+      case 'viewContent':
+      case 'openTerminal':
+      case 'requestConfirmation':
+        return true;
+      default:
+        return false;
+    }
+  }
+
   private async handleMessage(message: WebviewRequest): Promise<void> {
     try {
+      if (this.isTestMode) {
+        const handled = this.handleTestMessage(message);
+        if (handled) {
+          return;
+        }
+      }
       switch (message.type) {
         case 'requestInit':
           await this.handleInitRequest();
@@ -647,6 +773,26 @@ export class SftpExplorerPanel {
   }
 
   private async postInitialState(): Promise<void> {
+    if (this.isTestMode) {
+      const remoteHome = '/';
+      const remoteSnapshot = this.buildTestSnapshot('remote', remoteHome, 'left');
+      const localSnapshot = this.buildTestSnapshot('local', remoteHome);
+      const payload: InitResponse = {
+        type: 'init',
+        remoteHome,
+        localHome: remoteHome,
+        remote: remoteSnapshot,
+        local: localSnapshot,
+        sftpPresetsRemote: [],
+        sftpPresetsLocal: [],
+      };
+
+      this.remotePaths = { left: remoteSnapshot.path, right: remoteSnapshot.path };
+      this.updateConnectionStatus('connected');
+      this.postMessage(payload);
+      return;
+    }
+
     const remoteHome = await this.getRemoteHome();
     const remoteSnapshot = await this.buildSnapshot('remote', remoteHome);
     const localSnapshot = await this.buildSnapshot('local', this.localHome);
@@ -686,6 +832,11 @@ export class SftpExplorerPanel {
     requestId: string,
     context: 'left' | 'right' | undefined = undefined
   ): Promise<void> {
+    if (this.isTestMode) {
+      const snapshot = this.buildTestSnapshot(location, dirPath, context);
+      this.postMessage({ type: 'listResponse', requestId, snapshot });
+      return;
+    }
     const snapshot = await this.buildSnapshot(location, dirPath, context);
     this.postMessage({ type: 'listResponse', requestId, snapshot });
   }
@@ -2545,7 +2696,7 @@ export class SftpExplorerPanel {
     <link href="${styleUriString}" rel="stylesheet" />
     <title>SFTP Explorer</title>
 </head>
-<body>
+<body data-test-mode="${this.isTestMode ? 'true' : 'false'}">
     <div class="explorer" id="explorer">
         <header class="explorer__header">
             <h2>${this.escapeHtml(this.device.name)} — SFTP Explorer</h2>

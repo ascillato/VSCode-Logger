@@ -23,6 +23,11 @@ const sftpPanels: Set<SftpExplorerPanel> = new Set();
 let activePanel: LogPanel | undefined;
 let sidebarProvider: SidebarViewProvider | undefined;
 
+export interface ExtensionTestApi {
+  openSftpExplorerForTest(device: EmbeddedDevice): Promise<SftpExplorerPanel | undefined>;
+  getSftpPanels(): SftpExplorerPanel[];
+}
+
 /**
  * Validates the SSH-related fields for a configured device.
  *
@@ -222,7 +227,8 @@ async function migrateLegacyPasswords(
  *
  * @param context VS Code extension context provided on activation.
  */
-export async function activate(context: vscode.ExtensionContext): Promise<void> {
+export async function activate(context: vscode.ExtensionContext): Promise<ExtensionTestApi | void> {
+  const isTestMode = context.extensionMode === vscode.ExtensionMode.Test;
   const passwordManager = new PasswordManager(context);
   const { devices } = getEmbeddedLoggerConfiguration();
 
@@ -274,21 +280,23 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }
   };
 
-  const openSftpExplorer = async (device: EmbeddedDevice | undefined): Promise<void> => {
+  const openSftpExplorer = async (
+    device: EmbeddedDevice | undefined
+  ): Promise<SftpExplorerPanel | undefined> => {
     if (!device) {
       vscode.window.showErrorMessage('Device not found. Check embeddedLogger.devices.');
-      return;
+      return undefined;
     }
 
-    if (!vscode.workspace.isTrusted) {
+    if (!isTestMode && !vscode.workspace.isTrusted) {
       vscode.window.showErrorMessage('Workspace trust is required before connecting to devices.');
-      return;
+      return undefined;
     }
 
     const validationError = validateSshDevice(device);
     if (validationError) {
       vscode.window.showErrorMessage(validationError);
-      return;
+      return undefined;
     }
 
     let panel: SftpExplorerPanel | undefined;
@@ -298,6 +306,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       sftpPanels.add(createdPanel);
       createdPanel.onDidDispose(() => sftpPanels.delete(createdPanel));
       await panel.start();
+      return panel;
     } catch (err: unknown) {
       if (panel) {
         sftpPanels.delete(panel);
@@ -305,6 +314,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       const message = err instanceof Error ? err.message : String(err);
       vscode.window.showErrorMessage(message);
     }
+    return undefined;
   };
 
   sidebarProvider = new SidebarViewProvider(
@@ -567,6 +577,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       }
     })
   );
+
+  if (isTestMode) {
+    return {
+      openSftpExplorerForTest: async (device: EmbeddedDevice) => openSftpExplorer(device),
+      getSftpPanels: () => Array.from(sftpPanels),
+    };
+  }
 }
 
 /**
