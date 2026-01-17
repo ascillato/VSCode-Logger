@@ -1629,6 +1629,18 @@
       return;
     }
 
+    if (
+      (key === 'ArrowLeft' || key === 'ArrowRight') &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.altKey
+    ) {
+      event.preventDefault();
+      hideContextMenu();
+      focusList(side === 'remote' ? 'right' : 'remote');
+      return;
+    }
+
     if (key === 'Delete') {
       event.preventDefault();
       hideContextMenu();
@@ -1656,12 +1668,6 @@
         event.preventDefault();
         hideContextMenu();
         duplicateSelected(side);
-        return;
-      }
-      if (lowerKey === 'p') {
-        event.preventDefault();
-        hideContextMenu();
-        requestPermissions(side);
         return;
       }
     }
