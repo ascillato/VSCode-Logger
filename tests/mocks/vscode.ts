@@ -241,7 +241,10 @@ export const ThemeColor = class MockThemeColor implements vscode.ThemeColor {
 } as unknown as typeof vscode.ThemeColor;
 
 export const ThemeIcon = class MockThemeIcon implements vscode.ThemeIcon {
-  constructor(public readonly id: string, public readonly color?: vscode.ThemeColor) {}
+  constructor(
+    public readonly id: string,
+    public readonly color?: vscode.ThemeColor
+  ) {}
 } as unknown as typeof vscode.ThemeIcon;
 
 export const StatusBarAlignment = {

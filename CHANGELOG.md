@@ -7,34 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
-## [1.7.0] - 2026-01-17 [DEVICE-COLOR]
-
-### Added
-- Add per-device color setting to tint device tabs and show a swatch in device lists.
-
-### Changed
-- None.
-
-### Deprecated
-- None.
-
-### Removed
-- None.
-
-### Fixed
-- None.
-
-### Security
-- None.
-
-----------------------------------------
-
 ## [1.6.1] - 2026-01-17 [SFTP-QUICK-SEARCH]
 
 ### Added
 - Add quick search to SFTP explorer panes.
 - Add keys support to SFTP explorer panes to navigate and perform actions over files and directories.
 - Add edit SFTP path presets from settings page.
+- Add customizable identification color for all tabs of a device.
 - Add Clean Tests to makefile and to code-workspace (VSCode UI - bottom bar).
 
 ### Changed
