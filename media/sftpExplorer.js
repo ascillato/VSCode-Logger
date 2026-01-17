@@ -26,6 +26,8 @@
     presetsDialogLocation: 'remote',
   };
 
+  const isTestMode = document.body?.dataset.testMode === 'true';
+
   const selectionAnchors = {
     remote: undefined,
     rightLocal: undefined,
@@ -49,6 +51,8 @@
     localOpenTerminal: document.getElementById('localOpenTerminal'),
     remoteList: document.getElementById('remoteList'),
     localList: document.getElementById('localList'),
+    remoteQuickSearch: document.getElementById('remoteQuickSearch'),
+    localQuickSearch: document.getElementById('localQuickSearch'),
     remoteHome: document.getElementById('remoteHome'),
     remoteUp: document.getElementById('remoteUp'),
     remoteRefresh: document.getElementById('remoteRefresh'),
@@ -120,6 +124,26 @@
 
   const presetInputs = [];
   const presetLimit = 10;
+
+  const quickSearch = {
+    delay: 1200,
+    remote: {
+      term: '',
+      timer: undefined,
+      lastInput: 0,
+    },
+    right: {
+      term: '',
+      timer: undefined,
+      lastInput: 0,
+    },
+  };
+
+  if (isTestMode) {
+    quickSearch.delay = 10000;
+  }
+
+  const pendingAutoSelect = new Set();
 
   /**
    * Generates a unique identifier for correlating list requests.
@@ -210,11 +234,317 @@
     return snapshot.selected ?? [];
   }
 
+  function getQuickSearchState(side) {
+    return side === 'remote' ? quickSearch.remote : quickSearch.right;
+  }
+
+  function getQuickSearchLabel(side) {
+    return side === 'remote' ? elements.remoteQuickSearch : elements.localQuickSearch;
+  }
+
+  function setQuickSearchLabel(side, term) {
+    const label = getQuickSearchLabel(side);
+    if (!label) {
+      return;
+    }
+    label.textContent = term;
+    const isVisible = term.length > 0;
+    label.classList.toggle('quick-search--visible', isVisible);
+    label.setAttribute('aria-hidden', isVisible ? 'false' : 'true');
+  }
+
+  function clearQuickSearch(side) {
+    const stateForSide = getQuickSearchState(side);
+    if (stateForSide.timer) {
+      clearTimeout(stateForSide.timer);
+      stateForSide.timer = undefined;
+    }
+    stateForSide.term = '';
+    stateForSide.lastInput = 0;
+    setQuickSearchLabel(side, '');
+  }
+
+  function scheduleQuickSearchClear(side) {
+    const stateForSide = getQuickSearchState(side);
+    if (stateForSide.timer) {
+      clearTimeout(stateForSide.timer);
+    }
+    stateForSide.timer = setTimeout(() => {
+      clearQuickSearch(side);
+    }, quickSearch.delay);
+  }
+
+  function postTestMessage(type, payload) {
+    if (!isTestMode) {
+      return;
+    }
+    vscode.postMessage({ type, ...payload });
+  }
+
+  function buildTestState() {
+    const rightSnapshot = getActiveRightSnapshot();
+    return {
+      connectionState: state.connectionState,
+      focusedSide: getFocusedListSide(),
+      quickSearch: {
+        remote: quickSearch.remote.term,
+        right: quickSearch.right.term,
+      },
+      remote: {
+        path: state.remote.path,
+        selected: getSelectedEntries(state.remote).map((entry) => entry.name),
+      },
+      right: {
+        path: rightSnapshot.path,
+        selected: getSelectedEntries(rightSnapshot).map((entry) => entry.name),
+        mode: state.rightMode,
+      },
+    };
+  }
+
+  function postTestState(requestId) {
+    postTestMessage('testState', { requestId, state: buildTestState() });
+  }
+
+  function selectEntryByName(side, name) {
+    const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
+    const match = snapshot.entries.find((entry) => entry.name === name);
+    if (match) {
+      selectEntryAndReveal(side, match);
+    }
+  }
+
+  function performContextSelect(side) {
+    hideContextMenu();
+    const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
+    const selected = getSelectedEntries(snapshot);
+    if (selected.length) {
+      setSelection(side, [...selected], selected[selected.length - 1]);
+      focusList(side);
+      requestAnimationFrame(() => focusList(side));
+    }
+  }
+
+  function simulateTestKey(payload) {
+    const side = payload.side || 'remote';
+    focusList(side);
+    const event = new KeyboardEvent('keydown', {
+      key: payload.key,
+      code: payload.code || payload.key,
+      ctrlKey: Boolean(payload.ctrlKey),
+      metaKey: Boolean(payload.metaKey),
+      altKey: Boolean(payload.altKey),
+      shiftKey: Boolean(payload.shiftKey),
+      bubbles: true,
+      cancelable: true,
+    });
+    window.dispatchEvent(event);
+  }
+
+  function handleTestCommand(message) {
+    if (!isTestMode) {
+      return;
+    }
+    const side = message.side || 'remote';
+    switch (message.command) {
+      case 'simulateKey':
+        simulateTestKey(message);
+        break;
+      case 'selectEntry':
+        selectEntryByName(side, message.name);
+        break;
+      case 'clearQuickSearch':
+        clearQuickSearch(side);
+        break;
+      case 'getState':
+        postTestState(message.requestId);
+        break;
+      case 'confirmDialog':
+        hideConfirmation(message.confirmed !== false);
+        break;
+      case 'contextSelect':
+        performContextSelect(side);
+        break;
+      case 'focusSide':
+        focusList(side);
+        break;
+      default:
+        break;
+    }
+  }
+
+  function scheduleAutoSelect(requestId) {
+    pendingAutoSelect.add(requestId);
+  }
+
+  function consumeAutoSelect(requestId) {
+    if (!pendingAutoSelect.has(requestId)) {
+      return false;
+    }
+    pendingAutoSelect.delete(requestId);
+    return true;
+  }
+
+  function getFocusedListSide() {
+    const active = document.activeElement;
+    if (active === elements.remoteList) {
+      return 'remote';
+    }
+    if (active === elements.localList) {
+      return 'right';
+    }
+    return undefined;
+  }
+
+  function focusList(side) {
+    const list = side === 'remote' ? elements.remoteList : elements.localList;
+    list?.focus();
+  }
+
+  function isEditableTarget(target) {
+    if (!target || !(target instanceof HTMLElement)) {
+      return false;
+    }
+    if (target.closest('input, textarea, select')) {
+      return true;
+    }
+    let current = target;
+    while (current) {
+      if (current.isContentEditable) {
+        return true;
+      }
+      current = current.parentElement;
+    }
+    return false;
+  }
+
+  function isQuickSearchKey(event) {
+    if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) {
+      return false;
+    }
+    if (event.key === ' ' || event.code === 'Space') {
+      return false;
+    }
+    return event.key.length === 1;
+  }
+
+  function getCssSafeValue(value) {
+    if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') {
+      return CSS.escape(value);
+    }
+    return value.replace(/["\\]/g, '\\$&');
+  }
+
+  function selectEntryAndReveal(side, entry) {
+    setSingleSelection(side, entry);
+    requestAnimationFrame(() => {
+      const list = side === 'remote' ? elements.remoteList : elements.localList;
+      const selector = `.entry[data-name="${getCssSafeValue(entry.name)}"]`;
+      const row = list?.querySelector(selector);
+      row?.scrollIntoView({ block: 'nearest' });
+    });
+  }
+
+  function performQuickSearch(side, key) {
+    const stateForSide = getQuickSearchState(side);
+    const now = Date.now();
+    if (now - stateForSide.lastInput > quickSearch.delay) {
+      stateForSide.term = '';
+    }
+    stateForSide.lastInput = now;
+    stateForSide.term += key.toLowerCase();
+    setQuickSearchLabel(side, stateForSide.term);
+    scheduleQuickSearchClear(side);
+
+    const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
+    const match = snapshot.entries.find((entry) =>
+      entry.name.toLowerCase().startsWith(stateForSide.term)
+    );
+    if (match) {
+      selectEntryAndReveal(side, match);
+    }
+  }
+
+  function isQuickSearchActive(side) {
+    return getQuickSearchState(side).term.length > 0;
+  }
+
+  function selectNextQuickSearchMatch(side) {
+    const stateForSide = getQuickSearchState(side);
+    const term = stateForSide.term;
+    if (!term) {
+      return false;
+    }
+    const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
+    if (!snapshot.entries.length) {
+      return false;
+    }
+    const normalizedTerm = term.toLowerCase();
+    const selected = getSelectedEntries(snapshot);
+    const anchorName = getSelectionAnchor(side) || selected[selected.length - 1]?.name;
+    const startIndex = anchorName
+      ? snapshot.entries.findIndex((entry) => entry.name === anchorName)
+      : -1;
+    let match = undefined;
+    for (let index = startIndex + 1; index < snapshot.entries.length; index += 1) {
+      const entry = snapshot.entries[index];
+      if (entry.name.toLowerCase().startsWith(normalizedTerm)) {
+        match = entry;
+        break;
+      }
+    }
+    if (!match) {
+      match = snapshot.entries.find((entry) => entry.name.toLowerCase().startsWith(normalizedTerm));
+    }
+    if (!match) {
+      return false;
+    }
+    selectEntryAndReveal(side, match);
+    stateForSide.lastInput = Date.now();
+    scheduleQuickSearchClear(side);
+    return true;
+  }
+
+  function moveSelectionByOffset(side, offset) {
+    const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
+    if (!snapshot.entries.length) {
+      return false;
+    }
+    const selected = getSelectedEntries(snapshot);
+    if (!selected.length) {
+      return false;
+    }
+    const anchorName = getSelectionAnchor(side) || selected[selected.length - 1]?.name;
+    if (!anchorName) {
+      return false;
+    }
+    const currentIndex = snapshot.entries.findIndex((entry) => entry.name === anchorName);
+    if (currentIndex < 0) {
+      return false;
+    }
+    const nextIndex = currentIndex + offset;
+    if (nextIndex < 0 || nextIndex >= snapshot.entries.length) {
+      return false;
+    }
+    selectEntryAndReveal(side, snapshot.entries[nextIndex]);
+    return true;
+  }
+
   function getSelectionAnchorKey(side) {
     if (side === 'remote') {
       return 'remote';
     }
     return getActiveRightLocation() === 'local' ? 'rightLocal' : 'rightRemote';
+  }
+
+  function getSelectionAnchorKeyForRequestId(requestId) {
+    if (requestId === requestIds.remote) {
+      return 'remote';
+    }
+    if (requestId === requestIds.local) {
+      return 'rightLocal';
+    }
+    return 'rightRemote';
   }
 
   function getSelectionAnchor(side) {
@@ -223,6 +553,10 @@
 
   function setSelectionAnchor(side, entry) {
     selectionAnchors[getSelectionAnchorKey(side)] = entry ? entry.name : undefined;
+  }
+
+  function setSelectionAnchorForRequestId(requestId, entry) {
+    selectionAnchors[getSelectionAnchorKeyForRequestId(requestId)] = entry ? entry.name : undefined;
   }
 
   function resetSelectionAnchors() {
@@ -280,6 +614,7 @@
       row.className = 'entry';
       row.setAttribute('role', 'treeitem');
       row.dataset.type = entry.type;
+      row.dataset.name = entry.name;
       if (entry.type === 'file' && entry.isExecutable) {
         row.classList.add('entry--executable');
       }
@@ -358,7 +693,9 @@
     if (entry.type === 'directory') {
       const nextPath = getEntryPath(snapshot, entry);
       const location = side === 'remote' ? 'remote' : getActiveRightLocation();
-      requestList(location, nextPath, side === 'remote' ? requestIds.remote : getActiveRequestId());
+      const requestId = side === 'remote' ? requestIds.remote : getActiveRequestId();
+      scheduleAutoSelect(requestId);
+      requestList(location, nextPath, requestId);
       clearSelection(side);
       return;
     }
@@ -810,6 +1147,9 @@
     );
     resetSelectionAnchors();
     renderLists();
+    if (isTestMode) {
+      postTestMessage('testReady', {});
+    }
   }
 
   /**
@@ -825,7 +1165,20 @@
       state.rightRemote = snapshot;
     }
     clearSelectionAnchorByRequestId(message.requestId);
+    const shouldAutoSelect = consumeAutoSelect(message.requestId);
+    if (shouldAutoSelect && snapshot.entries.length) {
+      const firstEntry = snapshot.entries[0];
+      snapshot.selected = [firstEntry];
+      setSelectionAnchorForRequestId(message.requestId, firstEntry);
+      if (message.requestId === requestIds.remote || message.requestId === getActiveRequestId()) {
+        const side = message.requestId === requestIds.remote ? 'remote' : 'right';
+        requestAnimationFrame(() => focusList(side));
+      }
+    }
     renderLists();
+    if (isTestMode) {
+      postTestMessage('testListResponse', { requestId: message.requestId, path: snapshot.path });
+    }
   }
 
   /**
@@ -896,11 +1249,15 @@
     }
   }
 
-  function goUp(side) {
+  function goUp(side, options = {}) {
     resetStatus();
+    const autoSelectFirst = Boolean(options.autoSelectFirst);
     if (side === 'remote') {
       if (state.remote.isRoot) {
         return;
+      }
+      if (autoSelectFirst) {
+        scheduleAutoSelect(requestIds.remote);
       }
       requestList('remote', state.remote.parentPath, requestIds.remote);
       clearSelection('remote');
@@ -908,6 +1265,9 @@
       const snapshot = getActiveRightSnapshot();
       if (snapshot.isRoot) {
         return;
+      }
+      if (autoSelectFirst) {
+        scheduleAutoSelect(getActiveRequestId());
       }
       requestList(getActiveRightLocation(), snapshot.parentPath, getActiveRequestId());
       clearSelection('right');
@@ -982,6 +1342,26 @@
     }
 
     vscode.postMessage({ type: 'viewContent', location, path: getEntryPath(snapshot, entry) });
+  }
+
+  function openSelectedEntry(side) {
+    resetStatus();
+    const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
+    const selected = getSelectedEntries(snapshot);
+    if (selected.length !== 1) {
+      return;
+    }
+    const [entry] = selected;
+    if (entry.type === 'directory') {
+      const nextPath = getEntryPath(snapshot, entry);
+      const location = side === 'remote' ? 'remote' : getActiveRightLocation();
+      const requestId = side === 'remote' ? requestIds.remote : getActiveRequestId();
+      scheduleAutoSelect(requestId);
+      requestList(location, nextPath, requestId);
+      clearSelection(side === 'remote' ? 'remote' : 'right');
+      return;
+    }
+    viewContent(side);
   }
 
   async function deleteSelected(side) {
@@ -1199,18 +1579,108 @@
   });
 
   elements.contextSelect.addEventListener('click', () => {
-    hideContextMenu();
-    const snapshot = contextMenuState.side === 'remote' ? state.remote : getActiveRightSnapshot();
-    const selected = getSelectedEntries(snapshot);
-    if (selected.length) {
-      setSelection(contextMenuState.side, [...selected], selected[selected.length - 1]);
-    }
+    performContextSelect(contextMenuState.side);
   });
 
   window.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && !elements.confirmDialog.classList.contains('dialog--hidden')) {
       hideConfirmation(false);
     }
+  });
+
+  window.addEventListener('keydown', (event) => {
+    if (event.defaultPrevented || state.connectionState !== 'connected') {
+      return;
+    }
+    if (isEditableTarget(event.target)) {
+      return;
+    }
+    const side = getFocusedListSide();
+    if (!side) {
+      return;
+    }
+    const key = event.key;
+
+    if (key === 'Enter' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      if (isQuickSearchActive(side)) {
+        if (selectNextQuickSearchMatch(side)) {
+          event.preventDefault();
+          hideContextMenu();
+        }
+        return;
+      }
+      event.preventDefault();
+      hideContextMenu();
+      openSelectedEntry(side);
+      return;
+    }
+
+    if (
+      (key === 'ArrowUp' || key === 'ArrowDown') &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.altKey
+    ) {
+      const offset = key === 'ArrowUp' ? -1 : 1;
+      if (moveSelectionByOffset(side, offset)) {
+        event.preventDefault();
+        hideContextMenu();
+      }
+      return;
+    }
+
+    if (key === 'Delete') {
+      event.preventDefault();
+      hideContextMenu();
+      deleteSelected(side);
+      return;
+    }
+
+    if (key === 'Backspace') {
+      event.preventDefault();
+      hideContextMenu();
+      goUp(side, { autoSelectFirst: true });
+      return;
+    }
+
+    if (key === 'F2') {
+      event.preventDefault();
+      hideContextMenu();
+      renameSelected(side);
+      return;
+    }
+
+    if ((event.ctrlKey || event.metaKey) && !event.altKey) {
+      const lowerKey = key.toLowerCase();
+      if (lowerKey === 'd') {
+        event.preventDefault();
+        hideContextMenu();
+        duplicateSelected(side);
+        return;
+      }
+      if (lowerKey === 'p') {
+        event.preventDefault();
+        hideContextMenu();
+        requestPermissions(side);
+        return;
+      }
+    }
+  });
+
+  window.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      clearQuickSearch('remote');
+      clearQuickSearch('right');
+      return;
+    }
+    if (!isQuickSearchKey(event) || isEditableTarget(event.target)) {
+      return;
+    }
+    const side = getFocusedListSide();
+    if (!side || state.connectionState !== 'connected') {
+      return;
+    }
+    performQuickSearch(side, event.key);
   });
 
   elements.confirmYes.addEventListener('click', () => hideConfirmation(true));
@@ -1284,6 +1754,13 @@
     if (!elements.contextMenu.contains(target)) {
       hideContextMenu();
     }
+  });
+
+  elements.remoteList.addEventListener('click', () => {
+    elements.remoteList.focus();
+  });
+  elements.localList.addEventListener('click', () => {
+    elements.localList.focus();
   });
 
   [elements.remoteList, elements.localList].forEach((list) => {
@@ -1382,6 +1859,9 @@
           elements.rightPresetMenu,
           state.rightMode === 'local' ? state.sftpPresetsLocal : state.sftpPresetsRemote
         );
+        break;
+      case 'testCommand':
+        handleTestCommand(message);
         break;
     }
   });

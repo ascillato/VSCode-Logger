@@ -60,7 +60,7 @@ For more information visit the [Embedded Device Logger extension](https://market
 You can configure everything from the **Device Manager** panel (click the pencil icon or run **Embedded Logger: Edit Devices Configuration**):
 
 - Add/remove devices in a table UI. Each row exposes every supported key:
-  - `id`, `name`, `host`, and optional `port` for addressing.
+  - `id`, `color` (optional tab/device label color), `name`, `host`, and optional `port` for addressing.
   - `hostFingerprint`, `secondaryHost`, and `secondaryHostFingerprint` for host-key pinning and automatic fallback.
   - `bastion.host`, `bastion.port`, `bastion.username`, `bastion.hostFingerprint`, `bastion.password`, `bastion.privateKeyPath`, and `bastion.privateKeyPassphrase` for jump-host tunnelling.
   - `username`, `password`, `privateKeyPath`, and `privateKeyPassphrase` for authentication (password and passphrase values are migrated into Secret Storage on first use).
@@ -76,6 +76,7 @@ Add devices in your VS Code settings under `embeddedLogger.devices` if you prefe
 "embeddedLogger.devices": [
   {
     "id": "deviceA",
+    "color": "#4fc3f7",
     "name": "Device A",
     "host": "192.168.1.10",
     "hostFingerprint": "SHA256:your-device-fingerprint",
@@ -117,7 +118,7 @@ If no password is stored yet, the extension prompts for it when connecting and s
 
 Set `enableSshTerminal` to control visibility of the **Open SSH Terminal** button alongside any configured SSH commands for that device (the action is enabled by default; set it to `false` to hide it). The **Open SSH Terminal** action opens a dedicated VS Code terminal tab for the device and authenticates using the stored password or private key (prompting for and saving the credential securely when missing).
 
-Set `enableSftpExplorer` to control visibility of the **Open SFTP Explorer** button on the device card (enabled by default; set it to `false` to hide it). The explorer opens a dual-pane view with the remote home on the left and the local home on the right, including navigation, rename/delete/duplicate actions, and arrows to transfer selected files between panes (or between two remote panes when the right-side mode is switched to remote). If the SSH link drops, the explorer stays open, greys out, shows a reconnection countdown beside the title, and automatically retries every five seconds without losing the active remote paths.
+Set `enableSftpExplorer` to control visibility of the **Open SFTP Explorer** button on the device card (enabled by default; set it to `false` to hide it). The explorer opens a dual-pane view with the remote home on the left and the local home on the right, including navigation, rename/delete/duplicate actions, and arrows to transfer selected files between panes (or between two remote panes when the right-side mode is switched to remote). It also supports quick search (type to jump; press Enter to cycle matches) and keyboard shortcuts (Arrow Up/Down to move selection, Enter to open a folder or view file content when quick search is hidden, Delete to remove, Backspace to go up a directory, F2 to rename, Ctrl/Cmd+D to duplicate, Ctrl/Cmd+P to change permissions). Entering folders or going up automatically selects the first entry so you can keep navigating with the keyboard. If the SSH link drops, the explorer stays open, greys out, shows a reconnection countdown beside the title, and automatically retries every five seconds without losing the active remote paths.
 
 Set `enableWebBrowser` to surface the **Open WEB Browser** button beneath each device. The button is disabled by default; when enabled, clicking it opens the configured `webBrowserUrl` if provided, otherwise the extension opens `http://<host>` derived from the device host (including any port in the custom URL when supplied). Both `http://` and `https://` URLs are supported.
 

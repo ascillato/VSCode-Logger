@@ -97,7 +97,11 @@
       {
         "label": "Linter",
         "type": "shell",
-        "command": "make check",
+        "command": "bash",
+        "args": [
+          "-lc",
+          "export NVM_DIR=\"${NVM_DIR:-$HOME/.nvm}\"; . \"$NVM_DIR/nvm.sh\"; nvm use 25; make check",
+        ],
         "options": {
           "cwd": "${workspaceFolder}",
         },
@@ -114,7 +118,11 @@
       {
         "label": "Compile_Ext",
         "type": "shell",
-        "command": "make package",
+        "command": "bash",
+        "args": [
+          "-lc",
+          "export NVM_DIR=\"${NVM_DIR:-$HOME/.nvm}\"; . \"$NVM_DIR/nvm.sh\"; nvm use 25; make package",
+        ],
         "options": {
           "cwd": "${workspaceFolder}",
         },
@@ -131,7 +139,11 @@
       {
         "label": "Install_Ext",
         "type": "shell",
-        "command": "make all",
+        "command": "bash",
+        "args": [
+          "-lc",
+          "export NVM_DIR=\"${NVM_DIR:-$HOME/.nvm}\"; . \"$NVM_DIR/nvm.sh\"; nvm use 25; make all",
+        ],
         "options": {
           "cwd": "${workspaceFolder}",
         },
@@ -148,7 +160,11 @@
       {
         "label": "Clean_Compile",
         "type": "shell",
-        "command": "make package-clean",
+        "command": "bash",
+        "args": [
+          "-lc",
+          "export NVM_DIR=\"${NVM_DIR:-$HOME/.nvm}\"; . \"$NVM_DIR/nvm.sh\"; nvm use 25; make package-clean",
+        ],
         "options": {
           "cwd": "${workspaceFolder}",
         },
@@ -165,7 +181,11 @@
       {
         "label": "Gen_Docs",
         "type": "shell",
-        "command": "make docs",
+        "command": "bash",
+        "args": [
+          "-lc",
+          "export NVM_DIR=\"${NVM_DIR:-$HOME/.nvm}\"; . \"$NVM_DIR/nvm.sh\"; nvm use 25; make docs",
+        ],
         "options": {
           "cwd": "${workspaceFolder}",
         },
@@ -182,7 +202,11 @@
       {
         "label": "Clean_Tests",
         "type": "shell",
-        "command": "make tests-clean",
+        "command": "bash",
+        "args": [
+          "-lc",
+          "export NVM_DIR=\"${NVM_DIR:-$HOME/.nvm}\"; . \"$NVM_DIR/nvm.sh\"; nvm use 25; make tests-clean",
+        ],
         "options": {
           "cwd": "${workspaceFolder}",
         },
@@ -199,7 +223,11 @@
       {
         "label": "Clean_Docs",
         "type": "shell",
-        "command": "make docs-clean",
+        "command": "bash",
+        "args": [
+          "-lc",
+          "export NVM_DIR=\"${NVM_DIR:-$HOME/.nvm}\"; . \"$NVM_DIR/nvm.sh\"; nvm use 25; make docs-clean",
+        ],
         "options": {
           "cwd": "${workspaceFolder}",
         },
@@ -216,7 +244,11 @@
       {
         "label": "Linter_fix",
         "type": "shell",
-        "command": "make linter-fix",
+        "command": "bash",
+        "args": [
+          "-lc",
+          "export NVM_DIR=\"${NVM_DIR:-$HOME/.nvm}\"; . \"$NVM_DIR/nvm.sh\"; nvm use 25; make linter-fix",
+        ],
         "options": {
           "cwd": "${workspaceFolder}",
         },
@@ -233,7 +265,11 @@
       {
         "label": "Test_Extension",
         "type": "shell",
-        "command": "make test",
+        "command": "bash",
+        "args": [
+          "-lc",
+          "export NVM_DIR=\"${NVM_DIR:-$HOME/.nvm}\"; . \"$NVM_DIR/nvm.sh\"; nvm use 25; make test",
+        ],
         "options": {
           "cwd": "${workspaceFolder}",
         },

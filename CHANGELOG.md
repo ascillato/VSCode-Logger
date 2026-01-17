@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [1.7.0] - 2026-01-17 [SFTP-QUICK-SEARCH]
+
+### Added
+- Add quick search to SFTP explorer panes.
+- Add keys support to SFTP explorer panes to navigate and perform actions over files and directories.
+- Add edit SFTP path presets from settings page.
+- Add customizable identification color for all tabs of a device.
+- Add e2e tests for SFTP UI.
+- Add Clean Tests to makefile and to code-workspace (VSCode UI - bottom bar).
+
+### Changed
+- Updated developer-guide.md with URL of repository template.
+- Bump @types/node from 22.19.3 to 25.0.9
+- Bump typescript from 5.8.3 to 5.9.3
+- Bump typedoc from 0.27.9 to 0.28.15
+- Bump vitest from 4.0.16 to 4.0.17
+- Bump coverage-v8 to 4.0.17
+- Bump @types/vscode from 1.107.0 to 1.108.1
+- Bump @typescript-eslint/eslint-plugin from 8.51.0 to 8.53.0
+- Bump @typescript-eslint/parser from 8.51.0 to 8.53.0
+- Updated code-workspace file to include node path.
+
+### Deprecated
+- None.
+
+### Removed
+- Remove from CI unneeded concurrency check for build docs.
+
+### Fixed
+- Make docs build to have access to test report.
+- Fix log panel disconnection issue.
+- Fix use default settings unless an override exists for a particular device.
+- Fix makefile to use constants for colors.
+
+### Security
+- Enable npm version updates in dependabot configuration.
+
+----------------------------------------
+
 ## [1.6.0] - 2026-01-03 [SETTINGS-UI]
 
 ### Added
