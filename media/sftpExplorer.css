@@ -237,6 +237,13 @@ svg.action__icon {
     opacity: 0.6;
 }
 
+.list-wrapper {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+}
+
 .list {
     flex: 1;
     overflow: auto;
@@ -247,6 +254,29 @@ svg.action__icon {
     border-radius: 4px;
     --name-col-width: 20ch;
     --name-col-padding: 1.75rem;
+}
+
+.quick-search {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: var(--vscode-editorWidget-background);
+    color: var(--vscode-editorWidget-foreground);
+    border: 1px solid var(--vscode-editorWidget-border);
+    border-radius: 4px;
+    padding: 0.2rem 0.45rem;
+    font-size: 0.8rem;
+    letter-spacing: 0.02em;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+    opacity: 0;
+    transform: scale(0.98);
+    transition: opacity 0.12s ease, transform 0.12s ease;
+    pointer-events: none;
+}
+
+.quick-search--visible {
+    opacity: 1;
+    transform: scale(1);
 }
 
 .list--disconnected {
