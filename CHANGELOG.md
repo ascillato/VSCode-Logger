@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
-## [1.6.1] - UNRELEASED [TBD]
+## [1.6.1] - 2026-01-17 [SFTP-QUICK-SEARCH]
 
 ### Added
 - Add quick search to SFTP explorer panes.
