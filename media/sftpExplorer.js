@@ -137,6 +137,8 @@
     },
   };
 
+  const pendingAutoSelect = new Set();
+
   /**
    * Generates a unique identifier for correlating list requests.
    */
@@ -266,6 +268,18 @@
     }, quickSearch.delay);
   }
 
+  function scheduleAutoSelect(requestId) {
+    pendingAutoSelect.add(requestId);
+  }
+
+  function consumeAutoSelect(requestId) {
+    if (!pendingAutoSelect.has(requestId)) {
+      return false;
+    }
+    pendingAutoSelect.delete(requestId);
+    return true;
+  }
+
   function getFocusedListSide() {
     const active = document.activeElement;
     if (active === elements.remoteList) {
@@ -275,6 +289,11 @@
       return 'right';
     }
     return undefined;
+  }
+
+  function focusList(side) {
+    const list = side === 'remote' ? elements.remoteList : elements.localList;
+    list?.focus();
   }
 
   function isEditableTarget(target) {
@@ -341,11 +360,86 @@
     }
   }
 
+  function isQuickSearchActive(side) {
+    return getQuickSearchState(side).term.length > 0;
+  }
+
+  function selectNextQuickSearchMatch(side) {
+    const stateForSide = getQuickSearchState(side);
+    const term = stateForSide.term;
+    if (!term) {
+      return false;
+    }
+    const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
+    if (!snapshot.entries.length) {
+      return false;
+    }
+    const normalizedTerm = term.toLowerCase();
+    const selected = getSelectedEntries(snapshot);
+    const anchorName = getSelectionAnchor(side) || selected[selected.length - 1]?.name;
+    const startIndex = anchorName
+      ? snapshot.entries.findIndex((entry) => entry.name === anchorName)
+      : -1;
+    let match = undefined;
+    for (let index = startIndex + 1; index < snapshot.entries.length; index += 1) {
+      const entry = snapshot.entries[index];
+      if (entry.name.toLowerCase().startsWith(normalizedTerm)) {
+        match = entry;
+        break;
+      }
+    }
+    if (!match) {
+      match = snapshot.entries.find((entry) => entry.name.toLowerCase().startsWith(normalizedTerm));
+    }
+    if (!match) {
+      return false;
+    }
+    selectEntryAndReveal(side, match);
+    stateForSide.lastInput = Date.now();
+    scheduleQuickSearchClear(side);
+    return true;
+  }
+
+  function moveSelectionByOffset(side, offset) {
+    const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
+    if (!snapshot.entries.length) {
+      return false;
+    }
+    const selected = getSelectedEntries(snapshot);
+    if (!selected.length) {
+      return false;
+    }
+    const anchorName = getSelectionAnchor(side) || selected[selected.length - 1]?.name;
+    if (!anchorName) {
+      return false;
+    }
+    const currentIndex = snapshot.entries.findIndex((entry) => entry.name === anchorName);
+    if (currentIndex < 0) {
+      return false;
+    }
+    const nextIndex = currentIndex + offset;
+    if (nextIndex < 0 || nextIndex >= snapshot.entries.length) {
+      return false;
+    }
+    selectEntryAndReveal(side, snapshot.entries[nextIndex]);
+    return true;
+  }
+
   function getSelectionAnchorKey(side) {
     if (side === 'remote') {
       return 'remote';
     }
     return getActiveRightLocation() === 'local' ? 'rightLocal' : 'rightRemote';
+  }
+
+  function getSelectionAnchorKeyForRequestId(requestId) {
+    if (requestId === requestIds.remote) {
+      return 'remote';
+    }
+    if (requestId === requestIds.local) {
+      return 'rightLocal';
+    }
+    return 'rightRemote';
   }
 
   function getSelectionAnchor(side) {
@@ -354,6 +448,10 @@
 
   function setSelectionAnchor(side, entry) {
     selectionAnchors[getSelectionAnchorKey(side)] = entry ? entry.name : undefined;
+  }
+
+  function setSelectionAnchorForRequestId(requestId, entry) {
+    selectionAnchors[getSelectionAnchorKeyForRequestId(requestId)] = entry ? entry.name : undefined;
   }
 
   function resetSelectionAnchors() {
@@ -490,7 +588,9 @@
     if (entry.type === 'directory') {
       const nextPath = getEntryPath(snapshot, entry);
       const location = side === 'remote' ? 'remote' : getActiveRightLocation();
-      requestList(location, nextPath, side === 'remote' ? requestIds.remote : getActiveRequestId());
+      const requestId = side === 'remote' ? requestIds.remote : getActiveRequestId();
+      scheduleAutoSelect(requestId);
+      requestList(location, nextPath, requestId);
       clearSelection(side);
       return;
     }
@@ -957,6 +1057,16 @@
       state.rightRemote = snapshot;
     }
     clearSelectionAnchorByRequestId(message.requestId);
+    const shouldAutoSelect = consumeAutoSelect(message.requestId);
+    if (shouldAutoSelect && snapshot.entries.length) {
+      const firstEntry = snapshot.entries[0];
+      snapshot.selected = [firstEntry];
+      setSelectionAnchorForRequestId(message.requestId, firstEntry);
+      if (message.requestId === requestIds.remote || message.requestId === getActiveRequestId()) {
+        const side = message.requestId === requestIds.remote ? 'remote' : 'right';
+        requestAnimationFrame(() => focusList(side));
+      }
+    }
     renderLists();
   }
 
@@ -1028,11 +1138,15 @@
     }
   }
 
-  function goUp(side) {
+  function goUp(side, options = {}) {
     resetStatus();
+    const autoSelectFirst = Boolean(options.autoSelectFirst);
     if (side === 'remote') {
       if (state.remote.isRoot) {
         return;
+      }
+      if (autoSelectFirst) {
+        scheduleAutoSelect(requestIds.remote);
       }
       requestList('remote', state.remote.parentPath, requestIds.remote);
       clearSelection('remote');
@@ -1040,6 +1154,9 @@
       const snapshot = getActiveRightSnapshot();
       if (snapshot.isRoot) {
         return;
+      }
+      if (autoSelectFirst) {
+        scheduleAutoSelect(getActiveRequestId());
       }
       requestList(getActiveRightLocation(), snapshot.parentPath, getActiveRequestId());
       clearSelection('right');
@@ -1114,6 +1231,26 @@
     }
 
     vscode.postMessage({ type: 'viewContent', location, path: getEntryPath(snapshot, entry) });
+  }
+
+  function openSelectedEntry(side) {
+    resetStatus();
+    const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
+    const selected = getSelectedEntries(snapshot);
+    if (selected.length !== 1) {
+      return;
+    }
+    const [entry] = selected;
+    if (entry.type === 'directory') {
+      const nextPath = getEntryPath(snapshot, entry);
+      const location = side === 'remote' ? 'remote' : getActiveRightLocation();
+      const requestId = side === 'remote' ? requestIds.remote : getActiveRequestId();
+      scheduleAutoSelect(requestId);
+      requestList(location, nextPath, requestId);
+      clearSelection(side === 'remote' ? 'remote' : 'right');
+      return;
+    }
+    viewContent(side);
   }
 
   async function deleteSelected(side) {
@@ -1336,12 +1473,92 @@
     const selected = getSelectedEntries(snapshot);
     if (selected.length) {
       setSelection(contextMenuState.side, [...selected], selected[selected.length - 1]);
+      requestAnimationFrame(() => focusList(contextMenuState.side));
     }
   });
 
   window.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && !elements.confirmDialog.classList.contains('dialog--hidden')) {
       hideConfirmation(false);
+    }
+  });
+
+  window.addEventListener('keydown', (event) => {
+    if (event.defaultPrevented || state.connectionState !== 'connected') {
+      return;
+    }
+    if (isEditableTarget(event.target)) {
+      return;
+    }
+    const side = getFocusedListSide();
+    if (!side) {
+      return;
+    }
+    const key = event.key;
+
+    if (key === 'Enter' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      if (isQuickSearchActive(side)) {
+        if (selectNextQuickSearchMatch(side)) {
+          event.preventDefault();
+          hideContextMenu();
+        }
+        return;
+      }
+      event.preventDefault();
+      hideContextMenu();
+      openSelectedEntry(side);
+      return;
+    }
+
+    if (
+      (key === 'ArrowUp' || key === 'ArrowDown') &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.altKey
+    ) {
+      const offset = key === 'ArrowUp' ? -1 : 1;
+      if (moveSelectionByOffset(side, offset)) {
+        event.preventDefault();
+        hideContextMenu();
+      }
+      return;
+    }
+
+    if (key === 'Delete') {
+      event.preventDefault();
+      hideContextMenu();
+      deleteSelected(side);
+      return;
+    }
+
+    if (key === 'Backspace') {
+      event.preventDefault();
+      hideContextMenu();
+      goUp(side, { autoSelectFirst: true });
+      return;
+    }
+
+    if (key === 'F2') {
+      event.preventDefault();
+      hideContextMenu();
+      renameSelected(side);
+      return;
+    }
+
+    if ((event.ctrlKey || event.metaKey) && !event.altKey) {
+      const lowerKey = key.toLowerCase();
+      if (lowerKey === 'd') {
+        event.preventDefault();
+        hideContextMenu();
+        duplicateSelected(side);
+        return;
+      }
+      if (lowerKey === 'p') {
+        event.preventDefault();
+        hideContextMenu();
+        requestPermissions(side);
+        return;
+      }
     }
   });
 
