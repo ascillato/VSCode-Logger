@@ -95,6 +95,14 @@
     return span;
   }
 
+  function createDeviceColorSwatch(color) {
+    const swatch = document.createElement('span');
+    swatch.className = 'device-color';
+    swatch.style.backgroundColor = color || 'var(--vscode-tab-activeForeground)';
+    swatch.setAttribute('aria-hidden', 'true');
+    return swatch;
+  }
+
   /**
    * Renders the device list with action buttons and context menus.
    */
@@ -136,6 +144,7 @@
       };
 
       attachDeviceContextMenu(title);
+      info.appendChild(createDeviceColorSwatch(device.color));
       info.appendChild(title);
 
       const subtitle = document.createElement('span');

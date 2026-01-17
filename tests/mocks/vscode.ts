@@ -236,6 +236,17 @@ export const MarkdownString = class MockMarkdownString implements vscode.Markdow
   value = '';
 } as unknown as typeof vscode.MarkdownString;
 
+export const ThemeColor = class MockThemeColor implements vscode.ThemeColor {
+  constructor(public readonly id: string) {}
+} as unknown as typeof vscode.ThemeColor;
+
+export const ThemeIcon = class MockThemeIcon implements vscode.ThemeIcon {
+  constructor(
+    public readonly id: string,
+    public readonly color?: vscode.ThemeColor
+  ) {}
+} as unknown as typeof vscode.ThemeIcon;
+
 export const StatusBarAlignment = {
   Left: 1,
   Right: 2,
@@ -340,6 +351,8 @@ export default {
   extensions,
   SecretStorageChangeEvent,
   MarkdownString,
+  ThemeColor,
+  ThemeIcon,
   StatusBarAlignment,
   ViewColumn,
 };

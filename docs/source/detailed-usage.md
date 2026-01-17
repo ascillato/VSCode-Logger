@@ -60,7 +60,7 @@ For more information visit the [Embedded Device Logger extension](https://market
 You can configure everything from the **Device Manager** panel (click the pencil icon or run **Embedded Logger: Edit Devices Configuration**):
 
 - Add/remove devices in a table UI. Each row exposes every supported key:
-  - `id`, `name`, `host`, and optional `port` for addressing.
+  - `id`, `color` (optional tab/device label color), `name`, `host`, and optional `port` for addressing.
   - `hostFingerprint`, `secondaryHost`, and `secondaryHostFingerprint` for host-key pinning and automatic fallback.
   - `bastion.host`, `bastion.port`, `bastion.username`, `bastion.hostFingerprint`, `bastion.password`, `bastion.privateKeyPath`, and `bastion.privateKeyPassphrase` for jump-host tunnelling.
   - `username`, `password`, `privateKeyPath`, and `privateKeyPassphrase` for authentication (password and passphrase values are migrated into Secret Storage on first use).
@@ -76,6 +76,7 @@ Add devices in your VS Code settings under `embeddedLogger.devices` if you prefe
 "embeddedLogger.devices": [
   {
     "id": "deviceA",
+    "color": "#4fc3f7",
     "name": "Device A",
     "host": "192.168.1.10",
     "hostFingerprint": "SHA256:your-device-fingerprint",

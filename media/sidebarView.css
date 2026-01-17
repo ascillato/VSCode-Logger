@@ -35,10 +35,18 @@
 
 .device-info {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 8px;
     flex: 1;
     min-width: 0;
+}
+
+.device-color {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    border: 1px solid var(--vscode-panel-border);
+    flex: 0 0 auto;
 }
 
 .device-card .title,

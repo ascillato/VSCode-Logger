@@ -24,6 +24,7 @@ If you like the extension, please [rate it](https://marketplace.visualstudio.com
 - Run **one-off SSH commands**.
 - Open **SSH terminals**.
 - Browse files with the built-in **SFTP explorer**, including quick search and keyboard shortcuts.
+- Assign **per-device colors** to make tabs and device lists easier to scan.
 - **Secure by default**: passwords and key passphrases live in VS Code Secret Storage.
 - **Privacy focused**. **No telemetry**. Everything **runs locally**.
 
