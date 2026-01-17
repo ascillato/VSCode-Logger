@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Add quick search to SFTP explorer panes.
+- Add edit SFTP path presets from settings page.
 - Add Clean Tests to makefile and to code-workspace (VSCode UI - bottom bar).
 
 ### Changed
@@ -23,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump @types/vscode from 1.107.0 to 1.108.1
 - Bump @typescript-eslint/eslint-plugin from 8.51.0 to 8.53.0
 - Bump @typescript-eslint/parser from 8.51.0 to 8.53.0
+- Updated code-workspace file to include node path.
 
 ### Deprecated
 - None.

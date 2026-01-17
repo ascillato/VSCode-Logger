@@ -25,6 +25,8 @@ const deviceColumns = [
   { key: 'secondaryHostFingerprint', label: 'Secondary fingerprint', type: 'text' },
   { key: 'enableSshTerminal', label: 'SSH terminal', type: 'triState' },
   { key: 'enableSftpExplorer', label: 'SFTP', type: 'triState' },
+  { key: 'sftpPresetsRemote', label: 'SFTP presets (remote)', type: 'textarea' },
+  { key: 'sftpPresetsLocal', label: 'SFTP presets (local)', type: 'textarea' },
   { key: 'enableWebBrowser', label: 'Web', type: 'triState' },
   { key: 'webBrowserUrl', label: 'Web URL', type: 'text' },
   { key: 'privateKeyPath', label: 'Private key path', type: 'text' },
@@ -77,6 +79,12 @@ function toViewDevice(device) {
     secondaryHostFingerprint: device.secondaryHostFingerprint ?? '',
     enableSshTerminal: toTriState(device.enableSshTerminal),
     enableSftpExplorer: toTriState(device.enableSftpExplorer),
+    sftpPresetsRemote: Array.isArray(device.sftpPresetsRemote)
+      ? device.sftpPresetsRemote.join('\n')
+      : device.sftpPresetsRemote ?? '',
+    sftpPresetsLocal: Array.isArray(device.sftpPresetsLocal)
+      ? device.sftpPresetsLocal.join('\n')
+      : device.sftpPresetsLocal ?? '',
     enableWebBrowser: toTriState(device.enableWebBrowser),
     webBrowserUrl: device.webBrowserUrl ?? '',
     privateKeyPath: device.privateKeyPath ?? '',
@@ -444,6 +452,8 @@ function addDevice() {
     secondaryHostFingerprint: '',
     enableSshTerminal: 'default',
     enableSftpExplorer: 'default',
+    sftpPresetsRemote: '',
+    sftpPresetsLocal: '',
     enableWebBrowser: 'default',
     webBrowserUrl: '',
     privateKeyPath: '',

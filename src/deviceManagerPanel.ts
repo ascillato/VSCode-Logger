@@ -55,6 +55,8 @@ interface DevicePayload {
   bastionPassword?: string;
   bastionPrivateKeyPath?: string;
   bastionPrivateKeyPassphrase?: string;
+  sftpPresetsRemote?: string;
+  sftpPresetsLocal?: string;
 }
 
 export class DeviceManagerPanel {
@@ -63,9 +65,11 @@ export class DeviceManagerPanel {
 
   private readonly panel: vscode.WebviewPanel;
   private readonly disposables: vscode.Disposable[] = [];
+  private readonly sftpPresetLimit = 10;
 
   private constructor(
     private readonly extensionUri: vscode.Uri,
+    private readonly context: vscode.ExtensionContext,
     panel: vscode.WebviewPanel
   ) {
     this.panel = panel;
@@ -97,7 +101,7 @@ export class DeviceManagerPanel {
     this.panel.webview.html = this.buildHtml(this.panel.webview);
   }
 
-  static createOrShow(extensionUri: vscode.Uri): void {
+  static createOrShow(extensionUri: vscode.Uri, context: vscode.ExtensionContext): void {
     const column = vscode.window.activeTextEditor?.viewColumn;
 
     if (DeviceManagerPanel.currentPanel) {
@@ -119,7 +123,7 @@ export class DeviceManagerPanel {
       }
     );
 
-    DeviceManagerPanel.currentPanel = new DeviceManagerPanel(extensionUri, panel);
+    DeviceManagerPanel.currentPanel = new DeviceManagerPanel(extensionUri, context, panel);
   }
 
   dispose(): void {
@@ -237,6 +241,8 @@ export class DeviceManagerPanel {
                 <th>Secondary fingerprint</th>
                 <th>SSH terminal</th>
                 <th>SFTP</th>
+                <th>SFTP presets (remote)</th>
+                <th>SFTP presets (local)</th>
                 <th>Web</th>
                 <th>Web URL</th>
                 <th>Private key path</th>
@@ -266,6 +272,24 @@ export class DeviceManagerPanel {
   private postInitialState(): void {
     const config = vscode.workspace.getConfiguration('embeddedLogger');
     const devices = config.get<EmbeddedDevice[]>('devices', []);
+    const devicesWithPresets = devices.map((device) => {
+      const id = (device.id ?? '').trim();
+      return {
+        ...device,
+        sftpPresetsRemote: id
+          ? this.context.workspaceState.get<string[]>(
+              this.getSftpPresetKey(id, 'remote'),
+              []
+            )
+          : [],
+        sftpPresetsLocal: id
+          ? this.context.workspaceState.get<string[]>(
+              this.getSftpPresetKey(id, 'local'),
+              []
+            )
+          : [],
+      };
+    });
     const defaults = {
       defaultPort: config.get<number>('defaultPort', 22) ?? 22,
       defaultLogCommand:
@@ -278,7 +302,7 @@ export class DeviceManagerPanel {
       maxLinesPerTab: config.get<number>('maxLinesPerTab', 100000) ?? 100000,
     };
 
-    this.panel.webview.postMessage({ type: 'init', devices, defaults });
+    this.panel.webview.postMessage({ type: 'init', devices: devicesWithPresets, defaults });
   }
 
   private async saveConfiguration(
@@ -290,6 +314,7 @@ export class DeviceManagerPanel {
 
       const normalizedDefaults = this.normalizeDefaults(defaults);
       const normalizedDevices = devices.map((device) => this.normalizeDevice(device));
+      const presetUpdates = devices.flatMap((device) => this.buildPresetUpdates(device));
 
       await Promise.all([
         config.update('defaultPort', normalizedDefaults.defaultPort, target),
@@ -312,6 +337,9 @@ export class DeviceManagerPanel {
         config.update('defaultSshCommands', normalizedDefaults.defaultSshCommands, target),
         config.update('maxLinesPerTab', normalizedDefaults.maxLinesPerTab, target),
         config.update('devices', normalizedDevices, target),
+        ...presetUpdates.map((update) =>
+          this.context.workspaceState.update(update.key, update.values)
+        ),
       ]);
 
       this.panel.webview.postMessage({ type: 'saveResult', success: true });
@@ -445,6 +473,41 @@ export class DeviceManagerPanel {
     }
 
     return normalized;
+  }
+
+  private buildPresetUpdates(device: DevicePayload): { key: string; values: string[] }[] {
+    const id = (device.id ?? '').trim();
+    if (!id) {
+      return [];
+    }
+
+    return [
+      {
+        key: this.getSftpPresetKey(id, 'remote'),
+        values: this.parsePresetText(device.sftpPresetsRemote),
+      },
+      {
+        key: this.getSftpPresetKey(id, 'local'),
+        values: this.parsePresetText(device.sftpPresetsLocal),
+      },
+    ];
+  }
+
+  private parsePresetText(value: string | undefined): string[] {
+    if (!value) {
+      return [];
+    }
+    const entries = value
+      .split(/\r?\n/g)
+      .map((entry) => entry.trim())
+      .filter((entry) => entry.length > 0);
+    return entries.slice(0, this.sftpPresetLimit);
+  }
+
+  private getSftpPresetKey(id: string, location: 'remote' | 'local'): string {
+    return location === 'remote'
+      ? `embeddedLogger.sftpPresets.${id}`
+      : `embeddedLogger.sftpPresets.local.${id}`;
   }
 
   private buildBastion(device: DevicePayload): EmbeddedDevice['bastion'] {
