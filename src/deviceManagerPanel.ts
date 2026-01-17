@@ -28,6 +28,8 @@ interface DefaultsPayload {
   maxLinesPerTab: number;
 }
 
+type TriStateSelection = 'default' | 'enabled' | 'disabled';
+
 interface DevicePayload {
   id: string;
   name: string;
@@ -41,9 +43,9 @@ interface DevicePayload {
   privateKeyPath?: string;
   privateKeyPassphrase?: string;
   logCommand?: string;
-  enableSshTerminal?: boolean;
-  enableSftpExplorer?: boolean;
-  enableWebBrowser?: boolean;
+  enableSshTerminal?: boolean | TriStateSelection;
+  enableSftpExplorer?: boolean | TriStateSelection;
+  enableWebBrowser?: boolean | TriStateSelection;
   webBrowserUrl?: string;
   sshCommands?: SshCommand[];
   bastionHost?: string;
@@ -405,8 +407,11 @@ export class DeviceManagerPanel {
   private normalizeDevice(device: DevicePayload): EmbeddedDevice {
     const sshCommands = this.normalizeSshCommands(device.sshCommands);
     const bastion = this.buildBastion(device);
+    const enableSshTerminal = this.toOptionalTriState(device.enableSshTerminal);
+    const enableSftpExplorer = this.toOptionalTriState(device.enableSftpExplorer);
+    const enableWebBrowser = this.toOptionalTriState(device.enableWebBrowser);
 
-    return {
+    const normalized: EmbeddedDevice = {
       id: (device.id ?? '').trim(),
       name: (device.name ?? '').trim(),
       host: (device.host ?? '').trim(),
@@ -419,13 +424,27 @@ export class DeviceManagerPanel {
       privateKeyPath: device.privateKeyPath?.trim() || undefined,
       privateKeyPassphrase: device.privateKeyPassphrase?.trim() || undefined,
       logCommand: device.logCommand?.trim() || undefined,
-      enableSshTerminal: Boolean(device.enableSshTerminal),
-      enableSftpExplorer: Boolean(device.enableSftpExplorer),
-      enableWebBrowser: Boolean(device.enableWebBrowser),
       webBrowserUrl: device.webBrowserUrl?.trim() || undefined,
-      sshCommands,
       bastion,
     };
+
+    if (enableSshTerminal !== undefined) {
+      normalized.enableSshTerminal = enableSshTerminal;
+    }
+
+    if (enableSftpExplorer !== undefined) {
+      normalized.enableSftpExplorer = enableSftpExplorer;
+    }
+
+    if (enableWebBrowser !== undefined) {
+      normalized.enableWebBrowser = enableWebBrowser;
+    }
+
+    if (sshCommands.length > 0) {
+      normalized.sshCommands = sshCommands;
+    }
+
+    return normalized;
   }
 
   private buildBastion(device: DevicePayload): EmbeddedDevice['bastion'] {
@@ -484,6 +503,16 @@ export class DeviceManagerPanel {
     }
     const num = Number(value);
     return Number.isFinite(num) ? num : undefined;
+  }
+
+  private toOptionalTriState(value: boolean | TriStateSelection | undefined): boolean | undefined {
+    if (value === 'enabled' || value === true) {
+      return true;
+    }
+    if (value === 'disabled' || value === false) {
+      return false;
+    }
+    return undefined;
   }
 
   private toNumberOrDefault(value: number | string | undefined, fallback: number): number {

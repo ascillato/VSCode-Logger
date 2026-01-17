@@ -7,7 +7,7 @@
   "publisher": "Scallant",
   "author": "A. Scillato",
   "engines": {
-    "vscode": "^1.85.0"
+    "vscode": "^1.108.0"
   },
   "repository": {
     "type": "git",
@@ -431,5 +431,8 @@
   },
   "dependencies": {
     "ssh2": "^1.14.0"
+  },
+  "overrides": {
+    "diff": "^8.0.3"
   }
 }

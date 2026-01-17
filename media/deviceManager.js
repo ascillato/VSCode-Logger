@@ -23,9 +23,9 @@ const deviceColumns = [
   { key: 'hostFingerprint', label: 'Host fingerprint', type: 'text' },
   { key: 'secondaryHost', label: 'Secondary host', type: 'text' },
   { key: 'secondaryHostFingerprint', label: 'Secondary fingerprint', type: 'text' },
-  { key: 'enableSshTerminal', label: 'SSH terminal', type: 'checkbox' },
-  { key: 'enableSftpExplorer', label: 'SFTP', type: 'checkbox' },
-  { key: 'enableWebBrowser', label: 'Web', type: 'checkbox' },
+  { key: 'enableSshTerminal', label: 'SSH terminal', type: 'triState' },
+  { key: 'enableSftpExplorer', label: 'SFTP', type: 'triState' },
+  { key: 'enableWebBrowser', label: 'Web', type: 'triState' },
   { key: 'webBrowserUrl', label: 'Web URL', type: 'text' },
   { key: 'privateKeyPath', label: 'Private key path', type: 'text' },
   { key: 'privateKeyPassphrase', label: 'Key passphrase (legacy)', type: 'text' },
@@ -75,9 +75,9 @@ function toViewDevice(device) {
     hostFingerprint: device.hostFingerprint ?? '',
     secondaryHost: device.secondaryHost ?? '',
     secondaryHostFingerprint: device.secondaryHostFingerprint ?? '',
-    enableSshTerminal: Boolean(device.enableSshTerminal),
-    enableSftpExplorer: Boolean(device.enableSftpExplorer),
-    enableWebBrowser: Boolean(device.enableWebBrowser),
+    enableSshTerminal: toTriState(device.enableSshTerminal),
+    enableSftpExplorer: toTriState(device.enableSftpExplorer),
+    enableWebBrowser: toTriState(device.enableWebBrowser),
     webBrowserUrl: device.webBrowserUrl ?? '',
     privateKeyPath: device.privateKeyPath ?? '',
     privateKeyPassphrase: device.privateKeyPassphrase ?? '',
@@ -93,6 +93,16 @@ function toViewDevice(device) {
     bastionPrivateKeyPassphrase: device.bastion?.privateKeyPassphrase ?? '',
     bastionPassword: device.bastion?.password ?? '',
   };
+}
+
+function toTriState(value) {
+  if (value === true) {
+    return 'enabled';
+  }
+  if (value === false) {
+    return 'disabled';
+  }
+  return 'default';
 }
 
 function render() {
@@ -260,7 +270,7 @@ function measureWidth(value) {
 }
 
 function getInitialWidthValue(col) {
-  if (col.type === 'checkbox') {
+  if (col.type === 'checkbox' || col.type === 'triState') {
     return '12ch';
   }
   if (col.type === 'number') {
@@ -286,7 +296,7 @@ function setupTableColumns() {
     const colElement = document.createElement('col');
     const widthValue = getInitialWidthValue(col);
     const minWidthValue =
-      col.type === 'checkbox'
+      col.type === 'checkbox' || col.type === 'triState'
         ? '12ch'
         : col.type === 'textarea' || col.type === 'sshCommands'
           ? '24ch'
@@ -369,6 +379,25 @@ function createInput(col, value, index, key) {
       }
     });
   }
+  if (col.type === 'triState') {
+    const select = document.createElement('select');
+    const options = [
+      { value: 'default', label: 'Default' },
+      { value: 'enabled', label: 'Enabled' },
+      { value: 'disabled', label: 'Disabled' },
+    ];
+    options.forEach((option) => {
+      const entry = document.createElement('option');
+      entry.value = option.value;
+      entry.textContent = option.label;
+      select.appendChild(entry);
+    });
+    select.value = value || 'default';
+    select.addEventListener('change', (event) => {
+      state.devices[index][key] = event.target.value;
+    });
+    return select;
+  }
   if (col.type === 'checkbox') {
     const input = document.createElement('input');
     input.type = 'checkbox';
@@ -413,9 +442,9 @@ function addDevice() {
     hostFingerprint: '',
     secondaryHost: '',
     secondaryHostFingerprint: '',
-    enableSshTerminal: true,
-    enableSftpExplorer: true,
-    enableWebBrowser: false,
+    enableSshTerminal: 'default',
+    enableSftpExplorer: 'default',
+    enableWebBrowser: 'default',
     webBrowserUrl: '',
     privateKeyPath: '',
     privateKeyPassphrase: '',

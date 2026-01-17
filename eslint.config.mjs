@@ -101,6 +101,8 @@ const spellcheckSkipWords = [
   "thead",
   "tbody",
   "textarea",
+  "tri",
+  "triState",
   "mousemove",
   "mouseup",
   "mousedown",

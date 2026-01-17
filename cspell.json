@@ -46,6 +46,8 @@
     "sphinxcontrib",
     "syslog",
     "toctree",
+    "tri",
+    "triState",
     "typedoc",
     "vscode",
     "webview",

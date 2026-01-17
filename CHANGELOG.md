@@ -10,10 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.6.1] - UNRELEASED [TBD]
 
 ### Added
-- Add Clean Tests to makefile and to code-workspace (VSCode UI - bottom bar).
 - Add quick search to SFTP explorer panes.
+- Add Clean Tests to makefile and to code-workspace (VSCode UI - bottom bar).
 
 ### Changed
+- Updated developer-guide.md with URL of repository template.
 - Bump @types/node from 22.19.3 to 25.0.9
 - Bump typescript from 5.8.3 to 5.9.3
 - Bump typedoc from 0.27.9 to 0.28.15
@@ -22,7 +23,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump @types/vscode from 1.107.0 to 1.108.1
 - Bump @typescript-eslint/eslint-plugin from 8.51.0 to 8.53.0
 - Bump @typescript-eslint/parser from 8.51.0 to 8.53.0
-- Updated developer-guide.md with URL of repository template.
 
 ### Deprecated
 - None.
@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Make docs build to have access to test report.
 - Fix log panel disconnection issue.
+- Fix use default settings unless an override exists for a particular device.
 
 ### Security
 - Enable npm version updates in dependabot configuration.
