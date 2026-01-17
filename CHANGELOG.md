@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Make docs build to have access to test report.
+- Fix log panel disconnection issue.
 
 ### Security
 - Enable npm version updates in dependabot configuration.
