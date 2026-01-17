@@ -16,6 +16,7 @@ import { buildLogPanelHtml } from './html';
 import { parseWebviewMessage } from './messageParser';
 import { WorkspaceStateStore } from './stateStore';
 import type { FilterPreset, LogPanelTarget } from './types';
+import { getDeviceColorIcon } from '../deviceColor';
 
 /**
  * Lifecycle manager for a single log panel instance.
@@ -85,6 +86,10 @@ export class LogPanel {
         ],
       }
     );
+
+    if (this.device) {
+      this.panel.iconPath = getDeviceColorIcon(this.device.color);
+    }
 
     this.panel.onDidDispose(() => {
       if (!this.disposed) {

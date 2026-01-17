@@ -6,6 +6,7 @@
  */
 
 import * as vscode from 'vscode';
+import { getDeviceColorIcon } from './deviceColor';
 
 /**
  * Representation of a configured embedded device.
@@ -14,6 +15,7 @@ export interface EmbeddedDevice {
   id: string;
   name: string;
   host: string;
+  color?: string;
   hostFingerprint?: string;
   secondaryHost?: string;
   secondaryHostFingerprint?: string;
@@ -114,6 +116,7 @@ class DeviceItem extends vscode.TreeItem {
     super(device.name, vscode.TreeItemCollapsibleState.None);
     this.tooltip = `${device.name} (${device.host})`;
     this.description = device.host;
+    this.iconPath = getDeviceColorIcon(device.color);
     this.command = {
       command: 'embeddedLogger.openDevice',
       title: 'Open Device Logs',
