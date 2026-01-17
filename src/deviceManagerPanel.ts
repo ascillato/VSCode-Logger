@@ -277,16 +277,10 @@ export class DeviceManagerPanel {
       return {
         ...device,
         sftpPresetsRemote: id
-          ? this.context.workspaceState.get<string[]>(
-              this.getSftpPresetKey(id, 'remote'),
-              []
-            )
+          ? this.context.workspaceState.get<string[]>(this.getSftpPresetKey(id, 'remote'), [])
           : [],
         sftpPresetsLocal: id
-          ? this.context.workspaceState.get<string[]>(
-              this.getSftpPresetKey(id, 'local'),
-              []
-            )
+          ? this.context.workspaceState.get<string[]>(this.getSftpPresetKey(id, 'local'), [])
           : [],
       };
     });

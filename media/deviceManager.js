@@ -81,10 +81,10 @@ function toViewDevice(device) {
     enableSftpExplorer: toTriState(device.enableSftpExplorer),
     sftpPresetsRemote: Array.isArray(device.sftpPresetsRemote)
       ? device.sftpPresetsRemote.join('\n')
-      : device.sftpPresetsRemote ?? '',
+      : (device.sftpPresetsRemote ?? ''),
     sftpPresetsLocal: Array.isArray(device.sftpPresetsLocal)
       ? device.sftpPresetsLocal.join('\n')
-      : device.sftpPresetsLocal ?? '',
+      : (device.sftpPresetsLocal ?? ''),
     enableWebBrowser: toTriState(device.enableWebBrowser),
     webBrowserUrl: device.webBrowserUrl ?? '',
     privateKeyPath: device.privateKeyPath ?? '',
