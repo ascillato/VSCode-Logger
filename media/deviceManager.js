@@ -536,7 +536,10 @@ function hslToHex(hue, saturation, lightness) {
     b = x;
   }
 
-  const toHex = (value) => Math.round((value + m) * 255).toString(16).padStart(2, '0');
+  const toHex = (value) =>
+    Math.round((value + m) * 255)
+      .toString(16)
+      .padStart(2, '0');
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
