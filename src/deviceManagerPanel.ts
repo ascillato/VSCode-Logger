@@ -32,6 +32,7 @@ type TriStateSelection = 'default' | 'enabled' | 'disabled';
 
 interface DevicePayload {
   id: string;
+  color?: string;
   name: string;
   host: string;
   hostFingerprint?: string;
@@ -231,6 +232,7 @@ export class DeviceManagerPanel {
             <thead>
               <tr>
                 <th>ID</th>
+                <th>Color</th>
                 <th>Name</th>
                 <th>Host</th>
                 <th>Port</th>
@@ -435,6 +437,7 @@ export class DeviceManagerPanel {
 
     const normalized: EmbeddedDevice = {
       id: (device.id ?? '').trim(),
+      color: device.color?.trim() || undefined,
       name: (device.name ?? '').trim(),
       host: (device.host ?? '').trim(),
       hostFingerprint: device.hostFingerprint?.trim() || undefined,

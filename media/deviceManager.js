@@ -15,6 +15,7 @@ const state = {
 
 const deviceColumns = [
   { key: 'id', label: 'ID', type: 'text' },
+  { key: 'color', label: 'Color', type: 'color' },
   { key: 'name', label: 'Name', type: 'text' },
   { key: 'host', label: 'Host', type: 'text' },
   { key: 'port', label: 'Port', type: 'number', min: 1 },
@@ -69,6 +70,7 @@ function handleInit(message) {
 function toViewDevice(device) {
   return {
     id: device.id ?? '',
+    color: device.color ?? '',
     name: device.name ?? '',
     host: device.host ?? '',
     port: device.port ?? '',
@@ -284,6 +286,9 @@ function getInitialWidthValue(col) {
   if (col.type === 'number') {
     return '20ch';
   }
+  if (col.type === 'color') {
+    return '10ch';
+  }
   if (col.type === 'sshCommands') {
     return '24ch';
   }
@@ -308,7 +313,9 @@ function setupTableColumns() {
         ? '12ch'
         : col.type === 'textarea' || col.type === 'sshCommands'
           ? '24ch'
-          : '20ch';
+          : col.type === 'color'
+            ? '10ch'
+            : '20ch';
     colElement.style.width = widthValue;
     colElement.style.minWidth = minWidthValue;
     colElement.dataset.minWidthPx = String(measureWidth(minWidthValue));
@@ -427,6 +434,19 @@ function createInput(col, value, index, key) {
     return input;
   }
 
+  if (col.type === 'color') {
+    const input = document.createElement('input');
+    input.type = 'color';
+    input.className = 'color-input';
+    const defaultColor = getDefaultTabTitleColor();
+    const normalized = normalizeColorValue(value);
+    input.value = normalized || defaultColor;
+    input.addEventListener('input', (event) => {
+      state.devices[index][key] = event.target.value;
+    });
+    return input;
+  }
+
   const input = document.createElement('input');
   input.type = col.type || 'text';
   if (col.min) {
@@ -442,6 +462,7 @@ function createInput(col, value, index, key) {
 function addDevice() {
   state.devices.push({
     id: '',
+    color: randomDeviceColor(),
     name: '',
     host: '',
     port: '',
@@ -469,6 +490,88 @@ function addDevice() {
     bastionPassword: '',
   });
   renderDevices();
+}
+
+function getDefaultTabTitleColor() {
+  const computed = getComputedStyle(document.documentElement).getPropertyValue(
+    '--vscode-tab-activeForeground'
+  );
+  return normalizeColorValue(computed) || '#ffffff';
+}
+
+function randomDeviceColor() {
+  const hue = Math.floor(Math.random() * 360);
+  const saturation = 70;
+  const lightness = 55;
+  return hslToHex(hue, saturation, lightness);
+}
+
+function hslToHex(hue, saturation, lightness) {
+  const s = saturation / 100;
+  const l = lightness / 100;
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((hue / 60) % 2) - 1));
+  const m = l - c / 2;
+  let r = 0;
+  let g = 0;
+  let b = 0;
+
+  if (hue < 60) {
+    r = c;
+    g = x;
+  } else if (hue < 120) {
+    r = x;
+    g = c;
+  } else if (hue < 180) {
+    g = c;
+    b = x;
+  } else if (hue < 240) {
+    g = x;
+    b = c;
+  } else if (hue < 300) {
+    r = x;
+    b = c;
+  } else {
+    r = c;
+    b = x;
+  }
+
+  const toHex = (value) =>
+    Math.round((value + m) * 255)
+      .toString(16)
+      .padStart(2, '0');
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+function normalizeColorValue(value) {
+  if (!value) {
+    return '';
+  }
+  const trimmed = value.trim();
+  if (trimmed.startsWith('#')) {
+    const hex = trimmed.toLowerCase();
+    if (hex.length === 4) {
+      const [r, g, b] = hex.slice(1).split('');
+      return `#${r}${r}${g}${g}${b}${b}`;
+    }
+    if (hex.length >= 7) {
+      return hex.slice(0, 7);
+    }
+    return '';
+  }
+
+  const rgbMatch = trimmed.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+  if (rgbMatch) {
+    const [r, g, b] = rgbMatch.slice(1, 4).map((entry) => {
+      const parsed = Number(entry);
+      const safe = Number.isFinite(parsed) ? parsed : 0;
+      return Math.max(0, Math.min(255, safe));
+    });
+    const toHex = (entry) => entry.toString(16).padStart(2, '0');
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+  }
+
+  return '';
 }
 
 function removeDevice(index) {
@@ -596,6 +699,7 @@ function buildHelpJson() {
     'embeddedLogger.devices': [
       {
         id: 'device-1',
+        color: '#4fc3f7',
         name: 'My device',
         host: '192.168.0.10',
         port: defaults.defaultPort ?? 22,

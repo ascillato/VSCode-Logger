@@ -20,6 +20,7 @@ import { getHostEndpoints } from './hostEndpoints';
 import { PasswordManager } from './passwordManager';
 import { SshCommandRunner } from './sshCommandRunner';
 import { SshTerminalSession } from './sshTerminal';
+import { getDeviceColorIcon } from './deviceColor';
 
 type ForwardingClient = Client & {
   forwardOut(
@@ -324,6 +325,7 @@ export class SftpExplorerPanel {
         ],
       }
     );
+    this.panel.iconPath = getDeviceColorIcon(this.device.color);
 
     this.panel.webview.html = this.getHtml(this.panel.webview);
     this.panel.onDidDispose(() => this.dispose(), undefined, this.disposables);
