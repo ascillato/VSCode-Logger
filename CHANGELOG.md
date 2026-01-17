@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Make docs build to have access to test report.
 - Fix log panel disconnection issue.
 - Fix use default settings unless an override exists for a particular device.
+- Fix makefile to use constants for colors.
 
 ### Security
 - Enable npm version updates in dependabot configuration.
