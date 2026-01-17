@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Add Clean Tests to makefile and to code-workspace (VSCode UI - bottom bar).
+- Add quick search to SFTP explorer panes.
 
 ### Changed
 - Bump @types/node from 22.19.3 to 25.0.9
