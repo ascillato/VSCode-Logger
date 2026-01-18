@@ -88,6 +88,10 @@ suite('SFTP Explorer keyboard E2E', function () {
     await sendTestCommand({ command: 'clearQuickSearch', side });
   }
 
+  async function clearSelection(side) {
+    await sendTestCommand({ command: 'clearSelection', side });
+  }
+
   async function confirmDialog(confirmed = true) {
     await sendTestCommand({ command: 'confirmDialog', confirmed });
   }
@@ -200,6 +204,15 @@ suite('SFTP Explorer keyboard E2E', function () {
     await simulateKey('right', 'ArrowLeft', { code: 'ArrowLeft' });
     state = await getState();
     assert.strictEqual(state.focusedSide, 'remote');
+  });
+
+  test('Arrow pane switching selects first entry when none is selected', async () => {
+    drainMessages();
+    await clearSelection('right');
+    await simulateKey('remote', 'ArrowRight', { code: 'ArrowRight' });
+    const state = await getState();
+    assert.strictEqual(state.focusedSide, 'right');
+    assert.strictEqual(state.right.selected[0], 'alpha');
   });
 
   test('Ctrl+P no longer requests permissions info', async () => {

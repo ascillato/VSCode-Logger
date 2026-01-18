@@ -356,6 +356,9 @@
       case 'clearQuickSearch':
         clearQuickSearch(side);
         break;
+      case 'clearSelection':
+        clearSelection(side === 'remote' ? 'remote' : 'right');
+        break;
       case 'getState':
         postTestState(message.requestId);
         break;
@@ -399,6 +402,17 @@
   function focusList(side) {
     const list = side === 'remote' ? elements.remoteList : elements.localList;
     list?.focus();
+  }
+
+  function ensureSelectionForSide(side) {
+    const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
+    if (snapshot.selected.length) {
+      return;
+    }
+    const firstEntry = snapshot.entries[0];
+    if (firstEntry) {
+      setSingleSelection(side, firstEntry);
+    }
   }
 
   function isEditableTarget(target) {
@@ -1637,7 +1651,9 @@
     ) {
       event.preventDefault();
       hideContextMenu();
-      focusList(side === 'remote' ? 'right' : 'remote');
+      const nextSide = side === 'remote' ? 'right' : 'remote';
+      ensureSelectionForSide(nextSide);
+      focusList(nextSide);
       return;
     }
 
