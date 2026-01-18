@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [1.7.1] - 2026-01-17 [SFTP-KEYS-NAV]
+
+### Added
+- None.
+
+### Changed
+- Add left/right arrow navigation to switch focus between SFTP panes.
+
+### Deprecated
+- None.
+
+### Removed
+- Remove the Ctrl+P shortcut for SFTP permission edits.
+
+### Fixed
+- None.
+
+### Security
+- None.
+
+----------------------------------------
+
 ## [1.7.0] - 2026-01-17 [SFTP-QUICK-SEARCH]
 
 ### Added
