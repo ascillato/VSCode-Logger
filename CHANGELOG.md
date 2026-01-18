@@ -13,13 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - None.
 
 ### Changed
-- None.
+- Add left/right arrow navigation to switch focus between SFTP panes.
 
 ### Deprecated
 - None.
 
 ### Removed
-- None.
+- Remove the Ctrl+P shortcut for SFTP permission edits.
 
 ### Fixed
 - None.

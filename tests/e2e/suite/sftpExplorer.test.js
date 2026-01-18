@@ -88,6 +88,10 @@ suite('SFTP Explorer keyboard E2E', function () {
     await sendTestCommand({ command: 'clearQuickSearch', side });
   }
 
+  async function clearSelection(side) {
+    await sendTestCommand({ command: 'clearSelection', side });
+  }
+
   async function confirmDialog(confirmed = true) {
     await sendTestCommand({ command: 'confirmDialog', confirmed });
   }
@@ -190,13 +194,32 @@ suite('SFTP Explorer keyboard E2E', function () {
     assert.strictEqual(duplicateMessage.path, '/alpha-file.txt');
   });
 
-  test('Ctrl+P requests permissions info', async () => {
+  test('Arrow left/right switches between panes', async () => {
     drainMessages();
     await selectEntry('remote', 'alpha-file.txt');
-    const waitPermissions = waitForMessage((message) => message.type === 'requestPermissionsInfo');
+    await simulateKey('remote', 'ArrowRight', { code: 'ArrowRight' });
+    let state = await getState();
+    assert.strictEqual(state.focusedSide, 'right');
+
+    await simulateKey('right', 'ArrowLeft', { code: 'ArrowLeft' });
+    state = await getState();
+    assert.strictEqual(state.focusedSide, 'remote');
+  });
+
+  test('Arrow pane switching selects first entry when none is selected', async () => {
+    drainMessages();
+    await clearSelection('right');
+    await simulateKey('remote', 'ArrowRight', { code: 'ArrowRight' });
+    const state = await getState();
+    assert.strictEqual(state.focusedSide, 'right');
+    assert.strictEqual(state.right.selected[0], 'alpha');
+  });
+
+  test('Ctrl+P no longer requests permissions info', async () => {
+    drainMessages();
+    await selectEntry('remote', 'alpha-file.txt');
     await simulateKey('remote', 'p', { code: 'KeyP', ctrlKey: true });
-    const permissionsMessage = await waitPermissions;
-    assert.strictEqual(permissionsMessage.path, '/alpha-file.txt');
+    await expectNoMessage((message) => message.type === 'requestPermissionsInfo');
   });
 
   test('Context Select keeps focus for arrow navigation', async () => {

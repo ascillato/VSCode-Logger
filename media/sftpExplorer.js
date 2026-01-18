@@ -356,6 +356,9 @@
       case 'clearQuickSearch':
         clearQuickSearch(side);
         break;
+      case 'clearSelection':
+        clearSelection(side === 'remote' ? 'remote' : 'right');
+        break;
       case 'getState':
         postTestState(message.requestId);
         break;
@@ -399,6 +402,17 @@
   function focusList(side) {
     const list = side === 'remote' ? elements.remoteList : elements.localList;
     list?.focus();
+  }
+
+  function ensureSelectionForSide(side) {
+    const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
+    if (snapshot.selected.length) {
+      return;
+    }
+    const firstEntry = snapshot.entries[0];
+    if (firstEntry) {
+      setSingleSelection(side, firstEntry);
+    }
   }
 
   function isEditableTarget(target) {
@@ -1629,6 +1643,20 @@
       return;
     }
 
+    if (
+      (key === 'ArrowLeft' || key === 'ArrowRight') &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.altKey
+    ) {
+      event.preventDefault();
+      hideContextMenu();
+      const nextSide = side === 'remote' ? 'right' : 'remote';
+      ensureSelectionForSide(nextSide);
+      focusList(nextSide);
+      return;
+    }
+
     if (key === 'Delete') {
       event.preventDefault();
       hideContextMenu();
@@ -1656,12 +1684,6 @@
         event.preventDefault();
         hideContextMenu();
         duplicateSelected(side);
-        return;
-      }
-      if (lowerKey === 'p') {
-        event.preventDefault();
-        hideContextMenu();
-        requestPermissions(side);
         return;
       }
     }
