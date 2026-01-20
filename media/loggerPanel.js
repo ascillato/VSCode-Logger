@@ -2092,6 +2092,7 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
       handleStatusMessage,
       setSecondaryStatus,
       updateStatus,
+      handleConnectionLoss,
       handleHostKeyMismatch,
       handleSessionClosed,
       setAutoSaveActive,
