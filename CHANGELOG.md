@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
-## [1.7.2] - 2026-01-20 [RECONN-FIX]
+## [1.7.2] - 2026-01-20 [RECONNECT-FIX]
 
 ### Added
 - Added tests for auto-reconnection functions.
