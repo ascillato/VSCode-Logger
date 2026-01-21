@@ -137,10 +137,10 @@ def generate_coverage_report(
                 "<!-- Automatically generated coverage summary; do not edit manually. -->",
                 "Generated from `coverage/coverage-summary.json`.",
                 "",
-                "## Overall coverage",
+                "### Overall coverage",
                 overview_table,
                 "",
-                "## Coverage by file",
+                "### Coverage by file",
                 file_table if file_rows else "Coverage details were not available.",
                 "",
             ]

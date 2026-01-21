@@ -10,6 +10,13 @@ const OUTPUT_DIR = path.join(__dirname, '_generated');
 const OUTPUT_REPORT = path.join(OUTPUT_DIR, 'complexity-report.md');
 const OUTPUT_JSON = path.join(OUTPUT_DIR, 'complexity-summary.json');
 
+const DEFAULT_THRESHOLDS = {
+  cyclomatic: 10,
+  loc: 100,
+  dit: 5,
+  cbo: 5,
+};
+
 const EXCLUDED_DIRS = new Set([
   'node_modules',
   'build',
@@ -72,6 +79,27 @@ function countLoc(text) {
   return text
     .split(/\r\n|\r|\n/)
     .filter((line) => line.trim().length > 0).length;
+}
+
+function getThresholdValue(envKey, fallback) {
+  const raw = process.env[envKey];
+  if (!raw) {
+    return fallback;
+  }
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function loadThresholds() {
+  return {
+    cyclomatic: getThresholdValue(
+      'COMPLEXITY_THRESHOLD_CYCLOMATIC',
+      DEFAULT_THRESHOLDS.cyclomatic
+    ),
+    loc: getThresholdValue('COMPLEXITY_THRESHOLD_LOC', DEFAULT_THRESHOLDS.loc),
+    dit: getThresholdValue('COMPLEXITY_THRESHOLD_DIT', DEFAULT_THRESHOLDS.dit),
+    cbo: getThresholdValue('COMPLEXITY_THRESHOLD_CBO', DEFAULT_THRESHOLDS.cbo),
+  };
 }
 
 function isLogicalOperator(kind) {
@@ -265,7 +293,88 @@ function getBaseClassName(node) {
   return '';
 }
 
-function computeHalsteadMetrics(text, languageVariant, globalOperators, globalOperands) {
+function getPropertyNameText(name) {
+  if (!name) {
+    return '';
+  }
+  if (ts.isIdentifier(name)) {
+    return name.text;
+  }
+  if (ts.isStringLiteral(name) || ts.isNumericLiteral(name)) {
+    return name.text;
+  }
+  if (ts.isComputedPropertyName(name)) {
+    return name.getText();
+  }
+  return '';
+}
+
+function getFunctionName(node) {
+  if (ts.isConstructorDeclaration(node)) {
+    return 'constructor';
+  }
+  if (node.name) {
+    return getPropertyNameText(node.name) || node.name.getText();
+  }
+
+  if (ts.isFunctionExpression(node) || ts.isArrowFunction(node)) {
+    const parent = node.parent;
+    if (ts.isVariableDeclaration(parent) && ts.isIdentifier(parent.name)) {
+      return parent.name.text;
+    }
+    if (ts.isPropertyDeclaration(parent)) {
+      return getPropertyNameText(parent.name);
+    }
+    if (ts.isPropertyAssignment(parent)) {
+      return getPropertyNameText(parent.name);
+    }
+    if (
+      ts.isBinaryExpression(parent) &&
+      parent.operatorToken.kind === ts.SyntaxKind.EqualsToken
+    ) {
+      return parent.left.getText();
+    }
+  }
+
+  return '<anonymous>';
+}
+
+function resolveFunctionClassContext(node, currentClass) {
+  if (!currentClass) {
+    return null;
+  }
+
+  if (
+    ts.isMethodDeclaration(node) ||
+    ts.isConstructorDeclaration(node) ||
+    ts.isGetAccessor(node) ||
+    ts.isSetAccessor(node)
+  ) {
+    return currentClass;
+  }
+
+  if (
+    (ts.isFunctionExpression(node) || ts.isArrowFunction(node)) &&
+    ts.isPropertyDeclaration(node.parent)
+  ) {
+    return currentClass;
+  }
+
+  return null;
+}
+
+function getFunctionSnippet(node, sourceFile) {
+  const start = node.getStart(sourceFile);
+  const end = node.getEnd();
+  return sourceFile.text.slice(start, end);
+}
+
+function computeHalsteadMetrics(
+  text,
+  languageVariant,
+  globalOperators,
+  globalOperands
+) {
   const scanner = ts.createScanner(
     ts.ScriptTarget.Latest,
     true,
@@ -310,11 +419,13 @@ function computeHalsteadMetrics(text, languageVariant, globalOperators, globalOp
     token = scanner.scan();
   }
 
-  for (const key of operators.keys()) {
-    globalOperators.add(key);
-  }
-  for (const key of operands.keys()) {
-    globalOperands.add(key);
+  if (globalOperators && globalOperands) {
+    for (const key of operators.keys()) {
+      globalOperators.add(key);
+    }
+    for (const key of operands.keys()) {
+      globalOperands.add(key);
+    }
   }
 
   const totalOperators = Array.from(operators.values()).reduce((sum, value) => sum + value, 0);
@@ -417,13 +528,40 @@ function analyzeFile(
 
   const functions = [];
   const classNames = [];
+  const functionDetails = [];
 
-  function visit(node) {
+  function visit(node, classContext) {
     if (ts.isFunctionLike(node) && node.body) {
-      functions.push({
-        cyclomatic: computeCyclomaticComplexity(node),
-        cognitive: computeCognitiveComplexity(node),
+      const cyclomatic = computeCyclomaticComplexity(node);
+      const cognitive = computeCognitiveComplexity(node);
+      const snippet = getFunctionSnippet(node, sourceFile);
+      const halstead = computeHalsteadMetrics(
+        snippet,
+        sourceFile.languageVariant,
+        null,
+        null
+      );
+      const loc = countLoc(snippet);
+      const line = sourceFile.getLineAndCharacterOfPosition(
+        node.getStart(sourceFile)
+      ).line;
+      const resolvedClass = resolveFunctionClassContext(node, classContext);
+
+      functionDetails.push({
+        name: getFunctionName(node),
+        file: path.relative(PROJECT_ROOT, filePath),
+        line: line + 1,
+        loc,
+        cyclomatic,
+        cognitive,
+        halstead,
+        classId: resolvedClass ? resolvedClass.id : null,
+        className: resolvedClass ? resolvedClass.name : null,
       });
+
+      functions.push({ cyclomatic, cognitive });
+      ts.forEachChild(node, (child) => visit(child, null));
+      return;
     }
 
     if (ts.isClassDeclaration(node) && node.name) {
@@ -441,12 +579,16 @@ function analyzeFile(
         classNameIndex.set(className, []);
       }
       classNameIndex.get(className).push(classId);
+      ts.forEachChild(node, (child) =>
+        visit(child, { id: classId, name: className })
+      );
+      return;
     }
 
-    ts.forEachChild(node, visit);
+    ts.forEachChild(node, (child) => visit(child, classContext));
   }
 
-  visit(sourceFile);
+  visit(sourceFile, null);
 
   const loc = countLoc(text);
   const cyclomaticValues = functions.map((metric) => metric.cyclomatic);
@@ -485,6 +627,7 @@ function analyzeFile(
     halstead,
     maintainability,
     classNames,
+    functionDetails,
   };
 }
 
@@ -546,7 +689,7 @@ function computeDitValues(classInfoMap, classNameIndex) {
   return cache;
 }
 
-function buildReport(fileMetrics, classMetrics, halsteadSummary) {
+function buildReport(fileMetrics, classMetrics, halsteadSummary, thresholds) {
   const functionCount = fileMetrics.reduce(
     (sum, file) => sum + file.functions.count,
     0
@@ -626,6 +769,16 @@ function buildReport(fileMetrics, classMetrics, halsteadSummary) {
 
   const halsteadTable = formatTable(['Metric', 'Value'], halsteadRows, [1]);
 
+  const thresholdRows = [
+    ['Cyclomatic complexity (function)', `< ${formatInteger(thresholds.cyclomatic)}`, 'Break down complex functions'],
+    ['LOC (function)', `< ${formatInteger(thresholds.loc)}`, 'Modularize large functions'],
+    ['Depth of inheritance (class)', `< ${formatInteger(thresholds.dit)}`,'Simplify class hierarchies'],
+    ['Coupling between objects (class)', `< ${formatInteger(thresholds.cbo)}`,'Reduce class dependencies'],
+    ['Maintainability Index', '> 65','Improve the above metrics'],
+  ];
+
+  const thresholdTable = formatTable(['Metric', 'Ideal Range', 'Action if Exceeded'], thresholdRows, [1]);
+
   const complexityRows = fileMetrics.map((file) => [
     `\`${file.path}\``,
     formatInteger(file.loc),
@@ -693,24 +846,135 @@ function buildReport(fileMetrics, classMetrics, halsteadSummary) {
     );
   }
 
+  const classMetricById = new Map();
+  for (const metric of classMetrics) {
+    classMetricById.set(metric.id, metric);
+  }
+
+  const functions = fileMetrics.flatMap((file) => file.functionDetails || []);
+  const outlierFunctions = functions
+    .map((fn) => {
+      const classMetric = fn.classId ? classMetricById.get(fn.classId) : null;
+      const dit = classMetric ? classMetric.dit : 1;
+      const cbo = classMetric ? classMetric.cbo : 0;
+      return {
+        ...fn,
+        className: fn.className || (classMetric ? classMetric.name : ''),
+        dit,
+        cbo,
+      };
+    })
+    .filter(
+      (fn) =>
+        fn.cyclomatic >= thresholds.cyclomatic || fn.loc >= thresholds.loc
+    )
+    .sort((a, b) =>
+      a.file === b.file
+        ? a.line === b.line
+          ? a.name.localeCompare(b.name)
+          : a.line - b.line
+        : a.file.localeCompare(b.file)
+    );
+
+  let functionSection = [
+    '#### Functions outside thresholds',
+    'All functions are below the configured function thresholds.',
+  ].join('\n');
+  if (outlierFunctions.length) {
+    const functionComplexityRows = outlierFunctions.map((fn) => [
+      `\`${fn.name}\``,
+      fn.className ? `\`${fn.className}\`` : '—',
+      `\`${fn.file}:${fn.line}\``,
+      formatInteger(fn.loc),
+      formatInteger(fn.cyclomatic),
+      formatInteger(fn.cognitive),
+    ]);
+
+    const functionComplexityTable = formatTable(
+      ['Function', 'Class', 'Location', 'LOC', 'Cyclomatic', 'Cognitive'],
+      functionComplexityRows,
+      [3, 4, 5]
+    );
+
+    const functionHalsteadRows = outlierFunctions.map((fn) => [
+      `\`${fn.name}\``,
+      fn.className ? `\`${fn.className}\`` : '—',
+      `\`${fn.file}:${fn.line}\``,
+      formatInteger(fn.halstead.vocabulary),
+      formatInteger(fn.halstead.length),
+      formatNumber(fn.halstead.volume, 2),
+      formatNumber(fn.halstead.difficulty, 2),
+      formatNumber(fn.halstead.effort, 2),
+      formatNumber(fn.halstead.bugs, 2),
+      formatNumber(fn.halstead.time, 2),
+    ]);
+
+    const functionHalsteadTable = formatTable(
+      [
+        'Function',
+        'Class',
+        'Location',
+        'Vocabulary',
+        'Length',
+        'Volume',
+        'Difficulty',
+        'Effort',
+        'Bugs',
+        'Time (sec)',
+      ],
+      functionHalsteadRows,
+      [3, 4, 5, 6, 7, 8, 9]
+    );
+
+    const functionClassRows = outlierFunctions.map((fn) => [
+      `\`${fn.name}\``,
+      fn.className ? `\`${fn.className}\`` : '—',
+      `\`${fn.file}:${fn.line}\``,
+      formatInteger(fn.dit),
+      formatInteger(fn.cbo),
+    ]);
+
+    const functionClassTable = formatTable(
+      ['Function', 'Class', 'Location', 'DIT', 'CBO'],
+      functionClassRows,
+      [3, 4]
+    );
+
+    functionSection = [
+      '#### Complexity by function (outside thresholds)',
+      functionComplexityTable,
+      '',
+      '#### Halstead metrics by function (outside thresholds)',
+      functionHalsteadTable,
+      '',
+      '#### Class coupling and inheritance by function (outside thresholds)',
+      functionClassTable,
+    ].join('\n');
+  }
+
   return [
     '<!-- Automatically generated by docs/source/complexity_report.js; do not edit manually. -->',
     `Generated on ${new Date().toISOString()}.`,
     '',
-    '## Complexity overview',
+    '#### Thresholds',
+    thresholdTable,
+    '',
+    '#### Complexity overview',
     overviewTable,
     '',
-    '## Halstead summary',
+    '#### Halstead summary',
     halsteadTable,
     '',
-    '## Complexity by file',
+    '#### Complexity by file',
     complexityTable,
     '',
-    '## Halstead metrics by file',
+    '#### Halstead metrics by file',
     halsteadFileTable,
     '',
-    '## Class coupling and inheritance',
+    '#### Class coupling and inheritance by file',
     classTable,
+    '',
+    functionSection,
     '',
   ].join('\n');
 }
@@ -741,6 +1005,7 @@ function main() {
   const classMetrics = [];
   for (const [classId, info] of classInfoMap.entries()) {
     classMetrics.push({
+      id: classId,
       name: info.name,
       file: path.relative(PROJECT_ROOT, info.filePath),
       dit: ditValues.get(classId) || 1,
@@ -770,6 +1035,8 @@ function main() {
   const bugs = volume / 3000;
   const time = effort / 18;
 
+  const thresholds = loadThresholds();
+
   const halsteadSummary = {
     operators: { distinct: globalOperators.size, total: totalOperators },
     operands: { distinct: globalOperands.size, total: totalOperands },
@@ -782,7 +1049,7 @@ function main() {
     time,
   };
 
-  const report = buildReport(fileMetrics, classMetrics, halsteadSummary);
+  const report = buildReport(fileMetrics, classMetrics, halsteadSummary, thresholds);
 
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
   fs.writeFileSync(OUTPUT_REPORT, report, 'utf8');
@@ -795,6 +1062,7 @@ function main() {
         files: fileMetrics,
         classes: classMetrics,
         halsteadSummary,
+        thresholds,
       },
       null,
       2

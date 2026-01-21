@@ -1,5 +1,7 @@
 # Code Metrics
 
+## Lines of Code
+
 The following repository-wide code line count report is generated automatically during the documentation build using [`cloc`](https://github.com/AlDanial/cloc). The report excludes generated outputs and dependency directories to keep the results focused on source and documentation files. Both a language-level summary and a per-file breakdown are produced.
 
 This report is refreshed automatically on every docs build.
@@ -8,7 +10,9 @@ This report is refreshed automatically on every docs build.
 :relative-images:
 ```
 
-## Complexity metrics
+--------
+
+## Code Complexity
 
 Complexity metrics are generated during the documentation build using a TypeScript and JavaScript parser. The report covers `.ts` and `.js` files under the repository (excluding build outputs) and includes:
 
@@ -34,11 +38,11 @@ Here's a quick comparison:
 | Maintainability Index | Ease of maintenance         | Higher = easier to work with |
 | Cognitive Complexity  | Mental effort to understand | Lower = more readable        |
 
-## Benefits of Tracking Code Complexity
+### Benefits of Tracking Code Complexity
 
 Tracking complexity offers key advantages:
 
-### Improved Software Quality
+#### Improved Software Quality
 
 Teams can:
 
@@ -46,7 +50,7 @@ Teams can:
 - Cut error risk
 - Boost code readability
 
-### Cost-Effective Maintenance
+#### Cost-Effective Maintenance
 
 Complex code often means:
 
@@ -60,7 +64,7 @@ Tracking helps teams:
 - Streamline maintenance
 - Cut long-term costs
 
-### Better Resource Allocation
+#### Better Resource Allocation
 
 Complexity metrics guide teams in:
 
@@ -68,7 +72,7 @@ Complexity metrics guide teams in:
 - Allocating testing resources
 - Planning code reviews
 
-### Enhanced Team Collaboration
+#### Enhanced Team Collaboration
 
 Complexity metrics provide:
 
@@ -76,7 +80,7 @@ Complexity metrics provide:
 - Objective measures for reviews
 - Clear improvement goals
 
-### Proactive Risk Management
+#### Proactive Risk Management
 
 Teams can:
 
@@ -86,7 +90,7 @@ Teams can:
 
 A study of 12,000+ projects found quality issues caused over 20% of failures. Tracking complexity helps avoid these pitfalls.
 
-### Quantifiable Quality Standards
+#### Quantifiable Quality Standards
 
 Teams can:
 
@@ -94,15 +98,9 @@ Teams can:
 - Measure progress
 - Compare solutions objectively
 
-### Thresholds
+--------
 
-| Metric                   | Ideal Range        | Action if Exceeded           |
-| ------------------------ | ------------------ | ---------------------------- |
-| Cyclomatic Complexity    | < 10               | Break down complex functions |
-| LOC                      | < 100 per function | Modularize large functions   |
-| Depth of Inheritance     | < 5                | Simplify class hierarchies   |
-| Coupling Between Objects | < 5                | Reduce class dependencies    |
-| Maintainability Index    | \> 65              | Improve the above metrics    |
+### Code Complexity Report
 
 :::{ifconfig} have_complexity_report
 ```{include} _generated/complexity-report.md
@@ -114,7 +112,9 @@ Teams can:
 Complexity metrics are not available yet. Run the docs build after installing Node dependencies to refresh the report.
 :::
 
-## Test coverage
+--------
+
+## Test Coverage
 
 The coverage summary is generated automatically when running the test suite (for example, via `npm test` or `make test`) and exported into the documentation metrics.
 
