@@ -106,6 +106,8 @@ export function registerMessageHandlers({
       case 'error':
         if (isDefaultLogCommandMessage(message.message)) {
           handlers.setSecondaryStatus(message.message);
+        } else if (state.isLiveLog && state.connectionState === 'connecting') {
+          handlers.handleConnectionLoss(message.message);
         } else {
           handlers.updateStatus(message.message);
         }
