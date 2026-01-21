@@ -344,6 +344,75 @@ def _generate_cloc_reports() -> bool:
 
 
 have_cloc_report = _generate_cloc_reports()
+_complexity_report_md = _cloc_generated_dir / "complexity-report.md"
+_complexity_summary_json = _cloc_generated_dir / "complexity-summary.json"
+_complexity_script = DOCS_SOURCE / "complexity_report.js"
+
+
+def _write_complexity_placeholder(message: str) -> None:
+    """Write a placeholder report when complexity data is unavailable."""
+
+    _complexity_report_md.write_text(
+        "\n".join(
+            [
+                "<!-- complexity data unavailable; generated placeholder. -->",
+                message,
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+
+def _generate_complexity_report() -> bool:
+    """Generate complexity reports used in the documentation."""
+
+    if os.environ.get("COMPLEXITY_SKIP"):
+        _write_complexity_placeholder(
+            "`complexity` was skipped because COMPLEXITY_SKIP is set."
+        )
+        return False
+
+    if not _complexity_script.exists():
+        _write_complexity_placeholder(
+            "Complexity metrics are unavailable because the generator script is missing."
+        )
+        return False
+
+    if not shutil.which("node"):
+        _write_complexity_placeholder(
+            "Complexity metrics are unavailable because `node` is not installed."
+        )
+        return False
+
+    _cloc_generated_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        result = subprocess.run(
+            ["node", str(_complexity_script)],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        _write_complexity_placeholder(
+            "Complexity metrics are unavailable because the generator failed to run."
+        )
+        return False
+
+    if result.returncode != 0 or not _complexity_report_md.exists():
+        _write_complexity_placeholder(
+            "Complexity metrics are unavailable because the generator did not produce output."
+        )
+        return False
+
+    if not _complexity_summary_json.exists():
+        _complexity_summary_json.write_text("{}", encoding="utf-8")
+
+    return True
+
+
+have_complexity_report = _generate_complexity_report()
 _coverage_report_md = _cloc_generated_dir / "coverage-report.md"
 have_coverage_report = generate_coverage_report(
     PROJECT_ROOT, _coverage_report_md, fail_on_missing=False
@@ -360,6 +429,8 @@ def setup(app):
     app.config.have_typedoc = have_typedoc
     app.add_config_value("have_cloc_report", False, "env", types=[bool])
     app.config.have_cloc_report = have_cloc_report
+    app.add_config_value("have_complexity_report", False, "env", types=[bool])
+    app.config.have_complexity_report = have_complexity_report
     app.add_config_value("have_coverage_report", False, "env", types=[bool])
     app.config.have_coverage_report = have_coverage_report
     app.connect("build-finished", _copy_typedoc_output)
