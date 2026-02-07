@@ -54,6 +54,7 @@
     "typedoc",
     "vscode",
     "webview",
-    "webviews"
+    "webviews",
+    "UPDT"
   ]
 }
