@@ -4,6 +4,7 @@ import tsParser from "@typescript-eslint/parser";
 import prettier from "eslint-plugin-prettier";
 import spellcheck from "eslint-plugin-spellcheck";
 import globals from "globals";
+import { fixupPluginRules } from "@eslint/compat";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import js from "@eslint/js";
@@ -17,6 +18,7 @@ const compat = new FlatCompat({
   recommendedConfig: js.configs.recommended,
   allConfig: js.configs.all,
 });
+const spellcheckCompat = fixupPluginRules(spellcheck);
 
 const spellcheckSkipWords = [
   "ssh",
@@ -119,6 +121,7 @@ export default defineConfig([
     "**/node_modules/",
     "**/out/",
     "**/dist/",
+    "**/coverage/",
     "**/.vscode-test/",
     "**/.github/",
     "**/.vscode/",
@@ -142,7 +145,7 @@ export default defineConfig([
       ecmaVersion: "latest",
       sourceType: "module",
     },
-    plugins: { prettier, spellcheck },
+    plugins: { prettier, spellcheck: spellcheckCompat },
     rules: {
       "prettier/prettier": "error",
       "spellcheck/spell-checker": [
@@ -174,7 +177,7 @@ export default defineConfig([
     plugins: {
       "@typescript-eslint": typescriptEslint,
       prettier,
-      spellcheck,
+      spellcheck: spellcheckCompat,
     },
     languageOptions: {
       globals: {

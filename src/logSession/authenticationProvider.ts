@@ -122,7 +122,11 @@ export class AuthenticationProvider {
       return content;
     } catch (err: unknown) {
       const reason = err instanceof Error ? err.message : String(err);
-      throw new Error(`Failed to read private key from ${expanded}: ${reason}`);
+      const wrappedError = new Error(
+        `Failed to read private key from ${expanded}: ${reason}`
+      ) as Error & { cause?: unknown };
+      wrappedError.cause = err;
+      throw wrappedError;
     }
   }
 
