@@ -439,6 +439,7 @@
     "ssh2": "^1.14.0"
   },
   "overrides": {
-    "diff": "^8.0.3"
+    "diff": "^8.0.3",
+    "serialize-javascript": "^7.0.3"
   }
 }
