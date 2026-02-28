@@ -524,7 +524,11 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
       return content;
     } catch (err: unknown) {
       const reason = this.getErrorMessage(err) || 'unknown error';
-      throw new Error(`Failed to read private key from ${expanded}: ${reason}`);
+      const wrappedError = new Error(
+        `Failed to read private key from ${expanded}: ${reason}`
+      ) as Error & { cause?: unknown };
+      wrappedError.cause = err;
+      throw wrappedError;
     }
   }
 
