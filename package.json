@@ -424,7 +424,7 @@
     "@vitest/coverage-v8": "^4.0.18",
     "@vscode/test-electron": "^2.4.1",
     "cloc": "^2.6.0-cloc",
-    "cspell": "^9.6.4",
+    "cspell": "^9.7.0",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",
