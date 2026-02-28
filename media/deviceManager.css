@@ -203,8 +203,8 @@ th {
 
 th:last-child,
 td:last-child {
-  min-width: 12ch;
-  width: 12ch;
+  min-width: 16ch;
+  width: 18ch;
 }
 
 th.resizable {
@@ -265,6 +265,12 @@ td select {
 .button-icon {
   padding: 6px 8px;
   min-width: 28px;
+}
+
+.row-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .modal {

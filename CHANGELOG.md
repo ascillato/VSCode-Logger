@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [1.7.4] - 2026-02-28 [DEP-UPDT-2]
+
+### Added
+- Add per-device "Reset password" action in the Device Manager table.
+
+### Changed
+- Updated dependencies to latest.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- None.
+
+### Security
+- None.
+
+----------------------------------------
+
 ## [1.7.3] - 2026-01-20 [DEP-UPDT-1]
 
 ### Added

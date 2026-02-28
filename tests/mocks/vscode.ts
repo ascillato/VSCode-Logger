@@ -132,6 +132,7 @@ export const workspace: typeof vscode.workspace = {
   ] as unknown as vscode.WorkspaceFolder[],
   name: 'mock-workspace',
   getConfiguration: () => workspaceConfiguration as unknown as vscode.WorkspaceConfiguration,
+  onDidChangeConfiguration: vi.fn(() => ({ dispose: () => undefined })),
   fs: {
     writeFile: async (uri: vscode.Uri, content: Uint8Array) => {
       mockFileSystem.set((uri as unknown as MockUri).fsPath, content);
@@ -191,6 +192,7 @@ export const window: typeof vscode.window = {
       return panel;
     }
   ),
+  registerWebviewViewProvider: vi.fn(() => ({ dispose: () => undefined })),
   showTextDocument: vi.fn(() => Promise.resolve(undefined)),
 } as unknown as typeof vscode.window;
 
@@ -217,7 +219,7 @@ export const Uri = {
 };
 
 export const commands: typeof vscode.commands = {
-  registerCommand: vi.fn(),
+  registerCommand: vi.fn(() => ({ dispose: () => undefined })),
   executeCommand: vi.fn(),
 } as unknown as typeof vscode.commands;
 
@@ -258,11 +260,20 @@ export const ViewColumn = {
   Three: 3,
 };
 
+export const ExtensionMode = {
+  Production: 1,
+  Development: 2,
+  Test: 3,
+};
+
 export const workspaceState = new Map<string, unknown>();
 
 export const createExtensionContext = (): vscode.ExtensionContext => {
   return {
     extensionPath: '/workspace',
+    extensionUri: Uri.file('/workspace') as unknown as vscode.Uri,
+    extensionMode: ExtensionMode.Test as unknown as vscode.ExtensionMode,
+    subscriptions: [],
     secrets: createSecretStorage(),
     globalState: {
       get: (key: string, defaultValue?: unknown) => workspaceState.get(key) ?? defaultValue,
@@ -313,6 +324,10 @@ export const resetWindowResponses = (): void => {
   (window.showSaveDialog as ReturnType<typeof vi.fn>).mockClear?.();
   (window.showTextDocument as ReturnType<typeof vi.fn>).mockClear?.();
   (window.createWebviewPanel as ReturnType<typeof vi.fn>).mockClear?.();
+  (window.registerWebviewViewProvider as ReturnType<typeof vi.fn>).mockClear?.();
+  (workspace.onDidChangeConfiguration as ReturnType<typeof vi.fn>).mockClear?.();
+  (commands.registerCommand as ReturnType<typeof vi.fn>).mockClear?.();
+  (commands.executeCommand as ReturnType<typeof vi.fn>).mockClear?.();
 };
 
 export const getStoredSecrets = (context: vscode.ExtensionContext): StoredSecret[] => {
@@ -345,6 +360,7 @@ export default {
   workspace,
   window,
   ConfigurationTarget,
+  ExtensionMode,
   env,
   Uri,
   commands,

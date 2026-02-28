@@ -156,11 +156,27 @@ function renderDevices() {
       row.appendChild(cell);
     });
     const removeCell = document.createElement('td');
+    const actions = document.createElement('div');
+    actions.className = 'row-actions';
+
+    const resetPasswordButton = document.createElement('button');
+    resetPasswordButton.textContent = 'Reset password';
+    resetPasswordButton.className = 'button';
+    const deviceId = (device.id || '').trim();
+    resetPasswordButton.disabled = !deviceId;
+    resetPasswordButton.title = deviceId
+      ? `Remove stored password and passphrase for "${deviceId}"`
+      : 'Set device ID before resetting stored password';
+    resetPasswordButton.addEventListener('click', () => clearDeviceStoredPassword(index));
+    actions.appendChild(resetPasswordButton);
+
     const removeButton = document.createElement('button');
     removeButton.textContent = 'Remove';
     removeButton.className = 'button button-danger';
     removeButton.addEventListener('click', () => removeDevice(index));
-    removeCell.appendChild(removeButton);
+    actions.appendChild(removeButton);
+
+    removeCell.appendChild(actions);
     row.appendChild(removeCell);
     tbody.appendChild(row);
   });
@@ -323,9 +339,9 @@ function setupTableColumns() {
   });
 
   const actionCol = document.createElement('col');
-  actionCol.style.width = '12ch';
-  actionCol.style.minWidth = '10ch';
-  actionCol.dataset.minWidthPx = String(measureWidth('10ch'));
+  actionCol.style.width = '18ch';
+  actionCol.style.minWidth = '16ch';
+  actionCol.dataset.minWidthPx = String(measureWidth('16ch'));
   colgroup.appendChild(actionCol);
 }
 
@@ -608,6 +624,17 @@ function editJson() {
 function clearStoredPasswords() {
   setStatus('Removing stored passwords...', 'info');
   vscode.postMessage({ type: 'clearPasswords' });
+}
+
+function clearDeviceStoredPassword(index) {
+  const device = state.devices[index];
+  const deviceId = (device?.id || '').trim();
+  if (!deviceId) {
+    setStatus('Set a device ID before resetting stored password.', 'error');
+    return;
+  }
+  setStatus(`Removing stored password for ${deviceId}...`, 'info');
+  vscode.postMessage({ type: 'clearDevicePassword', deviceId });
 }
 
 function setupHelpModal() {

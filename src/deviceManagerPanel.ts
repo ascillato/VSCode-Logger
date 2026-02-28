@@ -11,7 +11,8 @@ type IncomingMessage =
   | { type: 'requestState' }
   | { type: 'save'; defaults: DefaultsPayload; devices: DevicePayload[] }
   | { type: 'editJson' }
-  | { type: 'clearPasswords' };
+  | { type: 'clearPasswords' }
+  | { type: 'clearDevicePassword'; deviceId: string };
 
 interface SshCommand {
   name: string;
@@ -90,6 +91,12 @@ export class DeviceManagerPanel {
             break;
           case 'clearPasswords':
             void vscode.commands.executeCommand('embeddedLogger.clearStoredPasswords');
+            break;
+          case 'clearDevicePassword':
+            void vscode.commands.executeCommand(
+              'embeddedLogger.clearStoredPasswords',
+              message.deviceId
+            );
             break;
           default:
             break;

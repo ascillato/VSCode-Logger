@@ -237,6 +237,24 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
   const getDevices = (): EmbeddedDevice[] => getEmbeddedLoggerConfiguration().devices;
   const findDevice = (deviceId: string): EmbeddedDevice | undefined =>
     getDevices().find((item) => item.id === deviceId);
+  const clearStoredCredentialsForDevice = async (deviceId: string): Promise<void> => {
+    await passwordManager.clearPassword(deviceId);
+    await passwordManager.clearPassword(`${deviceId}-bastion`);
+  };
+  const parseDeviceIdTarget = (target?: unknown): string | undefined => {
+    if (typeof target === 'string') {
+      const deviceId = target.trim();
+      return deviceId || undefined;
+    }
+    if (target && typeof target === 'object' && 'id' in target) {
+      const candidate = (target as { id?: unknown }).id;
+      if (typeof candidate === 'string') {
+        const deviceId = candidate.trim();
+        return deviceId || undefined;
+      }
+    }
+    return undefined;
+  };
 
   const openWebBrowser = async (device: EmbeddedDevice | undefined): Promise<void> => {
     if (!device) {
@@ -455,22 +473,36 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('embeddedLogger.clearStoredPasswords', async () => {
-      const devices = getDevices();
+    vscode.commands.registerCommand(
+      'embeddedLogger.clearStoredPasswords',
+      async (targetDevice?: unknown) => {
+        const targetDeviceId = parseDeviceIdTarget(targetDevice);
+        if (targetDeviceId) {
+          await clearStoredCredentialsForDevice(targetDeviceId);
+          const targetDeviceConfig = findDevice(targetDeviceId);
+          const deviceLabel = targetDeviceConfig?.name ?? targetDeviceId;
+          vscode.window.showInformationMessage(
+            `Stored passwords and passphrases have been removed for ${deviceLabel}.`
+          );
+          return;
+        }
 
-      if (!devices || devices.length === 0) {
-        vscode.window.showInformationMessage('No devices configured to clear passwords for.');
-        return;
+        const devices = getDevices();
+
+        if (!devices || devices.length === 0) {
+          vscode.window.showInformationMessage('No devices configured to clear passwords for.');
+          return;
+        }
+
+        for (const device of devices) {
+          await clearStoredCredentialsForDevice(device.id);
+        }
+
+        vscode.window.showInformationMessage(
+          'Stored passwords and passphrases have been removed for configured devices.'
+        );
       }
-
-      for (const device of devices) {
-        await passwordManager.clearPassword(device.id);
-      }
-
-      vscode.window.showInformationMessage(
-        'Stored passwords and passphrases have been removed for configured devices.'
-      );
-    })
+    )
   );
 
   context.subscriptions.push(
