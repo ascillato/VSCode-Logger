@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [1.7.5] - 2026-03-01 [DEVICE-ORDER]
+
+### Added
+- Added reorder control to device list.
+
+### Changed
+- None.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- None.
+
+### Security
+- None.
+
+----------------------------------------
+
 ## [1.7.4] - 2026-02-28 [DEP-UPDT-2]
 
 ### Added

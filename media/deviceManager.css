@@ -201,12 +201,6 @@ th {
   padding-right: 12px;
 }
 
-th:last-child,
-td:last-child {
-  min-width: 16ch;
-  width: 18ch;
-}
-
 th.resizable {
   position: sticky;
 }
@@ -267,10 +261,27 @@ td select {
   min-width: 28px;
 }
 
-.row-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+#devicesTable th:first-child,
+#devicesTable td:first-child {
+  min-width: 8ch;
+  width: 8ch;
+  text-align: center;
+}
+
+#devicesTable td:first-child input[type='checkbox'] {
+  width: auto;
+}
+
+#devicesTable tr.device-row-selected td {
+  background: var(
+    --vscode-list-inactiveSelectionBackground,
+    var(--vscode-list-activeSelectionBackground)
+  );
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .modal {

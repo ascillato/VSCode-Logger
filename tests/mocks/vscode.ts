@@ -216,6 +216,10 @@ export const env: typeof vscode.env = {
 export const Uri = {
   parse: (value: string) => createMockUri(value),
   file: (value: string) => createMockUri(path.normalize(value)),
+  joinPath: (base: vscode.Uri, ...pathSegments: string[]) => {
+    const fsPath = (base as unknown as MockUri).fsPath;
+    return createMockUri(path.join(fsPath, ...pathSegments));
+  },
 };
 
 export const commands: typeof vscode.commands = {
@@ -255,6 +259,7 @@ export const StatusBarAlignment = {
 };
 
 export const ViewColumn = {
+  Active: -1,
   One: 1,
   Two: 2,
   Three: 3,

@@ -13,7 +13,10 @@ const state = {
   },
 };
 
+const selectedDevices = new Set();
+
 const deviceColumns = [
+  { key: '__selected', label: 'Select', type: 'rowSelect' },
   { key: 'id', label: 'ID', type: 'text' },
   { key: 'color', label: 'Color', type: 'color' },
   { key: 'name', label: 'Name', type: 'text' },
@@ -56,6 +59,7 @@ function postReady() {
 
 function handleInit(message) {
   const { devices = [], defaults } = message;
+  selectedDevices.clear();
   state.defaults = {
     ...state.defaults,
     ...defaults,
@@ -149,39 +153,79 @@ function renderDevices() {
 
   state.devices.forEach((device, index) => {
     const row = document.createElement('tr');
+    row.className = selectedDevices.has(device) ? 'device-row-selected' : '';
     deviceColumns.forEach((col) => {
       const cell = document.createElement('td');
       const input = createInput(col, device[col.key], index, col.key);
       cell.appendChild(input);
       row.appendChild(cell);
     });
-    const removeCell = document.createElement('td');
-    const actions = document.createElement('div');
-    actions.className = 'row-actions';
-
-    const resetPasswordButton = document.createElement('button');
-    resetPasswordButton.textContent = 'Reset password';
-    resetPasswordButton.className = 'button';
-    const deviceId = (device.id || '').trim();
-    resetPasswordButton.disabled = !deviceId;
-    resetPasswordButton.title = deviceId
-      ? `Remove stored password and passphrase for "${deviceId}"`
-      : 'Set device ID before resetting stored password';
-    resetPasswordButton.addEventListener('click', () => clearDeviceStoredPassword(index));
-    actions.appendChild(resetPasswordButton);
-
-    const removeButton = document.createElement('button');
-    removeButton.textContent = 'Remove';
-    removeButton.className = 'button button-danger';
-    removeButton.addEventListener('click', () => removeDevice(index));
-    actions.appendChild(removeButton);
-
-    removeCell.appendChild(actions);
-    row.appendChild(removeCell);
     tbody.appendChild(row);
   });
 
   addColumnResizers();
+  updateSelectedDeviceActions();
+}
+
+function getSelectedDevices() {
+  return state.devices.filter((device) => selectedDevices.has(device));
+}
+
+function updateSelectedDeviceActions() {
+  const selectedCount = getSelectedDevices().length;
+  const hasSelection = selectedCount > 0;
+
+  const moveUpButton = document.getElementById('moveSelectedUp');
+  const moveDownButton = document.getElementById('moveSelectedDown');
+  const clearPasswordsButton = document.getElementById('clearSelectedPasswords');
+  const removeButton = document.getElementById('removeSelectedDevices');
+
+  if (moveUpButton) {
+    moveUpButton.disabled = !hasSelection;
+  }
+  if (moveDownButton) {
+    moveDownButton.disabled = !hasSelection;
+  }
+  if (clearPasswordsButton) {
+    clearPasswordsButton.disabled = !hasSelection;
+  }
+  if (removeButton) {
+    removeButton.disabled = !hasSelection;
+  }
+}
+
+function moveSelectedDevicesUp() {
+  if (!getSelectedDevices().length) {
+    return;
+  }
+
+  for (let index = 1; index < state.devices.length; index += 1) {
+    const current = state.devices[index];
+    const previous = state.devices[index - 1];
+    if (selectedDevices.has(current) && !selectedDevices.has(previous)) {
+      state.devices[index - 1] = current;
+      state.devices[index] = previous;
+    }
+  }
+
+  renderDevices();
+}
+
+function moveSelectedDevicesDown() {
+  if (!getSelectedDevices().length) {
+    return;
+  }
+
+  for (let index = state.devices.length - 2; index >= 0; index -= 1) {
+    const current = state.devices[index];
+    const next = state.devices[index + 1];
+    if (selectedDevices.has(current) && !selectedDevices.has(next)) {
+      state.devices[index] = next;
+      state.devices[index + 1] = current;
+    }
+  }
+
+  renderDevices();
 }
 
 function renderSshCommandsEditor(commands, mountPoint, onChange) {
@@ -296,6 +340,9 @@ function measureWidth(value) {
 }
 
 function getInitialWidthValue(col) {
+  if (col.type === 'rowSelect') {
+    return '8ch';
+  }
   if (col.type === 'checkbox' || col.type === 'triState') {
     return '12ch';
   }
@@ -325,24 +372,20 @@ function setupTableColumns() {
     const colElement = document.createElement('col');
     const widthValue = getInitialWidthValue(col);
     const minWidthValue =
-      col.type === 'checkbox' || col.type === 'triState'
-        ? '12ch'
-        : col.type === 'textarea' || col.type === 'sshCommands'
-          ? '24ch'
-          : col.type === 'color'
-            ? '10ch'
-            : '20ch';
+      col.type === 'rowSelect'
+        ? '8ch'
+        : col.type === 'checkbox' || col.type === 'triState'
+          ? '12ch'
+          : col.type === 'textarea' || col.type === 'sshCommands'
+            ? '24ch'
+            : col.type === 'color'
+              ? '10ch'
+              : '20ch';
     colElement.style.width = widthValue;
     colElement.style.minWidth = minWidthValue;
     colElement.dataset.minWidthPx = String(measureWidth(minWidthValue));
     colgroup.appendChild(colElement);
   });
-
-  const actionCol = document.createElement('col');
-  actionCol.style.width = '18ch';
-  actionCol.style.minWidth = '16ch';
-  actionCol.dataset.minWidthPx = String(measureWidth('16ch'));
-  colgroup.appendChild(actionCol);
 }
 
 function startColumnResize(event, index) {
@@ -402,6 +445,28 @@ function addColumnResizers() {
 }
 
 function createInput(col, value, index, key) {
+  if (col.type === 'rowSelect') {
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.checked = selectedDevices.has(state.devices[index]);
+    input.title = 'Select device row';
+    input.setAttribute('aria-label', 'Select device row');
+    input.addEventListener('change', (event) => {
+      const device = state.devices[index];
+      if (!device) {
+        return;
+      }
+      if (event.target.checked) {
+        selectedDevices.add(device);
+      } else {
+        selectedDevices.delete(device);
+      }
+      updateSelectedDeviceActions();
+      renderDevices();
+    });
+    return input;
+  }
+
   if (col.type === 'sshCommands') {
     return renderSshCommandsEditor(value || [], null, (next, options = {}) => {
       state.devices[index][key] = next;
@@ -590,9 +655,21 @@ function normalizeColorValue(value) {
   return '';
 }
 
-function removeDevice(index) {
-  state.devices.splice(index, 1);
+function removeSelectedDevices() {
+  const selected = getSelectedDevices();
+  if (!selected.length) {
+    return;
+  }
+
+  state.devices = state.devices.filter((device) => !selectedDevices.has(device));
+  selectedDevices.clear();
   renderDevices();
+  setStatus(
+    selected.length === 1
+      ? 'Removed selected device.'
+      : `Removed ${selected.length} selected devices.`,
+    'info'
+  );
 }
 
 function collectDefaults() {
@@ -626,15 +703,31 @@ function clearStoredPasswords() {
   vscode.postMessage({ type: 'clearPasswords' });
 }
 
-function clearDeviceStoredPassword(index) {
-  const device = state.devices[index];
-  const deviceId = (device?.id || '').trim();
-  if (!deviceId) {
-    setStatus('Set a device ID before resetting stored password.', 'error');
+function clearSelectedDeviceStoredPasswords() {
+  const selected = getSelectedDevices();
+  if (!selected.length) {
     return;
   }
-  setStatus(`Removing stored password for ${deviceId}...`, 'info');
-  vscode.postMessage({ type: 'clearDevicePassword', deviceId });
+
+  const ids = selected
+    .map((device) => (device?.id || '').trim())
+    .filter((deviceId, index, list) => !!deviceId && list.indexOf(deviceId) === index);
+
+  if (!ids.length) {
+    setStatus('Set at least one selected device ID before resetting stored password.', 'error');
+    return;
+  }
+
+  ids.forEach((deviceId) => {
+    vscode.postMessage({ type: 'clearDevicePassword', deviceId });
+  });
+
+  if (ids.length === 1) {
+    setStatus(`Removing stored password for ${ids[0]}...`, 'info');
+    return;
+  }
+
+  setStatus(`Removing stored passwords for ${ids.length} selected devices...`, 'info');
 }
 
 function setupHelpModal() {
@@ -776,6 +869,12 @@ function handleMessage(event) {
 function init() {
   setupTableColumns();
   document.getElementById('addDevice').addEventListener('click', addDevice);
+  document.getElementById('moveSelectedUp').addEventListener('click', moveSelectedDevicesUp);
+  document.getElementById('moveSelectedDown').addEventListener('click', moveSelectedDevicesDown);
+  document
+    .getElementById('clearSelectedPasswords')
+    .addEventListener('click', clearSelectedDeviceStoredPasswords);
+  document.getElementById('removeSelectedDevices').addEventListener('click', removeSelectedDevices);
   document.getElementById('editJson').addEventListener('click', editJson);
   document.getElementById('helpButton').addEventListener('click', openHelp);
   document.getElementById('clearPasswords').addEventListener('click', clearStoredPasswords);

@@ -231,6 +231,33 @@ export class DeviceManagerPanel {
           </div>
           <div class="card-header-actions">
             <button class="button" id="addDevice">Add device</button>
+            <button
+              class="button button-icon"
+              id="moveSelectedUp"
+              title="Move selected devices up in the list"
+              aria-label="Move selected devices up"
+              disabled
+            >
+              &uarr;
+            </button>
+            <button
+              class="button button-icon"
+              id="moveSelectedDown"
+              title="Move selected devices down in the list"
+              aria-label="Move selected devices down"
+              disabled
+            >
+              &darr;
+            </button>
+            <button
+              class="button"
+              id="clearSelectedPasswords"
+              title="Remove stored passwords and passphrases for selected devices"
+              disabled
+            >
+              Reset password
+            </button>
+            <button class="button button-danger" id="removeSelectedDevices" disabled>Remove</button>
           </div>
         </div>
         <div class="table-wrapper">
@@ -238,6 +265,7 @@ export class DeviceManagerPanel {
             <colgroup id="devicesColGroup"></colgroup>
             <thead>
               <tr>
+                <th>Select</th>
                 <th>ID</th>
                 <th>Color</th>
                 <th>Name</th>
@@ -265,7 +293,6 @@ export class DeviceManagerPanel {
                 <th>Bastion key path</th>
                 <th>Bastion key passphrase</th>
                 <th>Bastion password (legacy)</th>
-                <th></th>
               </tr>
             </thead>
             <tbody id="devicesBody"></tbody>

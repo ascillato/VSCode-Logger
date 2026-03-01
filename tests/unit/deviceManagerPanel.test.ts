@@ -1,0 +1,117 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('vscode', () => import('../mocks/vscode'));
+
+import { DeviceManagerPanel } from '../../src/deviceManagerPanel';
+import {
+  commands,
+  createExtensionContext,
+  getCreatedWebviews,
+  resetCreatedWebviews,
+  resetWindowResponses,
+  resetWorkspaceConfiguration,
+  workspace,
+} from '../mocks/vscode';
+
+const createPanel = () => {
+  const context = createExtensionContext();
+  DeviceManagerPanel.createOrShow(context.extensionUri, context);
+  const panel = getCreatedWebviews()[0];
+  if (!panel) {
+    throw new Error('Expected DeviceManagerPanel to create a webview panel.');
+  }
+  return panel;
+};
+
+beforeEach(() => {
+  resetWorkspaceConfiguration();
+  resetWindowResponses();
+  resetCreatedWebviews();
+});
+
+afterEach(() => {
+  const panels = getCreatedWebviews();
+  panels.forEach((panel) => {
+    panel.dispose();
+  });
+  resetCreatedWebviews();
+  vi.restoreAllMocks();
+});
+
+describe('DeviceManagerPanel', () => {
+  it('renders selected-device controls and select column in Devices table', () => {
+    const panel = createPanel();
+    const html = panel.webview.html;
+
+    expect(html).toContain('id="moveSelectedUp"');
+    expect(html).toContain('title="Move selected devices up in the list"');
+    expect(html).toContain('id="moveSelectedDown"');
+    expect(html).toContain('title="Move selected devices down in the list"');
+    expect(html).toContain('id="clearSelectedPasswords"');
+    expect(html).toContain('id="removeSelectedDevices"');
+    expect(html).toMatch(/id="moveSelectedUp"[\s\S]*?disabled/);
+    expect(html).toMatch(/id="moveSelectedDown"[\s\S]*?disabled/);
+    expect(html).toMatch(/id="clearSelectedPasswords"[\s\S]*?disabled/);
+    expect(html).toMatch(/id="removeSelectedDevices"[\s\S]*?disabled/);
+    expect(html).toMatch(/<th>Select<\/th>\s*<th>ID<\/th>/);
+  });
+
+  it('routes per-device password reset messages to clearStoredPasswords command with device id', async () => {
+    const panel = createPanel();
+    (commands.executeCommand as ReturnType<typeof vi.fn>).mockClear();
+
+    panel.__fireMessage({ type: 'clearDevicePassword', deviceId: 'device-1' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(commands.executeCommand).toHaveBeenCalledWith(
+      'embeddedLogger.clearStoredPasswords',
+      'device-1'
+    );
+  });
+
+  it('saves devices in the same order received from the webview payload', async () => {
+    const panel = createPanel();
+    const config = workspace.getConfiguration('embeddedLogger');
+    const updateSpy = vi.spyOn(config, 'update');
+
+    panel.__fireMessage({
+      type: 'save',
+      defaults: {
+        defaultPort: 22,
+        defaultLogCommand: 'tail -F /var/log/syslog',
+        defaultEnableSshTerminal: true,
+        defaultEnableSftpExplorer: true,
+        defaultEnableWebBrowser: false,
+        defaultSshCommands: [],
+        maxLinesPerTab: 100000,
+      },
+      devices: [
+        {
+          id: 'device-b',
+          name: 'Device B',
+          host: '10.0.0.2',
+          username: 'root',
+        },
+        {
+          id: 'device-a',
+          name: 'Device A',
+          host: '10.0.0.1',
+          username: 'root',
+        },
+      ],
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const devicesCall = updateSpy.mock.calls.find((call) => call[0] === 'devices');
+    expect(devicesCall).toBeDefined();
+    if (!devicesCall) {
+      throw new Error('Missing devices update call.');
+    }
+    expect((devicesCall[1] as Array<{ id: string }>).map((device) => device.id)).toEqual([
+      'device-b',
+      'device-a',
+    ]);
+    expect(panel.webview.postMessage).toHaveBeenCalledWith({ type: 'saveResult', success: true });
+  });
+});
