@@ -432,7 +432,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",
     "eslint-plugin-spellcheck": "^0.0.20",
-    "globals": "^17.3.0",
+    "globals": "^17.4.0",
     "mocha": "^11.7.5",
     "prettier": "^3.8.1",
     "typedoc": "^0.28.17",
