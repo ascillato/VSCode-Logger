@@ -23,6 +23,7 @@ If you like the extension, please [rate it](https://marketplace.visualstudio.com
 - **Highlight** up to 10 keywords per panel to spot critical events fast.
 - Run **one-off SSH commands**.
 - Open **SSH terminals**.
+- Open device URLs in an **external browser** or in VS Code's **embedded browser**.
 - Browse files with the built-in **SFTP explorer**, including quick search and keyboard shortcuts.
 - Assign **per-device colors** to make tabs and device lists easier to scan.
 - **Secure by default**: passwords and key passphrases live in VS Code Secret Storage.

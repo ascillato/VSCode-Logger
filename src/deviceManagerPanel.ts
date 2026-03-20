@@ -25,6 +25,7 @@ interface DefaultsPayload {
   defaultEnableSshTerminal: boolean;
   defaultEnableSftpExplorer: boolean;
   defaultEnableWebBrowser: boolean;
+  defaultEnableEmbeddedWebBrowser: boolean;
   defaultSshCommands: SshCommand[];
   maxLinesPerTab: number;
 }
@@ -48,6 +49,7 @@ interface DevicePayload {
   enableSshTerminal?: boolean | TriStateSelection;
   enableSftpExplorer?: boolean | TriStateSelection;
   enableWebBrowser?: boolean | TriStateSelection;
+  enableEmbeddedWebBrowser?: boolean | TriStateSelection;
   webBrowserUrl?: string;
   sshCommands?: SshCommand[];
   bastionHost?: string;
@@ -196,7 +198,11 @@ export class DeviceManagerPanel {
           </label>
           <label class="field checkbox">
             <input type="checkbox" id="defaultEnableWebBrowser" />
-            <span>Enable web browser</span>
+            <span>Enable external web browser</span>
+          </label>
+          <label class="field checkbox">
+            <input type="checkbox" id="defaultEnableEmbeddedWebBrowser" />
+            <span>Enable embedded web browser</span>
           </label>
         </div>
         <div class="divider" aria-hidden="true"></div>
@@ -280,7 +286,8 @@ export class DeviceManagerPanel {
                 <th>SFTP</th>
                 <th>SFTP presets (remote)</th>
                 <th>SFTP presets (local)</th>
-                <th>Web</th>
+                <th>External Web Browser</th>
+                <th>Embedded Web Browser</th>
                 <th>Web URL</th>
                 <th>Private key path</th>
                 <th>Private key passphrase</th>
@@ -328,6 +335,8 @@ export class DeviceManagerPanel {
       defaultEnableSshTerminal: config.get<boolean>('defaultEnableSshTerminal', true) ?? true,
       defaultEnableSftpExplorer: config.get<boolean>('defaultEnableSftpExplorer', true) ?? true,
       defaultEnableWebBrowser: config.get<boolean>('defaultEnableWebBrowser', false) ?? false,
+      defaultEnableEmbeddedWebBrowser:
+        config.get<boolean>('defaultEnableEmbeddedWebBrowser', false) ?? false,
       defaultSshCommands: config.get<SshCommand[]>('defaultSshCommands', []) ?? [],
       maxLinesPerTab: config.get<number>('maxLinesPerTab', 100000) ?? 100000,
     };
@@ -345,38 +354,98 @@ export class DeviceManagerPanel {
       const normalizedDefaults = this.normalizeDefaults(defaults);
       const normalizedDevices = devices.map((device) => this.normalizeDevice(device));
       const presetUpdates = devices.flatMap((device) => this.buildPresetUpdates(device));
+      let saveMessage = 'Saved settings.';
 
-      await Promise.all([
-        config.update('defaultPort', normalizedDefaults.defaultPort, target),
-        config.update('defaultLogCommand', normalizedDefaults.defaultLogCommand, target),
-        config.update(
-          'defaultEnableSshTerminal',
-          normalizedDefaults.defaultEnableSshTerminal,
-          target
-        ),
-        config.update(
-          'defaultEnableSftpExplorer',
-          normalizedDefaults.defaultEnableSftpExplorer,
-          target
-        ),
-        config.update(
-          'defaultEnableWebBrowser',
-          normalizedDefaults.defaultEnableWebBrowser,
-          target
-        ),
-        config.update('defaultSshCommands', normalizedDefaults.defaultSshCommands, target),
-        config.update('maxLinesPerTab', normalizedDefaults.maxLinesPerTab, target),
-        config.update('devices', normalizedDevices, target),
-        ...presetUpdates.map((update) =>
-          this.context.workspaceState.update(update.key, update.values)
-        ),
-      ]);
+      const updates: Array<{
+        run: () => Thenable<void>;
+        tolerateUnregistered?: string;
+      }> = [
+        {
+          run: () => config.update('defaultPort', normalizedDefaults.defaultPort, target),
+        },
+        {
+          run: () =>
+            config.update('defaultLogCommand', normalizedDefaults.defaultLogCommand, target),
+        },
+        {
+          run: () =>
+            config.update(
+              'defaultEnableSshTerminal',
+              normalizedDefaults.defaultEnableSshTerminal,
+              target
+            ),
+        },
+        {
+          run: () =>
+            config.update(
+              'defaultEnableSftpExplorer',
+              normalizedDefaults.defaultEnableSftpExplorer,
+              target
+            ),
+        },
+        {
+          run: () =>
+            config.update(
+              'defaultEnableWebBrowser',
+              normalizedDefaults.defaultEnableWebBrowser,
+              target
+            ),
+        },
+        {
+          run: () =>
+            config.update(
+              'defaultEnableEmbeddedWebBrowser',
+              normalizedDefaults.defaultEnableEmbeddedWebBrowser,
+              target
+            ),
+          tolerateUnregistered: 'embeddedLogger.defaultEnableEmbeddedWebBrowser',
+        },
+        {
+          run: () =>
+            config.update('defaultSshCommands', normalizedDefaults.defaultSshCommands, target),
+        },
+        {
+          run: () => config.update('maxLinesPerTab', normalizedDefaults.maxLinesPerTab, target),
+        },
+        {
+          run: () => config.update('devices', normalizedDevices, target),
+        },
+        ...presetUpdates.map((update) => ({
+          run: () => this.context.workspaceState.update(update.key, update.values),
+        })),
+      ];
 
-      this.panel.webview.postMessage({ type: 'saveResult', success: true });
+      for (const update of updates) {
+        try {
+          await update.run();
+        } catch (error: unknown) {
+          if (
+            update.tolerateUnregistered &&
+            this.isUnregisteredConfigurationError(error, update.tolerateUnregistered)
+          ) {
+            saveMessage =
+              'Saved settings. Reload the window or extension host, then save again to persist the Embedded Web Browser default.';
+            continue;
+          }
+
+          throw error;
+        }
+      }
+
+      this.panel.webview.postMessage({
+        type: 'saveResult',
+        success: true,
+        message: saveMessage,
+      });
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
       this.panel.webview.postMessage({ type: 'saveResult', success: false, message });
     }
+  }
+
+  private isUnregisteredConfigurationError(error: unknown, settingKey: string): boolean {
+    const message = error instanceof Error ? error.message : String(error);
+    return message.includes(`${settingKey} is not a registered configuration`);
   }
 
   private getUpdateConfiguration(): {
@@ -390,6 +459,7 @@ export class DeviceManagerPanel {
       'defaultEnableSshTerminal',
       'defaultEnableSftpExplorer',
       'defaultEnableWebBrowser',
+      'defaultEnableEmbeddedWebBrowser',
       'defaultSshCommands',
       'maxLinesPerTab',
       'devices',
@@ -439,6 +509,7 @@ export class DeviceManagerPanel {
     defaultEnableSshTerminal: boolean;
     defaultEnableSftpExplorer: boolean;
     defaultEnableWebBrowser: boolean;
+    defaultEnableEmbeddedWebBrowser: boolean;
     defaultSshCommands: { name: string; command: string }[];
     maxLinesPerTab: number;
   } {
@@ -449,6 +520,7 @@ export class DeviceManagerPanel {
     const defaultEnableSshTerminal = Boolean(defaults.defaultEnableSshTerminal);
     const defaultEnableSftpExplorer = Boolean(defaults.defaultEnableSftpExplorer);
     const defaultEnableWebBrowser = Boolean(defaults.defaultEnableWebBrowser);
+    const defaultEnableEmbeddedWebBrowser = Boolean(defaults.defaultEnableEmbeddedWebBrowser);
     const defaultSshCommands = this.normalizeSshCommands(defaults.defaultSshCommands);
 
     return {
@@ -457,6 +529,7 @@ export class DeviceManagerPanel {
       defaultEnableSshTerminal,
       defaultEnableSftpExplorer,
       defaultEnableWebBrowser,
+      defaultEnableEmbeddedWebBrowser,
       defaultSshCommands,
       maxLinesPerTab,
     };
@@ -468,6 +541,7 @@ export class DeviceManagerPanel {
     const enableSshTerminal = this.toOptionalTriState(device.enableSshTerminal);
     const enableSftpExplorer = this.toOptionalTriState(device.enableSftpExplorer);
     const enableWebBrowser = this.toOptionalTriState(device.enableWebBrowser);
+    const enableEmbeddedWebBrowser = this.toOptionalTriState(device.enableEmbeddedWebBrowser);
 
     const normalized: EmbeddedDevice = {
       id: (device.id ?? '').trim(),
@@ -497,6 +571,10 @@ export class DeviceManagerPanel {
 
     if (enableWebBrowser !== undefined) {
       normalized.enableWebBrowser = enableWebBrowser;
+    }
+
+    if (enableEmbeddedWebBrowser !== undefined) {
+      normalized.enableEmbeddedWebBrowser = enableEmbeddedWebBrowser;
     }
 
     if (sshCommands.length > 0) {

@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [1.8.0] - 2026-03-20 [EMBEDDED-BROWSER]
+
+### Added
+- Added per-device and global settings for an embedded web browser action in the Devices view.
+- Added an `Open Embedded Web Browser` command that opens device URLs inside VS Code.
+
+### Changed
+- Renamed the Device Manager `Web` column to `External Web Browser`.
+- Renamed the sidebar browser action label to `Open External Web Browser`.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- None.
+
+### Security
+- Updated dependencies to latest.
+
+----------------------------------------
+
 ## [1.7.5] - 2026-03-01 [DEVICE-ORDER]
 
 ### Added

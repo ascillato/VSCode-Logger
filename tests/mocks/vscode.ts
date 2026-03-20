@@ -14,6 +14,7 @@ interface MockSecretStorage extends vscode.SecretStorage {
 
 interface MockUri {
   fsPath: string;
+  scheme?: string;
   toString: () => string;
 }
 
@@ -36,8 +37,11 @@ interface MockWebviewView extends vscode.WebviewView {
   __fireMessage: (message: unknown) => void;
 }
 
-const configurationState: Record<string, unknown> = {
+const initialConfigurationState: Record<string, unknown> = {
   devices: [],
+};
+const configurationState: Record<string, unknown> = {
+  ...initialConfigurationState,
 };
 
 let trustedWorkspace = true;
@@ -68,9 +72,10 @@ const createMockWebview = (): MockWebview => {
   return webview;
 };
 
-const createMockUri = (value: string): MockUri =>
+const createMockUri = (value: string, scheme?: string): MockUri =>
   ({
     fsPath: value,
+    scheme,
     toString: () => value,
   }) satisfies MockUri;
 
@@ -204,6 +209,7 @@ export enum ConfigurationTarget {
 
 export const env: typeof vscode.env = {
   uiKind: 1,
+  openExternal: vi.fn(() => Promise.resolve(true)),
   clipboard: {
     writeText: vi.fn((value: string) => {
       clipboardText = value;
@@ -214,17 +220,33 @@ export const env: typeof vscode.env = {
 } as unknown as typeof vscode.env;
 
 export const Uri = {
-  parse: (value: string) => createMockUri(value),
-  file: (value: string) => createMockUri(path.normalize(value)),
+  parse: (value: string) => {
+    try {
+      const parsed = new URL(value);
+      return createMockUri(value, parsed.protocol.replace(/:$/, ''));
+    } catch {
+      const schemeMatch = value.match(/^([a-z][a-z0-9+.-]*):/i);
+      return createMockUri(value, schemeMatch?.[1]);
+    }
+  },
+  file: (value: string) => createMockUri(path.normalize(value), 'file'),
   joinPath: (base: vscode.Uri, ...pathSegments: string[]) => {
     const fsPath = (base as unknown as MockUri).fsPath;
-    return createMockUri(path.join(fsPath, ...pathSegments));
+    return createMockUri(path.join(fsPath, ...pathSegments), (base as unknown as MockUri).scheme);
   },
 };
 
 export const commands: typeof vscode.commands = {
   registerCommand: vi.fn(() => ({ dispose: () => undefined })),
   executeCommand: vi.fn(),
+  getCommands: vi.fn(() =>
+    Promise.resolve([
+      'workbench.action.browser.open',
+      'simpleBrowser.show',
+      'embeddedLogger.openWebBrowser',
+      'embeddedLogger.openEmbeddedWebBrowser',
+    ])
+  ),
 } as unknown as typeof vscode.commands;
 
 export const extensions: typeof vscode.extensions = {
@@ -292,7 +314,10 @@ export const createExtensionContext = (): vscode.ExtensionContext => {
 };
 
 export const resetWorkspaceConfiguration = (): void => {
-  configurationState.devices = [];
+  Object.keys(configurationState).forEach((key) => {
+    delete configurationState[key];
+  });
+  Object.assign(configurationState, initialConfigurationState);
 };
 
 export const resetSecrets = (context: vscode.ExtensionContext): void => {
@@ -333,6 +358,8 @@ export const resetWindowResponses = (): void => {
   (workspace.onDidChangeConfiguration as ReturnType<typeof vi.fn>).mockClear?.();
   (commands.registerCommand as ReturnType<typeof vi.fn>).mockClear?.();
   (commands.executeCommand as ReturnType<typeof vi.fn>).mockClear?.();
+  (commands.getCommands as ReturnType<typeof vi.fn>).mockClear?.();
+  (env.openExternal as ReturnType<typeof vi.fn>).mockClear?.();
 };
 
 export const getStoredSecrets = (context: vscode.ExtensionContext): StoredSecret[] => {

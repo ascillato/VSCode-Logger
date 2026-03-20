@@ -94,6 +94,7 @@ describe('Sidebar integration', () => {
       },
       () => undefined,
       () => undefined,
+      () => undefined,
       () => undefined
     );
 

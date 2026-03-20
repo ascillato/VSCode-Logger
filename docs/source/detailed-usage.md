@@ -64,9 +64,9 @@ You can configure everything from the **Device Manager** panel (click the pencil
   - `hostFingerprint`, `secondaryHost`, and `secondaryHostFingerprint` for host-key pinning and automatic fallback.
   - `bastion.host`, `bastion.port`, `bastion.username`, `bastion.hostFingerprint`, `bastion.password`, `bastion.privateKeyPath`, and `bastion.privateKeyPassphrase` for jump-host tunnelling.
   - `username`, `password`, `privateKeyPath`, and `privateKeyPassphrase` for authentication (password and passphrase values are migrated into Secret Storage on first use).
-  - `logCommand` plus feature toggles: `enableSshTerminal`, `enableSftpExplorer`, `enableWebBrowser`, and `webBrowserUrl`.
+  - `logCommand` plus feature toggles: `enableSshTerminal`, `enableSftpExplorer`, `enableWebBrowser`, `enableEmbeddedWebBrowser`, and `webBrowserUrl`.
   - `sshCommands` with per-command `name` and `command` values.
-- Adjust defaults without hand-editing JSON: `embeddedLogger.defaultPort`, `embeddedLogger.defaultLogCommand`, `embeddedLogger.defaultEnableSshTerminal`, `embeddedLogger.defaultEnableSftpExplorer`, `embeddedLogger.defaultEnableWebBrowser`, `embeddedLogger.defaultSshCommands`, and `embeddedLogger.maxLinesPerTab`.
+- Adjust defaults without hand-editing JSON: `embeddedLogger.defaultPort`, `embeddedLogger.defaultLogCommand`, `embeddedLogger.defaultEnableSshTerminal`, `embeddedLogger.defaultEnableSftpExplorer`, `embeddedLogger.defaultEnableWebBrowser`, `embeddedLogger.defaultEnableEmbeddedWebBrowser`, `embeddedLogger.defaultSshCommands`, and `embeddedLogger.maxLinesPerTab`.
 - Prefer raw JSON? Use **Edit in settings.json** from the Device Manager or paste the example below into `.vscode/settings.json`.
 
 Add devices in your VS Code settings under `embeddedLogger.devices` if you prefer to edit JSON directly:
@@ -95,6 +95,7 @@ Add devices in your VS Code settings under `embeddedLogger.devices` if you prefe
     "enableSshTerminal": true,
     "enableSftpExplorer": true,
     "enableWebBrowser": false,
+    "enableEmbeddedWebBrowser": false,
     "webBrowserUrl": "http://192.168.1.10",
     "sshCommands": [
       {
@@ -120,7 +121,9 @@ Set `enableSshTerminal` to control visibility of the **Open SSH Terminal** butto
 
 Set `enableSftpExplorer` to control visibility of the **Open SFTP Explorer** button on the device card (enabled by default; set it to `false` to hide it). The explorer opens a dual-pane view with the remote home on the left and the local home on the right, including navigation, rename/delete/duplicate actions, and arrows to transfer selected files between panes (or between two remote panes when the right-side mode is switched to remote). It also supports quick search (type to jump; press Enter to cycle matches) and keyboard shortcuts (Arrow Up/Down to move selection, Enter to open a folder or view file content when quick search is hidden, Delete to remove, Backspace to go up a directory, F2 to rename, Ctrl/Cmd+D to duplicate, Ctrl/Cmd+P to change permissions). Entering folders or going up automatically selects the first entry so you can keep navigating with the keyboard. If the SSH link drops, the explorer stays open, greys out, shows a reconnection countdown beside the title, and automatically retries every five seconds without losing the active remote paths.
 
-Set `enableWebBrowser` to surface the **Open WEB Browser** button beneath each device. The button is disabled by default; when enabled, clicking it opens the configured `webBrowserUrl` if provided, otherwise the extension opens `http://<host>` derived from the device host (including any port in the custom URL when supplied). Both `http://` and `https://` URLs are supported.
+Set `enableWebBrowser` to surface the **Open External Web Browser** button beneath each device. The button is disabled by default; when enabled, clicking it opens the configured `webBrowserUrl` if provided, otherwise the extension opens `http://<host>` derived from the device host (including any port in the custom URL when supplied). Both `http://` and `https://` URLs are supported.
+
+Set `enableEmbeddedWebBrowser` to surface the **Open Embedded Web Browser** button beneath each device. Its global default is disabled. When enabled, the extension opens the configured `webBrowserUrl` if provided, otherwise it opens `http://<host>` in VS Code's embedded browser. Both `http://` and `https://` URLs are supported.
 
 Control memory usage by capping retained lines per log tab with `embeddedLogger.maxLinesPerTab` (default: 100000). For auto-save, this limit is not applied to a file. Everything is saved.
 
@@ -130,8 +133,10 @@ All options are available through the VS Code Settings UI under **Embedded Devic
 - `embeddedLogger.defaultLogCommand` – used when `logCommand` is omitted.
 - `embeddedLogger.defaultEnableSshTerminal` – toggles whether the SSH terminal action is shown by default (default: true).
 - `embeddedLogger.defaultEnableSftpExplorer` – toggles whether the SFTP explorer action is shown by default (default: true).
-- `embeddedLogger.defaultEnableWebBrowser` – toggles whether the web browser action is shown by default (default: false).
-- `enableWebBrowser` – when set to true per device, the **Open WEB Browser** button opens `webBrowserUrl` if configured or `http://<host>` otherwise.
+- `embeddedLogger.defaultEnableWebBrowser` – toggles whether the external web browser action is shown by default (default: false).
+- `embeddedLogger.defaultEnableEmbeddedWebBrowser` – toggles whether the embedded web browser action is shown by default (default: false).
+- `enableWebBrowser` – when set to true per device, the **Open External Web Browser** button opens `webBrowserUrl` if configured or `http://<host>` otherwise.
+- `enableEmbeddedWebBrowser` – when set to true per device, the **Open Embedded Web Browser** button opens `webBrowserUrl` if configured or `http://<host>` in VS Code's embedded browser.
 - `embeddedLogger.defaultSshCommands` – shared SSH actions applied to devices that do not define their own list.
 
 ## Notes

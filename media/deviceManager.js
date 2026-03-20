@@ -8,6 +8,7 @@ const state = {
     defaultEnableSshTerminal: true,
     defaultEnableSftpExplorer: true,
     defaultEnableWebBrowser: false,
+    defaultEnableEmbeddedWebBrowser: false,
     defaultSshCommands: [],
     maxLinesPerTab: 100000,
   },
@@ -31,7 +32,8 @@ const deviceColumns = [
   { key: 'enableSftpExplorer', label: 'SFTP', type: 'triState' },
   { key: 'sftpPresetsRemote', label: 'SFTP presets (remote)', type: 'textarea' },
   { key: 'sftpPresetsLocal', label: 'SFTP presets (local)', type: 'textarea' },
-  { key: 'enableWebBrowser', label: 'Web', type: 'triState' },
+  { key: 'enableWebBrowser', label: 'External Web Browser', type: 'triState' },
+  { key: 'enableEmbeddedWebBrowser', label: 'Embedded Web Browser', type: 'triState' },
   { key: 'webBrowserUrl', label: 'Web URL', type: 'text' },
   { key: 'privateKeyPath', label: 'Private key path', type: 'text' },
   { key: 'privateKeyPassphrase', label: 'Key passphrase (legacy)', type: 'text' },
@@ -92,6 +94,7 @@ function toViewDevice(device) {
       ? device.sftpPresetsLocal.join('\n')
       : (device.sftpPresetsLocal ?? ''),
     enableWebBrowser: toTriState(device.enableWebBrowser),
+    enableEmbeddedWebBrowser: toTriState(device.enableEmbeddedWebBrowser),
     webBrowserUrl: device.webBrowserUrl ?? '',
     privateKeyPath: device.privateKeyPath ?? '',
     privateKeyPassphrase: device.privateKeyPassphrase ?? '',
@@ -135,6 +138,8 @@ function renderDefaults() {
     !!state.defaults.defaultEnableSftpExplorer;
   document.getElementById('defaultEnableWebBrowser').checked =
     !!state.defaults.defaultEnableWebBrowser;
+  document.getElementById('defaultEnableEmbeddedWebBrowser').checked =
+    !!state.defaults.defaultEnableEmbeddedWebBrowser;
   renderSshCommandsEditor(
     state.defaults.defaultSshCommands,
     document.getElementById('defaultSshCommands'),
@@ -557,6 +562,7 @@ function addDevice() {
     sftpPresetsRemote: '',
     sftpPresetsLocal: '',
     enableWebBrowser: 'default',
+    enableEmbeddedWebBrowser: 'default',
     webBrowserUrl: '',
     privateKeyPath: '',
     privateKeyPassphrase: '',
@@ -680,6 +686,8 @@ function collectDefaults() {
     defaultEnableSshTerminal: document.getElementById('defaultEnableSshTerminal').checked,
     defaultEnableSftpExplorer: document.getElementById('defaultEnableSftpExplorer').checked,
     defaultEnableWebBrowser: document.getElementById('defaultEnableWebBrowser').checked,
+    defaultEnableEmbeddedWebBrowser: document.getElementById('defaultEnableEmbeddedWebBrowser')
+      .checked,
     defaultSshCommands: state.defaults.defaultSshCommands,
   };
 }
@@ -814,6 +822,7 @@ function buildHelpJson() {
     'embeddedLogger.defaultEnableSshTerminal': !!defaults.defaultEnableSshTerminal,
     'embeddedLogger.defaultEnableSftpExplorer': !!defaults.defaultEnableSftpExplorer,
     'embeddedLogger.defaultEnableWebBrowser': !!defaults.defaultEnableWebBrowser,
+    'embeddedLogger.defaultEnableEmbeddedWebBrowser': !!defaults.defaultEnableEmbeddedWebBrowser,
     'embeddedLogger.maxLinesPerTab': defaults.maxLinesPerTab ?? 100000,
     'embeddedLogger.defaultSshCommands': defaults.defaultSshCommands ?? [],
     'embeddedLogger.devices': [
@@ -828,6 +837,7 @@ function buildHelpJson() {
         enableSshTerminal: !!defaults.defaultEnableSshTerminal,
         enableSftpExplorer: !!defaults.defaultEnableSftpExplorer,
         enableWebBrowser: !!defaults.defaultEnableWebBrowser,
+        enableEmbeddedWebBrowser: !!defaults.defaultEnableEmbeddedWebBrowser,
         webBrowserUrl: 'http://192.168.0.10',
         sshCommands: defaults.defaultSshCommands ?? [],
       },
@@ -846,7 +856,7 @@ function setStatus(message, variant = '') {
 
 function handleSaveResult(message) {
   if (message.success) {
-    setStatus('Saved settings.', 'success');
+    setStatus(message.message || 'Saved settings.', 'success');
   } else {
     setStatus(message.message || 'Failed to save settings.', 'error');
   }

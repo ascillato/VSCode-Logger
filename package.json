@@ -3,7 +3,7 @@
   "displayName": "Embedded Device Logger",
   "description": "Stream and filter embedded Linux device logs over SSH inside VS Code.",
   "icon": "media/icon.png",
-  "version": "1.7.5",
+  "version": "1.8.0",
   "publisher": "Scallant",
   "author": "A. Scillato",
   "engines": {
@@ -67,7 +67,12 @@
         "embeddedLogger.defaultEnableWebBrowser": {
           "type": "boolean",
           "default": false,
-          "description": "Whether devices without an explicit enableWebBrowser flag should show the web browser action."
+          "description": "Whether devices without an explicit enableWebBrowser flag should show the external web browser action."
+        },
+        "embeddedLogger.defaultEnableEmbeddedWebBrowser": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether devices without an explicit enableEmbeddedWebBrowser flag should show the embedded web browser action."
         },
         "embeddedLogger.defaultSshCommands": {
           "type": "array",
@@ -95,7 +100,7 @@
         "embeddedLogger.devices": {
           "type": "array",
           "description": "List of embedded devices to stream logs from.",
-          "markdownDescription": "List of embedded devices to stream logs from.\n\nManage devices with the **Embedded Logger: Edit Devices Configuration** Device Manager (table UI with add/remove rows and all fields). You can also choose **Edit in settings.json** for direct JSON editing.\n\nExample:\n```json\n[\n  {\n    \"id\": \"rpi4\",\n    \"color\": \"#4fc3f7\",\n    \"name\": \"Raspberry Pi 4\",\n    \"host\": \"192.168.1.50\",\n    \"hostFingerprint\": \"SHA256:your-base64-fingerprint\",\n    \"secondaryHost\": \"192.168.1.51\",\n    \"secondaryHostFingerprint\": \"SHA256:secondary-base64-fingerprint\",\n    \"port\": 22,\n    \"username\": \"pi\",\n    \"password\": \"\",\n    \"privateKeyPath\": \"/home/user/.ssh/id_ed25519\",\n    \"privateKeyPassphrase\": \"${env:KEY_PASSPHRASE}\",\n    \"logCommand\": \"journalctl -f -u app.service\",\n    \"enableSshTerminal\": true,\n    \"enableSftpExplorer\": true,\n    \"enableWebBrowser\": false,\n    \"webBrowserUrl\": \"http://192.168.1.50\",\n    \"sshCommands\": [\n      { \"name\": \"Reboot\", \"command\": \"sudo reboot\" }\n    ],\n    \"bastion\": {\n      \"host\": \"bastion.example.com\",\n      \"hostFingerprint\": \"SHA256:bastion-fingerprint\",\n      \"port\": 22,\n      \"username\": \"jump-user\",\n      \"password\": \"\",\n      \"privateKeyPath\": \"${env:HOME}/.ssh/id_ed25519\",\n      \"privateKeyPassphrase\": \"\"\n    }\n  }\n]\n```",
+          "markdownDescription": "List of embedded devices to stream logs from.\n\nManage devices with the **Embedded Logger: Edit Devices Configuration** Device Manager (table UI with add/remove rows and all fields). You can also choose **Edit in settings.json** for direct JSON editing.\n\nExample:\n```json\n[\n  {\n    \"id\": \"rpi4\",\n    \"color\": \"#4fc3f7\",\n    \"name\": \"Raspberry Pi 4\",\n    \"host\": \"192.168.1.50\",\n    \"hostFingerprint\": \"SHA256:your-base64-fingerprint\",\n    \"secondaryHost\": \"192.168.1.51\",\n    \"secondaryHostFingerprint\": \"SHA256:secondary-base64-fingerprint\",\n    \"port\": 22,\n    \"username\": \"pi\",\n    \"password\": \"\",\n    \"privateKeyPath\": \"/home/user/.ssh/id_ed25519\",\n    \"privateKeyPassphrase\": \"${env:KEY_PASSPHRASE}\",\n    \"logCommand\": \"journalctl -f -u app.service\",\n    \"enableSshTerminal\": true,\n    \"enableSftpExplorer\": true,\n    \"enableWebBrowser\": false,\n    \"enableEmbeddedWebBrowser\": false,\n    \"webBrowserUrl\": \"http://192.168.1.50\",\n    \"sshCommands\": [\n      { \"name\": \"Reboot\", \"command\": \"sudo reboot\" }\n    ],\n    \"bastion\": {\n      \"host\": \"bastion.example.com\",\n      \"hostFingerprint\": \"SHA256:bastion-fingerprint\",\n      \"port\": 22,\n      \"username\": \"jump-user\",\n      \"password\": \"\",\n      \"privateKeyPath\": \"${env:HOME}/.ssh/id_ed25519\",\n      \"privateKeyPassphrase\": \"\"\n    }\n  }\n]\n```",
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -119,6 +124,7 @@
                   "enableSshTerminal": true,
                   "enableSftpExplorer": true,
                   "enableWebBrowser": false,
+                  "enableEmbeddedWebBrowser": false,
                   "webBrowserUrl": "${9:http://192.168.1.10}",
                   "sshCommands": [
                     {
@@ -253,7 +259,12 @@
               "enableWebBrowser": {
                 "type": "boolean",
                 "default": false,
-                "description": "Whether to show an Open WEB Browser action for this device."
+                "description": "Whether to show an Open External Web Browser action for this device."
+              },
+              "enableEmbeddedWebBrowser": {
+                "type": "boolean",
+                "default": false,
+                "description": "Whether to show an Open Embedded Web Browser action for this device."
               },
               "webBrowserUrl": {
                 "type": "string",
@@ -309,6 +320,7 @@
               "enableSshTerminal": true,
               "enableSftpExplorer": true,
               "enableWebBrowser": false,
+              "enableEmbeddedWebBrowser": false,
               "webBrowserUrl": "http://192.168.1.10",
               "sshCommands": [
                 {
@@ -352,7 +364,8 @@
       "onCommand:embeddedLogger.editDevicesConfig",
       "onCommand:embeddedLogger.clearStoredPasswords",
       "onCommand:embeddedLogger.openSftpExplorer",
-      "onCommand:embeddedLogger.openWebBrowser"
+      "onCommand:embeddedLogger.openWebBrowser",
+      "onCommand:embeddedLogger.openEmbeddedWebBrowser"
     ],
     "commands": [
       {
@@ -380,7 +393,11 @@
       },
       {
         "command": "embeddedLogger.openWebBrowser",
-        "title": "Open WEB Browser"
+        "title": "Open External Web Browser"
+      },
+      {
+        "command": "embeddedLogger.openEmbeddedWebBrowser",
+        "title": "Open Embedded Web Browser"
       }
     ],
     "menus": {

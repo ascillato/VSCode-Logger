@@ -256,6 +256,28 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
     return undefined;
   };
 
+  const resolveDeviceWebUri = (device: EmbeddedDevice): vscode.Uri | undefined => {
+    const target = device.webBrowserUrl?.trim() || device.host?.trim();
+    if (!target) {
+      vscode.window.showErrorMessage('No host found for the selected device.');
+      return undefined;
+    }
+
+    const normalizedUrl = /^https?:\/\//i.test(target) ? target : `http://${target}`;
+    try {
+      const uri = vscode.Uri.parse(normalizedUrl, true);
+      if (uri.scheme !== 'http' && uri.scheme !== 'https') {
+        vscode.window.showErrorMessage('Web browser URLs must start with http:// or https://.');
+        return undefined;
+      }
+      return uri;
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      vscode.window.showErrorMessage(`Invalid web URL for ${device.name}: ${message}`);
+      return undefined;
+    }
+  };
+
   const openWebBrowser = async (device: EmbeddedDevice | undefined): Promise<void> => {
     if (!device) {
       vscode.window.showErrorMessage('Device not found. Check embeddedLogger.devices.');
@@ -269,29 +291,51 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
       return;
     }
 
-    const target = device.webBrowserUrl?.trim() || device.host?.trim();
-    if (!target) {
-      vscode.window.showErrorMessage('No host found for the selected device.');
-      return;
-    }
-
-    const normalizedUrl = /^https?:\/\//i.test(target) ? target : `http://${target}`;
-    let uri: vscode.Uri;
-    try {
-      uri = vscode.Uri.parse(normalizedUrl, true);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      vscode.window.showErrorMessage(`Invalid web URL for ${device.name}: ${message}`);
-      return;
-    }
-
-    if (uri.scheme !== 'http' && uri.scheme !== 'https') {
-      vscode.window.showErrorMessage('Web browser URLs must start with http:// or https://.');
+    const uri = resolveDeviceWebUri(device);
+    if (!uri) {
       return;
     }
 
     try {
       await vscode.env.openExternal(uri);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      vscode.window.showErrorMessage(`Failed to open ${uri.toString(true)}: ${message}`);
+    }
+  };
+
+  const openEmbeddedWebBrowser = async (device: EmbeddedDevice | undefined): Promise<void> => {
+    if (!device) {
+      vscode.window.showErrorMessage('Device not found. Check embeddedLogger.devices.');
+      return;
+    }
+
+    if (!vscode.workspace.isTrusted) {
+      vscode.window.showErrorMessage(
+        'Workspace trust is required before opening device resources.'
+      );
+      return;
+    }
+
+    const uri = resolveDeviceWebUri(device);
+    if (!uri) {
+      return;
+    }
+
+    try {
+      const commands = await vscode.commands.getCommands(true);
+      const commandId = commands.includes('workbench.action.browser.open')
+        ? 'workbench.action.browser.open'
+        : commands.includes('simpleBrowser.show')
+          ? 'simpleBrowser.show'
+          : undefined;
+
+      if (!commandId) {
+        vscode.window.showErrorMessage('VS Code embedded browser support is unavailable.');
+        return;
+      }
+
+      await vscode.commands.executeCommand(commandId, uri.toString(true));
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       vscode.window.showErrorMessage(`Failed to open ${uri.toString(true)}: ${message}`);
@@ -405,6 +449,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
     (deviceId) => {
       const device = findDevice(deviceId);
       void openWebBrowser(device);
+    },
+    (deviceId) => {
+      const device = findDevice(deviceId);
+      void openEmbeddedWebBrowser(device);
     }
   );
 
@@ -462,11 +510,38 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
 
         const selection = await vscode.window.showQuickPick(
           devices.map((item) => ({ label: item.name, description: item.host, device: item })),
-          { placeHolder: 'Select a device to open in the web browser' }
+          { placeHolder: 'Select a device to open in the external web browser' }
         );
 
         if (selection?.device) {
           await openWebBrowser(selection.device);
+        }
+      }
+    )
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      'embeddedLogger.openEmbeddedWebBrowser',
+      async (device?: EmbeddedDevice) => {
+        if (device) {
+          await openEmbeddedWebBrowser(device);
+          return;
+        }
+
+        const devices = getDevices();
+        if (!devices.length) {
+          vscode.window.showErrorMessage('No devices configured. Check embeddedLogger.devices.');
+          return;
+        }
+
+        const selection = await vscode.window.showQuickPick(
+          devices.map((item) => ({ label: item.name, description: item.host, device: item })),
+          { placeHolder: 'Select a device to open in the embedded web browser' }
+        );
+
+        if (selection?.device) {
+          await openEmbeddedWebBrowser(selection.device);
         }
       }
     )

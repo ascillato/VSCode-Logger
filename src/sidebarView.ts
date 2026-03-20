@@ -39,6 +39,11 @@ interface OpenWebBrowserMessage {
   deviceId: string;
 }
 
+interface OpenEmbeddedWebBrowserMessage {
+  type: 'openEmbeddedWebBrowser';
+  deviceId: string;
+}
+
 interface CopyDeviceNameMessage {
   type: 'copyDeviceName';
   deviceId: string;
@@ -58,6 +63,7 @@ type IncomingMessage =
   | OpenSshTerminalMessage
   | OpenSftpExplorerMessage
   | OpenWebBrowserMessage
+  | OpenEmbeddedWebBrowserMessage
   | CopyDeviceNameMessage
   | CopyDeviceUrlMessage;
 
@@ -76,7 +82,8 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
    * @param onRunDeviceCommand Handler for running a device command.
    * @param onOpenSshTerminal Handler for opening an SSH terminal.
    * @param onOpenSftpExplorer Handler for opening the SFTP explorer.
-   * @param onOpenWebBrowser Handler for opening the device web URL.
+   * @param onOpenWebBrowser Handler for opening the device web URL in an external browser.
+   * @param onOpenEmbeddedWebBrowser Handler for opening the device web URL in the embedded browser.
    */
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -89,7 +96,8 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
     ) => void,
     private readonly onOpenSshTerminal: (deviceId: string) => void,
     private readonly onOpenSftpExplorer: (deviceId: string) => void,
-    private readonly onOpenWebBrowser: (deviceId: string) => void
+    private readonly onOpenWebBrowser: (deviceId: string) => void,
+    private readonly onOpenEmbeddedWebBrowser: (deviceId: string) => void
   ) {}
 
   /**
@@ -128,6 +136,9 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
           break;
         case 'openWebBrowser':
           this.onOpenWebBrowser(message.deviceId);
+          break;
+        case 'openEmbeddedWebBrowser':
+          this.onOpenEmbeddedWebBrowser(message.deviceId);
           break;
         case 'copyDeviceName':
           void this.copyToClipboard(message.name, 'Device name');
@@ -172,6 +183,7 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
       enableSshTerminal: Boolean(device.enableSshTerminal),
       enableSftpExplorer: Boolean(device.enableSftpExplorer),
       enableWebBrowser: Boolean(device.enableWebBrowser),
+      enableEmbeddedWebBrowser: Boolean(device.enableEmbeddedWebBrowser),
       sshCommands: Array.isArray(device.sshCommands) ? device.sshCommands : [],
     }));
   }

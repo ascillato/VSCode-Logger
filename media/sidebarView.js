@@ -206,8 +206,8 @@
         const webButton = document.createElement('button');
         webButton.className = 'command-button';
         webButton.appendChild(createIconSpan('🌐'));
-        webButton.appendChild(document.createTextNode('Open WEB Browser'));
-        webButton.title = `Open the configured web URL for ${device.name}`;
+        webButton.appendChild(document.createTextNode('Open External Web Browser'));
+        webButton.title = `Open the configured web URL for ${device.name} in an external browser`;
         webButton.addEventListener('click', (event) => {
           event.stopPropagation();
           vscode.postMessage({
@@ -216,6 +216,22 @@
           });
         });
         list.appendChild(webButton);
+      }
+
+      if (device.enableEmbeddedWebBrowser) {
+        const embeddedWebButton = document.createElement('button');
+        embeddedWebButton.className = 'command-button';
+        embeddedWebButton.appendChild(createIconSpan('🌐'));
+        embeddedWebButton.appendChild(document.createTextNode('Open Embedded Web Browser'));
+        embeddedWebButton.title = `Open the configured web URL for ${device.name} in VS Code`;
+        embeddedWebButton.addEventListener('click', (event) => {
+          event.stopPropagation();
+          vscode.postMessage({
+            type: 'openEmbeddedWebBrowser',
+            deviceId: device.id,
+          });
+        });
+        list.appendChild(embeddedWebButton);
       }
 
       sshCommands.forEach((cmd) => {

@@ -54,6 +54,9 @@ describe('DeviceManagerPanel', () => {
     expect(html).toMatch(/id="clearSelectedPasswords"[\s\S]*?disabled/);
     expect(html).toMatch(/id="removeSelectedDevices"[\s\S]*?disabled/);
     expect(html).toMatch(/<th>Select<\/th>\s*<th>ID<\/th>/);
+    expect(html).toContain('<th>External Web Browser</th>');
+    expect(html).toContain('<th>Embedded Web Browser</th>');
+    expect(html).toContain('id="defaultEnableEmbeddedWebBrowser"');
   });
 
   it('routes per-device password reset messages to clearStoredPasswords command with device id', async () => {
@@ -82,6 +85,7 @@ describe('DeviceManagerPanel', () => {
         defaultEnableSshTerminal: true,
         defaultEnableSftpExplorer: true,
         defaultEnableWebBrowser: false,
+        defaultEnableEmbeddedWebBrowser: false,
         defaultSshCommands: [],
         maxLinesPerTab: 100000,
       },
@@ -112,6 +116,62 @@ describe('DeviceManagerPanel', () => {
       'device-b',
       'device-a',
     ]);
-    expect(panel.webview.postMessage).toHaveBeenCalledWith({ type: 'saveResult', success: true });
+    expect(panel.webview.postMessage).toHaveBeenCalledWith({
+      type: 'saveResult',
+      success: true,
+      message: 'Saved settings.',
+    });
+  });
+
+  it('keeps saving when the embedded browser default is unavailable and asks for a reload', async () => {
+    const panel = createPanel();
+    const config = workspace.getConfiguration('embeddedLogger');
+    const updateSpy = vi.spyOn(config, 'update').mockImplementation((key: string) => {
+      if (key === 'defaultEnableEmbeddedWebBrowser') {
+        return Promise.reject(
+          new Error(
+            'Unable to write to User Settings because embeddedLogger.defaultEnableEmbeddedWebBrowser is not a registered configuration.'
+          )
+        );
+      }
+
+      return Promise.resolve();
+    });
+
+    panel.__fireMessage({
+      type: 'save',
+      defaults: {
+        defaultPort: 22,
+        defaultLogCommand: 'tail -F /var/log/syslog',
+        defaultEnableSshTerminal: true,
+        defaultEnableSftpExplorer: true,
+        defaultEnableWebBrowser: false,
+        defaultEnableEmbeddedWebBrowser: false,
+        defaultSshCommands: [],
+        maxLinesPerTab: 100000,
+      },
+      devices: [
+        {
+          id: 'device-a',
+          name: 'Device A',
+          host: '10.0.0.1',
+          username: 'root',
+        },
+      ],
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(updateSpy).toHaveBeenCalledWith(
+      'devices',
+      expect.arrayContaining([expect.objectContaining({ id: 'device-a' })]),
+      expect.anything()
+    );
+    expect(panel.webview.postMessage).toHaveBeenCalledWith({
+      type: 'saveResult',
+      success: true,
+      message:
+        'Saved settings. Reload the window or extension host, then save again to persist the Embedded Web Browser default.',
+    });
   });
 });
