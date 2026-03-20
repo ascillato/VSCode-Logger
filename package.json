@@ -416,7 +416,7 @@
     "test:e2e": "npm run compile && node ./tests/e2e/runTest.js"
   },
   "devDependencies": {
-    "@eslint/compat": "^2.0.2",
+    "@eslint/compat": "^2.0.3",
     "@eslint/eslintrc": "^3.3.5",
     "@eslint/js": "^10.0.1",
     "@types/mocha": "^10.0.10",
