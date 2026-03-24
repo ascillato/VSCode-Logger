@@ -441,7 +441,7 @@
     "@types/vscode": "^1.110.0",
     "@typescript-eslint/eslint-plugin": "^8.56.1",
     "@typescript-eslint/parser": "^8.57.1",
-    "@vitest/coverage-v8": "^4.0.18",
+    "@vitest/coverage-v8": "^4.1.1",
     "@vscode/test-electron": "^2.4.1",
     "cloc": "^2.6.0-cloc",
     "cspell": "^9.7.0",
