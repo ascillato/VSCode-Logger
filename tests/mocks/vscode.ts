@@ -48,6 +48,7 @@ let trustedWorkspace = true;
 let warningMessageResponse: string | undefined;
 let inputBoxResponse: string | undefined;
 let saveDialogResponse: MockUri | undefined;
+let openDialogResponse: MockUri[] | undefined;
 let openTextDocumentContent = '';
 let clipboardText = '';
 const mockFileSystem = new Map<string, Uint8Array>();
@@ -170,6 +171,7 @@ export const window: typeof vscode.window = {
   showInformationMessage: vi.fn(() => Promise.resolve(undefined)),
   showErrorMessage: vi.fn(() => Promise.resolve(undefined)),
   showSaveDialog: vi.fn(() => Promise.resolve(saveDialogResponse)),
+  showOpenDialog: vi.fn(() => Promise.resolve(openDialogResponse)),
   createWebviewPanel: vi.fn(
     (
       _viewType,
@@ -351,6 +353,10 @@ export const setSaveDialogResponse = (value?: string): void => {
   saveDialogResponse = value ? createMockUri(value) : undefined;
 };
 
+export const setOpenDialogResponse = (...values: string[]): void => {
+  openDialogResponse = values.length ? values.map((value) => createMockUri(value)) : undefined;
+};
+
 export const setOpenTextDocumentContent = (value: string): void => {
   openTextDocumentContent = value;
 };
@@ -359,6 +365,7 @@ export const resetWindowResponses = (): void => {
   warningMessageResponse = undefined;
   inputBoxResponse = undefined;
   saveDialogResponse = undefined;
+  openDialogResponse = undefined;
   clipboardText = '';
   createdWebviews.length = 0;
   (window.showInputBox as ReturnType<typeof vi.fn>).mockClear();
@@ -366,6 +373,7 @@ export const resetWindowResponses = (): void => {
   (window.showInformationMessage as ReturnType<typeof vi.fn>).mockClear?.();
   (window.showErrorMessage as ReturnType<typeof vi.fn>).mockClear?.();
   (window.showSaveDialog as ReturnType<typeof vi.fn>).mockClear?.();
+  (window.showOpenDialog as ReturnType<typeof vi.fn>).mockClear?.();
   (window.showTextDocument as ReturnType<typeof vi.fn>).mockClear?.();
   (window.createWebviewPanel as ReturnType<typeof vi.fn>).mockClear?.();
   (window.registerWebviewViewProvider as ReturnType<typeof vi.fn>).mockClear?.();

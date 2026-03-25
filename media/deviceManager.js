@@ -711,6 +711,20 @@ function clearStoredPasswords() {
   vscode.postMessage({ type: 'clearPasswords' });
 }
 
+function exportSettings() {
+  setStatus('Exporting settings...', 'info');
+  vscode.postMessage({
+    type: 'exportSettings',
+    defaults: collectDefaults(),
+    devices: state.devices,
+  });
+}
+
+function importSettings() {
+  setStatus('Importing settings...', 'info');
+  vscode.postMessage({ type: 'importSettings' });
+}
+
 function clearSelectedDeviceStoredPasswords() {
   const selected = getSelectedDevices();
   if (!selected.length) {
@@ -862,11 +876,34 @@ function handleSaveResult(message) {
   }
 }
 
+function handleOperationResult(message) {
+  setStatus(message.message || '', message.variant || 'info');
+}
+
+function handleImportResult(message) {
+  if (message.success && message.defaults && message.devices) {
+    handleInit(message);
+    setStatus(
+      message.message || 'Imported settings. Review them and click Save changes to apply them.',
+      'success'
+    );
+    return;
+  }
+
+  setStatus(message.message || 'Failed to import settings.', 'error');
+}
+
 function handleMessage(event) {
   const { type, ...rest } = event.data;
   switch (type) {
     case 'init':
       handleInit(rest);
+      break;
+    case 'importResult':
+      handleImportResult(rest);
+      break;
+    case 'operationResult':
+      handleOperationResult(rest);
       break;
     case 'saveResult':
       handleSaveResult(rest);
@@ -887,6 +924,8 @@ function init() {
   document.getElementById('removeSelectedDevices').addEventListener('click', removeSelectedDevices);
   document.getElementById('editJson').addEventListener('click', editJson);
   document.getElementById('helpButton').addEventListener('click', openHelp);
+  document.getElementById('importSettings').addEventListener('click', importSettings);
+  document.getElementById('exportSettings').addEventListener('click', exportSettings);
   document.getElementById('clearPasswords').addEventListener('click', clearStoredPasswords);
   document.getElementById('saveChanges').addEventListener('click', save);
   window.addEventListener('message', handleMessage);

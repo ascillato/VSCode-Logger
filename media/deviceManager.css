@@ -261,6 +261,14 @@ td select {
   min-width: 28px;
 }
 
+.button-emoji {
+  align-items: center;
+  display: inline-flex;
+  font-size: 15px;
+  justify-content: center;
+  line-height: 1;
+}
+
 #devicesTable th:first-child,
 #devicesTable td:first-child {
   min-width: 8ch;

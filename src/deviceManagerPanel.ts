@@ -8,12 +8,27 @@ import * as vscode from 'vscode';
 import type { EmbeddedDevice } from './deviceTree';
 import { sanitizeSftpPresets } from './configuration';
 
+const defaultLogCommandValue = 'tail -F /var/log/syslog';
+const importedSettingsKeys = [
+  'embeddedLogger.defaultPort',
+  'embeddedLogger.defaultLogCommand',
+  'embeddedLogger.defaultEnableSshTerminal',
+  'embeddedLogger.defaultEnableSftpExplorer',
+  'embeddedLogger.defaultEnableWebBrowser',
+  'embeddedLogger.defaultEnableEmbeddedWebBrowser',
+  'embeddedLogger.defaultSshCommands',
+  'embeddedLogger.maxLinesPerTab',
+  'embeddedLogger.devices',
+] as const;
+
 type IncomingMessage =
   | { type: 'requestState' }
   | { type: 'save'; defaults: DefaultsPayload; devices: DevicePayload[] }
   | { type: 'editJson' }
   | { type: 'clearPasswords' }
-  | { type: 'clearDevicePassword'; deviceId: string };
+  | { type: 'clearDevicePassword'; deviceId: string }
+  | { type: 'exportSettings'; defaults: DefaultsPayload; devices: DevicePayload[] }
+  | { type: 'importSettings' };
 
 interface SshCommand {
   name: string;
@@ -64,6 +79,25 @@ interface DevicePayload {
   sftpPresetsLocal?: string;
 }
 
+type ImportedSettingsKey = (typeof importedSettingsKeys)[number];
+
+interface ExportedSettingsPayload {
+  'embeddedLogger.defaultPort': number;
+  'embeddedLogger.defaultLogCommand': string;
+  'embeddedLogger.defaultEnableSshTerminal': boolean;
+  'embeddedLogger.defaultEnableSftpExplorer': boolean;
+  'embeddedLogger.defaultEnableWebBrowser': boolean;
+  'embeddedLogger.defaultEnableEmbeddedWebBrowser': boolean;
+  'embeddedLogger.defaultSshCommands': SshCommand[];
+  'embeddedLogger.maxLinesPerTab': number;
+  'embeddedLogger.devices': EmbeddedDevice[];
+}
+
+interface ImportedSettingsState {
+  defaults: DefaultsPayload;
+  devices: EmbeddedDevice[];
+}
+
 export class DeviceManagerPanel {
   private static currentPanel: DeviceManagerPanel | undefined;
   private static readonly viewType = 'embeddedLogger.deviceManager';
@@ -99,6 +133,12 @@ export class DeviceManagerPanel {
               'embeddedLogger.clearStoredPasswords',
               message.deviceId
             );
+            break;
+          case 'exportSettings':
+            void this.exportSettings(message.defaults, message.devices);
+            break;
+          case 'importSettings':
+            void this.importSettings();
             break;
           default:
             break;
@@ -171,6 +211,22 @@ export class DeviceManagerPanel {
         </div>
         <div class="header-actions">
           <button class="button button-danger" id="clearPasswords">Remove Stored Passwords</button>
+          <button
+            class="button button-icon button-emoji"
+            id="importSettings"
+            title="Import Settings"
+            aria-label="Import Settings"
+          >
+            📥
+          </button>
+          <button
+            class="button button-icon button-emoji"
+            id="exportSettings"
+            title="Export Settings"
+            aria-label="Export Settings"
+          >
+            📤
+          </button>
           <button class="button" id="editJson">Edit in JSON</button>
           <button class="button button-icon" id="helpButton" title="View configuration example">?</button>
           <button class="button button-primary" id="saveChanges">Save changes</button>
@@ -315,26 +371,11 @@ export class DeviceManagerPanel {
   private postInitialState(): void {
     const config = vscode.workspace.getConfiguration('embeddedLogger');
     const devices = config.get<EmbeddedDevice[]>('devices', []);
-    const devicesWithPresets = devices.map((device) => ({
-      ...device,
-      sftpPresetsRemote: sanitizeSftpPresets(device.sftpPresetsRemote),
-      sftpPresetsLocal: sanitizeSftpPresets(device.sftpPresetsLocal),
-    }));
-    const defaults = {
-      defaultPort: config.get<number>('defaultPort', 22) ?? 22,
-      defaultLogCommand:
-        config.get<string>('defaultLogCommand', 'tail -F /var/log/syslog') ??
-        'tail -F /var/log/syslog',
-      defaultEnableSshTerminal: config.get<boolean>('defaultEnableSshTerminal', true) ?? true,
-      defaultEnableSftpExplorer: config.get<boolean>('defaultEnableSftpExplorer', true) ?? true,
-      defaultEnableWebBrowser: config.get<boolean>('defaultEnableWebBrowser', false) ?? false,
-      defaultEnableEmbeddedWebBrowser:
-        config.get<boolean>('defaultEnableEmbeddedWebBrowser', false) ?? false,
-      defaultSshCommands: config.get<SshCommand[]>('defaultSshCommands', []) ?? [],
-      maxLinesPerTab: config.get<number>('maxLinesPerTab', 100000) ?? 100000,
-    };
-
-    this.panel.webview.postMessage({ type: 'init', devices: devicesWithPresets, defaults });
+    const defaults = this.getDefaultsFromConfiguration(config);
+    this.panel.webview.postMessage({
+      type: 'init',
+      ...this.buildWebviewState(defaults, devices),
+    });
   }
 
   private async saveConfiguration(
@@ -432,6 +473,88 @@ export class DeviceManagerPanel {
     }
   }
 
+  private async exportSettings(defaults: DefaultsPayload, devices: DevicePayload[]): Promise<void> {
+    try {
+      const defaultUri = vscode.workspace.workspaceFolders?.[0]?.uri
+        ? vscode.Uri.joinPath(
+            vscode.workspace.workspaceFolders[0].uri,
+            'embedded-device-logger-settings.json'
+          )
+        : undefined;
+      const exportUri = await vscode.window.showSaveDialog({
+        saveLabel: 'Export settings',
+        filters: { JSON: ['json'], All: ['*'] },
+        defaultUri,
+      });
+
+      if (!exportUri) {
+        this.panel.webview.postMessage({
+          type: 'operationResult',
+          message: 'Export canceled.',
+          variant: 'info',
+        });
+        return;
+      }
+
+      const payload = this.buildExportPayload(defaults, devices);
+      const content = Buffer.from(`${JSON.stringify(payload, null, 2)}\n`, 'utf8');
+
+      await vscode.workspace.fs.writeFile(exportUri, content);
+      this.panel.webview.postMessage({
+        type: 'operationResult',
+        message: `Exported settings to ${exportUri.fsPath}.`,
+        variant: 'success',
+      });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.panel.webview.postMessage({
+        type: 'operationResult',
+        message: `Failed to export settings: ${message}`,
+        variant: 'error',
+      });
+    }
+  }
+
+  private async importSettings(): Promise<void> {
+    try {
+      const selection = await vscode.window.showOpenDialog({
+        canSelectFiles: true,
+        canSelectFolders: false,
+        canSelectMany: false,
+        filters: { JSON: ['json'], All: ['*'] },
+        openLabel: 'Import settings',
+      });
+
+      if (!selection?.length) {
+        this.panel.webview.postMessage({
+          type: 'operationResult',
+          message: 'Import canceled.',
+          variant: 'info',
+        });
+        return;
+      }
+
+      const importUri = selection[0];
+      const content = await vscode.workspace.fs.readFile(importUri);
+      const parsed = JSON.parse(Buffer.from(content).toString('utf8')) as unknown;
+      const imported = this.validateImportedSettings(parsed);
+
+      this.panel.webview.postMessage({
+        type: 'importResult',
+        success: true,
+        message: `Imported settings from ${importUri.fsPath}. Review and click Save changes to apply them.`,
+        ...this.buildWebviewState(imported.defaults, imported.devices),
+      });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.panel.webview.postMessage({
+        type: 'importResult',
+        success: false,
+        message: `Failed to import settings: ${message}`,
+      });
+    }
+  }
+
   private isUnregisteredConfigurationError(error: unknown, settingKey: string): boolean {
     const message = error instanceof Error ? error.message : String(error);
     return message.includes(`${settingKey} is not a registered configuration`);
@@ -504,8 +627,7 @@ export class DeviceManagerPanel {
   } {
     const defaultPort = this.toNumberOrDefault(defaults.defaultPort, 22);
     const maxLinesPerTab = this.toNumberOrDefault(defaults.maxLinesPerTab, 100000);
-    const defaultLogCommand =
-      (defaults.defaultLogCommand ?? '').trim() || 'tail -F /var/log/syslog';
+    const defaultLogCommand = (defaults.defaultLogCommand ?? '').trim() || defaultLogCommandValue;
     const defaultEnableSshTerminal = Boolean(defaults.defaultEnableSshTerminal);
     const defaultEnableSftpExplorer = Boolean(defaults.defaultEnableSftpExplorer);
     const defaultEnableWebBrowser = Boolean(defaults.defaultEnableWebBrowser);
@@ -521,6 +643,104 @@ export class DeviceManagerPanel {
       defaultEnableEmbeddedWebBrowser,
       defaultSshCommands,
       maxLinesPerTab,
+    };
+  }
+
+  private getDefaultsFromConfiguration(config: vscode.WorkspaceConfiguration): DefaultsPayload {
+    return {
+      defaultPort: config.get<number>('defaultPort', 22) ?? 22,
+      defaultLogCommand:
+        config.get<string>('defaultLogCommand', defaultLogCommandValue) ?? defaultLogCommandValue,
+      defaultEnableSshTerminal: config.get<boolean>('defaultEnableSshTerminal', true) ?? true,
+      defaultEnableSftpExplorer: config.get<boolean>('defaultEnableSftpExplorer', true) ?? true,
+      defaultEnableWebBrowser: config.get<boolean>('defaultEnableWebBrowser', false) ?? false,
+      defaultEnableEmbeddedWebBrowser:
+        config.get<boolean>('defaultEnableEmbeddedWebBrowser', false) ?? false,
+      defaultSshCommands: config.get<SshCommand[]>('defaultSshCommands', []) ?? [],
+      maxLinesPerTab: config.get<number>('maxLinesPerTab', 100000) ?? 100000,
+    };
+  }
+
+  private buildWebviewState(
+    defaults: DefaultsPayload,
+    devices: EmbeddedDevice[]
+  ): ImportedSettingsState {
+    return {
+      defaults,
+      devices: devices.map((device) => ({
+        ...device,
+        sftpPresetsRemote: sanitizeSftpPresets(device.sftpPresetsRemote),
+        sftpPresetsLocal: sanitizeSftpPresets(device.sftpPresetsLocal),
+      })),
+    };
+  }
+
+  private buildExportPayload(
+    defaults: DefaultsPayload,
+    devices: DevicePayload[]
+  ): ExportedSettingsPayload {
+    const normalizedDefaults = this.normalizeDefaults(defaults);
+    const normalizedDevices = devices.map((device) => this.normalizeDevice(device));
+
+    return {
+      'embeddedLogger.defaultPort': normalizedDefaults.defaultPort,
+      'embeddedLogger.defaultLogCommand': normalizedDefaults.defaultLogCommand,
+      'embeddedLogger.defaultEnableSshTerminal': normalizedDefaults.defaultEnableSshTerminal,
+      'embeddedLogger.defaultEnableSftpExplorer': normalizedDefaults.defaultEnableSftpExplorer,
+      'embeddedLogger.defaultEnableWebBrowser': normalizedDefaults.defaultEnableWebBrowser,
+      'embeddedLogger.defaultEnableEmbeddedWebBrowser':
+        normalizedDefaults.defaultEnableEmbeddedWebBrowser,
+      'embeddedLogger.defaultSshCommands': normalizedDefaults.defaultSshCommands,
+      'embeddedLogger.maxLinesPerTab': normalizedDefaults.maxLinesPerTab,
+      'embeddedLogger.devices': normalizedDevices,
+    };
+  }
+
+  private validateImportedSettings(raw: unknown): ImportedSettingsState {
+    const data = this.asRecord(raw, 'The imported settings file must contain a JSON object.');
+    const missingKeys = importedSettingsKeys.filter((key) => !(key in data));
+
+    if (missingKeys.length > 0) {
+      throw new Error(`Imported settings are missing required key(s): ${missingKeys.join(', ')}.`);
+    }
+
+    const defaults = this.normalizeDefaults({
+      defaultPort: this.readRequiredPositiveNumber(data, 'embeddedLogger.defaultPort'),
+      defaultLogCommand: this.requireStringValue(
+        data['embeddedLogger.defaultLogCommand'],
+        'embeddedLogger.defaultLogCommand'
+      ),
+      defaultEnableSshTerminal: this.readRequiredBoolean(
+        data,
+        'embeddedLogger.defaultEnableSshTerminal'
+      ),
+      defaultEnableSftpExplorer: this.readRequiredBoolean(
+        data,
+        'embeddedLogger.defaultEnableSftpExplorer'
+      ),
+      defaultEnableWebBrowser: this.readRequiredBoolean(
+        data,
+        'embeddedLogger.defaultEnableWebBrowser'
+      ),
+      defaultEnableEmbeddedWebBrowser: this.readRequiredBoolean(
+        data,
+        'embeddedLogger.defaultEnableEmbeddedWebBrowser'
+      ),
+      defaultSshCommands: this.validateSshCommands(
+        data['embeddedLogger.defaultSshCommands'],
+        'embeddedLogger.defaultSshCommands'
+      ),
+      maxLinesPerTab: this.readRequiredPositiveNumber(data, 'embeddedLogger.maxLinesPerTab'),
+    });
+
+    const rawDevices = data['embeddedLogger.devices'];
+    if (!Array.isArray(rawDevices)) {
+      throw new Error('embeddedLogger.devices must be an array.');
+    }
+
+    return {
+      defaults,
+      devices: rawDevices.map((device, index) => this.validateImportedDevice(device, index)),
     };
   }
 
@@ -584,6 +804,81 @@ export class DeviceManagerPanel {
     return normalized;
   }
 
+  private validateImportedDevice(value: unknown, index: number): EmbeddedDevice {
+    const keyPrefix = `embeddedLogger.devices[${index}]`;
+    const device = this.asRecord(value, `${keyPrefix} must be an object.`);
+    const sshCommands = this.validateOptionalSshCommands(
+      device.sshCommands,
+      `${keyPrefix}.sshCommands`
+    );
+    const bastion = this.validateOptionalBastion(device.bastion, `${keyPrefix}.bastion`);
+    const sftpPresetsRemote = this.validateOptionalPresetArray(
+      device.sftpPresetsRemote,
+      `${keyPrefix}.sftpPresetsRemote`
+    );
+    const sftpPresetsLocal = this.validateOptionalPresetArray(
+      device.sftpPresetsLocal,
+      `${keyPrefix}.sftpPresetsLocal`
+    );
+
+    const normalized: EmbeddedDevice = {
+      id: this.readRequiredPropertyString(device, 'id', keyPrefix),
+      color: this.readOptionalString(device.color, `${keyPrefix}.color`),
+      name: this.readRequiredPropertyString(device, 'name', keyPrefix),
+      host: this.readRequiredPropertyString(device, 'host', keyPrefix),
+      hostFingerprint: this.readOptionalString(
+        device.hostFingerprint,
+        `${keyPrefix}.hostFingerprint`
+      ),
+      secondaryHost: this.readOptionalString(device.secondaryHost, `${keyPrefix}.secondaryHost`),
+      secondaryHostFingerprint: this.readOptionalString(
+        device.secondaryHostFingerprint,
+        `${keyPrefix}.secondaryHostFingerprint`
+      ),
+      port: this.readOptionalPositiveNumber(device.port, `${keyPrefix}.port`),
+      username: this.readRequiredPropertyString(device, 'username', keyPrefix),
+      password: this.readOptionalString(device.password, `${keyPrefix}.password`),
+      privateKeyPath: this.readOptionalString(device.privateKeyPath, `${keyPrefix}.privateKeyPath`),
+      privateKeyPassphrase: this.readOptionalString(
+        device.privateKeyPassphrase,
+        `${keyPrefix}.privateKeyPassphrase`
+      ),
+      logCommand: this.readOptionalString(device.logCommand, `${keyPrefix}.logCommand`),
+      enableSshTerminal: this.readOptionalBoolean(
+        device.enableSshTerminal,
+        `${keyPrefix}.enableSshTerminal`
+      ),
+      enableSftpExplorer: this.readOptionalBoolean(
+        device.enableSftpExplorer,
+        `${keyPrefix}.enableSftpExplorer`
+      ),
+      enableWebBrowser: this.readOptionalBoolean(
+        device.enableWebBrowser,
+        `${keyPrefix}.enableWebBrowser`
+      ),
+      enableEmbeddedWebBrowser: this.readOptionalBoolean(
+        device.enableEmbeddedWebBrowser,
+        `${keyPrefix}.enableEmbeddedWebBrowser`
+      ),
+      webBrowserUrl: this.readOptionalString(device.webBrowserUrl, `${keyPrefix}.webBrowserUrl`),
+      bastion,
+    };
+
+    if (sshCommands.length > 0) {
+      normalized.sshCommands = sshCommands;
+    }
+
+    if (sftpPresetsRemote.length > 0) {
+      normalized.sftpPresetsRemote = sftpPresetsRemote;
+    }
+
+    if (sftpPresetsLocal.length > 0) {
+      normalized.sftpPresetsLocal = sftpPresetsLocal;
+    }
+
+    return normalized;
+  }
+
   private parsePresetText(value: string | undefined): string[] {
     if (!value) {
       return [];
@@ -593,6 +888,151 @@ export class DeviceManagerPanel {
       .map((entry) => entry.trim())
       .filter((entry) => entry.length > 0);
     return entries.slice(0, this.sftpPresetLimit);
+  }
+
+  private validateOptionalPresetArray(value: unknown, key: string): string[] {
+    if (value === undefined) {
+      return [];
+    }
+
+    if (!Array.isArray(value) || value.some((entry) => typeof entry !== 'string')) {
+      throw new Error(`${key} must be an array of strings.`);
+    }
+
+    return sanitizeSftpPresets(value);
+  }
+
+  private validateOptionalBastion(value: unknown, key: string): EmbeddedDevice['bastion'] {
+    if (value === undefined) {
+      return undefined;
+    }
+
+    const bastion = this.asRecord(value, `${key} must be an object.`);
+
+    return {
+      host: this.readRequiredPropertyString(bastion, 'host', key),
+      hostFingerprint: this.readOptionalString(bastion.hostFingerprint, `${key}.hostFingerprint`),
+      port: this.readOptionalPositiveNumber(bastion.port, `${key}.port`),
+      username: this.readRequiredPropertyString(bastion, 'username', key),
+      password: this.readOptionalString(bastion.password, `${key}.password`),
+      privateKeyPath: this.readOptionalString(bastion.privateKeyPath, `${key}.privateKeyPath`),
+      privateKeyPassphrase: this.readOptionalString(
+        bastion.privateKeyPassphrase,
+        `${key}.privateKeyPassphrase`
+      ),
+    };
+  }
+
+  private validateOptionalSshCommands(value: unknown, key: string): SshCommand[] {
+    if (value === undefined) {
+      return [];
+    }
+
+    return this.validateSshCommands(value, key);
+  }
+
+  private validateSshCommands(value: unknown, key: string): SshCommand[] {
+    if (!Array.isArray(value)) {
+      throw new Error(`${key} must be an array of {name, command} entries.`);
+    }
+
+    return value.map((entry, index) => {
+      const command = this.asRecord(entry, `${key}[${index}] must be an object.`);
+      return {
+        name: this.readRequiredPropertyString(command, 'name', `${key}[${index}]`),
+        command: this.readRequiredPropertyString(command, 'command', `${key}[${index}]`),
+      };
+    });
+  }
+
+  private asRecord(value: unknown, message: string): Record<string, unknown> {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      throw new Error(message);
+    }
+
+    return value as Record<string, unknown>;
+  }
+
+  private readRequiredPropertyString(
+    value: Record<string, unknown>,
+    key: string,
+    prefix?: string
+  ): string {
+    return this.requireStringValue(value[key], prefix ? `${prefix}.${key}` : key);
+  }
+
+  private requireStringValue(value: unknown, key: string, allowBlank = false): string {
+    if (typeof value !== 'string') {
+      throw new Error(`${key} must be a string.`);
+    }
+
+    const trimmed = value.trim();
+    if (!allowBlank && !trimmed) {
+      throw new Error(`${key} is required.`);
+    }
+
+    return trimmed;
+  }
+
+  private readOptionalString(value: unknown, key: string): string | undefined {
+    if (value === undefined || value === null || value === '') {
+      return undefined;
+    }
+
+    if (typeof value !== 'string') {
+      throw new Error(`${key} must be a string.`);
+    }
+
+    const trimmed = value.trim();
+    return trimmed || undefined;
+  }
+
+  private readRequiredBoolean(
+    value: Record<ImportedSettingsKey, unknown>,
+    key: ImportedSettingsKey
+  ): boolean {
+    return this.requireBooleanValue(value[key], key);
+  }
+
+  private readOptionalBoolean(value: unknown, key: string): boolean | undefined {
+    if (value === undefined) {
+      return undefined;
+    }
+
+    return this.requireBooleanValue(value, key);
+  }
+
+  private requireBooleanValue(value: unknown, key: string): boolean {
+    if (typeof value !== 'boolean') {
+      throw new Error(`${key} must be a boolean.`);
+    }
+
+    return value;
+  }
+
+  private readRequiredPositiveNumber(
+    value: Record<ImportedSettingsKey, unknown>,
+    key: ImportedSettingsKey
+  ): number {
+    return this.requirePositiveNumber(value[key], key);
+  }
+
+  private readOptionalPositiveNumber(value: unknown, key: string): number | undefined {
+    if (value === undefined || value === null || value === '') {
+      return undefined;
+    }
+
+    return this.requirePositiveNumber(value, key);
+  }
+
+  private requirePositiveNumber(value: unknown, key: string): number {
+    const parsed =
+      typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : NaN;
+    if (!Number.isFinite(parsed) || parsed < 1) {
+      throw new Error(`${key} must be a number greater than or equal to 1.`);
+    }
+
+    return parsed;
   }
 
   private buildBastion(device: DevicePayload): EmbeddedDevice['bastion'] {

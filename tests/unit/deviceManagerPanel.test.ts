@@ -4,10 +4,13 @@ vi.mock('vscode', () => import('../mocks/vscode'));
 
 import { DeviceManagerPanel } from '../../src/deviceManagerPanel';
 import {
+  Uri,
   commands,
   createExtensionContext,
   getCreatedWebviews,
   resetCreatedWebviews,
+  setOpenDialogResponse,
+  setSaveDialogResponse,
   resetWindowResponses,
   resetWorkspaceConfiguration,
   resetWorkspaceState,
@@ -60,6 +63,13 @@ describe('DeviceManagerPanel', () => {
     expect(html).toContain('<th>External Web Browser</th>');
     expect(html).toContain('<th>Embedded Web Browser</th>');
     expect(html).toContain('id="defaultEnableEmbeddedWebBrowser"');
+    expect(html).toMatch(
+      /id="clearPasswords"[\s\S]*id="importSettings"[\s\S]*id="exportSettings"[\s\S]*id="editJson"/
+    );
+    expect(html).toContain('title="Import Settings"');
+    expect(html).toContain('title="Export Settings"');
+    expect(html).toContain('aria-label="Import Settings"');
+    expect(html).toContain('aria-label="Export Settings"');
   });
 
   it('routes per-device password reset messages to clearStoredPasswords command with device id', async () => {
@@ -222,5 +232,190 @@ describe('DeviceManagerPanel', () => {
         sftpPresetsLocal: ['/tmp', '/work'],
       }),
     ]);
+  });
+
+  it('exports the current manager state as settings.json-compatible JSON', async () => {
+    const panel = createPanel();
+    const exportPath = '/tmp/embedded-device-logger-settings.json';
+    setSaveDialogResponse(exportPath);
+
+    panel.__fireMessage({
+      type: 'exportSettings',
+      defaults: {
+        defaultPort: 22,
+        defaultLogCommand: 'tail -F /var/log/syslog',
+        defaultEnableSshTerminal: true,
+        defaultEnableSftpExplorer: true,
+        defaultEnableWebBrowser: false,
+        defaultEnableEmbeddedWebBrowser: true,
+        defaultSshCommands: [{ name: ' Reboot ', command: ' sudo reboot ' }],
+        maxLinesPerTab: 5000,
+      },
+      devices: [
+        {
+          id: ' device-a ',
+          color: '#4fc3f7',
+          name: ' Device A ',
+          host: ' 10.0.0.1 ',
+          username: ' root ',
+          enableSshTerminal: 'enabled',
+          enableWebBrowser: 'disabled',
+          sftpPresetsRemote: ' /var/log \n /opt/app ',
+          sshCommands: [{ name: ' Logs ', command: ' journalctl -f ' }],
+          bastionHost: ' bastion.local ',
+          bastionUsername: ' jump ',
+          bastionPort: '22',
+        },
+      ],
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const written = await workspace.fs.readFile(Uri.file(exportPath) as never);
+    const exported = JSON.parse(Buffer.from(written).toString('utf8'));
+
+    expect(exported).toEqual({
+      'embeddedLogger.defaultPort': 22,
+      'embeddedLogger.defaultLogCommand': 'tail -F /var/log/syslog',
+      'embeddedLogger.defaultEnableSshTerminal': true,
+      'embeddedLogger.defaultEnableSftpExplorer': true,
+      'embeddedLogger.defaultEnableWebBrowser': false,
+      'embeddedLogger.defaultEnableEmbeddedWebBrowser': true,
+      'embeddedLogger.defaultSshCommands': [{ name: 'Reboot', command: 'sudo reboot' }],
+      'embeddedLogger.maxLinesPerTab': 5000,
+      'embeddedLogger.devices': [
+        {
+          id: 'device-a',
+          color: '#4fc3f7',
+          name: 'Device A',
+          host: '10.0.0.1',
+          username: 'root',
+          enableSshTerminal: true,
+          enableWebBrowser: false,
+          sftpPresetsRemote: ['/var/log', '/opt/app'],
+          sshCommands: [{ name: 'Logs', command: 'journalctl -f' }],
+          bastion: {
+            host: 'bastion.local',
+            port: 22,
+            username: 'jump',
+          },
+        },
+      ],
+    });
+    expect(panel.webview.postMessage).toHaveBeenCalledWith({
+      type: 'operationResult',
+      message: `Exported settings to ${exportPath}.`,
+      variant: 'success',
+    });
+  });
+
+  it('imports validated settings into the manager state without saving immediately', async () => {
+    const panel = createPanel();
+    const importPath = '/tmp/imported-settings.json';
+    setOpenDialogResponse(importPath);
+
+    await workspace.fs.writeFile(
+      Uri.file(importPath) as never,
+      Buffer.from(
+        JSON.stringify({
+          'embeddedLogger.defaultPort': 2222,
+          'embeddedLogger.defaultLogCommand': 'journalctl -f',
+          'embeddedLogger.defaultEnableSshTerminal': true,
+          'embeddedLogger.defaultEnableSftpExplorer': true,
+          'embeddedLogger.defaultEnableWebBrowser': false,
+          'embeddedLogger.defaultEnableEmbeddedWebBrowser': true,
+          'embeddedLogger.defaultSshCommands': [
+            { name: 'Restart', command: 'systemctl restart app' },
+          ],
+          'embeddedLogger.maxLinesPerTab': 9000,
+          'embeddedLogger.devices': [
+            {
+              id: 'device-a',
+              name: 'Device A',
+              host: '10.0.0.1',
+              username: 'root',
+              sftpPresetsRemote: ['/var/log'],
+              bastion: {
+                host: 'bastion.local',
+                username: 'jump',
+              },
+            },
+          ],
+        }),
+        'utf8'
+      )
+    );
+
+    panel.__fireMessage({ type: 'importSettings' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(panel.webview.postMessage).toHaveBeenCalledWith({
+      type: 'importResult',
+      success: true,
+      message: `Imported settings from ${importPath}. Review and click Save changes to apply them.`,
+      defaults: {
+        defaultPort: 2222,
+        defaultLogCommand: 'journalctl -f',
+        defaultEnableSshTerminal: true,
+        defaultEnableSftpExplorer: true,
+        defaultEnableWebBrowser: false,
+        defaultEnableEmbeddedWebBrowser: true,
+        defaultSshCommands: [{ name: 'Restart', command: 'systemctl restart app' }],
+        maxLinesPerTab: 9000,
+      },
+      devices: [
+        {
+          id: 'device-a',
+          name: 'Device A',
+          host: '10.0.0.1',
+          username: 'root',
+          sftpPresetsRemote: ['/var/log'],
+          sftpPresetsLocal: [],
+          bastion: {
+            host: 'bastion.local',
+            username: 'jump',
+          },
+        },
+      ],
+    });
+  });
+
+  it('rejects imported files that omit required device keys', async () => {
+    const panel = createPanel();
+    const importPath = '/tmp/invalid-imported-settings.json';
+    setOpenDialogResponse(importPath);
+
+    await workspace.fs.writeFile(
+      Uri.file(importPath) as never,
+      Buffer.from(
+        JSON.stringify({
+          'embeddedLogger.defaultPort': 22,
+          'embeddedLogger.defaultLogCommand': 'tail -F /var/log/syslog',
+          'embeddedLogger.defaultEnableSshTerminal': true,
+          'embeddedLogger.defaultEnableSftpExplorer': true,
+          'embeddedLogger.defaultEnableWebBrowser': false,
+          'embeddedLogger.defaultEnableEmbeddedWebBrowser': false,
+          'embeddedLogger.defaultSshCommands': [],
+          'embeddedLogger.maxLinesPerTab': 100000,
+          'embeddedLogger.devices': [
+            {
+              id: 'device-a',
+              name: 'Device A',
+              host: '10.0.0.1',
+            },
+          ],
+        }),
+        'utf8'
+      )
+    );
+
+    panel.__fireMessage({ type: 'importSettings' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(panel.webview.postMessage).toHaveBeenCalledWith({
+      type: 'importResult',
+      success: false,
+      message: 'Failed to import settings: embeddedLogger.devices[0].username must be a string.',
+    });
   });
 });
