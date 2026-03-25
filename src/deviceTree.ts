@@ -31,6 +31,8 @@ export interface EmbeddedDevice {
   enableWebBrowser?: boolean;
   enableEmbeddedWebBrowser?: boolean;
   webBrowserUrl?: string;
+  sftpPresetsRemote?: string[];
+  sftpPresetsLocal?: string[];
   sshCommands?: { name: string; command: string }[];
 }
 

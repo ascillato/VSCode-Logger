@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [1.8.1] - 2026-03-26 [EXPORT-CONFIG]
+
+### Added
+- Save SFTP presets globally.
+
+### Changed
+- None.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- None.
+
+### Security
+- Updated dependencies to latest.
+
+----------------------------------------
+
 ## [1.8.0] - 2026-03-20 [EMBEDDED-BROWSER]
 
 ### Added

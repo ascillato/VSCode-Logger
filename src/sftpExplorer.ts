@@ -21,6 +21,7 @@ import { PasswordManager } from './passwordManager';
 import { SshCommandRunner } from './sshCommandRunner';
 import { SshTerminalSession } from './sshTerminal';
 import { getDeviceColorIcon } from './deviceColor';
+import { sanitizeSftpPresets, updateEmbeddedLoggerDeviceConfiguration } from './configuration';
 
 type ForwardingClient = Client & {
   forwardOut(
@@ -285,8 +286,6 @@ export class SftpExplorerPanel {
   private disposed = false;
   private viewContentDirectory?: string;
   private readonly viewedTempFiles = new Map<string, { remotePath: string }>();
-  private readonly sftpPresetsKey: string;
-  private readonly sftpLocalPresetsKey: string;
   private readonly isTestMode: boolean;
   private readonly testEntries: Map<string, ExplorerEntry[]> = new Map();
   private readonly testInputQueue: string[] = [];
@@ -305,8 +304,6 @@ export class SftpExplorerPanel {
   ) {
     this.passwordManager = new PasswordManager(context);
     this.localHome = os.homedir();
-    this.sftpPresetsKey = `embeddedLogger.sftpPresets.${device.id}`;
-    this.sftpLocalPresetsKey = `embeddedLogger.sftpPresets.local.${device.id}`;
     this.isTestMode = context.extensionMode === vscode.ExtensionMode.Test;
     if (this.isTestMode) {
       this.seedTestEntries();
@@ -815,14 +812,56 @@ export class SftpExplorerPanel {
   }
 
   private getSftpPresets(location: 'remote' | 'local'): string[] {
-    const key = location === 'remote' ? this.sftpPresetsKey : this.sftpLocalPresetsKey;
-    return this.context.workspaceState.get<string[]>(key, []);
+    return location === 'remote'
+      ? sanitizeSftpPresets(this.device.sftpPresetsRemote)
+      : sanitizeSftpPresets(this.device.sftpPresetsLocal);
   }
 
   private async saveSftpPresets(location: 'remote' | 'local', presets: string[]): Promise<void> {
-    const sanitized = presets.map((entry) => entry.trim()).filter((entry) => entry.length > 0);
-    const key = location === 'remote' ? this.sftpPresetsKey : this.sftpLocalPresetsKey;
-    await this.context.workspaceState.update(key, sanitized);
+    const sanitized = sanitizeSftpPresets(presets);
+    const updatedDevice = await updateEmbeddedLoggerDeviceConfiguration(
+      this.device.id,
+      (device) => {
+        const updated = { ...device };
+
+        if (location === 'remote') {
+          if (sanitized.length > 0) {
+            updated.sftpPresetsRemote = sanitized;
+          } else {
+            delete updated.sftpPresetsRemote;
+          }
+          return updated;
+        }
+
+        if (sanitized.length > 0) {
+          updated.sftpPresetsLocal = sanitized;
+        } else {
+          delete updated.sftpPresetsLocal;
+        }
+        return updated;
+      }
+    );
+
+    if (!updatedDevice) {
+      throw new Error(
+        `Cannot save SFTP presets because device "${this.device.name || this.device.id}" is no longer configured.`
+      );
+    }
+
+    if (location === 'remote') {
+      if (sanitized.length > 0) {
+        this.device.sftpPresetsRemote = sanitized;
+      } else {
+        delete this.device.sftpPresetsRemote;
+      }
+    } else {
+      if (sanitized.length > 0) {
+        this.device.sftpPresetsLocal = sanitized;
+      } else {
+        delete this.device.sftpPresetsLocal;
+      }
+    }
+
     this.postMessage({ type: 'sftpPresetsUpdated', location, presets: sanitized });
   }
 

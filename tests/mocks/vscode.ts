@@ -296,6 +296,16 @@ export const ExtensionMode = {
 export const workspaceState = new Map<string, unknown>();
 
 export const createExtensionContext = (): vscode.ExtensionContext => {
+  const updateMemento = (key: string, value: unknown): Promise<void> => {
+    if (value === undefined) {
+      workspaceState.delete(key);
+      return Promise.resolve();
+    }
+
+    workspaceState.set(key, value);
+    return Promise.resolve();
+  };
+
   return {
     extensionPath: '/workspace',
     extensionUri: Uri.file('/workspace') as unknown as vscode.Uri,
@@ -304,11 +314,11 @@ export const createExtensionContext = (): vscode.ExtensionContext => {
     secrets: createSecretStorage(),
     globalState: {
       get: (key: string, defaultValue?: unknown) => workspaceState.get(key) ?? defaultValue,
-      update: (key: string, value: unknown) => Promise.resolve(workspaceState.set(key, value)),
+      update: updateMemento,
     },
     workspaceState: {
       get: (key: string, defaultValue?: unknown) => workspaceState.get(key) ?? defaultValue,
-      update: (key: string, value: unknown) => Promise.resolve(workspaceState.set(key, value)),
+      update: updateMemento,
     },
   } as unknown as vscode.ExtensionContext;
 };
@@ -318,6 +328,10 @@ export const resetWorkspaceConfiguration = (): void => {
     delete configurationState[key];
   });
   Object.assign(configurationState, initialConfigurationState);
+};
+
+export const resetWorkspaceState = (): void => {
+  workspaceState.clear();
 };
 
 export const resetSecrets = (context: vscode.ExtensionContext): void => {

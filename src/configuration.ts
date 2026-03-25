@@ -7,6 +7,8 @@
 import * as vscode from 'vscode';
 import type { EmbeddedDevice } from './deviceTree';
 
+const sftpPresetLimit = 10;
+
 interface LoggerDefaults {
   defaultPort: number;
   defaultLogCommand: string;
@@ -15,6 +17,58 @@ interface LoggerDefaults {
   defaultEnableWebBrowser: boolean;
   defaultEnableEmbeddedWebBrowser: boolean;
   defaultSshCommands: { name: string; command: string }[];
+}
+
+export interface EmbeddedLoggerDeviceConfigurationScope {
+  config: vscode.WorkspaceConfiguration;
+  target: vscode.ConfigurationTarget;
+  devices: EmbeddedDevice[];
+}
+
+function isEmbeddedDeviceArray(value: unknown): value is EmbeddedDevice[] {
+  return Array.isArray(value);
+}
+
+function getDeviceId(device: Pick<EmbeddedDevice, 'id'>): string {
+  return device.id.trim();
+}
+
+function getConfiguredDeviceScopes(): EmbeddedLoggerDeviceConfigurationScope[] {
+  const scopes: EmbeddedLoggerDeviceConfigurationScope[] = [];
+  const workspaceFolders = vscode.workspace.workspaceFolders ?? [];
+
+  for (const folder of workspaceFolders) {
+    const config = vscode.workspace.getConfiguration('embeddedLogger', folder.uri);
+    const inspection = config.inspect<EmbeddedDevice[]>('devices');
+    if (isEmbeddedDeviceArray(inspection?.workspaceFolderValue)) {
+      scopes.push({
+        config,
+        target: vscode.ConfigurationTarget.WorkspaceFolder,
+        devices: inspection.workspaceFolderValue,
+      });
+    }
+  }
+
+  const config = vscode.workspace.getConfiguration('embeddedLogger');
+  const inspection = config.inspect<EmbeddedDevice[]>('devices');
+
+  if (isEmbeddedDeviceArray(inspection?.workspaceValue)) {
+    scopes.push({
+      config,
+      target: vscode.ConfigurationTarget.Workspace,
+      devices: inspection.workspaceValue,
+    });
+  }
+
+  if (isEmbeddedDeviceArray(inspection?.globalValue)) {
+    scopes.push({
+      config,
+      target: vscode.ConfigurationTarget.Global,
+      devices: inspection.globalValue,
+    });
+  }
+
+  return scopes;
 }
 
 /**
@@ -72,11 +126,78 @@ function applyDeviceDefaults(device: EmbeddedDevice, defaults: LoggerDefaults): 
     enableEmbeddedWebBrowser:
       device.enableEmbeddedWebBrowser ?? defaults.defaultEnableEmbeddedWebBrowser,
     webBrowserUrl: device.webBrowserUrl?.trim() || undefined,
+    sftpPresetsRemote: sanitizeSftpPresets(device.sftpPresetsRemote),
+    sftpPresetsLocal: sanitizeSftpPresets(device.sftpPresetsLocal),
     sshCommands:
       device.sshCommands !== undefined
         ? device.sshCommands
         : defaults.defaultSshCommands.map((command) => ({ ...command })),
   };
+}
+
+export function sanitizeSftpPresets(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((entry) => (typeof entry === 'string' ? entry.trim() : ''))
+    .filter((entry) => entry.length > 0)
+    .slice(0, sftpPresetLimit);
+}
+
+export function mergeSftpPresets(current: unknown, legacy: unknown): string[] {
+  const merged = [...sanitizeSftpPresets(current)];
+
+  for (const entry of sanitizeSftpPresets(legacy)) {
+    if (merged.includes(entry)) {
+      continue;
+    }
+    merged.push(entry);
+    if (merged.length >= sftpPresetLimit) {
+      break;
+    }
+  }
+
+  return merged;
+}
+
+export function getEmbeddedLoggerDeviceConfigurationScopes(): EmbeddedLoggerDeviceConfigurationScope[] {
+  return getConfiguredDeviceScopes();
+}
+
+export async function updateEmbeddedLoggerDeviceConfiguration(
+  deviceId: string,
+  updateDevice: (device: EmbeddedDevice) => EmbeddedDevice
+): Promise<EmbeddedDevice | undefined> {
+  const normalizedId = deviceId.trim();
+  if (!normalizedId) {
+    return undefined;
+  }
+
+  for (const scope of getConfiguredDeviceScopes()) {
+    let updatedDevice: EmbeddedDevice | undefined;
+    let found = false;
+
+    const updatedDevices = scope.devices.map((device) => {
+      if (getDeviceId(device) !== normalizedId) {
+        return device;
+      }
+
+      found = true;
+      updatedDevice = updateDevice(device);
+      return updatedDevice;
+    });
+
+    if (!found) {
+      continue;
+    }
+
+    await scope.config.update('devices', updatedDevices, scope.target);
+    return updatedDevice;
+  }
+
+  return undefined;
 }
 
 /**

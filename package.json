@@ -3,7 +3,7 @@
   "displayName": "Embedded Device Logger",
   "description": "Stream and filter embedded Linux device logs over SSH inside VS Code.",
   "icon": "media/icon.png",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "publisher": "Scallant",
   "author": "A. Scillato",
   "engines": {
@@ -271,6 +271,24 @@
                 "description": "Optional URL to open for the device; defaults to http://<host> when omitted.",
                 "default": ""
               },
+              "sftpPresetsRemote": {
+                "type": "array",
+                "description": "Saved remote-path presets for the device's SFTP explorer.",
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 10,
+                "default": []
+              },
+              "sftpPresetsLocal": {
+                "type": "array",
+                "description": "Saved local-path presets for the device's SFTP explorer.",
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 10,
+                "default": []
+              },
               "sshCommands": {
                 "type": "array",
                 "description": "Optional list of on-demand SSH commands available from the Devices view.",
@@ -322,6 +340,14 @@
               "enableWebBrowser": false,
               "enableEmbeddedWebBrowser": false,
               "webBrowserUrl": "http://192.168.1.10",
+              "sftpPresetsRemote": [
+                "/var/log",
+                "/opt/app"
+              ],
+              "sftpPresetsLocal": [
+                "${env:HOME}/Downloads",
+                "${env:HOME}/Projects"
+              ],
               "sshCommands": [
                 {
                   "name": "Restart Service",

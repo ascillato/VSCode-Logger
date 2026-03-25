@@ -13,7 +13,12 @@ import { LogPanel } from './logPanel';
 import { SshCommandRunner } from './sshCommandRunner';
 import { SshTerminalSession } from './sshTerminal';
 import { SftpExplorerPanel } from './sftpExplorer';
-import { getEmbeddedLoggerConfiguration } from './configuration';
+import {
+  getEmbeddedLoggerConfiguration,
+  getEmbeddedLoggerDeviceConfigurationScopes,
+  mergeSftpPresets,
+  sanitizeSftpPresets,
+} from './configuration';
 import { PasswordManager } from './passwordManager';
 import { DeviceManagerPanel } from './deviceManagerPanel';
 
@@ -219,6 +224,101 @@ async function migrateLegacyPasswords(
   }
 }
 
+function getLegacySftpPresetKey(deviceId: string, location: 'remote' | 'local'): string {
+  return location === 'remote'
+    ? `embeddedLogger.sftpPresets.${deviceId}`
+    : `embeddedLogger.sftpPresets.local.${deviceId}`;
+}
+
+async function migrateLegacySftpPresets(context: vscode.ExtensionContext): Promise<void> {
+  const scopes = getEmbeddedLoggerDeviceConfigurationScopes();
+  if (!scopes.length) {
+    return;
+  }
+
+  let warningShown = false;
+
+  for (const scope of scopes) {
+    const deviceIdsToCleanup = new Set<string>();
+    let scopeChanged = false;
+
+    const migratedDevices = scope.devices.map((device) => {
+      const deviceId = device.id.trim();
+      if (!deviceId) {
+        return device;
+      }
+
+      const legacyRemote = sanitizeSftpPresets(
+        context.workspaceState.get<string[]>(getLegacySftpPresetKey(deviceId, 'remote'), [])
+      );
+      const legacyLocal = sanitizeSftpPresets(
+        context.workspaceState.get<string[]>(getLegacySftpPresetKey(deviceId, 'local'), [])
+      );
+
+      if (!legacyRemote.length && !legacyLocal.length) {
+        return device;
+      }
+
+      deviceIdsToCleanup.add(deviceId);
+
+      const nextRemote = mergeSftpPresets(device.sftpPresetsRemote, legacyRemote);
+      const nextLocal = mergeSftpPresets(device.sftpPresetsLocal, legacyLocal);
+      const currentRemote = sanitizeSftpPresets(device.sftpPresetsRemote);
+      const currentLocal = sanitizeSftpPresets(device.sftpPresetsLocal);
+
+      const remoteChanged =
+        currentRemote.length !== nextRemote.length ||
+        currentRemote.some((entry, index) => entry !== nextRemote[index]);
+      const localChanged =
+        currentLocal.length !== nextLocal.length ||
+        currentLocal.some((entry, index) => entry !== nextLocal[index]);
+
+      if (!remoteChanged && !localChanged) {
+        return device;
+      }
+
+      scopeChanged = true;
+
+      const updatedDevice: EmbeddedDevice = { ...device };
+      if (nextRemote.length > 0) {
+        updatedDevice.sftpPresetsRemote = nextRemote;
+      } else {
+        delete updatedDevice.sftpPresetsRemote;
+      }
+      if (nextLocal.length > 0) {
+        updatedDevice.sftpPresetsLocal = nextLocal;
+      } else {
+        delete updatedDevice.sftpPresetsLocal;
+      }
+
+      return updatedDevice;
+    });
+
+    if (!deviceIdsToCleanup.size) {
+      continue;
+    }
+
+    try {
+      if (scopeChanged) {
+        await scope.config.update('devices', migratedDevices, scope.target);
+      }
+
+      for (const deviceId of deviceIdsToCleanup) {
+        await context.workspaceState.update(getLegacySftpPresetKey(deviceId, 'remote'), undefined);
+        await context.workspaceState.update(getLegacySftpPresetKey(deviceId, 'local'), undefined);
+      }
+    } catch (err: unknown) {
+      console.error('Failed to migrate legacy SFTP presets into embeddedLogger.devices.', err);
+      if (!warningShown) {
+        warningShown = true;
+        vscode.window.showWarningMessage(
+          'Failed to migrate legacy SFTP presets into embeddedLogger.devices. Existing presets remain in extension storage.'
+        );
+      }
+    }
+  }
+}
+
 /**
  * Activates the extension and registers UI components.
  *
@@ -230,6 +330,7 @@ async function migrateLegacyPasswords(
 export async function activate(context: vscode.ExtensionContext): Promise<ExtensionTestApi | void> {
   const isTestMode = context.extensionMode === vscode.ExtensionMode.Test;
   const passwordManager = new PasswordManager(context);
+  await migrateLegacySftpPresets(context);
   const { devices } = getEmbeddedLoggerConfiguration();
 
   await migrateLegacyPasswords(context, devices, passwordManager);
@@ -462,7 +563,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
 
   context.subscriptions.push(
     vscode.commands.registerCommand('embeddedLogger.editDevicesConfig', () => {
-      DeviceManagerPanel.createOrShow(context.extensionUri, context);
+      DeviceManagerPanel.createOrShow(context.extensionUri);
     })
   );
 

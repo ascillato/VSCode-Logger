@@ -10,12 +10,13 @@ import {
   resetCreatedWebviews,
   resetWindowResponses,
   resetWorkspaceConfiguration,
+  resetWorkspaceState,
   workspace,
 } from '../mocks/vscode';
 
 const createPanel = () => {
   const context = createExtensionContext();
-  DeviceManagerPanel.createOrShow(context.extensionUri, context);
+  DeviceManagerPanel.createOrShow(context.extensionUri);
   const panel = getCreatedWebviews()[0];
   if (!panel) {
     throw new Error('Expected DeviceManagerPanel to create a webview panel.');
@@ -25,6 +26,7 @@ const createPanel = () => {
 
 beforeEach(() => {
   resetWorkspaceConfiguration();
+  resetWorkspaceState();
   resetWindowResponses();
   resetCreatedWebviews();
 });
@@ -35,6 +37,7 @@ afterEach(() => {
     panel.dispose();
   });
   resetCreatedWebviews();
+  resetWorkspaceState();
   vi.restoreAllMocks();
 });
 
@@ -173,5 +176,51 @@ describe('DeviceManagerPanel', () => {
       message:
         'Saved settings. Reload the window or extension host, then save again to persist the Embedded Web Browser default.',
     });
+  });
+
+  it('stores SFTP presets directly on device configuration entries', async () => {
+    const panel = createPanel();
+    const config = workspace.getConfiguration('embeddedLogger');
+    const updateSpy = vi.spyOn(config, 'update');
+
+    panel.__fireMessage({
+      type: 'save',
+      defaults: {
+        defaultPort: 22,
+        defaultLogCommand: 'tail -F /var/log/syslog',
+        defaultEnableSshTerminal: true,
+        defaultEnableSftpExplorer: true,
+        defaultEnableWebBrowser: false,
+        defaultEnableEmbeddedWebBrowser: false,
+        defaultSshCommands: [],
+        maxLinesPerTab: 100000,
+      },
+      devices: [
+        {
+          id: 'device-a',
+          name: 'Device A',
+          host: '10.0.0.1',
+          username: 'root',
+          sftpPresetsRemote: ' /var/log \n/opt/app\n',
+          sftpPresetsLocal: '\n/tmp\n /work ',
+        },
+      ],
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const devicesCall = updateSpy.mock.calls.find((call) => call[0] === 'devices');
+    expect(devicesCall).toBeDefined();
+    if (!devicesCall) {
+      throw new Error('Missing devices update call.');
+    }
+
+    expect(devicesCall[1]).toEqual([
+      expect.objectContaining({
+        id: 'device-a',
+        sftpPresetsRemote: ['/var/log', '/opt/app'],
+        sftpPresetsLocal: ['/tmp', '/work'],
+      }),
+    ]);
   });
 });

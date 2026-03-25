@@ -6,6 +6,7 @@
 
 import * as vscode from 'vscode';
 import type { EmbeddedDevice } from './deviceTree';
+import { sanitizeSftpPresets } from './configuration';
 
 type IncomingMessage =
   | { type: 'requestState' }
@@ -73,7 +74,6 @@ export class DeviceManagerPanel {
 
   private constructor(
     private readonly extensionUri: vscode.Uri,
-    private readonly context: vscode.ExtensionContext,
     panel: vscode.WebviewPanel
   ) {
     this.panel = panel;
@@ -111,7 +111,7 @@ export class DeviceManagerPanel {
     this.panel.webview.html = this.buildHtml(this.panel.webview);
   }
 
-  static createOrShow(extensionUri: vscode.Uri, context: vscode.ExtensionContext): void {
+  static createOrShow(extensionUri: vscode.Uri): void {
     const column = vscode.window.activeTextEditor?.viewColumn;
 
     if (DeviceManagerPanel.currentPanel) {
@@ -133,7 +133,7 @@ export class DeviceManagerPanel {
       }
     );
 
-    DeviceManagerPanel.currentPanel = new DeviceManagerPanel(extensionUri, context, panel);
+    DeviceManagerPanel.currentPanel = new DeviceManagerPanel(extensionUri, panel);
   }
 
   dispose(): void {
@@ -315,18 +315,11 @@ export class DeviceManagerPanel {
   private postInitialState(): void {
     const config = vscode.workspace.getConfiguration('embeddedLogger');
     const devices = config.get<EmbeddedDevice[]>('devices', []);
-    const devicesWithPresets = devices.map((device) => {
-      const id = (device.id ?? '').trim();
-      return {
-        ...device,
-        sftpPresetsRemote: id
-          ? this.context.workspaceState.get<string[]>(this.getSftpPresetKey(id, 'remote'), [])
-          : [],
-        sftpPresetsLocal: id
-          ? this.context.workspaceState.get<string[]>(this.getSftpPresetKey(id, 'local'), [])
-          : [],
-      };
-    });
+    const devicesWithPresets = devices.map((device) => ({
+      ...device,
+      sftpPresetsRemote: sanitizeSftpPresets(device.sftpPresetsRemote),
+      sftpPresetsLocal: sanitizeSftpPresets(device.sftpPresetsLocal),
+    }));
     const defaults = {
       defaultPort: config.get<number>('defaultPort', 22) ?? 22,
       defaultLogCommand:
@@ -353,7 +346,6 @@ export class DeviceManagerPanel {
 
       const normalizedDefaults = this.normalizeDefaults(defaults);
       const normalizedDevices = devices.map((device) => this.normalizeDevice(device));
-      const presetUpdates = devices.flatMap((device) => this.buildPresetUpdates(device));
       let saveMessage = 'Saved settings.';
 
       const updates: Array<{
@@ -410,9 +402,6 @@ export class DeviceManagerPanel {
         {
           run: () => config.update('devices', normalizedDevices, target),
         },
-        ...presetUpdates.map((update) => ({
-          run: () => this.context.workspaceState.update(update.key, update.values),
-        })),
       ];
 
       for (const update of updates) {
@@ -561,6 +550,9 @@ export class DeviceManagerPanel {
       bastion,
     };
 
+    const sftpPresetsRemote = this.parsePresetText(device.sftpPresetsRemote);
+    const sftpPresetsLocal = this.parsePresetText(device.sftpPresetsLocal);
+
     if (enableSshTerminal !== undefined) {
       normalized.enableSshTerminal = enableSshTerminal;
     }
@@ -581,25 +573,15 @@ export class DeviceManagerPanel {
       normalized.sshCommands = sshCommands;
     }
 
-    return normalized;
-  }
-
-  private buildPresetUpdates(device: DevicePayload): { key: string; values: string[] }[] {
-    const id = (device.id ?? '').trim();
-    if (!id) {
-      return [];
+    if (sftpPresetsRemote.length > 0) {
+      normalized.sftpPresetsRemote = sftpPresetsRemote;
     }
 
-    return [
-      {
-        key: this.getSftpPresetKey(id, 'remote'),
-        values: this.parsePresetText(device.sftpPresetsRemote),
-      },
-      {
-        key: this.getSftpPresetKey(id, 'local'),
-        values: this.parsePresetText(device.sftpPresetsLocal),
-      },
-    ];
+    if (sftpPresetsLocal.length > 0) {
+      normalized.sftpPresetsLocal = sftpPresetsLocal;
+    }
+
+    return normalized;
   }
 
   private parsePresetText(value: string | undefined): string[] {
@@ -611,12 +593,6 @@ export class DeviceManagerPanel {
       .map((entry) => entry.trim())
       .filter((entry) => entry.length > 0);
     return entries.slice(0, this.sftpPresetLimit);
-  }
-
-  private getSftpPresetKey(id: string, location: 'remote' | 'local'): string {
-    return location === 'remote'
-      ? `embeddedLogger.sftpPresets.${id}`
-      : `embeddedLogger.sftpPresets.local.${id}`;
   }
 
   private buildBastion(device: DevicePayload): EmbeddedDevice['bastion'] {
