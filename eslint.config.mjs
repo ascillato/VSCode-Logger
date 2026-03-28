@@ -190,6 +190,7 @@ export default defineConfig([
       parserOptions: {
         project: "./tsconfig.eslint.json",
         tsconfigRootDir: __dirname,
+        warnOnUnsupportedTypeScriptVersion: false,
       },
     },
     rules: {
