@@ -471,7 +471,7 @@
     "@vscode/test-electron": "^2.4.1",
     "cloc": "^2.6.0-cloc",
     "cspell": "^9.7.0",
-    "eslint": "^10.0.3",
+    "eslint": "^10.1.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",
     "eslint-plugin-spellcheck": "^0.0.20",
