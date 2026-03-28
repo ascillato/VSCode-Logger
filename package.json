@@ -466,7 +466,7 @@
     "@types/node": "^25.5.0",
     "@types/vscode": "^1.110.0",
     "@typescript-eslint/eslint-plugin": "^8.57.2",
-    "@typescript-eslint/parser": "^8.57.1",
+    "@typescript-eslint/parser": "^8.57.2",
     "@vitest/coverage-v8": "^4.1.2",
     "@vscode/test-electron": "^2.4.1",
     "cloc": "^2.6.0-cloc",
@@ -479,7 +479,7 @@
     "mocha": "^11.7.5",
     "prettier": "^3.8.1",
     "typedoc": "^0.28.18",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.2",
     "vitest": "^4.0.17"
   },
   "dependencies": {
@@ -487,6 +487,6 @@
   },
   "overrides": {
     "diff": "^8.0.3",
-    "serialize-javascript": "^7.0.3"
+    "serialize-javascript": "^7.0.5"
   }
 }
