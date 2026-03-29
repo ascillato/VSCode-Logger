@@ -16,6 +16,7 @@ import { SftpExplorerPanel } from './sftpExplorer';
 import {
   getEmbeddedLoggerConfiguration,
   getEmbeddedLoggerDeviceConfigurationScopes,
+  getEmbeddedLoggerGroups,
   mergeSftpPresets,
   sanitizeSftpPresets,
 } from './configuration';
@@ -483,6 +484,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
   sidebarProvider = new SidebarViewProvider(
     context,
     getDevices,
+    () => getEmbeddedLoggerGroups(),
     (deviceId) => {
       const device = findDevice(deviceId);
       if (device) {

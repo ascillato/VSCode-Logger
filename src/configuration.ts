@@ -5,7 +5,7 @@
  */
 
 import * as vscode from 'vscode';
-import type { EmbeddedDevice } from './deviceTree';
+import type { EmbeddedDevice, EmbeddedDeviceGroup } from './deviceTree';
 
 const sftpPresetLimit = 10;
 
@@ -23,6 +23,16 @@ export interface EmbeddedLoggerDeviceConfigurationScope {
   config: vscode.WorkspaceConfiguration;
   target: vscode.ConfigurationTarget;
   devices: EmbeddedDevice[];
+}
+
+function normalizeEmbeddedLoggerGroups(value: unknown): EmbeddedDeviceGroup[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((group) => ({ name: (group as EmbeddedDeviceGroup | undefined)?.name?.trim() ?? '' }))
+    .filter((group) => group.name.length > 0);
 }
 
 function isEmbeddedDeviceArray(value: unknown): value is EmbeddedDevice[] {
@@ -164,6 +174,12 @@ export function mergeSftpPresets(current: unknown, legacy: unknown): string[] {
 
 export function getEmbeddedLoggerDeviceConfigurationScopes(): EmbeddedLoggerDeviceConfigurationScope[] {
   return getConfiguredDeviceScopes();
+}
+
+export function getEmbeddedLoggerGroups(
+  config: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration('embeddedLogger')
+): EmbeddedDeviceGroup[] {
+  return normalizeEmbeddedLoggerGroups(config.get<EmbeddedDeviceGroup[]>('groups', []));
 }
 
 export async function updateEmbeddedLoggerDeviceConfiguration(

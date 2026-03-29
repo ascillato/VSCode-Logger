@@ -6,7 +6,7 @@
 
 import * as vscode from 'vscode';
 import * as path from 'path';
-import type { EmbeddedDevice } from './deviceTree';
+import type { EmbeddedDevice, EmbeddedDeviceGroup } from './deviceTree';
 
 interface SidebarMessage {
   type: 'openDevice';
@@ -88,6 +88,7 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
   constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly getDevices: () => EmbeddedDevice[],
+    private readonly getGroups: () => EmbeddedDeviceGroup[],
     private readonly onOpenDevice: (deviceId: string) => void,
     private readonly onRunDeviceCommand: (
       deviceId: string,
@@ -159,7 +160,11 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
     if (!this.view) {
       return;
     }
-    this.view.webview.postMessage({ type: 'devicesUpdated', devices: this.getDevicesForWebview() });
+    this.view.webview.postMessage({
+      type: 'devicesUpdated',
+      devices: this.getDevicesForWebview(),
+      groups: this.getGroupsForWebview(),
+    });
   }
 
   /**
@@ -169,7 +174,11 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
     if (!this.view) {
       return;
     }
-    this.view.webview.postMessage({ type: 'initDevices', devices: this.getDevicesForWebview() });
+    this.view.webview.postMessage({
+      type: 'initDevices',
+      devices: this.getDevicesForWebview(),
+      groups: this.getGroupsForWebview(),
+    });
   }
 
   /**
@@ -186,6 +195,10 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
       enableEmbeddedWebBrowser: Boolean(device.enableEmbeddedWebBrowser),
       sshCommands: Array.isArray(device.sshCommands) ? device.sshCommands : [],
     }));
+  }
+
+  private getGroupsForWebview(): EmbeddedDeviceGroup[] {
+    return this.getGroups().map((group) => ({ name: group.name }));
   }
 
   /**

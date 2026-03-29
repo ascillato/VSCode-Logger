@@ -7,6 +7,7 @@
 
 import * as vscode from 'vscode';
 import { getDeviceColorIcon } from './deviceColor';
+import { getEmbeddedLoggerGroups } from './configuration';
 
 /**
  * Representation of a configured embedded device.
@@ -95,7 +96,7 @@ export class DeviceTreeDataProvider implements vscode.TreeDataProvider<DeviceTre
   getChildren(element?: DeviceTreeItem): Thenable<DeviceTreeItem[]> {
     const config = vscode.workspace.getConfiguration('embeddedLogger');
     const devices = config.get<EmbeddedDevice[]>('devices', []);
-    const groups = this.getConfiguredGroups(config);
+    const groups = getEmbeddedLoggerGroups(config);
 
     if (element instanceof GroupItem) {
       const groupedDevices = devices.filter(
@@ -125,17 +126,6 @@ export class DeviceTreeDataProvider implements vscode.TreeDataProvider<DeviceTre
     const items = [...groupedItems, ...ungroupedDevices.map((device) => new DeviceItem(device))];
     return Promise.resolve(items);
   }
-
-  private getConfiguredGroups(config: vscode.WorkspaceConfiguration): EmbeddedDeviceGroup[] {
-    const groups = config.get<EmbeddedDeviceGroup[]>('groups', []);
-    if (!Array.isArray(groups)) {
-      return [];
-    }
-
-    return groups
-      .map((group) => ({ name: (group?.name ?? '').trim() }))
-      .filter((group) => group.name.length > 0);
-  }
 }
 
 type DeviceTreeItem = DeviceItem | GroupItem;
@@ -164,7 +154,7 @@ class GroupItem extends vscode.TreeItem {
   constructor(public readonly groupName: string) {
     super(groupName, vscode.TreeItemCollapsibleState.Collapsed);
     this.tooltip = `${groupName} group`;
-    this.iconPath = new vscode.ThemeIcon('new-folder');
+    this.iconPath = new vscode.ThemeIcon('package');
     this.contextValue = 'embeddedLoggerDeviceGroup';
   }
 }
