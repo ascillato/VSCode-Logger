@@ -109,18 +109,6 @@
     return typeof device.group === 'string' ? device.group.trim() : '';
   }
 
-  function createGroupIcon() {
-    const icon = document.createElement('span');
-    icon.className = 'group-icon';
-    icon.setAttribute('aria-hidden', 'true');
-
-    const plus = document.createElement('span');
-    plus.className = 'group-icon__plus';
-    plus.textContent = '+';
-    icon.appendChild(plus);
-    return icon;
-  }
-
   function createDeviceCard(device) {
     const card = document.createElement('div');
     card.className = 'device-card';
@@ -277,7 +265,6 @@
     chevron.textContent = '>';
     chevron.setAttribute('aria-hidden', 'true');
     summary.appendChild(chevron);
-    summary.appendChild(createGroupIcon());
 
     const title = document.createElement('span');
     title.className = 'device-group__title';

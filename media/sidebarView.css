@@ -43,25 +43,6 @@
     transform: rotate(90deg);
 }
 
-.group-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 14px;
-    height: 14px;
-    border: 1px solid var(--vscode-descriptionForeground);
-    border-radius: 2px;
-    box-sizing: border-box;
-    color: var(--vscode-descriptionForeground);
-    flex: 0 0 auto;
-}
-
-.group-icon__plus {
-    font-size: 11px;
-    line-height: 1;
-    transform: translateY(-0.5px);
-}
-
 .device-group__title {
     min-width: 0;
     white-space: nowrap;
