@@ -8,7 +8,7 @@ vi.mock('../../src/passwordManager', () => ({
   },
 }));
 
-import type { EmbeddedDevice } from '../../src/deviceTree';
+import type { EmbeddedDevice, EmbeddedDeviceGroup } from '../../src/deviceTree';
 import type * as vscode from 'vscode';
 import { LogSession } from '../../src/logSession';
 import { SshCommandRunner } from '../../src/sshCommandRunner';
@@ -75,6 +75,7 @@ describe('Sidebar integration', () => {
     const sidebar = new SidebarViewProvider(
       context,
       () => [device],
+      () => [],
       (deviceId) => {
         if (deviceId !== device.id) {
           return;
@@ -116,5 +117,45 @@ describe('Sidebar integration', () => {
 
     expect(logLines).toEqual(['primary line', 'next']);
     expect(commandOutputs).toEqual(['command ok']);
+  });
+
+  it('posts configured groups alongside devices for the sidebar webview', () => {
+    resetWorkspaceConfiguration();
+    const context = createExtensionContext();
+    const device: EmbeddedDevice = {
+      id: 'device-1',
+      group: 'Lab',
+      name: 'Grouped Device',
+      host: 'logs.example.com',
+      username: 'root',
+    };
+    const groups: EmbeddedDeviceGroup[] = [{ name: 'Lab' }, { name: 'Field' }];
+
+    const sidebar = new SidebarViewProvider(
+      context,
+      () => [device],
+      () => groups,
+      () => undefined,
+      () => undefined,
+      () => undefined,
+      () => undefined,
+      () => undefined,
+      () => undefined
+    );
+
+    const view = createWebviewView();
+    sidebar.resolveWebviewView(view as unknown as vscode.WebviewView);
+
+    expect(view.webview.postMessage).toHaveBeenCalledWith({
+      type: 'initDevices',
+      devices: [
+        expect.objectContaining({
+          id: 'device-1',
+          group: 'Lab',
+          name: 'Grouped Device',
+        }),
+      ],
+      groups: [{ name: 'Lab' }, { name: 'Field' }],
+    });
   });
 });

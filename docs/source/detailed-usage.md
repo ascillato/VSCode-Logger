@@ -6,7 +6,7 @@ The Embedded Device Logger is a Visual Studio Code extension that can connect to
 
 ![Live Log panel screenshot](../images/screenshot_example_live.png)
 
-- **SFTP Panel view and SSH terminal:**
+- **SFTP explorer and SSH terminal:**
 
 ![SFTP panel screenshot](../images/screenshot_example_sftp.png)
 
@@ -14,25 +14,26 @@ The Embedded Device Logger is a Visual Studio Code extension that can connect to
 
 ![Offline Log panel screenshot](../images/screenshot_example_log.png)
 
-If you like the extension, please [rate it](https://marketplace.visualstudio.com/items?itemName=Scallant.embedded-device-logger&ssr=false#review-details). We welcome issue reports and feature requests.
+If you like the extension, please [rate it](https://marketplace.visualstudio.com/items?itemName=Scallant.embedded-device-logger&ssr=false#review-details). Issue reports and feature requests are welcome.
 
 ## Full feature set
 
-- Activity Bar view listing configured devices.
-- **Real-time log streaming over SSH** using a configurable command (default: `tail -F /var/log/syslog`).
-- **Log level parsing, filtering, and colorization** inside a Webview panel per device.
-- Saved filter presets stored per device.
+- **Devices view in the Activity Bar** with device cards, per-device colors, optional groups, and quick actions.
+- **Real-time log streaming over SSH** using a configurable command. The default command is `tail -F /var/log/syslog`.
+- **Log parsing, filtering, and colorization** for `DEBUG`, `INFO`, `NOTICE`, `WARNING`, `ERR`, `CRIT`, `ALERT`, and `EMERG` level lines, including common aliases such as `WARN`, `ERROR`, `CRITICAL`, and `FATAL`.
 - **Highlight up to 10 custom keywords** with color-coded, bold, underlined text in both live and imported logs, configured per log panel.
-- **Find text inside live or imported logs** with Ctrl/Cmd+F, including next/previous navigation.
-- **Reconnect closed SSH sessions** directly from the log panel and automatically mark the log when a device closes a session.
-- **Export** currently visible (filtered) logs to a file.
-- **Auto-save** to file option for live SSH logs.
-- **Open any log files and filter them** with the same interface.
-- Add, edit, and remove **Bookmarks** in live logs and imported logs.
-- Run optional **on-demand SSH commands** configured per device from the Devices view.
-- Optionally **launch an SSH terminal** directly from a device card when enabled in settings.
-- Optionally open a dual-pane **SFTP explorer** to browse remote and local files side-by-side and transfer files.
-- Optionally open the configured device URL in your default **web browser** from the device card when enabled.
+- **Filter presets** stored per panel target.
+- **Search inside logs** with `Ctrl/Cmd+F`, next/previous navigation, and match counters.
+- **Bookmarks** that can be added, labeled, edited, removed, and navigated from a log-line context menu.
+- **Export the currently visible lines** after filters are applied.
+- **Auto-save live logs to disk** while a session is running.
+- **Open local `.log` and `.txt` files** in the same viewer, with edit and refresh actions.
+- **Reconnect controls** including manual reconnect/disconnect and optional automatic reconnect after a connection closes.
+- **One-off SSH commands** exposed as buttons in the Devices view.
+- **Interactive SSH terminals** opened directly inside VS Code.
+- **Dual-pane SFTP explorer** with transfers, presets, quick search, rename, duplicate, delete, and permissions editing.
+- **External and embedded web browser actions** for device URLs.
+- **Host-key verification** with optional pinned fingerprints, automatic fingerprint capture, secondary host fallback, and optional bastion/jump-host tunnelling.
 - Authenticate with SSH passwords or private keys.
 - SSH passwords and private key passphrases are **stored securely** with VS Code Secret Storage.
 - **Privacy focused**. **No telemetry**. Everything **runs locally**.
@@ -57,89 +58,302 @@ For more information visit the [Embedded Device Logger extension](https://market
 
 ![Configuration screenshot](../images/screenshot_example_setup.png)
 
-You can configure everything from the **Device Manager** panel (click the pencil icon or run **Embedded Logger: Edit Devices Configuration**):
+You can manage configuration in two ways:
 
-- Add/remove devices in a table UI. Each row exposes every supported key:
-  - `id`, `color` (optional tab/device label color), `name`, `host`, and optional `port` for addressing.
-  - `hostFingerprint`, `secondaryHost`, and `secondaryHostFingerprint` for host-key pinning and automatic fallback.
-  - `bastion.host`, `bastion.port`, `bastion.username`, `bastion.hostFingerprint`, `bastion.password`, `bastion.privateKeyPath`, and `bastion.privateKeyPassphrase` for jump-host tunnelling.
-  - `username`, `password`, `privateKeyPath`, and `privateKeyPassphrase` for authentication (password and passphrase values are migrated into Secret Storage on first use).
-  - `logCommand` plus feature toggles: `enableSshTerminal`, `enableSftpExplorer`, `enableWebBrowser`, `enableEmbeddedWebBrowser`, and `webBrowserUrl`.
-  - `sshCommands` with per-command `name` and `command` values.
-- Adjust defaults without hand-editing JSON: `embeddedLogger.defaultPort`, `embeddedLogger.defaultLogCommand`, `embeddedLogger.defaultEnableSshTerminal`, `embeddedLogger.defaultEnableSftpExplorer`, `embeddedLogger.defaultEnableWebBrowser`, `embeddedLogger.defaultEnableEmbeddedWebBrowser`, `embeddedLogger.defaultSshCommands`, and `embeddedLogger.maxLinesPerTab`.
-- Prefer raw JSON? Use **Edit in settings.json** from the Device Manager or paste the example below into `.vscode/settings.json`.
+- Use the **Device Manager** by clicking the pencil icon in the Devices view title or running **Embedded Logger: Edit Devices Configuration**.
+- Edit `settings.json` directly.
 
-Add devices in your VS Code settings under `embeddedLogger.devices` if you prefer to edit JSON directly:
+### Device Manager
+
+The Device Manager is the fastest way to work with the current schema because it exposes all supported fields in one place.
+
+- The **Defaults** section edits:
+  - `embeddedLogger.defaultPort`
+  - `embeddedLogger.defaultLogCommand`
+  - `embeddedLogger.defaultEnableSshTerminal`
+  - `embeddedLogger.defaultEnableSftpExplorer`
+  - `embeddedLogger.defaultEnableWebBrowser`
+  - `embeddedLogger.defaultEnableEmbeddedWebBrowser`
+  - `embeddedLogger.defaultSshCommands`
+  - `embeddedLogger.maxLinesPerTab`
+- The **Groups** table edits `embeddedLogger.groups`, which controls the ordered collapsible sections shown in the Devices view.
+- The **Devices** table edits `embeddedLogger.devices`, including device colors, host fingerprints, secondary hosts, SSH commands, SFTP presets, and bastion settings.
+- Per-device feature toggles in the table are **tri-state**:
+  - `Default` inherits the corresponding global default.
+  - `Enabled` forces the button on for that device.
+  - `Disabled` hides it for that device.
+- The header actions let you:
+  - **Remove Stored Passwords** for all devices.
+  - **Import Settings** from a JSON export.
+  - **Export Settings** as a JSON block.
+  - **Edit in JSON** to jump to `settings.json`.
+  - Open a **configuration example** and copy it to the clipboard.
+  - **Save changes** back to VS Code settings.
+
+All names for devices and commands support emojis that can be copied from: https://emojidb.org.
+
+### settings.json example
+
+If you prefer raw JSON, add entries like the following to your VS Code settings:
 
 ```json
-"embeddedLogger.maxLinesPerTab": 100000,
-"embeddedLogger.devices": [
-  {
-    "id": "deviceA",
-    "color": "#4fc3f7",
-    "name": "Device A",
-    "host": "192.168.1.10",
-    "hostFingerprint": "SHA256:your-device-fingerprint",
-    "secondaryHost": "192.168.1.11",
-    "secondaryHostFingerprint": "SHA256:backup-device-fingerprint",
-    "bastion": {
-      "host": "bastion.example.com",
-      "hostFingerprint": "SHA256:bastion-fingerprint",
-      "port": 22,
-      "username": "jump-user"
+{
+  "embeddedLogger.defaultPort": 22,
+  "embeddedLogger.defaultLogCommand": "tail -F /var/log/syslog",
+  "embeddedLogger.defaultEnableSshTerminal": true,
+  "embeddedLogger.defaultEnableSftpExplorer": true,
+  "embeddedLogger.defaultEnableWebBrowser": false,
+  "embeddedLogger.defaultEnableEmbeddedWebBrowser": false,
+  "embeddedLogger.defaultSshCommands": [
+    {
+      "name": "Restart Service",
+      "command": "systemctl restart my-service"
+    }
+  ],
+  "embeddedLogger.maxLinesPerTab": 100000,
+  "embeddedLogger.groups": [
+    {
+      "name": "Lab"
     },
-    "port": 22,
-    "privateKeyPath": "${env:HOME}/.ssh/id_ed25519",
-    "username": "root",
-    "logCommand": "tail -F /var/log/syslog",
-    "enableSshTerminal": true,
-    "enableSftpExplorer": true,
-    "enableWebBrowser": false,
-    "enableEmbeddedWebBrowser": false,
-    "webBrowserUrl": "http://192.168.1.10",
-    "sshCommands": [
-      {
-        "name": "Restart IOT",
-        "command": "systemctl restart fw-iot"
+    {
+      "name": "Field"
+    }
+  ],
+  "embeddedLogger.devices": [
+    {
+      "id": "deviceA",
+      "group": "Lab",
+      "color": "#4fc3f7",
+      "name": "Device A",
+      "host": "192.168.1.10",
+      "hostFingerprint": "SHA256:your-primary-fingerprint",
+      "secondaryHost": "192.168.1.11",
+      "secondaryHostFingerprint": "SHA256:your-secondary-fingerprint",
+      "port": 22,
+      "username": "root",
+      "privateKeyPath": "${env:HOME}/.ssh/id_ed25519",
+      "logCommand": "tail -F /var/log/syslog",
+      "enableSshTerminal": true,
+      "enableSftpExplorer": true,
+      "enableWebBrowser": true,
+      "enableEmbeddedWebBrowser": false,
+      "webBrowserUrl": "http://192.168.1.10",
+      "sftpPresetsRemote": [
+        "/var/log",
+        "/opt/app"
+      ],
+      "sftpPresetsLocal": [
+        "${env:HOME}/Downloads",
+        "${env:HOME}/Projects"
+      ],
+      "sshCommands": [
+        {
+          "name": "Restart IOT",
+          "command": "systemctl restart fw-iot"
+        }
+      ],
+      "bastion": {
+        "host": "bastion.example.com",
+        "hostFingerprint": "SHA256:bastion-fingerprint",
+        "port": 22,
+        "username": "jump-user",
+        "privateKeyPath": "${env:HOME}/.ssh/id_ed25519"
       }
-    ]
-  }
-]
+    }
+  ]
+}
 ```
 
-Names for commands support emojis that can be copied from: https://emojidb.org.
+### Required and optional device fields
 
-If no password is stored yet, the extension prompts for it when connecting and saves it locally and securely. When using an encrypted private key, the passphrase is requested once and stored securely in VS Code Secret Storage. Private key paths may include `~` or `${env:VAR}` tokens for convenience.
+Every device must provide:
 
-**Pin each device's host key** by setting `hostFingerprint` to the device's SSH host key fingerprint (for example, `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub -E sha256`). If no fingerprint is configured, the extension records the server's fingerprint on the first successful connection. When a server presents a different fingerprint later, you'll be prompted to accept the new value before reconnecting.
+- `id`
+- `name`
+- `host`
+- `username`
 
-**Optionally configure a secondary host** via `secondaryHost` (and `secondaryHostFingerprint` when pinning). Connections start with the primary host and automatically fall back to the secondary host when the primary connection fails; if the secondary host also fails, the extension retries the primary host.
+Common optional fields include:
 
-**[EXPERIMENTAL] Tunnel through a bastion/jump host** by supplying a `bastion` block with its `host`, `username`, optional `port`, and optional `hostFingerprint` plus password or private key authentication. Secrets and host key fingerprints for the bastion are stored independently in Secret Storage and captured on first connect when omitted.
+- `group` to place the device in a configured group.
+- `color` to tint the device indicator and log tab icon.
+- `port` to override `embeddedLogger.defaultPort`.
+- `logCommand` to override `embeddedLogger.defaultLogCommand`.
+- `hostFingerprint` to pin the primary device host key.
+- `secondaryHost` and `secondaryHostFingerprint` for automatic fallback to a second endpoint.
+- `privateKeyPath` for key-based authentication.
+- `password` and `privateKeyPassphrase` as legacy migration fields only.
+- `enableSshTerminal`, `enableSftpExplorer`, `enableWebBrowser`, and `enableEmbeddedWebBrowser` to override the defaults for one device.
+- `webBrowserUrl` to override the URL opened by browser actions.
+- `sshCommands` to define device-specific SSH buttons.
+- `sftpPresetsRemote` and `sftpPresetsLocal` to persist SFTP favorite paths with the device configuration.
+- `bastion` to reach the device through a jump host.
 
-Set `enableSshTerminal` to control visibility of the **Open SSH Terminal** button alongside any configured SSH commands for that device (the action is enabled by default; set it to `false` to hide it). The **Open SSH Terminal** action opens a dedicated VS Code terminal tab for the device and authenticates using the stored password or private key (prompting for and saving the credential securely when missing).
+`embeddedLogger.defaultSshCommands` is only applied to devices that do not define their own `sshCommands` list.
 
-Set `enableSftpExplorer` to control visibility of the **Open SFTP Explorer** button on the device card (enabled by default; set it to `false` to hide it). The explorer opens a dual-pane view with the remote home on the left and the local home on the right, including navigation, rename/delete/duplicate actions, and arrows to transfer selected files between panes (or between two remote panes when the right-side mode is switched to remote). It also supports quick search (type to jump; press Enter to cycle matches) and keyboard shortcuts (Arrow Up/Down to move selection, Enter to open a folder or view file content when quick search is hidden, Delete to remove, Backspace to go up a directory, F2 to rename, Ctrl/Cmd+D to duplicate, Ctrl/Cmd+P to change permissions). Entering folders or going up automatically selects the first entry so you can keep navigating with the keyboard. If the SSH link drops, the explorer stays open, greys out, shows a reconnection countdown beside the title, and automatically retries every five seconds without losing the active remote paths.
+### Authentication and secrets
 
-Each device entry can also persist `sftpPresetsRemote` and `sftpPresetsLocal` arrays, so saved SFTP presets follow the same settings scope as the rest of that device configuration.
+If no password is stored yet, the extension prompts for it when connecting and saves it locally and securely. When using an encrypted private key, the passphrase is requested once and stored securely in VS Code Secret Storage.
 
-Set `enableWebBrowser` to surface the **Open External Web Browser** button beneath each device. The button is disabled by default; when enabled, clicking it opens the configured `webBrowserUrl` if provided, otherwise the extension opens `http://<host>` derived from the device host (including any port in the custom URL when supplied). Both `http://` and `https://` URLs are supported.
+- If `privateKeyPath` is set, the extension uses the private key and prompts for a passphrase when needed.
+- Otherwise, it prompts for a password when needed.
+- Device and bastion passwords/passphrases are stored in **VS Code Secret Storage**.
+- Legacy `password` and `privateKeyPassphrase` fields are migrated into Secret Storage on activation when possible.
+- Use **Embedded Logger: Remove Stored Passwords** or the Device Manager button to clear stored device and bastion credentials.
+- Private key paths can include `~` and `${env:VAR}` expansions.
 
-Set `enableEmbeddedWebBrowser` to surface the **Open Embedded Web Browser** button beneath each device. Its global default is disabled. When enabled, the extension opens the configured `webBrowserUrl` if provided, otherwise it opens `http://<host>` in VS Code's embedded browser. Both `http://` and `https://` URLs are supported.
+### Host-key verification, secondary hosts, and bastions
 
-Control memory usage by capping retained lines per log tab with `embeddedLogger.maxLinesPerTab` (default: 100000). For auto-save, this limit is not applied to a file. Everything is saved.
+**Primary host fingerprint**
 
-All options are available through the VS Code Settings UI under **Embedded Device Logger**, including defaults for omitted device values:
+- Set `hostFingerprint` to pin the device SSH host key.
+- If no fingerprint is configured, the extension accepts the first successful host key, saves the fingerprint back into configuration, and uses it on later connections.
+- If the host key later changes, the panel reports the mismatch and asks whether to update the stored fingerprint before retrying.
 
-- `embeddedLogger.defaultPort` – applied when a device does not specify a port.
-- `embeddedLogger.defaultLogCommand` – used when `logCommand` is omitted.
-- `embeddedLogger.defaultEnableSshTerminal` – toggles whether the SSH terminal action is shown by default (default: true).
-- `embeddedLogger.defaultEnableSftpExplorer` – toggles whether the SFTP explorer action is shown by default (default: true).
-- `embeddedLogger.defaultEnableWebBrowser` – toggles whether the external web browser action is shown by default (default: false).
-- `embeddedLogger.defaultEnableEmbeddedWebBrowser` – toggles whether the embedded web browser action is shown by default (default: false).
-- `enableWebBrowser` – when set to true per device, the **Open External Web Browser** button opens `webBrowserUrl` if configured or `http://<host>` otherwise.
-- `enableEmbeddedWebBrowser` – when set to true per device, the **Open Embedded Web Browser** button opens `webBrowserUrl` if configured or `http://<host>` in VS Code's embedded browser.
-- `embeddedLogger.defaultSshCommands` – shared SSH actions applied to devices that do not define their own list.
+**Secondary host fallback**
+
+- Set `secondaryHost` to provide a fallback address for the same device.
+- Optionally set `secondaryHostFingerprint` to pin that fallback endpoint as well.
+- When the primary connection fails, the extension rotates to the secondary endpoint and retries.
+
+**Bastion host**
+
+- Use the `bastion` block when the device is only reachable through a jump host.
+- Supported bastion fields are `host`, `username`, optional `port`, optional `hostFingerprint`, `password`, `privateKeyPath`, and `privateKeyPassphrase`.
+- Bastion host-key fingerprints and secrets are tracked separately from the target device.
+- Bastion tunnelling is used consistently by live log streaming, SSH terminals, one-off SSH commands, and the SFTP explorer.
+
+## Using the Devices view
+
+The Devices view shows device cards, optionally grouped under the ordered names defined in `embeddedLogger.groups`.
+
+Each device always exposes **Open Logs**. Depending on configuration, it can also show:
+
+- **Open SSH Terminal**
+- **Open SFTP Explorer**
+- **Open External Web Browser**
+- **Open Embedded Web Browser**
+- One button for each configured `sshCommands` entry
+
+Right-clicking a device title or host opens a small context menu with:
+
+- **Copy URL**
+- **Copy Name**
+
+The command palette also exposes:
+
+- **Embedded Logger: Open Local Log File**
+- **Embedded Logger: Edit Devices Configuration**
+- **Embedded Logger: Remove Stored Passwords**
+- **Open SFTP Explorer**
+- **Open External Web Browser**
+- **Open Embedded Web Browser**
+
+## Using the log panel
+
+Remote devices and imported files share the same main viewer, but live-only controls are hidden for imported files.
+
+### Core controls
+
+- **Min Level** filters by parsed log severity.
+- **Text Filter** matches a substring anywhere in the line.
+- **Filter preset dropdown** shows saved presets for the current panel target.
+- **Save preset** stores the current min-level and text filter using the current text-filter text as the preset name.
+- **Delete preset** removes the selected preset and clears the text filter.
+- **Export logs** writes only the currently visible filtered lines.
+- **Highlight** opens the keyword-highlighting popover.
+- **Word wrap** toggles wrapped rendering.
+- **Find** searches within the current filtered view.
+
+### Live log controls
+
+For live SSH sessions, the panel also provides:
+
+- **Auto-scroll** toggle.
+- **Auto-reconnect** toggle.
+- **Start/Stop auto-save** to continuously append raw incoming log lines to a chosen file.
+- **Clear logs** to clear the in-memory panel while leaving the remote command running.
+- A status-area action button that becomes **Disconnect** while connected and **Reconnect** after a disconnect.
+
+When a live session closes:
+
+- The panel appends a visible marker line such as `--- SSH session closed on 2026-03-29 at 13:45:22`.
+- If auto-reconnect is enabled, the panel shows a five-second countdown and retries automatically.
+- If the host key mismatches, auto-reconnect is disabled until the fingerprint issue is resolved.
+
+### Imported log files
+
+Logs opened through **Open Local Log File** use the same viewer but hide live-only controls.
+
+Imported-file panels add:
+
+- **Edit log file** to open the source file in a normal editor tab.
+- **Refresh log file** to reread the file from disk and replace the current panel contents.
+
+### Search, highlights, and bookmarks
+
+**Search**
+
+- Press `Ctrl/Cmd+F` to focus the search box.
+- Press `Enter` for the next match and `Shift+Enter` for the previous match.
+- Click a matched line to make that result the active search result.
+
+**Highlights**
+
+- Each panel can store up to **10** highlight keywords.
+- Highlights are saved per panel target.
+- Search hits are highlighted separately from user-defined highlight keywords.
+
+**Bookmarks**
+
+- Right-click any log line to open the bookmark context menu.
+- You can add a bookmark before that line, edit the bookmark label, remove one bookmark, remove all bookmarks, or jump to the next/previous bookmark.
+- If text is selected when you right-click, the context menu also includes **Copy**.
+- Bookmark lines remain visible even when other filters would normally hide them.
+
+### Status area behavior
+
+The status area shows connection state and a secondary status line for auto-save or default `tail -F /var/log/syslog` notices.
+
+- Example informational message: `tail: '/var/log/syslog' has appeared; following new file`
+- This is expected when `tail -F` follows a rotated or recreated file.
+- Right-click the status area in a live log panel to clear transient status text and restore the default connected message.
+
+## SFTP explorer
+
+When `enableSftpExplorer` is enabled for a device, the card shows **Open SFTP Explorer**.
+
+The SFTP explorer provides:
+
+- A dual-pane layout with the remote device on the left and a local pane on the right by default.
+- Optional remote mode on the right side for remote-to-remote transfers.
+- Saved path presets for both panes, persisted to `sftpPresetsRemote` and `sftpPresetsLocal`.
+- Quick search by typing, with `Enter` cycling matches.
+- Keyboard shortcuts including:
+  - `Arrow Up/Down` to move selection
+  - `Enter` to open a folder or view file content when quick search is not active
+  - `Backspace` to go to the parent directory
+  - `Delete` to remove
+  - `F2` to rename
+  - `Ctrl/Cmd+D` to duplicate
+  - `Ctrl/Cmd+P` to change permissions
+- Rename, duplicate, delete, transfer, and permissions editing actions from the UI.
+- Owner and group name resolution for permission changes where available.
+
+If the remote connection drops, the panel stays open, greys out, shows a reconnection countdown, and retries automatically without discarding the active remote paths.
+
+## Browser actions
+
+Two browser-related actions are available per device:
+
+- `enableWebBrowser` shows **Open External Web Browser** and opens the target in your system browser.
+- `enableEmbeddedWebBrowser` shows **Open Embedded Web Browser** and opens the target in VS Code.
+
+Behavior is the same for both actions:
+
+- If `webBrowserUrl` is set, that URL is used.
+- Otherwise, the extension opens `http://<host>`.
+- Only `http://` and `https://` URLs are accepted.
 
 ## Notes
 
@@ -155,4 +369,9 @@ All options are available through the VS Code Settings UI under **Embedded Devic
 - Use the **Open Local Log File** button in the Embedded Logger devices view (or run the command with the same name) to select a `.log` or `.txt` file from your machine. The chosen file is loaded into the log viewer so you can reuse filtering, presets, export filtered logs, and highlights just like a live connection.
 - **Status** text also shows messages from the log command used in the configuration like `tail -F /var/log/syslog`. Messages such as `tail: '/var/log/syslog' has appeared; following new file` may appear when the log file is rotated or recreated. The `-F` flag tells `tail` to keep watching for the file to reappear, so the message is informational and indicates that log streaming will continue with the new file. If you prefer a different log source, update the `logCommand` in your device configuration.
 - The Embedded Device Logger extension supports **sharing the VS Code Activity Bar** with other extensions. To merge an extension into the Activity Bar, select its icon from the Side Bar, then drag and drop it into your desired position within the Activity Bar.
-- This extension also supports connecting to devices through a VPN (already running on the machine with VS Code).
+- `embeddedLogger.maxLinesPerTab` controls how many entries are kept in memory for each log panel. The default is `100000`.
+- In live panels, once the limit is reached, older entries are replaced with newer ones and a notice is shown.
+- In imported-file panels, only the newest `maxLinesPerTab` lines are displayed.
+- Auto-save is not limited by `embeddedLogger.maxLinesPerTab`; it writes all incoming lines until stopped.
+- SSH command names can include emoji if you want more visual buttons in the Devices view. Emojis that can be copied from: https://emojidb.org.
+- The extension works with devices reachable through a VPN as long as the host machine already has network access.

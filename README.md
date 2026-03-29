@@ -26,6 +26,7 @@ If you like the extension, please [rate it](https://marketplace.visualstudio.com
 - Open device URLs in an **external browser** or in VS Code's **embedded browser**.
 - Browse files with the built-in **SFTP explorer**, including quick search and keyboard shortcuts.
 - Assign **per-device colors** to make tabs and device lists easier to scan.
+- Organize devices with **collapsible groups** in the Embedded Devices view.
 - **Secure by default**: passwords and key passphrases live in VS Code Secret Storage.
 - **Privacy focused**. **No telemetry**. Everything **runs locally**.
 
@@ -33,7 +34,7 @@ If you like the extension, please [rate it](https://marketplace.visualstudio.com
 
 1. **Install** the extension (see below).
 2. Open the **Embedded Logger** view from the Activity Bar (terminal icon).
-3. Open the configuration with the edit icon (🖍) to launch the Device Manager, add your devices in the table UI (or edit the JSON) under `embeddedLogger.devices`, and start streaming logs. The manager can also import/export the full Embedded Logger settings block as JSON for backup or sharing.
+3. Open the configuration with the edit icon (🖍) to launch the Device Manager, define optional device groups under `embeddedLogger.groups`, add your devices under `embeddedLogger.devices`, and start streaming logs. Devices can reference a group with the device `group` field. The manager can also import/export the full Embedded Logger settings block as JSON for backup or sharing.
 
 For the full setup and configuration reference, see the [Detailed Usage and Configuration guide](https://ascillato.github.io/VSCode-Logger/detailed-usage.html).
 

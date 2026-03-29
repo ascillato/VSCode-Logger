@@ -97,10 +97,28 @@
           },
           "default": []
         },
+        "embeddedLogger.groups": {
+          "type": "array",
+          "default": [],
+          "description": "Optional ordered list of device groups displayed in the Embedded Devices view.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Group name shown in the devices view."
+              }
+            },
+            "required": [
+              "name"
+            ]
+          }
+        },
         "embeddedLogger.devices": {
           "type": "array",
           "description": "List of embedded devices to stream logs from.",
-          "markdownDescription": "List of embedded devices to stream logs from.\n\nManage devices with the **Embedded Logger: Edit Devices Configuration** Device Manager (table UI with add/remove rows and all fields). You can also choose **Edit in settings.json** for direct JSON editing.\n\nExample:\n```json\n[\n  {\n    \"id\": \"rpi4\",\n    \"color\": \"#4fc3f7\",\n    \"name\": \"Raspberry Pi 4\",\n    \"host\": \"192.168.1.50\",\n    \"hostFingerprint\": \"SHA256:your-base64-fingerprint\",\n    \"secondaryHost\": \"192.168.1.51\",\n    \"secondaryHostFingerprint\": \"SHA256:secondary-base64-fingerprint\",\n    \"port\": 22,\n    \"username\": \"pi\",\n    \"password\": \"\",\n    \"privateKeyPath\": \"/home/user/.ssh/id_ed25519\",\n    \"privateKeyPassphrase\": \"${env:KEY_PASSPHRASE}\",\n    \"logCommand\": \"journalctl -f -u app.service\",\n    \"enableSshTerminal\": true,\n    \"enableSftpExplorer\": true,\n    \"enableWebBrowser\": false,\n    \"enableEmbeddedWebBrowser\": false,\n    \"webBrowserUrl\": \"http://192.168.1.50\",\n    \"sshCommands\": [\n      { \"name\": \"Reboot\", \"command\": \"sudo reboot\" }\n    ],\n    \"bastion\": {\n      \"host\": \"bastion.example.com\",\n      \"hostFingerprint\": \"SHA256:bastion-fingerprint\",\n      \"port\": 22,\n      \"username\": \"jump-user\",\n      \"password\": \"\",\n      \"privateKeyPath\": \"${env:HOME}/.ssh/id_ed25519\",\n      \"privateKeyPassphrase\": \"\"\n    }\n  }\n]\n```",
+          "markdownDescription": "List of embedded devices to stream logs from.\n\nManage devices with the **Embedded Logger: Edit Devices Configuration** Device Manager (table UI with add/remove rows and all fields). You can also choose **Edit in settings.json** for direct JSON editing.\n\nExample:\n```json\n[\n  {\n    \"id\": \"rpi4\",\n    \"group\": \"Lab\",\n    \"color\": \"#4fc3f7\",\n    \"name\": \"Raspberry Pi 4\",\n    \"host\": \"192.168.1.50\",\n    \"hostFingerprint\": \"SHA256:your-base64-fingerprint\",\n    \"secondaryHost\": \"192.168.1.51\",\n    \"secondaryHostFingerprint\": \"SHA256:secondary-base64-fingerprint\",\n    \"port\": 22,\n    \"username\": \"pi\",\n    \"password\": \"\",\n    \"privateKeyPath\": \"/home/user/.ssh/id_ed25519\",\n    \"privateKeyPassphrase\": \"${env:KEY_PASSPHRASE}\",\n    \"logCommand\": \"journalctl -f -u app.service\",\n    \"enableSshTerminal\": true,\n    \"enableSftpExplorer\": true,\n    \"enableWebBrowser\": false,\n    \"enableEmbeddedWebBrowser\": false,\n    \"webBrowserUrl\": \"http://192.168.1.50\",\n    \"sshCommands\": [\n      { \"name\": \"Reboot\", \"command\": \"sudo reboot\" }\n    ],\n    \"bastion\": {\n      \"host\": \"bastion.example.com\",\n      \"hostFingerprint\": \"SHA256:bastion-fingerprint\",\n      \"port\": 22,\n      \"username\": \"jump-user\",\n      \"password\": \"\",\n      \"privateKeyPath\": \"${env:HOME}/.ssh/id_ed25519\",\n      \"privateKeyPassphrase\": \"\"\n    }\n  }\n]\n```",
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -109,10 +127,11 @@
                 "label": "New embedded device",
                 "body": {
                   "id": "${1:device-id}",
+                  "group": "${2:Lab}",
                   "color": "#4fc3f7",
-                  "name": "${2:Device name}",
-                  "host": "${3:192.168.1.10}",
-                  "hostFingerprint": "SHA256:${4:device-fingerprint}",
+                  "name": "${3:Device name}",
+                  "host": "${4:192.168.1.10}",
+                  "hostFingerprint": "SHA256:${5:device-fingerprint}",
                   "secondaryHost": "${5:}",
                   "secondaryHostFingerprint": "SHA256:${6:secondary-fingerprint}",
                   "port": 22,
@@ -148,6 +167,10 @@
               "id": {
                 "type": "string",
                 "description": "Unique identifier for the device."
+              },
+              "group": {
+                "type": "string",
+                "description": "Optional group name used to nest this device under a collapsible group in the Embedded Devices view."
               },
               "color": {
                 "type": "string",

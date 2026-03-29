@@ -23,12 +23,21 @@ const importedSettingsKeys = [
 
 type IncomingMessage =
   | { type: 'requestState' }
-  | { type: 'save'; defaults: DefaultsPayload; devices: DevicePayload[] }
+  | { type: 'save'; defaults: DefaultsPayload; groups: GroupPayload[]; devices: DevicePayload[] }
   | { type: 'editJson' }
   | { type: 'clearPasswords' }
   | { type: 'clearDevicePassword'; deviceId: string }
-  | { type: 'exportSettings'; defaults: DefaultsPayload; devices: DevicePayload[] }
+  | {
+      type: 'exportSettings';
+      defaults: DefaultsPayload;
+      groups: GroupPayload[];
+      devices: DevicePayload[];
+    }
   | { type: 'importSettings' };
+
+interface GroupPayload {
+  name: string;
+}
 
 interface SshCommand {
   name: string;
@@ -50,6 +59,7 @@ type TriStateSelection = 'default' | 'enabled' | 'disabled';
 
 interface DevicePayload {
   id: string;
+  group?: string;
   color?: string;
   name: string;
   host: string;
@@ -90,11 +100,13 @@ interface ExportedSettingsPayload {
   'embeddedLogger.defaultEnableEmbeddedWebBrowser': boolean;
   'embeddedLogger.defaultSshCommands': SshCommand[];
   'embeddedLogger.maxLinesPerTab': number;
+  'embeddedLogger.groups': GroupPayload[];
   'embeddedLogger.devices': EmbeddedDevice[];
 }
 
 interface ImportedSettingsState {
   defaults: DefaultsPayload;
+  groups: GroupPayload[];
   devices: EmbeddedDevice[];
 }
 
@@ -120,7 +132,7 @@ export class DeviceManagerPanel {
             this.postInitialState();
             break;
           case 'save':
-            void this.saveConfiguration(message.defaults, message.devices);
+            void this.saveConfiguration(message.defaults, message.groups, message.devices);
             break;
           case 'editJson':
             void vscode.commands.executeCommand('workbench.action.openSettingsJson');
@@ -135,7 +147,7 @@ export class DeviceManagerPanel {
             );
             break;
           case 'exportSettings':
-            void this.exportSettings(message.defaults, message.devices);
+            void this.exportSettings(message.defaults, message.groups, message.devices);
             break;
           case 'importSettings':
             void this.importSettings();
@@ -288,6 +300,34 @@ export class DeviceManagerPanel {
       <section class="card">
         <div class="card-header">
           <div class="card-header-text">
+            <h2>Groups</h2>
+            <p>Define optional groups to organize devices in the Embedded Devices view.</p>
+          </div>
+          <div class="card-header-actions">
+            <button class="button" id="addGroup">Add group</button>
+            <button class="button button-icon" id="moveSelectedGroupsUp" disabled>&uarr;</button>
+            <button class="button button-icon" id="moveSelectedGroupsDown" disabled>&darr;</button>
+            <button class="button button-danger" id="removeSelectedGroups" disabled>Remove</button>
+          </div>
+        </div>
+        <div class="table-wrapper table-wrapper--groups">
+          <table id="groupsTable">
+            <thead>
+              <tr>
+                <th>Select</th>
+                <th>Name</th>
+              </tr>
+            </thead>
+            <tbody id="groupsBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <br>
+
+      <section class="card">
+        <div class="card-header">
+          <div class="card-header-text">
             <h2>Devices</h2>
             <p>Add or remove rows, then edit fields inline.</p>
           </div>
@@ -329,6 +369,7 @@ export class DeviceManagerPanel {
               <tr>
                 <th>Select</th>
                 <th>ID</th>
+                <th>Group</th>
                 <th>Color</th>
                 <th>Name</th>
                 <th>Host</th>
@@ -371,21 +412,24 @@ export class DeviceManagerPanel {
   private postInitialState(): void {
     const config = vscode.workspace.getConfiguration('embeddedLogger');
     const devices = config.get<EmbeddedDevice[]>('devices', []);
+    const groups = this.getGroupsFromConfiguration(config);
     const defaults = this.getDefaultsFromConfiguration(config);
     this.panel.webview.postMessage({
       type: 'init',
-      ...this.buildWebviewState(defaults, devices),
+      ...this.buildWebviewState(defaults, groups, devices),
     });
   }
 
   private async saveConfiguration(
     defaults: DefaultsPayload,
+    groups: GroupPayload[],
     devices: DevicePayload[]
   ): Promise<void> {
     try {
       const { config, target } = this.getUpdateConfiguration();
 
       const normalizedDefaults = this.normalizeDefaults(defaults);
+      const normalizedGroups = this.normalizeGroups(groups);
       const normalizedDevices = devices.map((device) => this.normalizeDevice(device));
       let saveMessage = 'Saved settings.';
 
@@ -441,6 +485,9 @@ export class DeviceManagerPanel {
           run: () => config.update('maxLinesPerTab', normalizedDefaults.maxLinesPerTab, target),
         },
         {
+          run: () => config.update('groups', normalizedGroups, target),
+        },
+        {
           run: () => config.update('devices', normalizedDevices, target),
         },
       ];
@@ -473,7 +520,11 @@ export class DeviceManagerPanel {
     }
   }
 
-  private async exportSettings(defaults: DefaultsPayload, devices: DevicePayload[]): Promise<void> {
+  private async exportSettings(
+    defaults: DefaultsPayload,
+    groups: GroupPayload[],
+    devices: DevicePayload[]
+  ): Promise<void> {
     try {
       const defaultUri = vscode.workspace.workspaceFolders?.[0]?.uri
         ? vscode.Uri.joinPath(
@@ -496,7 +547,7 @@ export class DeviceManagerPanel {
         return;
       }
 
-      const payload = this.buildExportPayload(defaults, devices);
+      const payload = this.buildExportPayload(defaults, groups, devices);
       const content = Buffer.from(`${JSON.stringify(payload, null, 2)}\n`, 'utf8');
 
       await vscode.workspace.fs.writeFile(exportUri, content);
@@ -543,7 +594,7 @@ export class DeviceManagerPanel {
         type: 'importResult',
         success: true,
         message: `Imported settings from ${importUri.fsPath}. Review and click Save changes to apply them.`,
-        ...this.buildWebviewState(imported.defaults, imported.devices),
+        ...this.buildWebviewState(imported.defaults, imported.groups, imported.devices),
       });
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
@@ -574,6 +625,7 @@ export class DeviceManagerPanel {
       'defaultEnableEmbeddedWebBrowser',
       'defaultSshCommands',
       'maxLinesPerTab',
+      'groups',
       'devices',
     ] as const;
 
@@ -663,10 +715,12 @@ export class DeviceManagerPanel {
 
   private buildWebviewState(
     defaults: DefaultsPayload,
+    groups: GroupPayload[],
     devices: EmbeddedDevice[]
   ): ImportedSettingsState {
     return {
       defaults,
+      groups,
       devices: devices.map((device) => ({
         ...device,
         sftpPresetsRemote: sanitizeSftpPresets(device.sftpPresetsRemote),
@@ -677,9 +731,11 @@ export class DeviceManagerPanel {
 
   private buildExportPayload(
     defaults: DefaultsPayload,
+    groups: GroupPayload[],
     devices: DevicePayload[]
   ): ExportedSettingsPayload {
     const normalizedDefaults = this.normalizeDefaults(defaults);
+    const normalizedGroups = this.normalizeGroups(groups);
     const normalizedDevices = devices.map((device) => this.normalizeDevice(device));
 
     return {
@@ -692,6 +748,7 @@ export class DeviceManagerPanel {
         normalizedDefaults.defaultEnableEmbeddedWebBrowser,
       'embeddedLogger.defaultSshCommands': normalizedDefaults.defaultSshCommands,
       'embeddedLogger.maxLinesPerTab': normalizedDefaults.maxLinesPerTab,
+      'embeddedLogger.groups': normalizedGroups,
       'embeddedLogger.devices': normalizedDevices,
     };
   }
@@ -740,6 +797,10 @@ export class DeviceManagerPanel {
 
     return {
       defaults,
+      groups:
+        data['embeddedLogger.groups'] === undefined
+          ? []
+          : this.validateGroups(data['embeddedLogger.groups'], 'embeddedLogger.groups'),
       devices: rawDevices.map((device, index) => this.validateImportedDevice(device, index)),
     };
   }
@@ -754,6 +815,7 @@ export class DeviceManagerPanel {
 
     const normalized: EmbeddedDevice = {
       id: (device.id ?? '').trim(),
+      group: device.group?.trim() || undefined,
       color: device.color?.trim() || undefined,
       name: (device.name ?? '').trim(),
       host: (device.host ?? '').trim(),
@@ -823,6 +885,7 @@ export class DeviceManagerPanel {
 
     const normalized: EmbeddedDevice = {
       id: this.readRequiredPropertyString(device, 'id', keyPrefix),
+      group: this.readOptionalString(device.group, `${keyPrefix}.group`),
       color: this.readOptionalString(device.color, `${keyPrefix}.color`),
       name: this.readRequiredPropertyString(device, 'name', keyPrefix),
       host: this.readRequiredPropertyString(device, 'host', keyPrefix),
@@ -942,6 +1005,31 @@ export class DeviceManagerPanel {
         name: this.readRequiredPropertyString(command, 'name', `${key}[${index}]`),
         command: this.readRequiredPropertyString(command, 'command', `${key}[${index}]`),
       };
+    });
+  }
+
+  private getGroupsFromConfiguration(config: vscode.WorkspaceConfiguration): GroupPayload[] {
+    return this.normalizeGroups(config.get<GroupPayload[]>('groups', []) ?? []);
+  }
+
+  private normalizeGroups(value: GroupPayload[] | undefined): GroupPayload[] {
+    if (!Array.isArray(value)) {
+      return [];
+    }
+
+    return value
+      .map((group) => ({ name: (group?.name ?? '').trim() }))
+      .filter((group) => group.name.length > 0);
+  }
+
+  private validateGroups(value: unknown, key: string): GroupPayload[] {
+    if (!Array.isArray(value)) {
+      throw new Error(`${key} must be an array of group objects.`);
+    }
+
+    return value.map((group, index) => {
+      const record = this.asRecord(group, `${key}[${index}] must be an object.`);
+      return { name: this.readRequiredPropertyString(record, 'name', `${key}[${index}]`) };
     });
   }
 
