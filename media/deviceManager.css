@@ -175,6 +175,10 @@ body {
   margin-top: 12px;
 }
 
+.table-wrapper--groups {
+  max-height: 260px;
+}
+
 table {
   width: max-content;
   min-width: 100%;
@@ -273,6 +277,27 @@ td select {
 #devicesTable td:first-child {
   min-width: 8ch;
   width: 8ch;
+  text-align: center;
+}
+
+#groupsTable {
+  min-width: 420px;
+  width: 100%;
+  table-layout: fixed;
+}
+
+#groupsTable th:first-child,
+#groupsTable td:first-child {
+  min-width: 8ch;
+  width: 8ch;
+  text-align: center;
+}
+
+#groupsTable td:nth-child(2) {
+  min-width: 30ch;
+}
+
+.cell-center {
   text-align: center;
 }
 

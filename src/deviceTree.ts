@@ -13,6 +13,7 @@ import { getDeviceColorIcon } from './deviceColor';
  */
 export interface EmbeddedDevice {
   id: string;
+  group?: string;
   name: string;
   host: string;
   color?: string;
@@ -36,6 +37,10 @@ export interface EmbeddedDevice {
   sshCommands?: { name: string; command: string }[];
 }
 
+export interface EmbeddedDeviceGroup {
+  name: string;
+}
+
 export interface BastionConfig {
   host: string;
   hostFingerprint?: string;
@@ -52,10 +57,10 @@ export interface BastionConfig {
  * Users configure the array in `embeddedLogger.devices` in settings.json and
  * each entry is presented as a selectable item that opens a log panel.
  */
-export class DeviceTreeDataProvider implements vscode.TreeDataProvider<DeviceItem> {
-  private _onDidChangeTreeData: vscode.EventEmitter<DeviceItem | undefined | void> =
+export class DeviceTreeDataProvider implements vscode.TreeDataProvider<DeviceTreeItem> {
+  private _onDidChangeTreeData: vscode.EventEmitter<DeviceTreeItem | undefined | void> =
     new vscode.EventEmitter();
-  readonly onDidChangeTreeData: vscode.Event<DeviceItem | undefined | void> =
+  readonly onDidChangeTreeData: vscode.Event<DeviceTreeItem | undefined | void> =
     this._onDidChangeTreeData.event;
 
   /**
@@ -78,7 +83,7 @@ export class DeviceTreeDataProvider implements vscode.TreeDataProvider<DeviceIte
    * @param element Device tree item to render.
    * @returns The same tree item instance.
    */
-  getTreeItem(element: DeviceItem): vscode.TreeItem {
+  getTreeItem(element: DeviceTreeItem): vscode.TreeItem {
     return element;
   }
 
@@ -87,11 +92,19 @@ export class DeviceTreeDataProvider implements vscode.TreeDataProvider<DeviceIte
    *
    * @returns A promise containing the device items or a placeholder when none exist.
    */
-  getChildren(): Thenable<DeviceItem[]> {
+  getChildren(element?: DeviceTreeItem): Thenable<DeviceTreeItem[]> {
     const config = vscode.workspace.getConfiguration('embeddedLogger');
     const devices = config.get<EmbeddedDevice[]>('devices', []);
+    const groups = this.getConfiguredGroups(config);
 
-    if (!devices || devices.length === 0) {
+    if (element instanceof GroupItem) {
+      const groupedDevices = devices.filter(
+        (device) => (device.group ?? '').trim() === element.groupName
+      );
+      return Promise.resolve(groupedDevices.map((device) => new DeviceItem(device)));
+    }
+
+    if ((!devices || devices.length === 0) && groups.length === 0) {
       const item = new vscode.TreeItem(
         'No devices configured. Update "embeddedLogger.devices" in settings.'
       );
@@ -101,13 +114,31 @@ export class DeviceTreeDataProvider implements vscode.TreeDataProvider<DeviceIte
         title: 'Open Settings',
         arguments: ['embeddedLogger.devices'],
       };
-      return Promise.resolve([item as unknown as DeviceItem]);
+      return Promise.resolve([item as unknown as DeviceTreeItem]);
     }
 
-    const items = devices.map((device) => new DeviceItem(device));
+    const groupedItems = groups.map((group) => new GroupItem(group.name));
+    const ungroupedDevices = devices.filter((device) => {
+      const groupName = (device.group ?? '').trim();
+      return !groupName || !groups.some((group) => group.name === groupName);
+    });
+    const items = [...groupedItems, ...ungroupedDevices.map((device) => new DeviceItem(device))];
     return Promise.resolve(items);
   }
+
+  private getConfiguredGroups(config: vscode.WorkspaceConfiguration): EmbeddedDeviceGroup[] {
+    const groups = config.get<EmbeddedDeviceGroup[]>('groups', []);
+    if (!Array.isArray(groups)) {
+      return [];
+    }
+
+    return groups
+      .map((group) => ({ name: (group?.name ?? '').trim() }))
+      .filter((group) => group.name.length > 0);
+  }
 }
+
+type DeviceTreeItem = DeviceItem | GroupItem;
 
 class DeviceItem extends vscode.TreeItem {
   /**
@@ -126,5 +157,14 @@ class DeviceItem extends vscode.TreeItem {
       arguments: [device],
     };
     this.contextValue = 'embeddedLoggerDevice';
+  }
+}
+
+class GroupItem extends vscode.TreeItem {
+  constructor(public readonly groupName: string) {
+    super(groupName, vscode.TreeItemCollapsibleState.Collapsed);
+    this.tooltip = `${groupName} group`;
+    this.iconPath = new vscode.ThemeIcon('new-folder');
+    this.contextValue = 'embeddedLoggerDeviceGroup';
   }
 }

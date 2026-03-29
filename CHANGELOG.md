@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Added import/export config.
 - Save SFTP presets globally.
+- Added device grouping support with a Groups section in Device Manager and collapsible groups in the Embedded Devices view.
 
 ### Changed
 - None.

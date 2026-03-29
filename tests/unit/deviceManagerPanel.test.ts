@@ -63,6 +63,10 @@ describe('DeviceManagerPanel', () => {
     expect(html).toContain('<th>External Web Browser</th>');
     expect(html).toContain('<th>Embedded Web Browser</th>');
     expect(html).toContain('id="defaultEnableEmbeddedWebBrowser"');
+    expect(html).toContain('<h2>Groups</h2>');
+    expect(html).toContain('id="addGroup"');
+    expect(html).toContain('id="removeSelectedGroups"');
+    expect(html).toMatch(/<th>Select<\/th>\s*<th>Name<\/th>/);
     expect(html).toMatch(
       /id="clearPasswords"[\s\S]*id="importSettings"[\s\S]*id="exportSettings"[\s\S]*id="editJson"/
     );
@@ -251,9 +255,11 @@ describe('DeviceManagerPanel', () => {
         defaultSshCommands: [{ name: ' Reboot ', command: ' sudo reboot ' }],
         maxLinesPerTab: 5000,
       },
+      groups: [{ name: ' Lab ' }],
       devices: [
         {
           id: ' device-a ',
+          group: ' Lab ',
           color: '#4fc3f7',
           name: ' Device A ',
           host: ' 10.0.0.1 ',
@@ -283,9 +289,11 @@ describe('DeviceManagerPanel', () => {
       'embeddedLogger.defaultEnableEmbeddedWebBrowser': true,
       'embeddedLogger.defaultSshCommands': [{ name: 'Reboot', command: 'sudo reboot' }],
       'embeddedLogger.maxLinesPerTab': 5000,
+      'embeddedLogger.groups': [{ name: 'Lab' }],
       'embeddedLogger.devices': [
         {
           id: 'device-a',
+          group: 'Lab',
           color: '#4fc3f7',
           name: 'Device A',
           host: '10.0.0.1',
@@ -328,9 +336,11 @@ describe('DeviceManagerPanel', () => {
             { name: 'Restart', command: 'systemctl restart app' },
           ],
           'embeddedLogger.maxLinesPerTab': 9000,
+          'embeddedLogger.groups': [{ name: 'Lab' }],
           'embeddedLogger.devices': [
             {
               id: 'device-a',
+              group: 'Lab',
               name: 'Device A',
               host: '10.0.0.1',
               username: 'root',
@@ -363,9 +373,11 @@ describe('DeviceManagerPanel', () => {
         defaultSshCommands: [{ name: 'Restart', command: 'systemctl restart app' }],
         maxLinesPerTab: 9000,
       },
+      groups: [{ name: 'Lab' }],
       devices: [
         {
           id: 'device-a',
+          group: 'Lab',
           name: 'Device A',
           host: '10.0.0.1',
           username: 'root',

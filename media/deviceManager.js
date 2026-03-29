@@ -1,6 +1,7 @@
 const vscode = acquireVsCodeApi();
 
 const state = {
+  groups: [],
   devices: [],
   defaults: {
     defaultPort: 22,
@@ -15,10 +16,12 @@ const state = {
 };
 
 const selectedDevices = new Set();
+const selectedGroups = new Set();
 
 const deviceColumns = [
   { key: '__selected', label: 'Select', type: 'rowSelect' },
   { key: 'id', label: 'ID', type: 'text' },
+  { key: 'group', label: 'Group', type: 'groupSelect' },
   { key: 'color', label: 'Color', type: 'color' },
   { key: 'name', label: 'Name', type: 'text' },
   { key: 'host', label: 'Host', type: 'text' },
@@ -60,8 +63,10 @@ function postReady() {
 }
 
 function handleInit(message) {
-  const { devices = [], defaults } = message;
+  const { groups = [], devices = [], defaults } = message;
+  selectedGroups.clear();
   selectedDevices.clear();
+  state.groups = groups.map((group) => ({ name: group?.name ?? '' }));
   state.defaults = {
     ...state.defaults,
     ...defaults,
@@ -76,6 +81,7 @@ function handleInit(message) {
 function toViewDevice(device) {
   return {
     id: device.id ?? '',
+    group: device.group ?? '',
     color: device.color ?? '',
     name: device.name ?? '',
     host: device.host ?? '',
@@ -124,8 +130,52 @@ function toTriState(value) {
 
 function render() {
   renderDefaults();
+  renderGroups();
   renderDevices();
   setStatus('');
+}
+
+function renderGroups() {
+  const tbody = document.getElementById('groupsBody');
+  tbody.innerHTML = '';
+
+  state.groups.forEach((group, index) => {
+    const row = document.createElement('tr');
+    row.className = selectedGroups.has(group) ? 'device-row-selected' : '';
+
+    const selectCell = document.createElement('td');
+    selectCell.className = 'cell-center';
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = selectedGroups.has(group);
+    checkbox.addEventListener('change', (event) => {
+      if (event.target.checked) {
+        selectedGroups.add(group);
+      } else {
+        selectedGroups.delete(group);
+      }
+      updateSelectedGroupActions();
+      renderGroups();
+    });
+    selectCell.appendChild(checkbox);
+
+    const nameCell = document.createElement('td');
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = group.name ?? '';
+    input.placeholder = 'Group name';
+    input.addEventListener('input', (event) => {
+      state.groups[index].name = event.target.value;
+      renderDevices();
+    });
+    nameCell.appendChild(input);
+
+    row.appendChild(selectCell);
+    row.appendChild(nameCell);
+    tbody.appendChild(row);
+  });
+
+  updateSelectedGroupActions();
 }
 
 function renderDefaults() {
@@ -176,6 +226,17 @@ function getSelectedDevices() {
   return state.devices.filter((device) => selectedDevices.has(device));
 }
 
+function getSelectedGroups() {
+  return state.groups.filter((group) => selectedGroups.has(group));
+}
+
+function updateSelectedGroupActions() {
+  const hasSelection = getSelectedGroups().length > 0;
+  document.getElementById('removeSelectedGroups').disabled = !hasSelection;
+  document.getElementById('moveSelectedGroupsUp').disabled = !hasSelection;
+  document.getElementById('moveSelectedGroupsDown').disabled = !hasSelection;
+}
+
 function updateSelectedDeviceActions() {
   const selectedCount = getSelectedDevices().length;
   const hasSelection = selectedCount > 0;
@@ -214,6 +275,67 @@ function moveSelectedDevicesUp() {
   }
 
   renderDevices();
+}
+
+function addGroup() {
+  const newGroup = { name: '' };
+  state.groups.push(newGroup);
+  renderGroups();
+  renderDevices();
+}
+
+function removeSelectedGroups() {
+  const selected = getSelectedGroups();
+  if (!selected.length) {
+    return;
+  }
+
+  const removedNames = new Set(
+    selected.map((group) => (group.name ?? '').trim()).filter((name) => !!name)
+  );
+  state.groups = state.groups.filter((group) => !selectedGroups.has(group));
+  selectedGroups.clear();
+  state.devices.forEach((device) => {
+    if (removedNames.has((device.group ?? '').trim())) {
+      device.group = '';
+    }
+  });
+  renderGroups();
+  renderDevices();
+}
+
+function moveSelectedGroupsUp() {
+  if (!getSelectedGroups().length) {
+    return;
+  }
+
+  for (let index = 1; index < state.groups.length; index += 1) {
+    const current = state.groups[index];
+    const previous = state.groups[index - 1];
+    if (selectedGroups.has(current) && !selectedGroups.has(previous)) {
+      state.groups[index - 1] = current;
+      state.groups[index] = previous;
+    }
+  }
+
+  renderGroups();
+}
+
+function moveSelectedGroupsDown() {
+  if (!getSelectedGroups().length) {
+    return;
+  }
+
+  for (let index = state.groups.length - 2; index >= 0; index -= 1) {
+    const current = state.groups[index];
+    const next = state.groups[index + 1];
+    if (selectedGroups.has(current) && !selectedGroups.has(next)) {
+      state.groups[index] = next;
+      state.groups[index + 1] = current;
+    }
+  }
+
+  renderGroups();
 }
 
 function moveSelectedDevicesDown() {
@@ -499,6 +621,29 @@ function createInput(col, value, index, key) {
     });
     return select;
   }
+  if (col.type === 'groupSelect') {
+    const select = document.createElement('select');
+    const noneOption = document.createElement('option');
+    noneOption.value = '';
+    noneOption.textContent = 'None';
+    select.appendChild(noneOption);
+
+    const groupNames = state.groups
+      .map((group) => (group.name ?? '').trim())
+      .filter((name, idx, list) => !!name && list.indexOf(name) === idx);
+    groupNames.forEach((groupName) => {
+      const option = document.createElement('option');
+      option.value = groupName;
+      option.textContent = groupName;
+      select.appendChild(option);
+    });
+
+    select.value = value || '';
+    select.addEventListener('change', (event) => {
+      state.devices[index][key] = event.target.value;
+    });
+    return select;
+  }
   if (col.type === 'checkbox') {
     const input = document.createElement('input');
     input.type = 'checkbox';
@@ -548,6 +693,7 @@ function createInput(col, value, index, key) {
 function addDevice() {
   state.devices.push({
     id: '',
+    group: '',
     color: randomDeviceColor(),
     name: '',
     host: '',
@@ -697,6 +843,7 @@ function save() {
   vscode.postMessage({
     type: 'save',
     defaults: collectDefaults(),
+    groups: state.groups,
     devices: state.devices,
   });
 }
@@ -716,6 +863,7 @@ function exportSettings() {
   vscode.postMessage({
     type: 'exportSettings',
     defaults: collectDefaults(),
+    groups: state.groups,
     devices: state.devices,
   });
 }
@@ -839,9 +987,11 @@ function buildHelpJson() {
     'embeddedLogger.defaultEnableEmbeddedWebBrowser': !!defaults.defaultEnableEmbeddedWebBrowser,
     'embeddedLogger.maxLinesPerTab': defaults.maxLinesPerTab ?? 100000,
     'embeddedLogger.defaultSshCommands': defaults.defaultSshCommands ?? [],
+    'embeddedLogger.groups': state.groups.filter((group) => (group.name ?? '').trim().length > 0),
     'embeddedLogger.devices': [
       {
         id: 'device-1',
+        group: 'Lab',
         color: '#4fc3f7',
         name: 'My device',
         host: '192.168.0.10',
@@ -915,6 +1065,12 @@ function handleMessage(event) {
 
 function init() {
   setupTableColumns();
+  document.getElementById('addGroup').addEventListener('click', addGroup);
+  document.getElementById('moveSelectedGroupsUp').addEventListener('click', moveSelectedGroupsUp);
+  document
+    .getElementById('moveSelectedGroupsDown')
+    .addEventListener('click', moveSelectedGroupsDown);
+  document.getElementById('removeSelectedGroups').addEventListener('click', removeSelectedGroups);
   document.getElementById('addDevice').addEventListener('click', addDevice);
   document.getElementById('moveSelectedUp').addEventListener('click', moveSelectedDevicesUp);
   document.getElementById('moveSelectedDown').addEventListener('click', moveSelectedDevicesDown);
