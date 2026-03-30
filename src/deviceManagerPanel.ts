@@ -72,6 +72,7 @@ interface DevicePayload {
   enableWebBrowser?: boolean | TriStateSelection;
   enableEmbeddedWebBrowser?: boolean | TriStateSelection;
   webBrowserUrl?: string;
+  showDefaultSshCommands?: boolean;
   sshCommands?: SshCommandDefinition[];
   bastionHost?: string;
   bastionHostFingerprint?: string;
@@ -384,6 +385,7 @@ export class DeviceManagerPanel {
                 <th>Private key path</th>
                 <th>Private key passphrase</th>
                 <th>Password (legacy)</th>
+                <th>Show default SSH cmnds</th>
                 <th>SSH commands</th>
                 <th>Bastion host</th>
                 <th>Bastion port</th>
@@ -807,6 +809,7 @@ export class DeviceManagerPanel {
     const enableSftpExplorer = this.toOptionalTriState(device.enableSftpExplorer);
     const enableWebBrowser = this.toOptionalTriState(device.enableWebBrowser);
     const enableEmbeddedWebBrowser = this.toOptionalTriState(device.enableEmbeddedWebBrowser);
+    const showDefaultSshCommands = device.showDefaultSshCommands ?? true;
 
     const normalized: EmbeddedDevice = {
       id: (device.id ?? '').trim(),
@@ -844,6 +847,10 @@ export class DeviceManagerPanel {
 
     if (enableEmbeddedWebBrowser !== undefined) {
       normalized.enableEmbeddedWebBrowser = enableEmbeddedWebBrowser;
+    }
+
+    if (!showDefaultSshCommands) {
+      normalized.showDefaultSshCommands = false;
     }
 
     if (sshCommands.length > 0) {
@@ -919,8 +926,17 @@ export class DeviceManagerPanel {
         `${keyPrefix}.enableEmbeddedWebBrowser`
       ),
       webBrowserUrl: this.readOptionalString(device.webBrowserUrl, `${keyPrefix}.webBrowserUrl`),
+      showDefaultSshCommands:
+        this.readOptionalBoolean(
+          device.showDefaultSshCommands,
+          `${keyPrefix}.showDefaultSshCommands`
+        ) ?? true,
       bastion,
     };
+
+    if (normalized.showDefaultSshCommands === true) {
+      delete normalized.showDefaultSshCommands;
+    }
 
     if (sshCommands.length > 0) {
       normalized.sshCommands = sshCommands;

@@ -77,7 +77,7 @@ The Device Manager is the fastest way to work with the current schema because it
   - `embeddedLogger.defaultSshCommands`
   - `embeddedLogger.maxLinesPerTab`
 - The **Groups** table edits `embeddedLogger.groups`, which controls the ordered collapsible sections shown in the Devices view.
-- The **Devices** table edits `embeddedLogger.devices`, including device colors, host fingerprints, secondary hosts, SSH commands, SFTP presets, and bastion settings.
+- The **Devices** table edits `embeddedLogger.devices`, including device colors, host fingerprints, secondary hosts, whether shared SSH commands should be shown, device-specific SSH commands, SFTP presets, and bastion settings.
 - Per-device feature toggles in the table are **tri-state**:
   - `Default` inherits the corresponding global default.
   - `Enabled` forces the button on for that device.
@@ -149,6 +149,7 @@ If you prefer raw JSON, add entries like the following to your VS Code settings:
       "enableWebBrowser": true,
       "enableEmbeddedWebBrowser": false,
       "webBrowserUrl": "http://192.168.1.10",
+      "showDefaultSshCommands": true,
       "sftpPresetsRemote": [
         "/var/log",
         "/opt/app"
@@ -197,12 +198,13 @@ Common optional fields include:
 - `password` and `privateKeyPassphrase` as legacy migration fields only.
 - `enableSshTerminal`, `enableSftpExplorer`, `enableWebBrowser`, and `enableEmbeddedWebBrowser` to override the defaults for one device.
 - `webBrowserUrl` to override the URL opened by browser actions.
+- `showDefaultSshCommands` to prepend `embeddedLogger.defaultSshCommands` before the device's own `sshCommands`. It defaults to `true`.
 - `sshCommands` to define device-specific SSH buttons.
   Set `openSshPanel: true` on a command to launch it in a persistent SSH terminal instead of a one-off notification.
 - `sftpPresetsRemote` and `sftpPresetsLocal` to persist SFTP favorite paths with the device configuration.
 - `bastion` to reach the device through a jump host.
 
-`embeddedLogger.defaultSshCommands` is only applied to devices that do not define their own `sshCommands` list.
+With `showDefaultSshCommands: true`, the Devices view shows `embeddedLogger.defaultSshCommands` first and then the device's own `sshCommands`. Set it to `false` to show only device-specific commands. A device with no `sshCommands` and `showDefaultSshCommands: true` shows only the shared commands.
 
 ### Authentication and secrets
 
@@ -246,7 +248,7 @@ Each device always exposes **Open Logs**. Depending on configuration, it can als
 - **Open SFTP Explorer**
 - **Open External Web Browser**
 - **Open Embedded Web Browser**
-- One button for each configured `sshCommands` entry
+- Shared SSH command buttons first when `showDefaultSshCommands` is enabled, followed by device-specific `sshCommands`
 
 Commands with `openSshPanel: true` reuse the SSH terminal flow: the extension opens a terminal, runs the command immediately, and keeps the session open for follow-up input.
 

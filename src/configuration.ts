@@ -147,6 +147,15 @@ function getLoggerDefaults(config: vscode.WorkspaceConfiguration): LoggerDefault
  * @returns The device configuration with defaults applied.
  */
 function applyDeviceDefaults(device: EmbeddedDevice, defaults: LoggerDefaults): EmbeddedDevice {
+  const deviceSshCommands = normalizeSshCommands(device.sshCommands);
+  const showDefaultSshCommands = device.showDefaultSshCommands ?? true;
+  const sshCommands = showDefaultSshCommands
+    ? [
+        ...defaults.defaultSshCommands.map((command) => ({ ...command })),
+        ...deviceSshCommands.map((command) => ({ ...command })),
+      ]
+    : deviceSshCommands.map((command) => ({ ...command }));
+
   return {
     ...device,
     port: device.port ?? defaults.defaultPort,
@@ -165,10 +174,8 @@ function applyDeviceDefaults(device: EmbeddedDevice, defaults: LoggerDefaults): 
     webBrowserUrl: device.webBrowserUrl?.trim() || undefined,
     sftpPresetsRemote: sanitizeSftpPresets(device.sftpPresetsRemote),
     sftpPresetsLocal: sanitizeSftpPresets(device.sftpPresetsLocal),
-    sshCommands:
-      device.sshCommands !== undefined
-        ? normalizeSshCommands(device.sshCommands)
-        : defaults.defaultSshCommands.map((command) => ({ ...command })),
+    showDefaultSshCommands,
+    sshCommands,
   };
 }
 

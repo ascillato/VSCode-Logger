@@ -76,8 +76,8 @@
         },
         "embeddedLogger.defaultSshCommands": {
           "type": "array",
-          "description": "Reusable SSH commands automatically applied to devices that do not define their own list.",
-          "markdownDescription": "Reusable SSH commands automatically applied to devices that do not define their own list.\n\nExample:\n```json\n[\n  {\n    \"name\": \"🔁 Reboot\",\n    \"command\": \"reboot\",\n    \"openSshPanel\": false\n  },\n  {\n    \"name\": \"⚙️ Restart Service\",\n    \"command\": \"systemctl restart my-service\",\n    \"openSshPanel\": false\n  },\n  {\n    \"name\": \"📈 Processes\",\n    \"command\": \"top\",\n    \"openSshPanel\": true\n  }\n]\n```",
+          "description": "Reusable SSH commands that can be shown before each device's own SSH commands in the Devices view.",
+          "markdownDescription": "Reusable SSH commands that can be shown before each device's own SSH commands in the Devices view.\n\nEach device can disable them with `showDefaultSshCommands: false` to show only its device-specific commands.\n\nExample:\n```json\n[\n  {\n    \"name\": \"🔁 Reboot\",\n    \"command\": \"reboot\",\n    \"openSshPanel\": false\n  },\n  {\n    \"name\": \"⚙️ Restart Service\",\n    \"command\": \"systemctl restart my-service\",\n    \"openSshPanel\": false\n  },\n  {\n    \"name\": \"📈 Processes\",\n    \"command\": \"top\",\n    \"openSshPanel\": true\n  }\n]\n```",
           "items": {
             "type": "object",
             "properties": {
@@ -123,7 +123,7 @@
         "embeddedLogger.devices": {
           "type": "array",
           "description": "List of embedded devices to stream logs from.",
-          "markdownDescription": "List of embedded devices to stream logs from.\n\nManage devices with the **Embedded Logger: Edit Devices Configuration** Device Manager (table UI with add/remove rows and all fields). You can also choose **Edit in settings.json** for direct JSON editing.\n\nExample:\n```json\n[\n  {\n    \"id\": \"rpi4\",\n    \"group\": \"Lab\",\n    \"color\": \"#4fc3f7\",\n    \"name\": \"Raspberry Pi 4\",\n    \"host\": \"192.168.1.50\",\n    \"hostFingerprint\": \"SHA256:your-base64-fingerprint\",\n    \"secondaryHost\": \"192.168.1.51\",\n    \"secondaryHostFingerprint\": \"SHA256:secondary-base64-fingerprint\",\n    \"port\": 22,\n    \"username\": \"pi\",\n    \"password\": \"\",\n    \"privateKeyPath\": \"/home/user/.ssh/id_ed25519\",\n    \"privateKeyPassphrase\": \"${env:KEY_PASSPHRASE}\",\n    \"logCommand\": \"journalctl -f -u app.service\",\n    \"enableSshTerminal\": true,\n    \"enableSftpExplorer\": true,\n    \"enableWebBrowser\": false,\n    \"enableEmbeddedWebBrowser\": false,\n    \"webBrowserUrl\": \"http://192.168.1.50\",\n    \"sshCommands\": [\n      {\n        \"name\": \"🔁 Reboot\",\n        \"command\": \"reboot\",\n        \"openSshPanel\": false\n      },\n      {\n        \"name\": \"⚙️ Restart Service\",\n        \"command\": \"systemctl restart my-service\",\n        \"openSshPanel\": false\n      },\n      {\n        \"name\": \"📈 Processes\",\n        \"command\": \"top\",\n        \"openSshPanel\": true\n      }\n    ],\n    \"bastion\": {\n      \"host\": \"bastion.example.com\",\n      \"hostFingerprint\": \"SHA256:bastion-fingerprint\",\n      \"port\": 22,\n      \"username\": \"jump-user\",\n      \"password\": \"\",\n      \"privateKeyPath\": \"${env:HOME}/.ssh/id_ed25519\",\n      \"privateKeyPassphrase\": \"\"\n    }\n  }\n]\n```",
+          "markdownDescription": "List of embedded devices to stream logs from.\n\nManage devices with the **Embedded Logger: Edit Devices Configuration** Device Manager (table UI with add/remove rows and all fields). You can also choose **Edit in settings.json** for direct JSON editing.\n\nExample:\n```json\n[\n  {\n    \"id\": \"rpi4\",\n    \"group\": \"Lab\",\n    \"color\": \"#4fc3f7\",\n    \"name\": \"Raspberry Pi 4\",\n    \"host\": \"192.168.1.50\",\n    \"hostFingerprint\": \"SHA256:your-base64-fingerprint\",\n    \"secondaryHost\": \"192.168.1.51\",\n    \"secondaryHostFingerprint\": \"SHA256:secondary-base64-fingerprint\",\n    \"port\": 22,\n    \"username\": \"pi\",\n    \"password\": \"\",\n    \"privateKeyPath\": \"/home/user/.ssh/id_ed25519\",\n    \"privateKeyPassphrase\": \"${env:KEY_PASSPHRASE}\",\n    \"logCommand\": \"journalctl -f -u app.service\",\n    \"enableSshTerminal\": true,\n    \"enableSftpExplorer\": true,\n    \"enableWebBrowser\": false,\n    \"enableEmbeddedWebBrowser\": false,\n    \"webBrowserUrl\": \"http://192.168.1.50\",\n    \"showDefaultSshCommands\": true,\n    \"sshCommands\": [\n      {\n        \"name\": \"🔁 Reboot\",\n        \"command\": \"reboot\",\n        \"openSshPanel\": false\n      },\n      {\n        \"name\": \"⚙️ Restart Service\",\n        \"command\": \"systemctl restart my-service\",\n        \"openSshPanel\": false\n      },\n      {\n        \"name\": \"📈 Processes\",\n        \"command\": \"top\",\n        \"openSshPanel\": true\n      }\n    ],\n    \"bastion\": {\n      \"host\": \"bastion.example.com\",\n      \"hostFingerprint\": \"SHA256:bastion-fingerprint\",\n      \"port\": 22,\n      \"username\": \"jump-user\",\n      \"password\": \"\",\n      \"privateKeyPath\": \"${env:HOME}/.ssh/id_ed25519\",\n      \"privateKeyPassphrase\": \"\"\n    }\n  }\n]\n```",
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -150,6 +150,7 @@
                   "enableWebBrowser": false,
                   "enableEmbeddedWebBrowser": false,
                   "webBrowserUrl": "${9:http://192.168.1.10}",
+                  "showDefaultSshCommands": true,
                   "sshCommands": [
                     {
                       "name": "Restart Service",
@@ -304,6 +305,11 @@
                 "description": "Optional URL to open for the device; defaults to http://<host> when omitted.",
                 "default": ""
               },
+              "showDefaultSshCommands": {
+                "type": "boolean",
+                "default": true,
+                "description": "Whether to prepend embeddedLogger.defaultSshCommands before this device's own sshCommands in the Devices view."
+              },
               "sftpPresetsRemote": {
                 "type": "array",
                 "description": "Saved remote-path presets for the device's SFTP explorer.",
@@ -378,6 +384,7 @@
               "enableWebBrowser": false,
               "enableEmbeddedWebBrowser": false,
               "webBrowserUrl": "http://192.168.1.10",
+              "showDefaultSshCommands": true,
               "sftpPresetsRemote": [
                 "/var/log",
                 "/opt/app"

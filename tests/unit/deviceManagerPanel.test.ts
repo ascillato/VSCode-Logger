@@ -62,6 +62,7 @@ describe('DeviceManagerPanel', () => {
     expect(html).toMatch(/<th>Select<\/th>\s*<th>ID<\/th>/);
     expect(html).toContain('<th>External Web Browser</th>');
     expect(html).toContain('<th>Embedded Web Browser</th>');
+    expect(html).toContain('<th>Show default SSH cmnds</th>');
     expect(html).toContain('id="defaultEnableEmbeddedWebBrowser"');
     expect(html).toContain('<h2>Groups</h2>');
     expect(html).toContain('id="addGroup"');
@@ -238,6 +239,52 @@ describe('DeviceManagerPanel', () => {
     ]);
   });
 
+  it('stores disabled default SSH commands explicitly on device entries', async () => {
+    const panel = createPanel();
+    const config = workspace.getConfiguration('embeddedLogger');
+    const updateSpy = vi.spyOn(config, 'update');
+
+    panel.__fireMessage({
+      type: 'save',
+      defaults: {
+        defaultPort: 22,
+        defaultLogCommand: 'tail -F /var/log/syslog',
+        defaultEnableSshTerminal: true,
+        defaultEnableSftpExplorer: true,
+        defaultEnableWebBrowser: false,
+        defaultEnableEmbeddedWebBrowser: false,
+        defaultSshCommands: [{ name: 'Reboot', command: 'reboot', openSshPanel: false }],
+        maxLinesPerTab: 100000,
+      },
+      devices: [
+        {
+          id: 'device-a',
+          name: 'Device A',
+          host: '10.0.0.1',
+          username: 'root',
+          showDefaultSshCommands: false,
+          sshCommands: [{ name: 'Logs', command: 'journalctl -f', openSshPanel: true }],
+        },
+      ],
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const devicesCall = updateSpy.mock.calls.find((call) => call[0] === 'devices');
+    expect(devicesCall).toBeDefined();
+    if (!devicesCall) {
+      throw new Error('Missing devices update call.');
+    }
+
+    expect(devicesCall[1]).toEqual([
+      expect.objectContaining({
+        id: 'device-a',
+        showDefaultSshCommands: false,
+        sshCommands: [{ name: 'Logs', command: 'journalctl -f', openSshPanel: true }],
+      }),
+    ]);
+  });
+
   it('exports the current manager state as settings.json-compatible JSON', async () => {
     const panel = createPanel();
     const exportPath = '/tmp/embedded-device-logger-settings.json';
@@ -266,6 +313,7 @@ describe('DeviceManagerPanel', () => {
           username: ' root ',
           enableSshTerminal: 'enabled',
           enableWebBrowser: 'disabled',
+          showDefaultSshCommands: false,
           sftpPresetsRemote: ' /var/log \n /opt/app ',
           sshCommands: [{ name: ' Logs ', command: ' journalctl -f ', openSshPanel: true }],
           bastionHost: ' bastion.local ',
@@ -302,6 +350,7 @@ describe('DeviceManagerPanel', () => {
           username: 'root',
           enableSshTerminal: true,
           enableWebBrowser: false,
+          showDefaultSshCommands: false,
           sftpPresetsRemote: ['/var/log', '/opt/app'],
           sshCommands: [{ name: 'Logs', command: 'journalctl -f', openSshPanel: true }],
           bastion: {
@@ -346,6 +395,7 @@ describe('DeviceManagerPanel', () => {
               name: 'Device A',
               host: '10.0.0.1',
               username: 'root',
+              showDefaultSshCommands: false,
               sftpPresetsRemote: ['/var/log'],
               bastion: {
                 host: 'bastion.local',
@@ -385,6 +435,7 @@ describe('DeviceManagerPanel', () => {
           name: 'Device A',
           host: '10.0.0.1',
           username: 'root',
+          showDefaultSshCommands: false,
           sftpPresetsRemote: ['/var/log'],
           sftpPresetsLocal: [],
           bastion: {

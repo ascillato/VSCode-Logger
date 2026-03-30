@@ -41,6 +41,7 @@ export interface EmbeddedDevice {
   webBrowserUrl?: string;
   sftpPresetsRemote?: string[];
   sftpPresetsLocal?: string[];
+  showDefaultSshCommands?: boolean;
   sshCommands?: SshCommandDefinition[];
 }
 
