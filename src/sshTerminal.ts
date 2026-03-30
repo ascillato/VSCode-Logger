@@ -63,11 +63,13 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
    * @param device The device configuration to connect to.
    * @param context The extension context for secret storage access.
    * @param initialPath Optional working directory to open on connect.
+   * @param initialCommand Optional command to execute after the shell opens.
    */
   constructor(
     private readonly device: EmbeddedDevice,
     private readonly context: vscode.ExtensionContext,
-    private readonly initialPath?: string
+    private readonly initialPath?: string,
+    private readonly initialCommand?: string
   ) {
     this.passwordManager = new PasswordManager(this.context);
   }
@@ -414,6 +416,16 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
               stream.write(`cd -- ${this.quotePath(this.initialPath)}\n`);
             }
 
+            try {
+              const initialCommand = this.normalizeInitialCommand(this.initialCommand);
+              if (initialCommand) {
+                stream.write(`${initialCommand}\n`);
+              }
+            } catch (error: unknown) {
+              reject(this.toError(error, 'Failed to start SSH command.'));
+              return;
+            }
+
             stream
               .on('exit', (code: number | null | undefined, signal: string | null | undefined) => {
                 if (this.isCleanExit(code, signal)) {
@@ -545,6 +557,19 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
 
   private quotePath(value: string): string {
     return `'${value.replace(/'/g, "'\\''")}'`;
+  }
+
+  private normalizeInitialCommand(value: string | undefined): string | undefined {
+    const trimmed = value?.trim();
+    if (!trimmed) {
+      return undefined;
+    }
+
+    if (/\r|\n/.test(trimmed)) {
+      throw new Error('SSH command must not contain control characters or new lines.');
+    }
+
+    return trimmed;
   }
 
   private isExitCommand(input: string): boolean {

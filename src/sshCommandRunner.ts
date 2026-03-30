@@ -38,6 +38,7 @@ type SocketConnectConfig = ConnectConfig & { sock?: ClientChannel };
 export interface DeviceCommand {
   name: string;
   command: string;
+  openSshPanel?: boolean;
 }
 
 /**

@@ -5,7 +5,7 @@
  */
 
 import * as vscode from 'vscode';
-import type { EmbeddedDevice, EmbeddedDeviceGroup } from './deviceTree';
+import type { EmbeddedDevice, EmbeddedDeviceGroup, SshCommandDefinition } from './deviceTree';
 
 const sftpPresetLimit = 10;
 
@@ -16,7 +16,7 @@ interface LoggerDefaults {
   defaultEnableSftpExplorer: boolean;
   defaultEnableWebBrowser: boolean;
   defaultEnableEmbeddedWebBrowser: boolean;
-  defaultSshCommands: { name: string; command: string }[];
+  defaultSshCommands: SshCommandDefinition[];
 }
 
 export interface EmbeddedLoggerDeviceConfigurationScope {
@@ -41,6 +41,36 @@ function isEmbeddedDeviceArray(value: unknown): value is EmbeddedDevice[] {
 
 function getDeviceId(device: Pick<EmbeddedDevice, 'id'>): string {
   return device.id.trim();
+}
+
+function normalizeSshCommands(value: unknown): SshCommandDefinition[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const normalized: SshCommandDefinition[] = [];
+
+  for (const entry of value) {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      continue;
+    }
+
+    const command = entry as Partial<SshCommandDefinition>;
+    const name = typeof command.name === 'string' ? command.name.trim() : '';
+    const shellCommand = typeof command.command === 'string' ? command.command.trim() : '';
+
+    if (!name || !shellCommand) {
+      continue;
+    }
+
+    normalized.push({
+      name,
+      command: shellCommand,
+      openSshPanel: command.openSshPanel === true ? true : undefined,
+    });
+  }
+
+  return normalized;
 }
 
 function getConfiguredDeviceScopes(): EmbeddedLoggerDeviceConfigurationScope[] {
@@ -96,8 +126,7 @@ function getLoggerDefaults(config: vscode.WorkspaceConfiguration): LoggerDefault
   const defaultEnableWebBrowser = config.get<boolean>('defaultEnableWebBrowser', false) ?? false;
   const defaultEnableEmbeddedWebBrowser =
     config.get<boolean>('defaultEnableEmbeddedWebBrowser', false) ?? false;
-  const defaultSshCommands =
-    config.get<{ name: string; command: string }[]>('defaultSshCommands', []) || [];
+  const defaultSshCommands = config.get<SshCommandDefinition[]>('defaultSshCommands', []) || [];
 
   return {
     defaultPort,
@@ -106,9 +135,7 @@ function getLoggerDefaults(config: vscode.WorkspaceConfiguration): LoggerDefault
     defaultEnableSftpExplorer,
     defaultEnableWebBrowser,
     defaultEnableEmbeddedWebBrowser,
-    defaultSshCommands: Array.isArray(defaultSshCommands)
-      ? defaultSshCommands.map((command) => ({ ...command }))
-      : [],
+    defaultSshCommands: normalizeSshCommands(defaultSshCommands),
   };
 }
 
@@ -140,7 +167,7 @@ function applyDeviceDefaults(device: EmbeddedDevice, defaults: LoggerDefaults): 
     sftpPresetsLocal: sanitizeSftpPresets(device.sftpPresetsLocal),
     sshCommands:
       device.sshCommands !== undefined
-        ? device.sshCommands
+        ? normalizeSshCommands(device.sshCommands)
         : defaults.defaultSshCommands.map((command) => ({ ...command })),
   };
 }

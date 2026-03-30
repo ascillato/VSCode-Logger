@@ -34,6 +34,7 @@ describe('Sidebar integration', () => {
 
     const logLines: string[] = [];
     const commandOutputs: string[] = [];
+    const openInPanelFlags: boolean[] = [];
     const startPromises: Promise<void>[] = [];
     const commandPromises: Promise<void>[] = [];
 
@@ -83,10 +84,11 @@ describe('Sidebar integration', () => {
         const session = sessionFactory();
         startPromises.push(session.start());
       },
-      (deviceId, commandName, command) => {
+      (deviceId, commandName, command, openSshPanel) => {
         if (deviceId !== device.id) {
           return;
         }
+        openInPanelFlags.push(openSshPanel === true);
         const runner = runnerFactory();
         const promise = runner
           .run({ name: commandName, command })
@@ -111,12 +113,14 @@ describe('Sidebar integration', () => {
       deviceId: device.id,
       commandName: 'List',
       command: 'ls',
+      openSshPanel: true,
     });
     await Promise.all(commandPromises);
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(logLines).toEqual(['primary line', 'next']);
     expect(commandOutputs).toEqual(['command ok']);
+    expect(openInPanelFlags).toEqual([true]);
   });
 
   it('posts configured groups alongside devices for the sidebar webview', () => {

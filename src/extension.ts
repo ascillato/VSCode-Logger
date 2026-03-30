@@ -481,6 +481,43 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
     return undefined;
   };
 
+  const openSshTerminal = (
+    device: EmbeddedDevice | undefined,
+    initialCommand?: string,
+    commandName?: string
+  ): void => {
+    if (!device) {
+      vscode.window.showErrorMessage('Device not found. Check embeddedLogger.devices.');
+      return;
+    }
+
+    if (!isTestMode && !vscode.workspace.isTrusted) {
+      vscode.window.showErrorMessage('Workspace trust is required before connecting to devices.');
+      return;
+    }
+
+    const error = validateSshDevice(device);
+    if (error) {
+      vscode.window.showErrorMessage(error);
+      return;
+    }
+
+    const normalizedInitialCommand = initialCommand?.trim();
+    if (normalizedInitialCommand && /\r|\n/.test(normalizedInitialCommand)) {
+      vscode.window.showErrorMessage(
+        'SSH command must not contain control characters or new lines.'
+      );
+      return;
+    }
+
+    const terminalName = commandName ? `${device.name} SSH: ${commandName}` : `${device.name} SSH`;
+    const terminal = vscode.window.createTerminal({
+      name: terminalName,
+      pty: new SshTerminalSession(device, context, undefined, normalizedInitialCommand),
+    });
+    terminal.show(true);
+  };
+
   sidebarProvider = new SidebarViewProvider(
     context,
     getDevices,
@@ -493,10 +530,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
         vscode.window.showErrorMessage('Device not found. Check embeddedLogger.devices.');
       }
     },
-    (deviceId, commandName, command) => {
+    (deviceId, commandName, command, openSshPanel) => {
       const device = findDevice(deviceId);
       if (!device) {
         vscode.window.showErrorMessage('Device not found. Check embeddedLogger.devices.');
+        return;
+      }
+
+      if (openSshPanel) {
+        openSshTerminal(device, command, commandName);
         return;
       }
 
@@ -523,27 +565,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
     },
     (deviceId) => {
       const device = findDevice(deviceId);
-      if (!device) {
-        vscode.window.showErrorMessage('Device not found. Check embeddedLogger.devices.');
-        return;
-      }
-
-      if (!vscode.workspace.isTrusted) {
-        vscode.window.showErrorMessage('Workspace trust is required before connecting to devices.');
-        return;
-      }
-
-      const error = validateSshDevice(device);
-      if (error) {
-        vscode.window.showErrorMessage(error);
-        return;
-      }
-
-      const terminal = vscode.window.createTerminal({
-        name: `${device.name} SSH`,
-        pty: new SshTerminalSession(device, context),
-      });
-      terminal.show(true);
+      openSshTerminal(device);
     },
     (deviceId) => {
       const device = findDevice(deviceId);

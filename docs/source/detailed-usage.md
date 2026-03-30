@@ -106,8 +106,19 @@ If you prefer raw JSON, add entries like the following to your VS Code settings:
   "embeddedLogger.defaultEnableEmbeddedWebBrowser": false,
   "embeddedLogger.defaultSshCommands": [
     {
-      "name": "Restart Service",
-      "command": "systemctl restart my-service"
+        "name": "🔁 Reboot",
+        "command": "reboot",
+        "openSshPanel": false
+    },
+    {
+        "name": "⚙️ Restart Service",
+        "command": "systemctl restart my-service",
+        "openSshPanel": false
+    },
+    {
+        "name": "📈 Processes",
+        "command": "top",
+        "openSshPanel": true
     }
   ],
   "embeddedLogger.maxLinesPerTab": 100000,
@@ -148,8 +159,9 @@ If you prefer raw JSON, add entries like the following to your VS Code settings:
       ],
       "sshCommands": [
         {
-          "name": "Restart IOT",
-          "command": "systemctl restart fw-iot"
+          "name": "🔁 Restart IOT",
+          "command": "systemctl restart fw-iot",
+          "openSshPanel": false
         }
       ],
       "bastion": {
@@ -186,6 +198,7 @@ Common optional fields include:
 - `enableSshTerminal`, `enableSftpExplorer`, `enableWebBrowser`, and `enableEmbeddedWebBrowser` to override the defaults for one device.
 - `webBrowserUrl` to override the URL opened by browser actions.
 - `sshCommands` to define device-specific SSH buttons.
+  Set `openSshPanel: true` on a command to launch it in a persistent SSH terminal instead of a one-off notification.
 - `sftpPresetsRemote` and `sftpPresetsLocal` to persist SFTP favorite paths with the device configuration.
 - `bastion` to reach the device through a jump host.
 
@@ -234,6 +247,8 @@ Each device always exposes **Open Logs**. Depending on configuration, it can als
 - **Open External Web Browser**
 - **Open Embedded Web Browser**
 - One button for each configured `sshCommands` entry
+
+Commands with `openSshPanel: true` reuse the SSH terminal flow: the extension opens a terminal, runs the command immediately, and keeps the session open for follow-up input.
 
 Right-clicking a device title or host opens a small context menu with:
 
@@ -328,6 +343,8 @@ The SFTP explorer provides:
 - A dual-pane layout with the remote device on the left and a local pane on the right by default.
 - Optional remote mode on the right side for remote-to-remote transfers.
 - Saved path presets for both panes, persisted to `sftpPresetsRemote` and `sftpPresetsLocal`.
+- **Rename**, **duplicate**, **delete**, **transfer**, **permissions editing** and **view and edit content** actions from the UI.
+- Owner and group name resolution for permission changes where available.
 - Quick search by typing, with `Enter` cycling matches.
 - Keyboard shortcuts including:
   - `Arrow Up/Down` to move selection
@@ -337,8 +354,6 @@ The SFTP explorer provides:
   - `F2` to rename
   - `Ctrl/Cmd+D` to duplicate
   - `Ctrl/Cmd+P` to change permissions
-- Rename, duplicate, delete, transfer, and permissions editing actions from the UI.
-- Owner and group name resolution for permission changes where available.
 
 If the remote connection drops, the panel stays open, greys out, shows a reconnection countdown, and retries automatically without discarding the active remote paths.
 

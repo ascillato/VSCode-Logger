@@ -12,6 +12,12 @@ import { getEmbeddedLoggerGroups } from './configuration';
 /**
  * Representation of a configured embedded device.
  */
+export interface SshCommandDefinition {
+  name: string;
+  command: string;
+  openSshPanel?: boolean;
+}
+
 export interface EmbeddedDevice {
   id: string;
   group?: string;
@@ -35,7 +41,7 @@ export interface EmbeddedDevice {
   webBrowserUrl?: string;
   sftpPresetsRemote?: string[];
   sftpPresetsLocal?: string[];
-  sshCommands?: { name: string; command: string }[];
+  sshCommands?: SshCommandDefinition[];
 }
 
 export interface EmbeddedDeviceGroup {

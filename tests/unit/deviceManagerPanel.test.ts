@@ -252,7 +252,7 @@ describe('DeviceManagerPanel', () => {
         defaultEnableSftpExplorer: true,
         defaultEnableWebBrowser: false,
         defaultEnableEmbeddedWebBrowser: true,
-        defaultSshCommands: [{ name: ' Reboot ', command: ' sudo reboot ' }],
+        defaultSshCommands: [{ name: ' Reboot ', command: ' sudo reboot ', openSshPanel: true }],
         maxLinesPerTab: 5000,
       },
       groups: [{ name: ' Lab ' }],
@@ -267,7 +267,7 @@ describe('DeviceManagerPanel', () => {
           enableSshTerminal: 'enabled',
           enableWebBrowser: 'disabled',
           sftpPresetsRemote: ' /var/log \n /opt/app ',
-          sshCommands: [{ name: ' Logs ', command: ' journalctl -f ' }],
+          sshCommands: [{ name: ' Logs ', command: ' journalctl -f ', openSshPanel: true }],
           bastionHost: ' bastion.local ',
           bastionUsername: ' jump ',
           bastionPort: '22',
@@ -287,7 +287,9 @@ describe('DeviceManagerPanel', () => {
       'embeddedLogger.defaultEnableSftpExplorer': true,
       'embeddedLogger.defaultEnableWebBrowser': false,
       'embeddedLogger.defaultEnableEmbeddedWebBrowser': true,
-      'embeddedLogger.defaultSshCommands': [{ name: 'Reboot', command: 'sudo reboot' }],
+      'embeddedLogger.defaultSshCommands': [
+        { name: 'Reboot', command: 'sudo reboot', openSshPanel: true },
+      ],
       'embeddedLogger.maxLinesPerTab': 5000,
       'embeddedLogger.groups': [{ name: 'Lab' }],
       'embeddedLogger.devices': [
@@ -301,7 +303,7 @@ describe('DeviceManagerPanel', () => {
           enableSshTerminal: true,
           enableWebBrowser: false,
           sftpPresetsRemote: ['/var/log', '/opt/app'],
-          sshCommands: [{ name: 'Logs', command: 'journalctl -f' }],
+          sshCommands: [{ name: 'Logs', command: 'journalctl -f', openSshPanel: true }],
           bastion: {
             host: 'bastion.local',
             port: 22,
@@ -333,7 +335,7 @@ describe('DeviceManagerPanel', () => {
           'embeddedLogger.defaultEnableWebBrowser': false,
           'embeddedLogger.defaultEnableEmbeddedWebBrowser': true,
           'embeddedLogger.defaultSshCommands': [
-            { name: 'Restart', command: 'systemctl restart app' },
+            { name: 'Restart', command: 'systemctl restart app', openSshPanel: true },
           ],
           'embeddedLogger.maxLinesPerTab': 9000,
           'embeddedLogger.groups': [{ name: 'Lab' }],
@@ -370,7 +372,9 @@ describe('DeviceManagerPanel', () => {
         defaultEnableSftpExplorer: true,
         defaultEnableWebBrowser: false,
         defaultEnableEmbeddedWebBrowser: true,
-        defaultSshCommands: [{ name: 'Restart', command: 'systemctl restart app' }],
+        defaultSshCommands: [
+          { name: 'Restart', command: 'systemctl restart app', openSshPanel: true },
+        ],
         maxLinesPerTab: 9000,
       },
       groups: [{ name: 'Lab' }],

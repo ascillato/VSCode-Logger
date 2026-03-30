@@ -239,6 +239,7 @@
           deviceId: device.id,
           commandName: cmd.name,
           command: cmd.command,
+          openSshPanel: cmd.openSshPanel === true,
         });
       });
       list.appendChild(commandButton);

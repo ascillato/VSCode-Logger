@@ -5,7 +5,7 @@
  */
 
 import * as vscode from 'vscode';
-import type { EmbeddedDevice } from './deviceTree';
+import type { EmbeddedDevice, SshCommandDefinition } from './deviceTree';
 import { sanitizeSftpPresets } from './configuration';
 
 const defaultLogCommandValue = 'tail -F /var/log/syslog';
@@ -39,11 +39,6 @@ interface GroupPayload {
   name: string;
 }
 
-interface SshCommand {
-  name: string;
-  command: string;
-}
-
 interface DefaultsPayload {
   defaultPort: number;
   defaultLogCommand: string;
@@ -51,7 +46,7 @@ interface DefaultsPayload {
   defaultEnableSftpExplorer: boolean;
   defaultEnableWebBrowser: boolean;
   defaultEnableEmbeddedWebBrowser: boolean;
-  defaultSshCommands: SshCommand[];
+  defaultSshCommands: SshCommandDefinition[];
   maxLinesPerTab: number;
 }
 
@@ -77,7 +72,7 @@ interface DevicePayload {
   enableWebBrowser?: boolean | TriStateSelection;
   enableEmbeddedWebBrowser?: boolean | TriStateSelection;
   webBrowserUrl?: string;
-  sshCommands?: SshCommand[];
+  sshCommands?: SshCommandDefinition[];
   bastionHost?: string;
   bastionHostFingerprint?: string;
   bastionPort?: number | string;
@@ -98,7 +93,7 @@ interface ExportedSettingsPayload {
   'embeddedLogger.defaultEnableSftpExplorer': boolean;
   'embeddedLogger.defaultEnableWebBrowser': boolean;
   'embeddedLogger.defaultEnableEmbeddedWebBrowser': boolean;
-  'embeddedLogger.defaultSshCommands': SshCommand[];
+  'embeddedLogger.defaultSshCommands': SshCommandDefinition[];
   'embeddedLogger.maxLinesPerTab': number;
   'embeddedLogger.groups': GroupPayload[];
   'embeddedLogger.devices': EmbeddedDevice[];
@@ -674,7 +669,7 @@ export class DeviceManagerPanel {
     defaultEnableSftpExplorer: boolean;
     defaultEnableWebBrowser: boolean;
     defaultEnableEmbeddedWebBrowser: boolean;
-    defaultSshCommands: { name: string; command: string }[];
+    defaultSshCommands: SshCommandDefinition[];
     maxLinesPerTab: number;
   } {
     const defaultPort = this.toNumberOrDefault(defaults.defaultPort, 22);
@@ -708,7 +703,7 @@ export class DeviceManagerPanel {
       defaultEnableWebBrowser: config.get<boolean>('defaultEnableWebBrowser', false) ?? false,
       defaultEnableEmbeddedWebBrowser:
         config.get<boolean>('defaultEnableEmbeddedWebBrowser', false) ?? false,
-      defaultSshCommands: config.get<SshCommand[]>('defaultSshCommands', []) ?? [],
+      defaultSshCommands: config.get<SshCommandDefinition[]>('defaultSshCommands', []) ?? [],
       maxLinesPerTab: config.get<number>('maxLinesPerTab', 100000) ?? 100000,
     };
   }
@@ -986,7 +981,7 @@ export class DeviceManagerPanel {
     };
   }
 
-  private validateOptionalSshCommands(value: unknown, key: string): SshCommand[] {
+  private validateOptionalSshCommands(value: unknown, key: string): SshCommandDefinition[] {
     if (value === undefined) {
       return [];
     }
@@ -994,17 +989,27 @@ export class DeviceManagerPanel {
     return this.validateSshCommands(value, key);
   }
 
-  private validateSshCommands(value: unknown, key: string): SshCommand[] {
+  private validateSshCommands(value: unknown, key: string): SshCommandDefinition[] {
     if (!Array.isArray(value)) {
-      throw new Error(`${key} must be an array of {name, command} entries.`);
+      throw new Error(`${key} must be an array of {name, command, openSshPanel?} entries.`);
     }
 
     return value.map((entry, index) => {
       const command = this.asRecord(entry, `${key}[${index}] must be an object.`);
-      return {
+      const normalized: SshCommandDefinition = {
         name: this.readRequiredPropertyString(command, 'name', `${key}[${index}]`),
         command: this.readRequiredPropertyString(command, 'command', `${key}[${index}]`),
       };
+
+      const openSshPanel = this.readOptionalBoolean(
+        command.openSshPanel,
+        `${key}[${index}].openSshPanel`
+      );
+      if (openSshPanel) {
+        normalized.openSshPanel = true;
+      }
+
+      return normalized;
     });
   }
 
@@ -1148,7 +1153,9 @@ export class DeviceManagerPanel {
     };
   }
 
-  private normalizeSshCommands(value: SshCommand[] | string | undefined): SshCommand[] {
+  private normalizeSshCommands(
+    value: SshCommandDefinition[] | string | undefined
+  ): SshCommandDefinition[] {
     if (!value || (typeof value === 'string' && !value.trim())) {
       return [];
     }
@@ -1159,7 +1166,9 @@ export class DeviceManagerPanel {
       try {
         parsed = JSON.parse(value);
       } catch {
-        throw new Error('SSH commands must be valid JSON (array of {name, command}).');
+        throw new Error(
+          'SSH commands must be valid JSON (array of {name, command, openSshPanel?}).'
+        );
       }
     }
 
@@ -1169,7 +1178,11 @@ export class DeviceManagerPanel {
 
     return parsed
       .filter(isSshCommand)
-      .map((item) => ({ name: item.name.trim(), command: item.command.trim() }))
+      .map((item) => ({
+        name: item.name.trim(),
+        command: item.command.trim(),
+        openSshPanel: item.openSshPanel === true ? true : undefined,
+      }))
       .filter((item) => item.name && item.command);
   }
 
@@ -1204,10 +1217,10 @@ function getNonce(): string {
     .join('');
 }
 
-function isSshCommand(value: unknown): value is SshCommand {
+function isSshCommand(value: unknown): value is SshCommandDefinition {
   if (!value || typeof value !== 'object') {
     return false;
   }
-  const candidate = value as Partial<SshCommand>;
+  const candidate = value as Partial<SshCommandDefinition>;
   return typeof candidate.name === 'string' && typeof candidate.command === 'string';
 }

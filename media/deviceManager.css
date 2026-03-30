@@ -251,11 +251,22 @@ td select {
   min-width: 64px;
 }
 
+.ssh-commands-table th:nth-last-child(2),
+.ssh-commands-table td:nth-last-child(2) {
+  width: 14ch;
+  min-width: 14ch;
+}
+
 .ssh-commands-table input {
   width: 100%;
   box-sizing: border-box;
 }
 
+.ssh-command-open-panel input {
+  width: auto;
+}
+
+.ssh-command-open-panel,
 .ssh-command-remove {
   text-align: center;
 }

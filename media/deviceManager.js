@@ -373,6 +373,10 @@ function renderSshCommandsEditor(commands, mountPoint, onChange) {
   commandTh.textContent = 'Command';
   headerRow.appendChild(commandTh);
 
+  const openPanelTh = document.createElement('th');
+  openPanelTh.textContent = 'Open SSH Panel';
+  headerRow.appendChild(openPanelTh);
+
   const addTh = document.createElement('th');
   const addButton = document.createElement('button');
   addButton.type = 'button';
@@ -380,7 +384,7 @@ function renderSshCommandsEditor(commands, mountPoint, onChange) {
   addButton.textContent = '+';
   addButton.title = 'Add command';
   addButton.addEventListener('click', () => {
-    const updated = [...list, { name: '', command: '' }];
+    const updated = [...list, { name: '', command: '', openSshPanel: false }];
     list = updated;
     onChange(updated, { rebuild: true });
   });
@@ -422,6 +426,21 @@ function renderSshCommandsEditor(commands, mountPoint, onChange) {
     const commandCell = document.createElement('td');
     commandCell.appendChild(commandInput);
 
+    const openPanelInput = document.createElement('input');
+    openPanelInput.type = 'checkbox';
+    openPanelInput.checked = item?.openSshPanel === true;
+    openPanelInput.title = 'Open this command in an SSH panel';
+    openPanelInput.setAttribute('aria-label', `Open ${item?.name || 'command'} in SSH panel`);
+    openPanelInput.addEventListener('change', (event) => {
+      const updated = [...list];
+      updated[idx] = { ...updated[idx], openSshPanel: event.target.checked };
+      list = updated;
+      onChange(updated, { rebuild: false });
+    });
+    const openPanelCell = document.createElement('td');
+    openPanelCell.className = 'ssh-command-open-panel';
+    openPanelCell.appendChild(openPanelInput);
+
     const removeButton = document.createElement('button');
     removeButton.type = 'button';
     removeButton.className = 'button button-danger button-icon';
@@ -438,6 +457,7 @@ function renderSshCommandsEditor(commands, mountPoint, onChange) {
 
     row.appendChild(nameCell);
     row.appendChild(commandCell);
+    row.appendChild(openPanelCell);
     row.appendChild(removeCell);
     tbody.appendChild(row);
   });
@@ -978,6 +998,23 @@ async function copyHelpJson() {
 
 function buildHelpJson() {
   const defaults = state.defaults;
+  const exampleSshCommands = [
+    {
+      name: '🔁 Reboot',
+      command: 'reboot',
+      openSshPanel: false,
+    },
+    {
+      name: '⚙️ Restart Service',
+      command: 'systemctl restart my-service',
+      openSshPanel: false,
+    },
+    {
+      name: '📈 Processes',
+      command: 'top',
+      openSshPanel: true,
+    },
+  ];
   const example = {
     'embeddedLogger.defaultPort': defaults.defaultPort ?? 22,
     'embeddedLogger.defaultLogCommand': defaults.defaultLogCommand ?? 'tail -F /var/log/syslog',
@@ -1003,7 +1040,7 @@ function buildHelpJson() {
         enableWebBrowser: !!defaults.defaultEnableWebBrowser,
         enableEmbeddedWebBrowser: !!defaults.defaultEnableEmbeddedWebBrowser,
         webBrowserUrl: 'http://192.168.0.10',
-        sshCommands: defaults.defaultSshCommands ?? [],
+        sshCommands: exampleSshCommands,
       },
     ],
   };
