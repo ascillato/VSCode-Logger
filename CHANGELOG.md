@@ -7,7 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
-## [1.8.1] - 2026-03-26 [GROUPING]
+## [1.8.2] - 2026-03-30 [SSH-IMPROVEMENTS]
+
+### Added
+- Added a regression test covering fingerprint-update retries within the same log panel session.
+
+### Changed
+- None.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- Fixed SSH reconnect behavior after choosing `Update fingerprint and connect` so the current panel retries immediately without needing to close and reopen it.
+
+### Security
+- None.
+
+----------------------------------------
+
+## [1.8.1] - 2026-03-29 [GROUPING]
 
 ### Added
 - Added import/export config.

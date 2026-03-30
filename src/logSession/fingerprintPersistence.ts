@@ -63,6 +63,7 @@ export class FingerprintPersistence {
     }
 
     await config.update('devices', updatedDevices, target);
+    endpoint.fingerprint = fingerprint;
     this.updateLocalDevice(endpoint, fingerprint, bastionConfig);
   }
 

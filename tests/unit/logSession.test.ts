@@ -58,15 +58,20 @@ describe('LogSession (unit)', () => {
 
     const connectSpy = vi.spyOn(ConnectionManager.prototype, 'connect');
     const stream = new MockSshChannel();
+    const requestedFingerprints: Array<string | undefined> = [];
 
-    connectSpy.mockImplementationOnce(async () => {
+    connectSpy.mockImplementationOnce(async (request) => {
+      requestedFingerprints.push(request.endpoint.fingerprint);
       onMismatch({ expected: 'expected-value', received: mockFingerprint() });
-      throw new HostKeyMismatchError('Mismatch', 'expected-value', mockFingerprint(), {
-        host: device.host,
-        label: 'primary',
-      });
+      throw new HostKeyMismatchError(
+        'Mismatch',
+        'expected-value',
+        mockFingerprint(),
+        request.endpoint
+      );
     });
-    connectSpy.mockImplementationOnce(async () => {
+    connectSpy.mockImplementationOnce(async (request) => {
+      requestedFingerprints.push(request.endpoint.fingerprint);
       statuses.push('Connected. Streaming logs...');
       setTimeout(() => {
         stream.emitData('line one\n');
@@ -95,6 +100,10 @@ describe('LogSession (unit)', () => {
     expect(devices.find((entry) => entry.id === device.id)?.hostFingerprint).toBe(
       mockFingerprint()
     );
+    expect(requestedFingerprints).toEqual([
+      'SHA256:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+      mockFingerprint(),
+    ]);
     expect(onMismatch).toHaveBeenCalled();
     expect(lines).toEqual(['line one']);
     expect(statuses.some((status) => status.includes('Streaming logs'))).toBe(true);
