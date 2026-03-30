@@ -49,6 +49,7 @@ export class LogPanel {
   private readonly autoSaveManager: AutoSaveManager;
   private resolveWebviewReady?: () => void;
   private disposed = false;
+  private preferredReconnectHost?: string;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -208,19 +209,29 @@ export class LogPanel {
       throw new Error('Cannot create a log session without a device.');
     }
 
-    return new LogSession(this.device, this.context, {
-      onLine: (line: string): void => this.handleIncomingLine(line),
-      onError: (message: string): void => {
-        void this.panel.webview.postMessage({ type: 'error', message });
+    return new LogSession(
+      this.device,
+      this.context,
+      {
+        onLine: (line: string): void => this.handleIncomingLine(line),
+        onError: (message: string): void => {
+          void this.panel.webview.postMessage({ type: 'error', message });
+        },
+        onStatus: (message: string): void => {
+          void this.panel.webview.postMessage({ type: 'status', message });
+        },
+        onClose: (): void => this.handleSessionClose(),
+        onHostKeyMismatch: (details): void => {
+          void this.handleHostKeyMismatch(details);
+        },
+        onConnectedEndpoint: (endpoint): void => {
+          this.preferredReconnectHost = endpoint.host;
+        },
       },
-      onStatus: (message: string): void => {
-        void this.panel.webview.postMessage({ type: 'status', message });
-      },
-      onClose: (): void => this.handleSessionClose(),
-      onHostKeyMismatch: (details): void => {
-        void this.handleHostKeyMismatch(details);
-      },
-    });
+      {
+        preferredEndpointHost: this.preferredReconnectHost,
+      }
+    );
   }
 
   private async sendInitialData(): Promise<void> {

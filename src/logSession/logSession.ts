@@ -37,6 +37,7 @@ export interface LogSessionDependencies {
   createForwardingClient?: () => ForwardingClient;
   passwordManager?: PasswordManager;
   authenticationProvider?: AuthenticationProvider;
+  preferredEndpointHost?: string;
 }
 
 /**
@@ -136,7 +137,7 @@ export class LogSession {
       const bastionAuthentication = this.bastionConfig
         ? await this.authenticator.getBastionAuthentication(this.bastionConfig)
         : undefined;
-      const endpoints = getHostEndpoints(this.device);
+      const endpoints = this.getOrderedEndpoints();
 
       if (endpoints.length === 0) {
         throw new Error(`Device "${this.device.name}" is missing a host.`);
@@ -237,8 +238,29 @@ export class LogSession {
 
     this.connection = connection;
     this.hasConnected = true;
+    this.callbacks.onConnectedEndpoint?.(endpoint);
 
     this.attachStream(connection.stream);
+  }
+
+  private getOrderedEndpoints(): HostEndpoint[] {
+    const endpoints = getHostEndpoints(this.device);
+    const preferredHost = this.dependencies.preferredEndpointHost?.trim();
+    if (!preferredHost) {
+      return endpoints;
+    }
+
+    const preferredIndex = endpoints.findIndex((endpoint) => endpoint.host === preferredHost);
+    if (preferredIndex <= 0) {
+      return endpoints;
+    }
+
+    const preferredEndpoint = endpoints[preferredIndex];
+    return [
+      preferredEndpoint,
+      ...endpoints.slice(0, preferredIndex),
+      ...endpoints.slice(preferredIndex + 1),
+    ];
   }
 
   /**

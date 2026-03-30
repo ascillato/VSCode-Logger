@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fixed SSH reconnect behavior after choosing `Update fingerprint and connect` so the current panel retries immediately without needing to close and reopen it.
+- Fixed Secondary Host reconnection.
 
 ### Security
 - None.

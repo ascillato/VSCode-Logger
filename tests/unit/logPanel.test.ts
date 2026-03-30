@@ -5,12 +5,23 @@ vi.mock('../../src/logSession', () => {
   const logSessionInstances: Array<{
     start: ReturnType<typeof vi.fn>;
     dispose: ReturnType<typeof vi.fn>;
+    callbacks: Record<string, unknown>;
+    dependencies: Record<string, unknown>;
   }> = [];
   class MockLogSession {
     start = vi.fn(async () => undefined);
     dispose = vi.fn(() => undefined);
+    callbacks: Record<string, unknown>;
+    dependencies: Record<string, unknown>;
 
-    constructor() {
+    constructor(
+      _device: unknown,
+      _context: unknown,
+      callbacks: Record<string, unknown>,
+      dependencies: Record<string, unknown> = {}
+    ) {
+      this.callbacks = callbacks;
+      this.dependencies = dependencies;
       logSessionInstances.push(this);
     }
   }
@@ -91,6 +102,31 @@ describe('LogPanel (unit)', () => {
     expect(firstDispose).toHaveBeenCalled();
     expect(postMessage).toHaveBeenCalledWith({ type: 'status', message: 'Reconnecting...' });
     expect(secondSession.start).toHaveBeenCalled();
+
+    panel.dispose();
+  });
+
+  it('reuses the last successful endpoint host on reconnect', async () => {
+    const context = createExtensionContext();
+    const panel = new LogPanel(context, { type: 'remote', device }, () => undefined);
+    const webviewPanel = getCreatedWebviews()[0];
+    const firstSession = logSessionInstances[0];
+    const notifyConnectedEndpoint = firstSession.callbacks.onConnectedEndpoint as (endpoint: {
+      host: string;
+      label: string;
+    }) => void;
+
+    notifyConnectedEndpoint({
+      host: 'backup.example.com',
+      label: 'secondary',
+    });
+
+    webviewPanel.__fireMessage({ type: 'requestReconnect' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const secondSession = logSessionInstances[1];
+
+    expect(secondSession.dependencies.preferredEndpointHost).toBe('backup.example.com');
 
     panel.dispose();
   });

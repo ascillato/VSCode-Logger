@@ -163,4 +163,51 @@ describe('LogSession (unit)', () => {
     expect(lines).toEqual(['secondary ok']);
     expect(statuses.some((status) => status.includes('Streaming logs'))).toBe(true);
   });
+
+  it('prefers the last successful endpoint host on a new reconnect attempt', async () => {
+    const context = createExtensionContext();
+    const attemptedHosts: string[] = [];
+    const statuses: string[] = [];
+    const lines: string[] = [];
+    const stream = new MockSshChannel();
+
+    const connectSpy = vi.spyOn(ConnectionManager.prototype, 'connect');
+    connectSpy.mockImplementationOnce(async (request) => {
+      attemptedHosts.push(request.endpoint.host);
+      throw new Error('secondary unavailable');
+    });
+    connectSpy.mockImplementationOnce(async (request) => {
+      attemptedHosts.push(request.endpoint.host);
+      setTimeout(() => {
+        stream.emitData('primary ok\n');
+        stream.emitClose();
+      });
+      statuses.push('Connected. Streaming logs...');
+      return {
+        client: { end: vi.fn() } as unknown as object,
+        stream,
+      };
+    });
+
+    const session = new LogSession(
+      baseDevice,
+      context,
+      {
+        onLine: (line) => lines.push(line),
+        onStatus: (message) => statuses.push(message),
+        onError: (message) => statuses.push(`error:${message}`),
+        onClose: () => statuses.push('closed'),
+      },
+      {
+        preferredEndpointHost: 'backup.example.com',
+      }
+    );
+
+    await session.start();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(attemptedHosts).toEqual(['backup.example.com', 'primary.example.com']);
+    expect(lines).toEqual(['primary ok']);
+    expect(statuses.some((status) => status.includes('Streaming logs'))).toBe(true);
+  });
 });
