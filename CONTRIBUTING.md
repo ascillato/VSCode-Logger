@@ -97,7 +97,7 @@ The log session and log panel are intentionally modular: keep SSH orchestration 
 
 * Increment the version in `package.json` following semantic versioning: bump the patch version for bug fixes, minor for backward‑compatible feature additions and major for breaking changes.
 * Update the changelog or release notes (if present) whenever you release a new version. Summarize notable changes and migration steps.
-* Before publishing to the VS Code Marketplace, run `npm run compile` and ensure the extension packages successfully (e.g., using `vsce package`). Test that all contributed settings and commands appear in the VS Code UI and that secrets are handled correctly.
+* Before publishing to the VS Code Marketplace, run `npm run compile` and ensure the extension packages successfully (for example `npm run package:vsix` or `make package`, which use a pinned `@vscode/vsce` through `npm exec`). Test that all contributed settings and commands appear in the VS Code UI and that secrets are handled correctly.
 
 ## Conclusion
 

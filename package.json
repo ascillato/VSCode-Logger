@@ -3,7 +3,7 @@
   "displayName": "Embedded Device Logger",
   "description": "Stream and filter embedded Linux device logs over SSH inside VS Code.",
   "icon": "media/icon.png",
-  "version": "1.8.2",
+  "version": "1.8.3",
   "publisher": "Scallant",
   "author": "A. Scillato",
   "engines": {
@@ -45,37 +45,44 @@
       "properties": {
         "embeddedLogger.defaultPort": {
           "type": "number",
+          "scope": "resource",
           "default": 22,
           "description": "Default SSH port applied to devices that do not specify one.",
           "minimum": 1
         },
         "embeddedLogger.defaultLogCommand": {
           "type": "string",
+          "scope": "resource",
           "default": "tail -F /var/log/syslog",
           "description": "Default log command used when a device omits logCommand."
         },
         "embeddedLogger.defaultEnableSshTerminal": {
           "type": "boolean",
+          "scope": "resource",
           "default": true,
           "description": "Whether devices without an explicit enableSshTerminal flag should show the SSH terminal action."
         },
         "embeddedLogger.defaultEnableSftpExplorer": {
           "type": "boolean",
+          "scope": "resource",
           "default": true,
           "description": "Whether devices without an explicit enableSftpExplorer flag should show the SFTP explorer action."
         },
         "embeddedLogger.defaultEnableWebBrowser": {
           "type": "boolean",
+          "scope": "resource",
           "default": false,
           "description": "Whether devices without an explicit enableWebBrowser flag should show the external web browser action."
         },
         "embeddedLogger.defaultEnableEmbeddedWebBrowser": {
           "type": "boolean",
+          "scope": "resource",
           "default": false,
           "description": "Whether devices without an explicit enableEmbeddedWebBrowser flag should show the embedded web browser action."
         },
         "embeddedLogger.defaultSshCommands": {
           "type": "array",
+          "scope": "resource",
           "description": "Reusable SSH commands that can be shown before each device's own SSH commands in the Devices view.",
           "markdownDescription": "Reusable SSH commands that can be shown before each device's own SSH commands in the Devices view.\n\nEach device can disable them with `showDefaultSshCommands: false` to show only its device-specific commands.\n\nExample:\n```json\n[\n  {\n    \"name\": \"🔁 Reboot\",\n    \"command\": \"reboot\",\n    \"openSshPanel\": false\n  },\n  {\n    \"name\": \"⚙️ Restart Service\",\n    \"command\": \"systemctl restart my-service\",\n    \"openSshPanel\": false\n  },\n  {\n    \"name\": \"📈 Processes\",\n    \"command\": \"top\",\n    \"openSshPanel\": true\n  }\n]\n```",
           "items": {
@@ -104,6 +111,7 @@
         },
         "embeddedLogger.groups": {
           "type": "array",
+          "scope": "resource",
           "default": [],
           "description": "Optional ordered list of device groups displayed in the Embedded Devices view.",
           "items": {
@@ -122,6 +130,7 @@
         },
         "embeddedLogger.devices": {
           "type": "array",
+          "scope": "resource",
           "description": "List of embedded devices to stream logs from.",
           "markdownDescription": "List of embedded devices to stream logs from.\n\nManage devices with the **Embedded Logger: Edit Devices Configuration** Device Manager (table UI with add/remove rows and all fields). You can also choose **Edit in settings.json** for direct JSON editing.\n\nExample:\n```json\n[\n  {\n    \"id\": \"rpi4\",\n    \"group\": \"Lab\",\n    \"color\": \"#4fc3f7\",\n    \"name\": \"Raspberry Pi 4\",\n    \"host\": \"192.168.1.50\",\n    \"hostFingerprint\": \"SHA256:your-base64-fingerprint\",\n    \"secondaryHost\": \"192.168.1.51\",\n    \"secondaryHostFingerprint\": \"SHA256:secondary-base64-fingerprint\",\n    \"port\": 22,\n    \"username\": \"pi\",\n    \"password\": \"\",\n    \"privateKeyPath\": \"/home/user/.ssh/id_ed25519\",\n    \"privateKeyPassphrase\": \"${env:KEY_PASSPHRASE}\",\n    \"logCommand\": \"journalctl -f -u app.service\",\n    \"enableSshTerminal\": true,\n    \"enableSftpExplorer\": true,\n    \"enableWebBrowser\": false,\n    \"enableEmbeddedWebBrowser\": false,\n    \"webBrowserUrl\": \"http://192.168.1.50\",\n    \"showDefaultSshCommands\": true,\n    \"sshCommands\": [\n      {\n        \"name\": \"🔁 Reboot\",\n        \"command\": \"reboot\",\n        \"openSshPanel\": false\n      },\n      {\n        \"name\": \"⚙️ Restart Service\",\n        \"command\": \"systemctl restart my-service\",\n        \"openSshPanel\": false\n      },\n      {\n        \"name\": \"📈 Processes\",\n        \"command\": \"top\",\n        \"openSshPanel\": true\n      }\n    ],\n    \"bastion\": {\n      \"host\": \"bastion.example.com\",\n      \"hostFingerprint\": \"SHA256:bastion-fingerprint\",\n      \"port\": 22,\n      \"username\": \"jump-user\",\n      \"password\": \"\",\n      \"privateKeyPath\": \"${env:HOME}/.ssh/id_ed25519\",\n      \"privateKeyPassphrase\": \"\"\n    }\n  }\n]\n```",
           "items": {
@@ -409,6 +418,7 @@
         },
         "embeddedLogger.maxLinesPerTab": {
           "type": "number",
+          "scope": "resource",
           "default": 100000,
           "description": "Maximum number of log lines retained per log tab before older lines are discarded.",
           "minimum": 1
@@ -494,6 +504,7 @@
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
+    "package:vsix": "npm exec --yes --loglevel=error --package @vscode/vsce@3.7.1 -- vsce package",
     "watch": "tsc -watch -p ./",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -515,8 +526,8 @@
     "@types/mocha": "^10.0.10",
     "@types/node": "^25.5.0",
     "@types/vscode": "^1.110.0",
-    "@typescript-eslint/eslint-plugin": "^8.57.2",
-    "@typescript-eslint/parser": "^8.57.2",
+    "@typescript-eslint/eslint-plugin": "^8.58.0",
+    "@typescript-eslint/parser": "^8.58.0",
     "@vitest/coverage-v8": "^4.1.2",
     "@vscode/test-electron": "^2.4.1",
     "cloc": "^2.6.0-cloc",
