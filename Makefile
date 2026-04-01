@@ -74,7 +74,7 @@ package: ## Install deps, compile, and create the .vsix package
 	printf "$(YELLOW)\n\nStart building package at %s\n\n$(RESET)\n" "$$ts"
 
 	@ts=""; \
-	if npm install && npm run compile && vsce package; then \
+	if npm install && npm run compile && npm run package:vsix; then \
 		ts="$$(date +"%Y-%m-%dT%H:%M:%S%z")"; \
 		printf "$(GREEN)\n\nPackage completed at %s\n\n$(RESET)\n" "$$ts"; \
 	else \

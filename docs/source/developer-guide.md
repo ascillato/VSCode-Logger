@@ -9,6 +9,8 @@ Embedded Device Logger welcomes contributions from the community. Please review 
 
 ## Build and run from source
 
+Use Node.js `25.8.2` to match CI and the repository `.nvmrc`.
+
 1. Clone the repository.
 2. Install dependencies and compile:
    ```bash
@@ -19,7 +21,7 @@ Embedded Device Logger welcomes contributions from the community. Please review 
 
 ## Packaging and installation
 
-- Generate a VSIX (requires `@vscode/vsce`):
+- Generate a VSIX:
   ```bash
   make package
   ```
@@ -27,6 +29,8 @@ Embedded Device Logger welcomes contributions from the community. Please review 
   ```bash
   make install
   ```
+
+The repository uses a pinned `@vscode/vsce` version through `npm exec`, so packaging does not depend on any globally installed `vsce` executable.
 
 ## Cleaning and rebuilding
 
