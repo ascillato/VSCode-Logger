@@ -67,6 +67,8 @@ function normalizeSshCommands(value: unknown): SshCommandDefinition[] {
       name,
       command: shellCommand,
       openSshPanel: command.openSshPanel === true ? true : undefined,
+      rerunOnReconnection:
+        command.openSshPanel === true && command.rerunOnReconnection === true ? true : undefined,
     });
   }
 

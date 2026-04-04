@@ -39,6 +39,7 @@ export interface DeviceCommand {
   name: string;
   command: string;
   openSshPanel?: boolean;
+  rerunOnReconnection?: boolean;
 }
 
 /**

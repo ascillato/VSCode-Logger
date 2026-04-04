@@ -73,11 +73,20 @@ function handleInit(message) {
     ...state.defaults,
     ...defaults,
     defaultSshCommands: Array.isArray(defaults?.defaultSshCommands)
-      ? defaults.defaultSshCommands.map((command) => ({ ...command }))
+      ? defaults.defaultSshCommands.map(toViewSshCommand)
       : [],
   };
   state.devices = devices.map(toViewDevice);
   render();
+}
+
+function toViewSshCommand(command) {
+  return {
+    name: command?.name ?? '',
+    command: command?.command ?? '',
+    openSshPanel: command?.openSshPanel === true,
+    rerunOnReconnection: command?.openSshPanel === true && command?.rerunOnReconnection === true,
+  };
 }
 
 function toViewDevice(device) {
@@ -108,9 +117,7 @@ function toViewDevice(device) {
     privateKeyPath: device.privateKeyPath ?? '',
     privateKeyPassphrase: device.privateKeyPassphrase ?? '',
     password: device.password ?? '',
-    sshCommands: Array.isArray(device.sshCommands)
-      ? device.sshCommands.map((command) => ({ ...command }))
-      : [],
+    sshCommands: Array.isArray(device.sshCommands) ? device.sshCommands.map(toViewSshCommand) : [],
     bastionHost: device.bastion?.host ?? '',
     bastionPort: device.bastion?.port ?? '',
     bastionUsername: device.bastion?.username ?? '',
@@ -380,6 +387,10 @@ function renderSshCommandsEditor(commands, mountPoint, onChange) {
   openPanelTh.textContent = 'Open SSH Panel';
   headerRow.appendChild(openPanelTh);
 
+  const rerunOnReconnectionTh = document.createElement('th');
+  rerunOnReconnectionTh.textContent = 'Re-run on reconnection';
+  headerRow.appendChild(rerunOnReconnectionTh);
+
   const addTh = document.createElement('th');
   const addButton = document.createElement('button');
   addButton.type = 'button';
@@ -387,7 +398,10 @@ function renderSshCommandsEditor(commands, mountPoint, onChange) {
   addButton.textContent = '+';
   addButton.title = 'Add command';
   addButton.addEventListener('click', () => {
-    const updated = [...list, { name: '', command: '', openSshPanel: false }];
+    const updated = [
+      ...list,
+      { name: '', command: '', openSshPanel: false, rerunOnReconnection: false },
+    ];
     list = updated;
     onChange(updated, { rebuild: true });
   });
@@ -436,13 +450,45 @@ function renderSshCommandsEditor(commands, mountPoint, onChange) {
     openPanelInput.setAttribute('aria-label', `Open ${item?.name || 'command'} in SSH panel`);
     openPanelInput.addEventListener('change', (event) => {
       const updated = [...list];
-      updated[idx] = { ...updated[idx], openSshPanel: event.target.checked };
+      const openSshPanel = event.target.checked;
+      updated[idx] = {
+        ...updated[idx],
+        openSshPanel,
+        rerunOnReconnection: openSshPanel ? updated[idx]?.rerunOnReconnection === true : false,
+      };
       list = updated;
       onChange(updated, { rebuild: false });
+      rerunOnReconnectionInput.disabled = !openSshPanel;
+      if (!openSshPanel) {
+        rerunOnReconnectionInput.checked = false;
+      }
     });
     const openPanelCell = document.createElement('td');
     openPanelCell.className = 'ssh-command-open-panel';
     openPanelCell.appendChild(openPanelInput);
+
+    const rerunOnReconnectionInput = document.createElement('input');
+    rerunOnReconnectionInput.type = 'checkbox';
+    rerunOnReconnectionInput.checked =
+      item?.openSshPanel === true && item?.rerunOnReconnection === true;
+    rerunOnReconnectionInput.disabled = item?.openSshPanel !== true;
+    rerunOnReconnectionInput.title = 'Re-run this command after the SSH panel reconnects';
+    rerunOnReconnectionInput.setAttribute(
+      'aria-label',
+      `Re-run ${item?.name || 'command'} on reconnection`
+    );
+    rerunOnReconnectionInput.addEventListener('change', (event) => {
+      const updated = [...list];
+      updated[idx] = {
+        ...updated[idx],
+        rerunOnReconnection: updated[idx]?.openSshPanel === true && event.target.checked === true,
+      };
+      list = updated;
+      onChange(updated, { rebuild: false });
+    });
+    const rerunOnReconnectionCell = document.createElement('td');
+    rerunOnReconnectionCell.className = 'ssh-command-open-panel';
+    rerunOnReconnectionCell.appendChild(rerunOnReconnectionInput);
 
     const removeButton = document.createElement('button');
     removeButton.type = 'button';
@@ -461,6 +507,7 @@ function renderSshCommandsEditor(commands, mountPoint, onChange) {
     row.appendChild(nameCell);
     row.appendChild(commandCell);
     row.appendChild(openPanelCell);
+    row.appendChild(rerunOnReconnectionCell);
     row.appendChild(removeCell);
     tbody.appendChild(row);
   });
@@ -1007,16 +1054,19 @@ function buildHelpJson() {
       name: '🔁 Reboot',
       command: 'reboot',
       openSshPanel: false,
+      rerunOnReconnection: false,
     },
     {
       name: '⚙️ Restart Service',
       command: 'systemctl restart my-service',
       openSshPanel: false,
+      rerunOnReconnection: false,
     },
     {
       name: '📈 Processes',
       command: 'top',
       openSshPanel: true,
+      rerunOnReconnection: true,
     },
   ];
   const example = {

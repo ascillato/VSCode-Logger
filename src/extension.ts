@@ -484,7 +484,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
   const openSshTerminal = (
     device: EmbeddedDevice | undefined,
     initialCommand?: string,
-    commandName?: string
+    commandName?: string,
+    rerunInitialCommandOnReconnect = false
   ): void => {
     if (!device) {
       vscode.window.showErrorMessage('Device not found. Check embeddedLogger.devices.');
@@ -513,7 +514,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
     const terminalName = commandName ? `${device.name} SSH: ${commandName}` : `${device.name} SSH`;
     const terminal = vscode.window.createTerminal({
       name: terminalName,
-      pty: new SshTerminalSession(device, context, undefined, normalizedInitialCommand),
+      pty: new SshTerminalSession(
+        device,
+        context,
+        undefined,
+        normalizedInitialCommand,
+        rerunInitialCommandOnReconnect
+      ),
     });
     terminal.show(true);
   };
@@ -530,7 +537,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
         vscode.window.showErrorMessage('Device not found. Check embeddedLogger.devices.');
       }
     },
-    (deviceId, commandName, command, openSshPanel) => {
+    (deviceId, commandName, command, openSshPanel, rerunOnReconnection) => {
       const device = findDevice(deviceId);
       if (!device) {
         vscode.window.showErrorMessage('Device not found. Check embeddedLogger.devices.');
@@ -538,7 +545,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
       }
 
       if (openSshPanel) {
-        openSshTerminal(device, command, commandName);
+        openSshTerminal(device, command, commandName, rerunOnReconnection === true);
         return;
       }
 

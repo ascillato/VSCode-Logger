@@ -240,6 +240,7 @@
           commandName: cmd.name,
           command: cmd.command,
           openSshPanel: cmd.openSshPanel === true,
+          rerunOnReconnection: cmd.rerunOnReconnection === true,
         });
       });
       list.appendChild(commandButton);

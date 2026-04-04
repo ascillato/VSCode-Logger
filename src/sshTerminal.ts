@@ -51,6 +51,7 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
   private userRequestedClose = false;
   private inputBuffer = '';
   private lastDimensions: vscode.TerminalDimensions | undefined;
+  private hasOpenedShellOnce = false;
   private readonly passwordManager: PasswordManager;
   private readonly getErrorMessage = (err: unknown): string =>
     err instanceof Error ? err.message : typeof err === 'string' ? err : String(err);
@@ -64,12 +65,14 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
    * @param context The extension context for secret storage access.
    * @param initialPath Optional working directory to open on connect.
    * @param initialCommand Optional command to execute after the shell opens.
+   * @param rerunInitialCommandOnReconnect Whether the initial command should run again after reconnects.
    */
   constructor(
     private readonly device: EmbeddedDevice,
     private readonly context: vscode.ExtensionContext,
     private readonly initialPath?: string,
-    private readonly initialCommand?: string
+    private readonly initialCommand?: string,
+    private readonly rerunInitialCommandOnReconnect = false
   ) {
     this.passwordManager = new PasswordManager(this.context);
   }
@@ -418,7 +421,10 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
 
             try {
               const initialCommand = this.normalizeInitialCommand(this.initialCommand);
-              if (initialCommand) {
+              const shouldRunInitialCommand =
+                !this.hasOpenedShellOnce || this.rerunInitialCommandOnReconnect;
+              this.hasOpenedShellOnce = true;
+              if (initialCommand && shouldRunInitialCommand) {
                 stream.write(`${initialCommand}\n`);
               }
             } catch (error: unknown) {

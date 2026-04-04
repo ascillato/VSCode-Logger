@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [1.8.4] - 2026-04-03 [SSH-CMNDS-IMPROVEMENTS]
+
+### Added
+- Added optional re-run ssh command for ssh terminals on reconnection.
+
+### Changed
+- Improved wording in UI for passwords.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- None.
+
+### Security
+- Updated dependencies to latest.
+
+----------------------------------------
+
 ## [1.8.3] - 2026-03-31 [CONFIG-FIXES]
 
 ### Added

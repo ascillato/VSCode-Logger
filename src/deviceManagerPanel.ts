@@ -1007,7 +1007,9 @@ export class DeviceManagerPanel {
 
   private validateSshCommands(value: unknown, key: string): SshCommandDefinition[] {
     if (!Array.isArray(value)) {
-      throw new Error(`${key} must be an array of {name, command, openSshPanel?} entries.`);
+      throw new Error(
+        `${key} must be an array of {name, command, openSshPanel?, rerunOnReconnection?} entries.`
+      );
     }
 
     return value.map((entry, index) => {
@@ -1023,6 +1025,14 @@ export class DeviceManagerPanel {
       );
       if (openSshPanel) {
         normalized.openSshPanel = true;
+      }
+
+      const rerunOnReconnection = this.readOptionalBoolean(
+        command.rerunOnReconnection,
+        `${key}[${index}].rerunOnReconnection`
+      );
+      if (openSshPanel && rerunOnReconnection) {
+        normalized.rerunOnReconnection = true;
       }
 
       return normalized;
@@ -1183,7 +1193,7 @@ export class DeviceManagerPanel {
         parsed = JSON.parse(value);
       } catch {
         throw new Error(
-          'SSH commands must be valid JSON (array of {name, command, openSshPanel?}).'
+          'SSH commands must be valid JSON (array of {name, command, openSshPanel?, rerunOnReconnection?}).'
         );
       }
     }
@@ -1198,6 +1208,8 @@ export class DeviceManagerPanel {
         name: item.name.trim(),
         command: item.command.trim(),
         openSshPanel: item.openSshPanel === true ? true : undefined,
+        rerunOnReconnection:
+          item.openSshPanel === true && item.rerunOnReconnection === true ? true : undefined,
       }))
       .filter((item) => item.name && item.command);
   }

@@ -16,6 +16,7 @@ export interface SshCommandDefinition {
   name: string;
   command: string;
   openSshPanel?: boolean;
+  rerunOnReconnection?: boolean;
 }
 
 export interface EmbeddedDevice {
