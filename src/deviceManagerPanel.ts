@@ -384,7 +384,7 @@ export class DeviceManagerPanel {
                 <th>Web URL</th>
                 <th>Private key path</th>
                 <th>Private key passphrase</th>
-                <th>Password (legacy)</th>
+                <th>Password (write only)</th>
                 <th>Show default SSH cmnds</th>
                 <th>SSH commands</th>
                 <th>Bastion host</th>
@@ -393,7 +393,7 @@ export class DeviceManagerPanel {
                 <th>Bastion fingerprint</th>
                 <th>Bastion key path</th>
                 <th>Bastion key passphrase</th>
-                <th>Bastion password (legacy)</th>
+                <th>Bastion password (write only)</th>
               </tr>
             </thead>
             <tbody id="devicesBody"></tbody>

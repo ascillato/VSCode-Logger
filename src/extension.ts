@@ -56,7 +56,7 @@ function validateSshDevice(device: EmbeddedDevice): string | undefined {
 }
 
 /**
- * Migrates legacy passwords into VS Code SecretStorage.
+ * Migrates passwords into VS Code SecretStorage.
  *
  * Users might still have passwords stored in their settings for convenience. This
  * function copies those values into SecretStorage so future connections can
@@ -154,7 +154,7 @@ async function migrateLegacyPasswords(
   }
 
   const warningMessage =
-    'Credentials were migrated to Secret Storage, but the legacy "password" or "privateKeyPassphrase" fields could not be removed. ' +
+    'Credentials were migrated to Secret Storage, but the "password" or "privateKeyPassphrase" fields could not be removed. ' +
     'Please delete them from embeddedLogger.devices in your settings.';
 
   const workspaceFolders = vscode.workspace.workspaceFolders ?? [];
@@ -180,7 +180,7 @@ async function migrateLegacyPasswords(
         vscode.ConfigurationTarget.WorkspaceFolder
       );
     } catch (err: unknown) {
-      console.error('Failed to remove legacy passwords from workspace folder settings.', err);
+      console.error('Failed to remove passwords from workspace folder settings.', err);
       vscode.window.showWarningMessage(warningMessage);
       return;
     }
@@ -197,7 +197,7 @@ async function migrateLegacyPasswords(
         vscode.ConfigurationTarget.Workspace
       );
     } catch (err: unknown) {
-      console.error('Failed to remove legacy passwords from workspace settings.', err);
+      console.error('Failed to remove passwords from workspace settings.', err);
       vscode.window.showWarningMessage(warningMessage);
       return;
     }
@@ -214,7 +214,7 @@ async function migrateLegacyPasswords(
         vscode.ConfigurationTarget.Global
       );
     } catch (err: unknown) {
-      console.error('Failed to remove legacy passwords from user settings.', err);
+      console.error('Failed to remove passwords from user settings.', err);
       vscode.window.showWarningMessage(warningMessage);
       return;
     }
@@ -309,11 +309,11 @@ async function migrateLegacySftpPresets(context: vscode.ExtensionContext): Promi
         await context.workspaceState.update(getLegacySftpPresetKey(deviceId, 'local'), undefined);
       }
     } catch (err: unknown) {
-      console.error('Failed to migrate legacy SFTP presets into embeddedLogger.devices.', err);
+      console.error('Failed to migrate SFTP presets into embeddedLogger.devices.', err);
       if (!warningShown) {
         warningShown = true;
         vscode.window.showWarningMessage(
-          'Failed to migrate legacy SFTP presets into embeddedLogger.devices. Existing presets remain in extension storage.'
+          'Failed to migrate SFTP presets into embeddedLogger.devices. Existing presets remain in extension storage.'
         );
       }
     }
@@ -323,7 +323,7 @@ async function migrateLegacySftpPresets(context: vscode.ExtensionContext): Promi
 /**
  * Activates the extension and registers UI components.
  *
- * The activation routine migrates legacy passwords, registers the device tree
+ * The activation routine migrates passwords, registers the device tree
  * view, and handles configuration changes that affect the device list.
  *
  * @param context VS Code extension context provided on activation.

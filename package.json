@@ -246,7 +246,7 @@
                   },
                   "password": {
                     "type": "string",
-                    "description": "Legacy password field for the bastion; stored to secret storage on first use.",
+                    "description": "Password field for the bastion; stored to secret storage on first use.",
                     "default": ""
                   },
                   "privateKeyPath": {
@@ -256,7 +256,7 @@
                   },
                   "privateKeyPassphrase": {
                     "type": "string",
-                    "description": "Legacy passphrase field for bastion keys; stored to secret storage on first use.",
+                    "description": "Passphrase field for bastion keys; stored to secret storage on first use.",
                     "default": ""
                   }
                 },
@@ -276,7 +276,7 @@
               },
               "password": {
                 "type": "string",
-                "description": "Legacy password field; stored to secret storage on first use.",
+                "description": "Password field; stored to secret storage on first use.",
                 "default": ""
               },
               "privateKeyPath": {
@@ -287,7 +287,7 @@
               },
               "privateKeyPassphrase": {
                 "type": "string",
-                "description": "Legacy passphrase field for encrypted keys; stored to secret storage on first use.",
+                "description": "Passphrase field for encrypted keys; stored to secret storage on first use.",
                 "default": ""
               },
               "logCommand": {

@@ -50,7 +50,7 @@ This project was designed around the following principles:
     to run in untrusted workspaces and validate key device inputs before
     use.
 -   **Secret handling**: Passwords and passphrases are pulled from VS
-    Code Secret Storage with migration from legacy settings, prompts,
+    Code Secret Storage with migration from settings, prompts,
     and controlled reuse across workspaces.
 -   **Connection hygiene**: SSH features support host-key verification
     with SHA-256 fingerprints, secondary-host fallback, bastion
@@ -185,7 +185,7 @@ the Webviews, and key configuration and security considerations.
 - **Activation trigger**: The extension activates when VS Code loads the workspace or when a contributed view or command is invoked.
 - **Configuration resolution**: Devices come from `embeddedLogger.devices`, groups come from `embeddedLogger.groups`, and device defaults are enriched from `embeddedLogger.defaultPort`, `embeddedLogger.defaultLogCommand`, `embeddedLogger.defaultEnableSshTerminal`, `embeddedLogger.defaultEnableSftpExplorer`, `embeddedLogger.defaultEnableWebBrowser`, `embeddedLogger.defaultEnableEmbeddedWebBrowser`, `embeddedLogger.defaultSshCommands`, and `embeddedLogger.maxLinesPerTab`.
 - **Per-device overrides**: Device fields such as `showDefaultSshCommands`, `enableSshTerminal`, `enableSftpExplorer`, browser flags, SFTP presets, secondary hosts, colors, and bastion settings override or extend those defaults.
-- **Legacy migration**: During activation, legacy plaintext passwords and passphrases are migrated into VS Code Secret Storage, and legacy workspace-state SFTP presets are migrated into `embeddedLogger.devices` when possible.
+- **Settings migration**: During activation, plaintext passwords and passphrases in settings are migrated into VS Code Secret Storage, and workspace-state SFTP presets are migrated into `embeddedLogger.devices` when possible.
 - **View and command registration**: Activation registers the tree view, the devices Webview, Device Manager commands, local-log opening, SSH command and terminal handlers, SFTP explorer handlers, browser actions, and `embeddedLogger.openDevice` so selecting a device opens or reuses its log panel.
 
 ## Major components

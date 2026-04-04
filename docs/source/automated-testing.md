@@ -5,7 +5,7 @@ This project uses a three-layer automated test suite to validate critical behavi
 ## What is covered
 
 ### New unit and integration tests
-- **PasswordManager flows (unit)** – Exercises cached password reuse, legacy secret migration, and the interactive prompt path using the VS Code mock layer in `tests/mocks/vscode`. These cases ensure stored credentials are reused without re-prompting, migrated secrets are cleaned up after confirmation, and fresh prompts occur when no secret exists.
+- **PasswordManager flows (unit)** – Exercises cached password reuse, secret migration, and the interactive prompt path using the VS Code mock layer in `tests/mocks/vscode`. These cases ensure stored credentials are reused without re-prompting, migrated secrets are cleaned up after confirmation, and fresh prompts occur when no secret exists.
 - **SshCommandRunner execution (unit)** – Uses the mock SSH client factory in `tests/mocks/ssh` to validate that commands are trimmed, rejected when they include control characters, and surface remote stderr/exit codes through `SshCommandError`. This protects against command injection and makes error handling predictable for the UI.
 - **LogSession streaming (integration)** – Spins up a mocked SSH client to feed log data and status events through the `LogSession` lifecycle. It asserts that complete lines are emitted, host fingerprints are persisted back into the device configuration, and the session closes cleanly after the stream ends.
 

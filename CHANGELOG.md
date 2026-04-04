@@ -603,7 +603,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Expand private key paths that include `~` or `${env:VAR}` tokens for convenience.
 
 ### Changed
-- Migrate legacy private key passphrases into VS Code Secret Storage alongside passwords.
+- Migrate private key passphrases into VS Code Secret Storage alongside passwords.
 
 ### Deprecated
 - None.
@@ -639,7 +639,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - None.
 
 ### Security
-- Migrate legacy device passwords to Secret Storage and clear plaintext values from settings when possible.
+- Migrate device passwords to Secret Storage and clear plaintext values from settings when possible.
 - Enforce SSH host key verification.
 - Scope stored device passwords to the host, username, and workspace with confirmation prompts before reusing secrets when device metadata changes.
 

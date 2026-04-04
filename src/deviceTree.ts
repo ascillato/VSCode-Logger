@@ -31,9 +31,9 @@ export interface EmbeddedDevice {
   bastion?: BastionConfig;
   port?: number;
   username: string;
-  password?: string; // legacy
+  password?: string; // write only
   privateKeyPath?: string;
-  privateKeyPassphrase?: string; // legacy
+  privateKeyPassphrase?: string; // write only
   logCommand?: string;
   enableSshTerminal?: boolean;
   enableSftpExplorer?: boolean;
@@ -55,9 +55,9 @@ export interface BastionConfig {
   hostFingerprint?: string;
   port?: number;
   username: string;
-  password?: string; // legacy
+  password?: string; // write only
   privateKeyPath?: string;
-  privateKeyPassphrase?: string; // legacy
+  privateKeyPassphrase?: string; // write only
 }
 
 /**

@@ -38,7 +38,7 @@ describe('PasswordManager', () => {
     expect(window.showInputBox).not.toHaveBeenCalled();
   });
 
-  it('migrates legacy secrets when user confirms reuse', async () => {
+  it('migrates secrets when user confirms reuse', async () => {
     const context = createExtensionContext();
     const manager = new PasswordManager(context);
     const legacyKey = 'embeddedLogger.password.device-1';

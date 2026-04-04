@@ -31,7 +31,7 @@ afterEach(() => {
   resetWindowResponses();
 });
 
-describe('legacy SFTP preset migration', () => {
+describe('SFTP preset migration', () => {
   it('moves workspace-state SFTP presets into embeddedLogger.devices', async () => {
     await workspace.getConfiguration('embeddedLogger').update('devices', [device]);
     const context = createExtensionContext();

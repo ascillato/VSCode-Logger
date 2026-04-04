@@ -39,8 +39,8 @@ const deviceColumns = [
   { key: 'enableEmbeddedWebBrowser', label: 'Embedded Web Browser', type: 'triState' },
   { key: 'webBrowserUrl', label: 'Web URL', type: 'text' },
   { key: 'privateKeyPath', label: 'Private key path', type: 'text' },
-  { key: 'privateKeyPassphrase', label: 'Key passphrase (legacy)', type: 'text' },
-  { key: 'password', label: 'Password (legacy)', type: 'text' },
+  { key: 'privateKeyPassphrase', label: 'Key passphrase (write only)', type: 'text' },
+  { key: 'password', label: 'Password (write only)', type: 'text' },
   // eslint-disable-next-line spellcheck/spell-checker
   { key: 'showDefaultSshCommands', label: 'Show default SSH cmnds', type: 'checkbox' },
   { key: 'sshCommands', label: 'SSH commands', type: 'sshCommands' },
@@ -50,7 +50,7 @@ const deviceColumns = [
   { key: 'bastionHostFingerprint', label: 'Bastion fingerprint', type: 'text' },
   { key: 'bastionPrivateKeyPath', label: 'Bastion key path', type: 'text' },
   { key: 'bastionPrivateKeyPassphrase', label: 'Bastion key passphrase', type: 'text' },
-  { key: 'bastionPassword', label: 'Bastion password (legacy)', type: 'text' },
+  { key: 'bastionPassword', label: 'Bastion password (write only)', type: 'text' },
 ];
 
 let activeColumnResize = null;

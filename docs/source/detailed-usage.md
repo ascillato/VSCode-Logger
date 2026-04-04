@@ -195,7 +195,7 @@ Common optional fields include:
 - `hostFingerprint` to pin the primary device host key.
 - `secondaryHost` and `secondaryHostFingerprint` for automatic fallback to a second endpoint.
 - `privateKeyPath` for key-based authentication.
-- `password` and `privateKeyPassphrase` as legacy migration fields only.
+- `password` and `privateKeyPassphrase` as migration fields only.
 - `enableSshTerminal`, `enableSftpExplorer`, `enableWebBrowser`, and `enableEmbeddedWebBrowser` to override the defaults for one device.
 - `webBrowserUrl` to override the URL opened by browser actions.
 - `showDefaultSshCommands` to prepend `embeddedLogger.defaultSshCommands` before the device's own `sshCommands`. It defaults to `true`.
@@ -213,7 +213,7 @@ If no password is stored yet, the extension prompts for it when connecting and s
 - If `privateKeyPath` is set, the extension uses the private key and prompts for a passphrase when needed.
 - Otherwise, it prompts for a password when needed.
 - Device and bastion passwords/passphrases are stored in **VS Code Secret Storage**.
-- Legacy `password` and `privateKeyPassphrase` fields are migrated into Secret Storage on activation when possible.
+- `password` and `privateKeyPassphrase` fields are migrated into Secret Storage on activation when possible.
 - Use **Embedded Logger: Remove Stored Passwords** or the Device Manager button to clear stored device and bastion credentials.
 - Private key paths can include `~` and `${env:VAR}` expansions.
 
