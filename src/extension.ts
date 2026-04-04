@@ -7,7 +7,7 @@
 
 import * as vscode from 'vscode';
 import * as path from 'path';
-import type { EmbeddedDevice } from './deviceTree';
+import type { EmbeddedDevice, SshCommandDefinition } from './deviceTree';
 import { SidebarViewProvider } from './sidebarView';
 import { LogPanel } from './logPanel';
 import { SshCommandRunner } from './sshCommandRunner';
@@ -483,7 +483,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
 
   const openSshTerminal = (
     device: EmbeddedDevice | undefined,
-    initialCommand?: string,
+    commandDefinition?: Pick<
+      SshCommandDefinition,
+      'command' | 'copyAndRunScript' | 'script' | 'name'
+    >,
     commandName?: string,
     rerunInitialCommandOnReconnect = false
   ): void => {
@@ -503,7 +506,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
       return;
     }
 
-    const normalizedInitialCommand = initialCommand?.trim();
+    const normalizedInitialCommand = commandDefinition?.command?.trim();
     if (normalizedInitialCommand && /\r|\n/.test(normalizedInitialCommand)) {
       vscode.window.showErrorMessage(
         'SSH command must not contain control characters or new lines.'
@@ -519,7 +522,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
         context,
         undefined,
         normalizedInitialCommand,
-        rerunInitialCommandOnReconnect
+        rerunInitialCommandOnReconnect,
+        commandDefinition?.copyAndRunScript === true ? commandDefinition.script : undefined
       ),
     });
     terminal.show(true);
@@ -537,15 +541,36 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
         vscode.window.showErrorMessage('Device not found. Check embeddedLogger.devices.');
       }
     },
-    (deviceId, commandName, command, openSshPanel, rerunOnReconnection) => {
+    (
+      deviceId,
+      commandName,
+      command,
+      openSshPanel,
+      rerunOnReconnection,
+      copyAndRunScript,
+      script
+    ) => {
       const device = findDevice(deviceId);
       if (!device) {
         vscode.window.showErrorMessage('Device not found. Check embeddedLogger.devices.');
         return;
       }
 
+      const commandDefinition: SshCommandDefinition = {
+        name: commandName,
+        command,
+        openSshPanel: openSshPanel === true ? true : undefined,
+        rerunOnReconnection:
+          openSshPanel === true && rerunOnReconnection === true ? true : undefined,
+        copyAndRunScript:
+          copyAndRunScript === true && typeof script === 'string' && script.trim()
+            ? true
+            : undefined,
+        script,
+      };
+
       if (openSshPanel) {
-        openSshTerminal(device, command, commandName, rerunOnReconnection === true);
+        openSshTerminal(device, commandDefinition, commandName, rerunOnReconnection === true);
         return;
       }
 
@@ -558,7 +583,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
             },
             async () => {
               const runner = new SshCommandRunner(device, context);
-              const output = await runner.run({ name: commandName, command });
+              const output = await runner.run(commandDefinition);
               const trimmed = output.trim();
               const message = trimmed || `Command "${commandName}" finished on ${device.name}.`;
               vscode.window.showInformationMessage(message);

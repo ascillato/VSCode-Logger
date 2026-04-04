@@ -10,10 +10,11 @@ import * as os from 'os';
 import * as path from 'path';
 import type { ClientChannel, ConnectConfig } from 'ssh2';
 import { Client } from 'ssh2';
-import type { BastionConfig, EmbeddedDevice } from './deviceTree';
+import type { BastionConfig, EmbeddedDevice, SshCommandDefinition } from './deviceTree';
 import type { HostEndpoint } from './hostEndpoints';
 import { getHostEndpoints } from './hostEndpoints';
 import { PasswordManager } from './passwordManager';
+import { buildRemoteExecution, uploadScriptToRemote } from './sshCommandExecution';
 
 interface SshCommandRunnerDependencies {
   createClient?: () => Client;
@@ -32,15 +33,7 @@ type ForwardingClient = Client & {
 
 type SocketConnectConfig = ConnectConfig & { sock?: ClientChannel };
 
-/**
- * Represents a named SSH command configured for a device.
- */
-export interface DeviceCommand {
-  name: string;
-  command: string;
-  openSshPanel?: boolean;
-  rerunOnReconnection?: boolean;
-}
+export type DeviceCommand = SshCommandDefinition;
 
 /**
  * Error describing a failed SSH command execution.
@@ -96,7 +89,10 @@ export class SshCommandRunner {
       throw new Error(validationError);
     }
 
-    const sanitizedCommand = this.sanitizeCommand(command.command);
+    const preparedExecution = buildRemoteExecution(
+      command.command,
+      command.copyAndRunScript === true ? command.script : undefined
+    );
     const authentication = await this.getAuthentication();
     const bastion = this.getBastionConfig();
     const bastionAuthentication = bastion
@@ -118,7 +114,7 @@ export class SshCommandRunner {
       try {
         return await this.executeCommand(
           endpoint,
-          sanitizedCommand,
+          preparedExecution,
           authentication,
           bastion,
           bastionAuthentication
@@ -170,17 +166,6 @@ export class SshCommandRunner {
       }
     }
     return undefined;
-  }
-
-  private sanitizeCommand(command: string): string {
-    const trimmed = command.trim();
-    if (/\r|\n/.test(trimmed)) {
-      throw new Error('SSH command must not contain control characters or new lines.');
-    }
-    if (!trimmed) {
-      throw new Error('SSH command is empty.');
-    }
-    return trimmed;
   }
 
   private async getAuthentication(): Promise<
@@ -247,7 +232,7 @@ export class SshCommandRunner {
 
   private executeCommand(
     endpoint: HostEndpoint,
-    command: string,
+    command: ReturnType<typeof buildRemoteExecution>,
     authentication: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>,
     bastion?: BastionConfig,
     bastionAuthentication?: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>
@@ -267,7 +252,7 @@ export class SshCommandRunner {
 
   private executeCommandThroughBastion(
     endpoint: HostEndpoint,
-    command: string,
+    command: ReturnType<typeof buildRemoteExecution>,
     authentication: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>,
     bastion: BastionConfig,
     bastionAuthentication: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>
@@ -319,7 +304,7 @@ export class SshCommandRunner {
 
   private executeAgainstEndpoint(
     endpoint: HostEndpoint,
-    command: string,
+    command: ReturnType<typeof buildRemoteExecution>,
     authentication: Pick<ConnectConfig, 'password' | 'privateKey' | 'passphrase'>,
     sock?: ClientChannel,
     onComplete?: () => void
@@ -344,46 +329,57 @@ export class SshCommandRunner {
 
       client
         .on('ready', () => {
-          client.exec(command, (err, stream) => {
-            if (err) {
-              finalize();
-              client.end();
-              reject(err);
-              return;
+          void (async (): Promise<void> => {
+            if (command.remoteScriptPath && command.script) {
+              await uploadScriptToRemote(client, command.remoteScriptPath, command.script);
             }
 
-            stream
-              .on('data', (data: Buffer) => {
-                stdout += data.toString();
-              })
-              .on('exit', (code: number | null, signal: string | null) => {
-                exitCode = code;
-                exitSignal = signal;
-              })
-              .on('close', () => {
-                client.end();
+            client.exec(command.remoteCommand, (err, stream) => {
+              if (err) {
                 finalize();
-                const terminatedBySignal = !!exitSignal;
-                const hasErrorCode = exitCode !== null && exitCode !== 0;
-                if (terminatedBySignal || hasErrorCode) {
-                  const output = [stderr, stdout].filter(Boolean).join('\n').trim();
-                  const reason = terminatedBySignal
-                    ? `signal ${exitSignal}`
-                    : `exit code ${exitCode}`;
-                  const message = output
-                    ? `Command "${command}" failed on ${this.device.name} (${reason}). Output:\n${output}`
-                    : `Command "${command}" failed on ${this.device.name} (${reason}).`;
-                  reject(new SshCommandError(message, exitCode, exitSignal, stdout, stderr));
-                  return;
-                }
+                client.end();
+                reject(err);
+                return;
+              }
 
-                const combinedOutput = [stdout, stderr].filter(Boolean).join('\n');
-                resolve(combinedOutput);
+              stream
+                .on('data', (data: Buffer) => {
+                  stdout += data.toString();
+                })
+                .on('exit', (code: number | null, signal: string | null) => {
+                  exitCode = code;
+                  exitSignal = signal;
+                })
+                .on('close', () => {
+                  client.end();
+                  finalize();
+                  const terminatedBySignal = !!exitSignal;
+                  const hasErrorCode = exitCode !== null && exitCode !== 0;
+                  if (terminatedBySignal || hasErrorCode) {
+                    const output = [stderr, stdout].filter(Boolean).join('\n').trim();
+                    const reason = terminatedBySignal
+                      ? `signal ${exitSignal}`
+                      : `exit code ${exitCode}`;
+                    const displayCommand = command.command ?? command.remoteCommand;
+                    const message = output
+                      ? `Command "${displayCommand}" failed on ${this.device.name} (${reason}). Output:\n${output}`
+                      : `Command "${displayCommand}" failed on ${this.device.name} (${reason}).`;
+                    reject(new SshCommandError(message, exitCode, exitSignal, stdout, stderr));
+                    return;
+                  }
+
+                  const combinedOutput = [stdout, stderr].filter(Boolean).join('\n');
+                  resolve(combinedOutput);
+                });
+
+              stream.stderr.on('data', (data: Buffer) => {
+                stderr += data.toString();
               });
-
-            stream.stderr.on('data', (data: Buffer) => {
-              stderr += data.toString();
             });
+          })().catch((error: unknown) => {
+            finalize();
+            client.end();
+            reject(this.toError(error, 'Failed to upload SSH script.'));
           });
         })
         .on('error', (err) => {

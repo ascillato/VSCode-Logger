@@ -75,4 +75,62 @@ describe('SshCommandRunner', () => {
         /whoami/.test(err.message)
     );
   });
+
+  it('uploads and runs a script after the optional command', async () => {
+    const context = createExtensionContext();
+    const executed: string[] = [];
+    const client = createMockClient({
+      onExec: (command, stream: MockSshChannel): void => {
+        executed.push(command);
+        stream.emitData('script ok');
+        stream.emitExit(0, null);
+        stream.emitClose();
+      },
+    });
+
+    const runner = new SshCommandRunner(baseDevice, context, {
+      createClient: () => client,
+    });
+
+    const output = await runner.run({
+      name: 'Deploy',
+      command: 'echo ready',
+      copyAndRunScript: true,
+      script: '#!/bin/sh\necho deployed\n',
+    });
+
+    expect(output.trim()).toBe('script ok');
+    expect(executed).toHaveLength(1);
+    expect(executed[0]).toMatch(/^echo ready && chmod 0777 '\/tmp\/embedded-logger-/);
+    expect(executed[0]).toContain(".sh' && '/tmp/embedded-logger-");
+    expect(client.sftpSessions).toHaveLength(1);
+    expect(client.sftpSessions[0].uploads[0]?.remotePath).toMatch(
+      /^\/tmp\/embedded-logger-.*\.sh$/
+    );
+  });
+
+  it('supports script-only commands when copyAndRunScript is enabled', async () => {
+    const context = createExtensionContext();
+    const executed: string[] = [];
+    const client = createMockClient({
+      onExec: (command, stream: MockSshChannel): void => {
+        executed.push(command);
+        stream.emitExit(0, null);
+        stream.emitClose();
+      },
+    });
+
+    const runner = new SshCommandRunner(baseDevice, context, {
+      createClient: () => client,
+    });
+
+    await runner.run({
+      name: 'Script only',
+      copyAndRunScript: true,
+      script: '#!/bin/sh\necho only-script\n',
+    });
+
+    expect(executed).toHaveLength(1);
+    expect(executed[0]).toMatch(/^chmod 0777 '\/tmp\/embedded-logger-/);
+  });
 });

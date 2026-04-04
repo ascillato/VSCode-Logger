@@ -7,6 +7,7 @@
 import * as vscode from 'vscode';
 import type { EmbeddedDevice, SshCommandDefinition } from './deviceTree';
 import { sanitizeSftpPresets } from './configuration';
+import { normalizeStoredCommand, normalizeStoredScript } from './sshCommandExecution';
 
 const defaultLogCommandValue = 'tail -F /var/log/syslog';
 const importedSettingsKeys = [
@@ -1008,7 +1009,7 @@ export class DeviceManagerPanel {
   private validateSshCommands(value: unknown, key: string): SshCommandDefinition[] {
     if (!Array.isArray(value)) {
       throw new Error(
-        `${key} must be an array of {name, command, openSshPanel?, rerunOnReconnection?} entries.`
+        `${key} must be an array of {name, command?, openSshPanel?, rerunOnReconnection?, copyAndRunScript?, script?} entries.`
       );
     }
 
@@ -1016,8 +1017,27 @@ export class DeviceManagerPanel {
       const command = this.asRecord(entry, `${key}[${index}] must be an object.`);
       const normalized: SshCommandDefinition = {
         name: this.readRequiredPropertyString(command, 'name', `${key}[${index}]`),
-        command: this.readRequiredPropertyString(command, 'command', `${key}[${index}]`),
       };
+      const commandValue = this.readOptionalString(command.command, `${key}[${index}].command`);
+      const copyAndRunScript = this.readOptionalBoolean(
+        command.copyAndRunScript,
+        `${key}[${index}].copyAndRunScript`
+      );
+      const script = this.readOptionalString(command.script, `${key}[${index}].script`, true);
+
+      if (copyAndRunScript && !script?.trim()) {
+        throw new Error(`${key}[${index}].script is required when copyAndRunScript is enabled.`);
+      }
+
+      if (!commandValue && !(copyAndRunScript && script?.trim())) {
+        throw new Error(
+          `${key}[${index}] must define a command or enable copyAndRunScript with a script.`
+        );
+      }
+
+      if (commandValue) {
+        normalized.command = commandValue;
+      }
 
       const openSshPanel = this.readOptionalBoolean(
         command.openSshPanel,
@@ -1033,6 +1053,14 @@ export class DeviceManagerPanel {
       );
       if (openSshPanel && rerunOnReconnection) {
         normalized.rerunOnReconnection = true;
+      }
+
+      if (copyAndRunScript && script?.trim()) {
+        normalized.copyAndRunScript = true;
+      }
+
+      if (script?.trim()) {
+        normalized.script = script.replace(/\r\n/g, '\n');
       }
 
       return normalized;
@@ -1093,13 +1121,17 @@ export class DeviceManagerPanel {
     return trimmed;
   }
 
-  private readOptionalString(value: unknown, key: string): string | undefined {
+  private readOptionalString(value: unknown, key: string, allowBlank = false): string | undefined {
     if (value === undefined || value === null || value === '') {
       return undefined;
     }
 
     if (typeof value !== 'string') {
       throw new Error(`${key} must be a string.`);
+    }
+
+    if (allowBlank) {
+      return value;
     }
 
     const trimmed = value.trim();
@@ -1193,7 +1225,7 @@ export class DeviceManagerPanel {
         parsed = JSON.parse(value);
       } catch {
         throw new Error(
-          'SSH commands must be valid JSON (array of {name, command, openSshPanel?, rerunOnReconnection?}).'
+          'SSH commands must be valid JSON (array of {name, command?, openSshPanel?, rerunOnReconnection?, copyAndRunScript?, script?}).'
         );
       }
     }
@@ -1204,14 +1236,29 @@ export class DeviceManagerPanel {
 
     return parsed
       .filter(isSshCommand)
-      .map((item) => ({
-        name: item.name.trim(),
-        command: item.command.trim(),
-        openSshPanel: item.openSshPanel === true ? true : undefined,
-        rerunOnReconnection:
-          item.openSshPanel === true && item.rerunOnReconnection === true ? true : undefined,
-      }))
-      .filter((item) => item.name && item.command);
+      .map((item, index) => {
+        const script = normalizeStoredScript(item.script);
+        if (item.copyAndRunScript === true && !script) {
+          throw new Error(
+            `SSH command at index ${index} has copyAndRunScript enabled but no script.`
+          );
+        }
+
+        return {
+          name: item.name.trim(),
+          command: normalizeStoredCommand(item.command),
+          openSshPanel: item.openSshPanel === true ? true : undefined,
+          rerunOnReconnection:
+            item.openSshPanel === true && item.rerunOnReconnection === true ? true : undefined,
+          copyAndRunScript: item.copyAndRunScript === true && script ? true : undefined,
+          script,
+        };
+      })
+      .filter(
+        (item) =>
+          item.name.length > 0 &&
+          Boolean(item.command || (item.copyAndRunScript === true && item.script))
+      );
   }
 
   private toOptionalNumber(value: number | string | undefined): number | undefined {
@@ -1250,5 +1297,9 @@ function isSshCommand(value: unknown): value is SshCommandDefinition {
     return false;
   }
   const candidate = value as Partial<SshCommandDefinition>;
-  return typeof candidate.name === 'string' && typeof candidate.command === 'string';
+  return (
+    typeof candidate.name === 'string' &&
+    (candidate.command === undefined || typeof candidate.command === 'string') &&
+    (candidate.script === undefined || typeof candidate.script === 'string')
+  );
 }

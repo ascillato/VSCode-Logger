@@ -266,6 +266,17 @@ td select {
   width: auto;
 }
 
+.ssh-command-copy-script {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.ssh-command-copy-script input {
+  width: auto;
+}
+
 .ssh-command-open-panel,
 .ssh-command-remove {
   text-align: center;
@@ -321,6 +332,92 @@ td select {
     --vscode-list-inactiveSelectionBackground,
     var(--vscode-list-activeSelectionBackground)
   );
+}
+
+.modal {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 24px;
+  position: fixed;
+  z-index: 1000;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal__dialog {
+  background: var(--vscode-editorWidget-background);
+  border: 1px solid var(--vscode-widget-border);
+  border-radius: 8px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: calc(100vh - 48px);
+  max-width: 960px;
+  padding: 20px;
+  width: min(960px, 100%);
+}
+
+.modal__dialog--script-editor {
+  height: calc(100vh - 48px);
+  max-width: 1200px;
+}
+
+.modal__header h3,
+.modal__header p {
+  margin: 0;
+}
+
+.modal__header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.modal__header p {
+  color: var(--vscode-descriptionForeground);
+}
+
+.modal__code,
+.modal__textarea {
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, transparent);
+  border-radius: 6px;
+  box-sizing: border-box;
+  color: var(--vscode-input-foreground);
+  font: inherit;
+  width: 100%;
+}
+
+.modal__code {
+  margin: 0;
+  max-height: 60vh;
+  overflow: auto;
+  padding: 12px;
+  white-space: pre-wrap;
+}
+
+.modal__textarea {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 12px;
+  resize: none;
+}
+
+.modal__actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.modal__actions--sticky {
+  border-top: 1px solid var(--vscode-editorGroup-border);
+  padding-top: 12px;
 }
 
 .button:disabled {

@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import type { ClientChannel, ConnectConfig } from 'ssh2';
+import type { ClientChannel, ConnectConfig, SFTPWrapper } from 'ssh2';
 
 export class MockSshChannel extends EventEmitter {
   readonly stderr = new EventEmitter();
@@ -24,11 +24,35 @@ export class MockSshChannel extends EventEmitter {
 export interface MockClientOptions {
   onExec?: (command: string, stream: MockSshChannel, client: MockSshClient) => void;
   onForwardOut?: (stream: MockSshChannel, client: MockSshClient) => void;
+  onFastPut?: (
+    localPath: string,
+    remotePath: string,
+    sftp: MockSftpWrapper,
+    client: MockSshClient
+  ) => void;
+}
+
+export class MockSftpWrapper implements SFTPWrapper {
+  readonly uploads: Array<{ localPath: string; remotePath: string }> = [];
+
+  constructor(
+    private readonly client: MockSshClient,
+    private readonly options: MockClientOptions = {}
+  ) {}
+
+  fastPut(localPath: string, remotePath: string, callback: (err?: Error) => void): void {
+    this.uploads.push({ localPath, remotePath });
+    this.options.onFastPut?.(localPath, remotePath, this, this.client);
+    callback(undefined);
+  }
+
+  end(): void {}
 }
 
 export class MockSshClient extends EventEmitter {
   lastConnectConfig: (ConnectConfig & { hostVerifier?: (key: Buffer) => boolean }) | undefined;
   readonly streams: MockSshChannel[] = [];
+  readonly sftpSessions: MockSftpWrapper[] = [];
   private ended = false;
 
   constructor(private readonly options: MockClientOptions = {}) {
@@ -54,6 +78,12 @@ export class MockSshClient extends EventEmitter {
     callback(undefined, stream as unknown as ClientChannel);
     this.options.onExec?.(command, stream, this);
     return this;
+  }
+
+  sftp(callback: (err: Error | undefined, sftp: SFTPWrapper) => void): void {
+    const sftp = new MockSftpWrapper(this, this.options);
+    this.sftpSessions.push(sftp);
+    callback(undefined, sftp);
   }
 
   forwardOut(

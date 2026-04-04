@@ -231,7 +231,9 @@
       const commandButton = document.createElement('button');
       commandButton.className = 'command-button';
       commandButton.textContent = cmd.name;
-      commandButton.title = cmd.command;
+      commandButton.title =
+        cmd.command ||
+        (cmd.copyAndRunScript ? 'Copy script to /tmp, chmod 777, and run it' : cmd.name);
       commandButton.addEventListener('click', (event) => {
         event.stopPropagation();
         vscode.postMessage({
@@ -241,6 +243,8 @@
           command: cmd.command,
           openSshPanel: cmd.openSshPanel === true,
           rerunOnReconnection: cmd.rerunOnReconnection === true,
+          copyAndRunScript: cmd.copyAndRunScript === true,
+          script: cmd.script,
         });
       });
       list.appendChild(commandButton);

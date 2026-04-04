@@ -285,6 +285,73 @@ describe('DeviceManagerPanel', () => {
     ]);
   });
 
+  it('persists copy-and-run scripts on SSH commands', async () => {
+    const panel = createPanel();
+    const config = workspace.getConfiguration('embeddedLogger');
+    const updateSpy = vi.spyOn(config, 'update');
+
+    panel.__fireMessage({
+      type: 'save',
+      defaults: {
+        defaultPort: 22,
+        defaultLogCommand: 'tail -F /var/log/syslog',
+        defaultEnableSshTerminal: true,
+        defaultEnableSftpExplorer: true,
+        defaultEnableWebBrowser: false,
+        defaultEnableEmbeddedWebBrowser: false,
+        defaultSshCommands: [
+          {
+            name: 'Deploy',
+            command: 'echo ready',
+            copyAndRunScript: true,
+            script: '#!/bin/sh\necho deployed\n',
+          },
+        ],
+        maxLinesPerTab: 100000,
+      },
+      devices: [
+        {
+          id: 'device-a',
+          name: 'Device A',
+          host: '10.0.0.1',
+          username: 'root',
+          sshCommands: [
+            {
+              name: 'Script only',
+              copyAndRunScript: true,
+              script: '#!/bin/sh\necho device\n',
+            },
+          ],
+        },
+      ],
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const defaultsCall = updateSpy.mock.calls.find((call) => call[0] === 'defaultSshCommands');
+    const devicesCall = updateSpy.mock.calls.find((call) => call[0] === 'devices');
+    expect(defaultsCall?.[1]).toEqual([
+      {
+        name: 'Deploy',
+        command: 'echo ready',
+        copyAndRunScript: true,
+        script: '#!/bin/sh\necho deployed\n',
+      },
+    ]);
+    expect(devicesCall?.[1]).toEqual([
+      expect.objectContaining({
+        id: 'device-a',
+        sshCommands: [
+          {
+            name: 'Script only',
+            copyAndRunScript: true,
+            script: '#!/bin/sh\necho device\n',
+          },
+        ],
+      }),
+    ]);
+  });
+
   it('exports the current manager state as settings.json-compatible JSON', async () => {
     const panel = createPanel();
     const exportPath = '/tmp/embedded-device-logger-settings.json';
@@ -299,7 +366,14 @@ describe('DeviceManagerPanel', () => {
         defaultEnableSftpExplorer: true,
         defaultEnableWebBrowser: false,
         defaultEnableEmbeddedWebBrowser: true,
-        defaultSshCommands: [{ name: ' Reboot ', command: ' sudo reboot ', openSshPanel: true }],
+        defaultSshCommands: [
+          {
+            name: ' Deploy ',
+            command: ' echo ready ',
+            copyAndRunScript: true,
+            script: '#!/bin/sh\necho deployed\n',
+          },
+        ],
         maxLinesPerTab: 5000,
       },
       groups: [{ name: ' Lab ' }],
@@ -315,7 +389,13 @@ describe('DeviceManagerPanel', () => {
           enableWebBrowser: 'disabled',
           showDefaultSshCommands: false,
           sftpPresetsRemote: ' /var/log \n /opt/app ',
-          sshCommands: [{ name: ' Logs ', command: ' journalctl -f ', openSshPanel: true }],
+          sshCommands: [
+            {
+              name: ' Deploy ',
+              copyAndRunScript: true,
+              script: '#!/bin/sh\necho device\n',
+            },
+          ],
           bastionHost: ' bastion.local ',
           bastionUsername: ' jump ',
           bastionPort: '22',
@@ -336,7 +416,12 @@ describe('DeviceManagerPanel', () => {
       'embeddedLogger.defaultEnableWebBrowser': false,
       'embeddedLogger.defaultEnableEmbeddedWebBrowser': true,
       'embeddedLogger.defaultSshCommands': [
-        { name: 'Reboot', command: 'sudo reboot', openSshPanel: true },
+        {
+          name: 'Deploy',
+          command: 'echo ready',
+          copyAndRunScript: true,
+          script: '#!/bin/sh\necho deployed\n',
+        },
       ],
       'embeddedLogger.maxLinesPerTab': 5000,
       'embeddedLogger.groups': [{ name: 'Lab' }],
@@ -352,7 +437,13 @@ describe('DeviceManagerPanel', () => {
           enableWebBrowser: false,
           showDefaultSshCommands: false,
           sftpPresetsRemote: ['/var/log', '/opt/app'],
-          sshCommands: [{ name: 'Logs', command: 'journalctl -f', openSshPanel: true }],
+          sshCommands: [
+            {
+              name: 'Deploy',
+              copyAndRunScript: true,
+              script: '#!/bin/sh\necho device\n',
+            },
+          ],
           bastion: {
             host: 'bastion.local',
             port: 22,
@@ -384,7 +475,13 @@ describe('DeviceManagerPanel', () => {
           'embeddedLogger.defaultEnableWebBrowser': false,
           'embeddedLogger.defaultEnableEmbeddedWebBrowser': true,
           'embeddedLogger.defaultSshCommands': [
-            { name: 'Restart', command: 'systemctl restart app', openSshPanel: true },
+            {
+              name: 'Restart',
+              command: 'systemctl restart app',
+              openSshPanel: true,
+              copyAndRunScript: true,
+              script: '#!/bin/sh\necho imported\n',
+            },
           ],
           'embeddedLogger.maxLinesPerTab': 9000,
           'embeddedLogger.groups': [{ name: 'Lab' }],
@@ -423,7 +520,13 @@ describe('DeviceManagerPanel', () => {
         defaultEnableWebBrowser: false,
         defaultEnableEmbeddedWebBrowser: true,
         defaultSshCommands: [
-          { name: 'Restart', command: 'systemctl restart app', openSshPanel: true },
+          {
+            name: 'Restart',
+            command: 'systemctl restart app',
+            openSshPanel: true,
+            copyAndRunScript: true,
+            script: '#!/bin/sh\necho imported\n',
+          },
         ],
         maxLinesPerTab: 9000,
       },

@@ -6,6 +6,7 @@
 
 import * as vscode from 'vscode';
 import type { EmbeddedDevice, EmbeddedDeviceGroup, SshCommandDefinition } from './deviceTree';
+import { normalizeStoredCommand, normalizeStoredScript } from './sshCommandExecution';
 
 const sftpPresetLimit = 10;
 
@@ -57,9 +58,15 @@ function normalizeSshCommands(value: unknown): SshCommandDefinition[] {
 
     const command = entry as Partial<SshCommandDefinition>;
     const name = typeof command.name === 'string' ? command.name.trim() : '';
-    const shellCommand = typeof command.command === 'string' ? command.command.trim() : '';
+    const shellCommand = normalizeStoredCommand(command.command);
+    const copyAndRunScript = command.copyAndRunScript === true;
+    const script = normalizeStoredScript(command.script);
 
-    if (!name || !shellCommand) {
+    if (!name) {
+      continue;
+    }
+
+    if (!shellCommand && !(copyAndRunScript && script)) {
       continue;
     }
 
@@ -69,6 +76,8 @@ function normalizeSshCommands(value: unknown): SshCommandDefinition[] {
       openSshPanel: command.openSshPanel === true ? true : undefined,
       rerunOnReconnection:
         command.openSshPanel === true && command.rerunOnReconnection === true ? true : undefined,
+      copyAndRunScript: copyAndRunScript && script ? true : undefined,
+      script,
     });
   }
 

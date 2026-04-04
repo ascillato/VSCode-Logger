@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Added optional re-run ssh command for ssh terminals on reconnection.
+- Added a per-command `Copy and Run Script` option in the Embedded Devices Manager and SSH command configuration to upload a script to `/tmp`, `chmod 777` it, and run it after the optional command text.
 
 ### Changed
 - Improved wording in UI for passwords.

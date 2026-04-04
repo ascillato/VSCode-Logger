@@ -21,9 +21,11 @@ interface RunDeviceCommandMessage {
   type: 'runDeviceCommand';
   deviceId: string;
   commandName: string;
-  command: string;
+  command?: string;
   openSshPanel?: boolean;
   rerunOnReconnection?: boolean;
+  copyAndRunScript?: boolean;
+  script?: string;
 }
 
 interface OpenSshTerminalMessage {
@@ -95,9 +97,11 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
     private readonly onRunDeviceCommand: (
       deviceId: string,
       commandName: string,
-      command: string,
+      command: string | undefined,
       openSshPanel?: boolean,
-      rerunOnReconnection?: boolean
+      rerunOnReconnection?: boolean,
+      copyAndRunScript?: boolean,
+      script?: string
     ) => void,
     private readonly onOpenSshTerminal: (deviceId: string) => void,
     private readonly onOpenSftpExplorer: (deviceId: string) => void,
@@ -136,7 +140,9 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
             message.commandName,
             message.command,
             message.openSshPanel,
-            message.rerunOnReconnection
+            message.rerunOnReconnection,
+            message.copyAndRunScript,
+            message.script
           );
           break;
         case 'openSshTerminal':

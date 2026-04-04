@@ -84,7 +84,7 @@
           "type": "array",
           "scope": "resource",
           "description": "Reusable SSH commands that can be shown before each device's own SSH commands in the Devices view.",
-          "markdownDescription": "Reusable SSH commands that can be shown before each device's own SSH commands in the Devices view.\n\nEach device can disable them with `showDefaultSshCommands: false` to show only its device-specific commands.\n\nExample:\n```json\n[\n  {\n    \"name\": \"🔁 Reboot\",\n    \"command\": \"reboot\",\n    \"openSshPanel\": false,\n    \"rerunOnReconnection\": false\n  },\n  {\n    \"name\": \"⚙️ Restart Service\",\n    \"command\": \"systemctl restart my-service\",\n    \"openSshPanel\": false,\n    \"rerunOnReconnection\": false\n  },\n  {\n    \"name\": \"📈 Processes\",\n    \"command\": \"top\",\n    \"openSshPanel\": true,\n    \"rerunOnReconnection\": true\n  }\n]\n```",
+          "markdownDescription": "Reusable SSH commands that can be shown before each device's own SSH commands in the Devices view.\n\nEach device can disable them with `showDefaultSshCommands: false` to show only its device-specific commands.\n\nWhen `copyAndRunScript` is enabled, the optional `script` is copied to `/tmp`, made executable with `chmod 777`, and run after the optional `command`.\n\nExample:\n```json\n[\n  {\n    \"name\": \"🔁 Reboot\",\n    \"command\": \"reboot\",\n    \"openSshPanel\": false,\n    \"rerunOnReconnection\": false\n  },\n  {\n    \"name\": \"⚙️ Restart Service\",\n    \"command\": \"systemctl restart my-service\",\n    \"openSshPanel\": false,\n    \"rerunOnReconnection\": false\n  },\n  {\n    \"name\": \"📈 Processes\",\n    \"command\": \"top\",\n    \"openSshPanel\": true,\n    \"rerunOnReconnection\": true\n  },\n  {\n    \"name\": \"🚀 Deploy helper\",\n    \"command\": \"echo Preparing deployment\",\n    \"copyAndRunScript\": true,\n    \"script\": \"#!/bin/sh\\nprintf \\\"Deploying on %s\\\\n\\\" \\\"$(hostname)\\\"\\n\"\n  }\n]\n```",
           "items": {
             "type": "object",
             "properties": {
@@ -94,7 +94,7 @@
               },
               "command": {
                 "type": "string",
-                "description": "Command to execute when selected."
+                "description": "Optional command to execute before the uploaded script runs."
               },
               "openSshPanel": {
                 "type": "boolean",
@@ -105,11 +105,19 @@
                 "type": "boolean",
                 "description": "Whether an SSH-panel command should be re-run automatically after the panel reconnects.",
                 "default": false
+              },
+              "copyAndRunScript": {
+                "type": "boolean",
+                "description": "Whether to copy the configured script to /tmp over SFTP, set chmod 777, and run it after the optional command.",
+                "default": false
+              },
+              "script": {
+                "type": "string",
+                "description": "Optional script content to copy to /tmp and run when copyAndRunScript is enabled."
               }
             },
             "required": [
-              "name",
-              "command"
+              "name"
             ]
           },
           "default": []
@@ -137,7 +145,7 @@
           "type": "array",
           "scope": "resource",
           "description": "List of embedded devices to stream logs from.",
-          "markdownDescription": "List of embedded devices to stream logs from.\n\nManage devices with the **Embedded Logger: Edit Devices Configuration** Device Manager (table UI with add/remove rows and all fields). You can also choose **Edit in settings.json** for direct JSON editing.\n\nExample:\n```json\n[\n  {\n    \"id\": \"rpi4\",\n    \"group\": \"Lab\",\n    \"color\": \"#4fc3f7\",\n    \"name\": \"Raspberry Pi 4\",\n    \"host\": \"192.168.1.50\",\n    \"hostFingerprint\": \"SHA256:your-base64-fingerprint\",\n    \"secondaryHost\": \"192.168.1.51\",\n    \"secondaryHostFingerprint\": \"SHA256:secondary-base64-fingerprint\",\n    \"port\": 22,\n    \"username\": \"pi\",\n    \"password\": \"\",\n    \"privateKeyPath\": \"/home/user/.ssh/id_ed25519\",\n    \"privateKeyPassphrase\": \"${env:KEY_PASSPHRASE}\",\n    \"logCommand\": \"journalctl -f -u app.service\",\n    \"enableSshTerminal\": true,\n    \"enableSftpExplorer\": true,\n    \"enableWebBrowser\": false,\n    \"enableEmbeddedWebBrowser\": false,\n    \"webBrowserUrl\": \"http://192.168.1.50\",\n    \"showDefaultSshCommands\": true,\n    \"sshCommands\": [\n      {\n        \"name\": \"🔁 Reboot\",\n        \"command\": \"reboot\",\n        \"openSshPanel\": false,\n        \"rerunOnReconnection\": false\n      },\n      {\n        \"name\": \"⚙️ Restart Service\",\n        \"command\": \"systemctl restart my-service\",\n        \"openSshPanel\": false,\n        \"rerunOnReconnection\": false\n      },\n      {\n        \"name\": \"📈 Processes\",\n        \"command\": \"top\",\n        \"openSshPanel\": true,\n        \"rerunOnReconnection\": true\n      }\n    ],\n    \"bastion\": {\n      \"host\": \"bastion.example.com\",\n      \"hostFingerprint\": \"SHA256:bastion-fingerprint\",\n      \"port\": 22,\n      \"username\": \"jump-user\",\n      \"password\": \"\",\n      \"privateKeyPath\": \"${env:HOME}/.ssh/id_ed25519\",\n      \"privateKeyPassphrase\": \"\"\n    }\n  }\n]\n```",
+          "markdownDescription": "List of embedded devices to stream logs from.\n\nManage devices with the **Embedded Logger: Edit Devices Configuration** Device Manager (table UI with add/remove rows and all fields). You can also choose **Edit in settings.json** for direct JSON editing.\n\nWhen `copyAndRunScript` is enabled for an SSH command, the optional `script` is copied to `/tmp`, made executable with `chmod 777`, and run after the optional `command`.\n\nExample:\n```json\n[\n  {\n    \"id\": \"rpi4\",\n    \"group\": \"Lab\",\n    \"color\": \"#4fc3f7\",\n    \"name\": \"Raspberry Pi 4\",\n    \"host\": \"192.168.1.50\",\n    \"hostFingerprint\": \"SHA256:your-base64-fingerprint\",\n    \"secondaryHost\": \"192.168.1.51\",\n    \"secondaryHostFingerprint\": \"SHA256:secondary-base64-fingerprint\",\n    \"port\": 22,\n    \"username\": \"pi\",\n    \"password\": \"\",\n    \"privateKeyPath\": \"/home/user/.ssh/id_ed25519\",\n    \"privateKeyPassphrase\": \"${env:KEY_PASSPHRASE}\",\n    \"logCommand\": \"journalctl -f -u app.service\",\n    \"enableSshTerminal\": true,\n    \"enableSftpExplorer\": true,\n    \"enableWebBrowser\": false,\n    \"enableEmbeddedWebBrowser\": false,\n    \"webBrowserUrl\": \"http://192.168.1.50\",\n    \"showDefaultSshCommands\": true,\n    \"sshCommands\": [\n      {\n        \"name\": \"🔁 Reboot\",\n        \"command\": \"reboot\",\n        \"openSshPanel\": false,\n        \"rerunOnReconnection\": false\n      },\n      {\n        \"name\": \"⚙️ Restart Service\",\n        \"command\": \"systemctl restart my-service\",\n        \"openSshPanel\": false,\n        \"rerunOnReconnection\": false\n      },\n      {\n        \"name\": \"📈 Processes\",\n        \"command\": \"top\",\n        \"openSshPanel\": true,\n        \"rerunOnReconnection\": true\n      },\n      {\n        \"name\": \"🚀 Deploy helper\",\n        \"command\": \"echo Preparing deployment\",\n        \"copyAndRunScript\": true,\n        \"script\": \"#!/bin/sh\\nprintf \\\"Deploying on %s\\\\n\\\" \\\"$(hostname)\\\"\\n\"\n      }\n    ],\n    \"bastion\": {\n      \"host\": \"bastion.example.com\",\n      \"hostFingerprint\": \"SHA256:bastion-fingerprint\",\n      \"port\": 22,\n      \"username\": \"jump-user\",\n      \"password\": \"\",\n      \"privateKeyPath\": \"${env:HOME}/.ssh/id_ed25519\",\n      \"privateKeyPassphrase\": \"\"\n    }\n  }\n]\n```",
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -175,6 +183,12 @@
                       "command": "journalctl -f -u my-service",
                       "openSshPanel": true,
                       "rerunOnReconnection": true
+                    },
+                    {
+                      "name": "Deploy helper",
+                      "command": "echo Preparing deployment",
+                      "copyAndRunScript": true,
+                      "script": "#!/bin/sh\nprintf \"Deploying on %s\\n\" \"$(hostname)\"\n"
                     }
                   ],
                   "bastion": {
@@ -355,7 +369,7 @@
                     },
                     "command": {
                       "type": "string",
-                      "description": "Command to execute when selected."
+                      "description": "Optional command to execute before the uploaded script runs."
                     },
                     "openSshPanel": {
                       "type": "boolean",
@@ -366,11 +380,19 @@
                       "type": "boolean",
                       "description": "Whether an SSH-panel command should be re-run automatically after the panel reconnects.",
                       "default": false
+                    },
+                    "copyAndRunScript": {
+                      "type": "boolean",
+                      "description": "Whether to copy the configured script to /tmp over SFTP, set chmod 777, and run it after the optional command.",
+                      "default": false
+                    },
+                    "script": {
+                      "type": "string",
+                      "description": "Optional script content to copy to /tmp and run when copyAndRunScript is enabled."
                     }
                   },
                   "required": [
-                    "name",
-                    "command"
+                    "name"
                   ]
                 }
               }
@@ -423,6 +445,12 @@
                   "command": "journalctl -f -u my-service",
                   "openSshPanel": true,
                   "rerunOnReconnection": true
+                },
+                {
+                  "name": "Deploy helper",
+                  "command": "echo Preparing deployment",
+                  "copyAndRunScript": true,
+                  "script": "#!/bin/sh\nprintf \"Deploying on %s\\n\" \"$(hostname)\"\n"
                 }
               ]
             }

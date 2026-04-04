@@ -15,6 +15,14 @@ const deviceCommands: SshCommandDefinition[] = [
   { name: 'Logs', command: 'journalctl -f', openSshPanel: true },
 ];
 
+const scriptCommands: SshCommandDefinition[] = [
+  {
+    name: 'Deploy helper',
+    copyAndRunScript: true,
+    script: '#!/bin/sh\necho deployed\n',
+  },
+];
+
 beforeEach(() => {
   resetWorkspaceConfiguration();
 });
@@ -71,6 +79,29 @@ describe('configuration', () => {
         id: 'device-a',
         showDefaultSshCommands: false,
         sshCommands: deviceCommands,
+      }),
+    ]);
+  });
+
+  it('keeps script-backed SSH commands when no shell command is configured', async () => {
+    const devices: EmbeddedDevice[] = [
+      {
+        id: 'device-a',
+        name: 'Device A',
+        host: '10.0.0.1',
+        username: 'root',
+        sshCommands: scriptCommands,
+      },
+    ];
+
+    await workspace.getConfiguration('embeddedLogger').update('devices', devices);
+
+    const { devices: resolvedDevices } = getEmbeddedLoggerConfiguration();
+
+    expect(resolvedDevices).toEqual([
+      expect.objectContaining({
+        id: 'device-a',
+        sshCommands: scriptCommands,
       }),
     ]);
   });

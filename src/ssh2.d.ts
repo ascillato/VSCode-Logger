@@ -30,6 +30,11 @@ declare module 'ssh2' {
     setWindow(rows: number, cols: number, height: number, width: number): void;
   }
 
+  export interface SFTPWrapper {
+    fastPut(localPath: string, remotePath: string, callback: (err?: Error) => void): void;
+    end(): void;
+  }
+
   export class Client extends EventEmitter {
     on(event: 'ready', listener: () => void): this;
     on(event: 'error', listener: (err: Error) => void): this;
@@ -40,6 +45,7 @@ declare module 'ssh2' {
       callback: (err: Error | undefined, stream: ClientChannel) => void
     ): void;
     exec(command: string, callback: (err: Error | undefined, stream: ClientChannel) => void): void;
+    sftp(callback: (err: Error | undefined, sftp: SFTPWrapper) => void): void;
     end(): void;
   }
 }

@@ -58,6 +58,12 @@ let helpModal;
 let helpContent;
 let helpCopyButton;
 let helpCloseButton;
+let scriptEditorModal;
+let scriptEditorTitle;
+let scriptEditorTextarea;
+let scriptEditorSaveButton;
+let scriptEditorCancelButton;
+let activeScriptEditor;
 let isSyncingScroll = false;
 
 function postReady() {
@@ -86,6 +92,8 @@ function toViewSshCommand(command) {
     command: command?.command ?? '',
     openSshPanel: command?.openSshPanel === true,
     rerunOnReconnection: command?.openSshPanel === true && command?.rerunOnReconnection === true,
+    copyAndRunScript: command?.copyAndRunScript === true,
+    script: command?.script ?? '',
   };
 }
 
@@ -365,6 +373,90 @@ function moveSelectedDevicesDown() {
   renderDevices();
 }
 
+function setupScriptEditorModal() {
+  scriptEditorModal = document.createElement('div');
+  scriptEditorModal.className = 'modal modal--script-editor hidden';
+
+  const dialog = document.createElement('div');
+  dialog.className = 'modal__dialog modal__dialog--script-editor';
+
+  const header = document.createElement('div');
+  header.className = 'modal__header';
+
+  scriptEditorTitle = document.createElement('h3');
+  scriptEditorTitle.textContent = 'Edit script';
+
+  const description = document.createElement('p');
+  description.textContent = 'Write the script that will be copied to /tmp and executed.';
+
+  header.appendChild(scriptEditorTitle);
+  header.appendChild(description);
+
+  scriptEditorTextarea = document.createElement('textarea');
+  scriptEditorTextarea.className = 'modal__textarea';
+  scriptEditorTextarea.spellcheck = false;
+  scriptEditorTextarea.setAttribute('aria-label', 'SSH command script editor');
+
+  const actions = document.createElement('div');
+  actions.className = 'modal__actions modal__actions--sticky';
+
+  scriptEditorSaveButton = document.createElement('button');
+  scriptEditorSaveButton.className = 'button button-primary';
+  scriptEditorSaveButton.textContent = 'Save';
+  scriptEditorSaveButton.addEventListener('click', saveScriptEditor);
+
+  scriptEditorCancelButton = document.createElement('button');
+  scriptEditorCancelButton.className = 'button button-secondary';
+  scriptEditorCancelButton.textContent = 'Cancel';
+  scriptEditorCancelButton.addEventListener('click', closeScriptEditor);
+
+  actions.appendChild(scriptEditorSaveButton);
+  actions.appendChild(scriptEditorCancelButton);
+
+  dialog.appendChild(header);
+  dialog.appendChild(scriptEditorTextarea);
+  dialog.appendChild(actions);
+  scriptEditorModal.appendChild(dialog);
+
+  scriptEditorModal.addEventListener('click', (event) => {
+    if (event.target === scriptEditorModal) {
+      closeScriptEditor();
+    }
+  });
+
+  document.body.appendChild(scriptEditorModal);
+}
+
+function openScriptEditor(title, initialValue, onSave) {
+  if (!scriptEditorModal) {
+    setupScriptEditorModal();
+  }
+
+  activeScriptEditor = { onSave };
+  scriptEditorTitle.textContent = title || 'Edit script';
+  scriptEditorTextarea.value = initialValue || '';
+  scriptEditorModal.classList.remove('hidden');
+  setTimeout(() => {
+    scriptEditorTextarea.focus();
+    scriptEditorTextarea.setSelectionRange(
+      scriptEditorTextarea.value.length,
+      scriptEditorTextarea.value.length
+    );
+  }, 0);
+}
+
+function closeScriptEditor() {
+  activeScriptEditor = null;
+  if (scriptEditorModal) {
+    scriptEditorModal.classList.add('hidden');
+  }
+}
+
+function saveScriptEditor() {
+  activeScriptEditor?.onSave(scriptEditorTextarea.value);
+  closeScriptEditor();
+}
+
 function renderSshCommandsEditor(commands, mountPoint, onChange) {
   const wrapper = document.createElement('div');
   wrapper.className = 'ssh-commands-editor';
@@ -391,6 +483,10 @@ function renderSshCommandsEditor(commands, mountPoint, onChange) {
   rerunOnReconnectionTh.textContent = 'Re-run on reconnection';
   headerRow.appendChild(rerunOnReconnectionTh);
 
+  const copyAndRunScriptTh = document.createElement('th');
+  copyAndRunScriptTh.textContent = 'Copy and Run Script';
+  headerRow.appendChild(copyAndRunScriptTh);
+
   const addTh = document.createElement('th');
   const addButton = document.createElement('button');
   addButton.type = 'button';
@@ -400,7 +496,14 @@ function renderSshCommandsEditor(commands, mountPoint, onChange) {
   addButton.addEventListener('click', () => {
     const updated = [
       ...list,
-      { name: '', command: '', openSshPanel: false, rerunOnReconnection: false },
+      {
+        name: '',
+        command: '',
+        openSshPanel: false,
+        rerunOnReconnection: false,
+        copyAndRunScript: false,
+        script: '',
+      },
     ];
     list = updated;
     onChange(updated, { rebuild: true });
@@ -490,6 +593,57 @@ function renderSshCommandsEditor(commands, mountPoint, onChange) {
     rerunOnReconnectionCell.className = 'ssh-command-open-panel';
     rerunOnReconnectionCell.appendChild(rerunOnReconnectionInput);
 
+    const copyAndRunScriptInput = document.createElement('input');
+    copyAndRunScriptInput.type = 'checkbox';
+    copyAndRunScriptInput.checked = item?.copyAndRunScript === true;
+    copyAndRunScriptInput.title = 'Copy a script to /tmp and run it after the command';
+    copyAndRunScriptInput.setAttribute(
+      'aria-label',
+      `Copy and run script for ${item?.name || 'command'}`
+    );
+
+    const editScriptButton = document.createElement('button');
+    editScriptButton.type = 'button';
+    editScriptButton.className = 'button button-icon';
+    editScriptButton.textContent = '✎';
+    editScriptButton.title = 'Edit script';
+    editScriptButton.disabled = item?.copyAndRunScript !== true;
+    editScriptButton.addEventListener('click', () => {
+      if (editScriptButton.disabled) {
+        return;
+      }
+
+      openScriptEditor(
+        `Edit script for ${list[idx]?.name || 'SSH command'}`,
+        list[idx]?.script ?? '',
+        (value) => {
+          const updated = [...list];
+          updated[idx] = {
+            ...updated[idx],
+            script: value,
+          };
+          list = updated;
+          onChange(updated, { rebuild: false });
+        }
+      );
+    });
+
+    copyAndRunScriptInput.addEventListener('change', (event) => {
+      const updated = [...list];
+      updated[idx] = {
+        ...updated[idx],
+        copyAndRunScript: event.target.checked === true,
+      };
+      list = updated;
+      onChange(updated, { rebuild: false });
+      editScriptButton.disabled = event.target.checked !== true;
+    });
+
+    const copyAndRunScriptCell = document.createElement('td');
+    copyAndRunScriptCell.className = 'ssh-command-copy-script';
+    copyAndRunScriptCell.appendChild(copyAndRunScriptInput);
+    copyAndRunScriptCell.appendChild(editScriptButton);
+
     const removeButton = document.createElement('button');
     removeButton.type = 'button';
     removeButton.className = 'button button-danger button-icon';
@@ -508,6 +662,7 @@ function renderSshCommandsEditor(commands, mountPoint, onChange) {
     row.appendChild(commandCell);
     row.appendChild(openPanelCell);
     row.appendChild(rerunOnReconnectionCell);
+    row.appendChild(copyAndRunScriptCell);
     row.appendChild(removeCell);
     tbody.appendChild(row);
   });
@@ -1055,18 +1210,29 @@ function buildHelpJson() {
       command: 'reboot',
       openSshPanel: false,
       rerunOnReconnection: false,
+      copyAndRunScript: false,
     },
     {
       name: '⚙️ Restart Service',
       command: 'systemctl restart my-service',
       openSshPanel: false,
       rerunOnReconnection: false,
+      copyAndRunScript: false,
     },
     {
       name: '📈 Processes',
       command: 'top',
       openSshPanel: true,
       rerunOnReconnection: true,
+      copyAndRunScript: false,
+    },
+    {
+      name: '🚀 Deploy helper',
+      command: 'echo Preparing deployment',
+      openSshPanel: false,
+      rerunOnReconnection: false,
+      copyAndRunScript: true,
+      script: '#!/bin/sh\necho "Deploying on $(hostname)"\n',
     },
   ];
   const example = {
@@ -1181,7 +1347,15 @@ function init() {
     setupTableColumns();
     addColumnResizers();
   });
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') {
+      return;
+    }
+    closeHelp();
+    closeScriptEditor();
+  });
   setupHelpModal();
+  setupScriptEditorModal();
   postReady();
 }
 

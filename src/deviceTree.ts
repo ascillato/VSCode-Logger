@@ -14,9 +14,11 @@ import { getEmbeddedLoggerGroups } from './configuration';
  */
 export interface SshCommandDefinition {
   name: string;
-  command: string;
+  command?: string;
   openSshPanel?: boolean;
   rerunOnReconnection?: boolean;
+  copyAndRunScript?: boolean;
+  script?: string;
 }
 
 export interface EmbeddedDevice {

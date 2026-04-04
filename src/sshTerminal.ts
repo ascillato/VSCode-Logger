@@ -14,6 +14,12 @@ import type { BastionConfig, EmbeddedDevice } from './deviceTree';
 import type { HostEndpoint } from './hostEndpoints';
 import { getHostEndpoints } from './hostEndpoints';
 import { PasswordManager } from './passwordManager';
+import {
+  buildRemoteExecution,
+  quoteShellArg,
+  sanitizeRunnableCommand,
+  uploadScriptToRemote,
+} from './sshCommandExecution';
 
 type ForwardingClient = Client & {
   forwardOut(
@@ -72,7 +78,8 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
     private readonly context: vscode.ExtensionContext,
     private readonly initialPath?: string,
     private readonly initialCommand?: string,
-    private readonly rerunInitialCommandOnReconnect = false
+    private readonly rerunInitialCommandOnReconnect = false,
+    private readonly initialScript?: string
   ) {
     this.passwordManager = new PasswordManager(this.context);
   }
@@ -406,50 +413,73 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
 
           const cols = initialDimensions?.columns ?? 80;
           const rows = initialDimensions?.rows ?? 24;
-          client.shell({ term: 'xterm-color', cols, rows }, (err, stream) => {
-            if (err) {
-              reject(err);
-              return;
+          void (async (): Promise<void> => {
+            const hasInitialExecution =
+              Boolean(this.initialCommand?.trim()) || Boolean(this.initialScript?.trim());
+            const initialExecution = hasInitialExecution
+              ? buildRemoteExecution(this.initialCommand, this.initialScript)
+              : undefined;
+
+            if (initialExecution?.remoteScriptPath && initialExecution.script) {
+              await uploadScriptToRemote(
+                client,
+                initialExecution.remoteScriptPath,
+                initialExecution.script
+              );
             }
 
-            this.shell = stream;
-            this.writeEmitter.fire(`Connected to ${this.device.name}\r\n`);
-
-            if (this.initialPath) {
-              stream.write(`cd -- ${this.quotePath(this.initialPath)}\n`);
-            }
-
-            try {
-              const initialCommand = this.normalizeInitialCommand(this.initialCommand);
-              const shouldRunInitialCommand =
-                !this.hasOpenedShellOnce || this.rerunInitialCommandOnReconnect;
-              this.hasOpenedShellOnce = true;
-              if (initialCommand && shouldRunInitialCommand) {
-                stream.write(`${initialCommand}\n`);
+            client.shell({ term: 'xterm-color', cols, rows }, (err, stream) => {
+              if (err) {
+                reject(err);
+                return;
               }
-            } catch (error: unknown) {
-              reject(this.toError(error, 'Failed to start SSH command.'));
-              return;
-            }
 
-            stream
-              .on('exit', (code: number | null | undefined, signal: string | null | undefined) => {
-                if (this.isCleanExit(code, signal)) {
-                  this.userRequestedClose = true;
+              this.shell = stream;
+              this.writeEmitter.fire(`Connected to ${this.device.name}\r\n`);
+
+              if (this.initialPath) {
+                stream.write(`cd -- ${this.quotePath(this.initialPath)}\n`);
+              }
+
+              try {
+                const initialCommand = this.normalizeInitialCommand(
+                  initialExecution?.remoteCommand
+                );
+                const shouldRunInitialCommand =
+                  !this.hasOpenedShellOnce || this.rerunInitialCommandOnReconnect;
+                this.hasOpenedShellOnce = true;
+                if (initialCommand && shouldRunInitialCommand) {
+                  stream.write(`${initialCommand}\n`);
                 }
-              })
-              .on('data', (data: Buffer) => {
+              } catch (error: unknown) {
+                reject(this.toError(error, 'Failed to start SSH command.'));
+                return;
+              }
+
+              stream
+                .on(
+                  'exit',
+                  (code: number | null | undefined, signal: string | null | undefined) => {
+                    if (this.isCleanExit(code, signal)) {
+                      this.userRequestedClose = true;
+                    }
+                  }
+                )
+                .on('data', (data: Buffer) => {
+                  this.writeEmitter.fire(data.toString().replace(/\n/g, '\r\n'));
+                })
+                .on('close', () => {
+                  this.handleConnectionLost();
+                });
+
+              stream.stderr.on('data', (data: Buffer) => {
                 this.writeEmitter.fire(data.toString().replace(/\n/g, '\r\n'));
-              })
-              .on('close', () => {
-                this.handleConnectionLost();
               });
 
-            stream.stderr.on('data', (data: Buffer) => {
-              this.writeEmitter.fire(data.toString().replace(/\n/g, '\r\n'));
+              resolve();
             });
-
-            resolve();
+          })().catch((error: unknown) => {
+            reject(this.toError(error, 'Failed to upload SSH script.'));
           });
         })
         .on('error', (err) => {
@@ -562,20 +592,11 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
   }
 
   private quotePath(value: string): string {
-    return `'${value.replace(/'/g, "'\\''")}'`;
+    return quoteShellArg(value);
   }
 
   private normalizeInitialCommand(value: string | undefined): string | undefined {
-    const trimmed = value?.trim();
-    if (!trimmed) {
-      return undefined;
-    }
-
-    if (/\r|\n/.test(trimmed)) {
-      throw new Error('SSH command must not contain control characters or new lines.');
-    }
-
-    return trimmed;
+    return sanitizeRunnableCommand(value);
   }
 
   private isExitCommand(input: string): boolean {
