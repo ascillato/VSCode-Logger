@@ -24,6 +24,7 @@ If you like the extension, please [rate it](https://marketplace.visualstudio.com
 - Run **one-off SSH commands** and optionally upload a script to `/tmp`, `chmod 777` it, and execute it after the command.
 - Open **SSH terminals**, including command panels that can optionally re-run after reconnecting and run uploaded scripts.
 - Open device URLs in an **external browser** or in VS Code's **embedded browser**.
+- Optionally **ping all configured devices**, with manual or scheduled checks and reachability dots in the Devices view.
 - Browse files with the built-in **SFTP explorer**, including quick search, `find`/`grep` result views, and keyboard shortcuts.
 - Assign **per-device colors** to make tabs and device lists easier to scan.
 - Organize devices with **collapsible groups** in the Embedded Devices view.

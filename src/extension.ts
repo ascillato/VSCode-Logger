@@ -22,12 +22,16 @@ import {
 } from './configuration';
 import { PasswordManager } from './passwordManager';
 import { DeviceManagerPanel } from './deviceManagerPanel';
+import { pingHost, type DevicePingStatus } from './devicePing';
 
 // Map of deviceId to existing log panels so multiple clicks reuse tabs.
 const panelMap: Map<string, LogPanel> = new Map();
 const sftpPanels: Set<SftpExplorerPanel> = new Set();
 let activePanel: LogPanel | undefined;
 let sidebarProvider: SidebarViewProvider | undefined;
+const pingStatusByDeviceId: Map<string, DevicePingStatus> = new Map();
+let pingIntervalHandle: NodeJS.Timeout | undefined;
+let isPingInProgress = false;
 
 export interface ExtensionTestApi {
   openSftpExplorerForTest(device: EmbeddedDevice): Promise<SftpExplorerPanel | undefined>;
@@ -337,8 +341,74 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
   await migrateLegacyPasswords(context, devices, passwordManager);
 
   const getDevices = (): EmbeddedDevice[] => getEmbeddedLoggerConfiguration().devices;
+  const isDevicePingEnabled = (): boolean => getEmbeddedLoggerConfiguration().enableDevicePing;
+  const getDevicePingIntervalSeconds = (): number | undefined =>
+    getEmbeddedLoggerConfiguration().devicePingIntervalSeconds;
   const findDevice = (deviceId: string): EmbeddedDevice | undefined =>
     getDevices().find((item) => item.id === deviceId);
+  const prunePingStatuses = (): void => {
+    const activeDeviceIds = new Set(getDevices().map((device) => device.id));
+    for (const knownId of pingStatusByDeviceId.keys()) {
+      if (!activeDeviceIds.has(knownId)) {
+        pingStatusByDeviceId.delete(knownId);
+      }
+    }
+  };
+  const refreshSidebarDevices = (): void => {
+    prunePingStatuses();
+    sidebarProvider?.refreshDevices();
+  };
+  const pingAllDevices = async (): Promise<void> => {
+    if (!isDevicePingEnabled() || isPingInProgress) {
+      return;
+    }
+
+    const devices = getDevices();
+    if (!devices.length) {
+      return;
+    }
+
+    isPingInProgress = true;
+    try {
+      await Promise.all(
+        devices.map(async (device) => {
+          const reachable = await pingHost(device.host);
+          pingStatusByDeviceId.set(device.id, reachable ? 'ok' : 'error');
+        })
+      );
+      refreshSidebarDevices();
+    } finally {
+      isPingInProgress = false;
+    }
+  };
+  const updateDevicePingContext = async (): Promise<void> => {
+    const enabled = isDevicePingEnabled();
+    await vscode.commands.executeCommand('setContext', 'embeddedLogger.devicePingEnabled', enabled);
+
+    if (!enabled) {
+      pingStatusByDeviceId.clear();
+      if (pingIntervalHandle) {
+        clearInterval(pingIntervalHandle);
+        pingIntervalHandle = undefined;
+      }
+      refreshSidebarDevices();
+      return;
+    }
+
+    const intervalSeconds = getDevicePingIntervalSeconds();
+    if (pingIntervalHandle) {
+      clearInterval(pingIntervalHandle);
+      pingIntervalHandle = undefined;
+    }
+
+    if (intervalSeconds) {
+      pingIntervalHandle = setInterval(() => {
+        void pingAllDevices();
+      }, intervalSeconds * 1000);
+    }
+
+    await pingAllDevices();
+  };
   const clearStoredCredentialsForDevice = async (deviceId: string): Promise<void> => {
     await passwordManager.clearPassword(deviceId);
     await passwordManager.clearPassword(`${deviceId}-bastion`);
@@ -610,16 +680,35 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
     (deviceId) => {
       const device = findDevice(deviceId);
       void openEmbeddedWebBrowser(device);
-    }
+    },
+    () => {
+      void pingAllDevices();
+    },
+    isDevicePingEnabled,
+    () => pingStatusByDeviceId
   );
 
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider('embeddedLogger.devicesView', sidebarProvider)
   );
+  context.subscriptions.push({
+    dispose: () => {
+      if (pingIntervalHandle) {
+        clearInterval(pingIntervalHandle);
+        pingIntervalHandle = undefined;
+      }
+    },
+  });
 
   context.subscriptions.push(
     vscode.commands.registerCommand('embeddedLogger.editDevicesConfig', () => {
       DeviceManagerPanel.createOrShow(context.extensionUri);
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('embeddedLogger.pingAllDevices', async () => {
+      await pingAllDevices();
     })
   );
 
@@ -837,10 +926,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration('embeddedLogger')) {
-        sidebarProvider?.refreshDevices();
+        void updateDevicePingContext();
+        refreshSidebarDevices();
       }
     })
   );
+
+  await updateDevicePingContext();
 
   if (isTestMode) {
     return {

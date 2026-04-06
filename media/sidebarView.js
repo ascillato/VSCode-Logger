@@ -11,6 +11,7 @@
     devices: [],
     groups: [],
     expandedGroups: {},
+    isDevicePingEnabled: false,
   };
 
   const deviceList = document.getElementById('deviceList');
@@ -139,6 +140,19 @@
     attachDeviceContextMenu(title);
     info.appendChild(createDeviceColorSwatch(device.color));
     info.appendChild(title);
+    if (
+      state.isDevicePingEnabled &&
+      (device.pingStatus === 'ok' || device.pingStatus === 'error')
+    ) {
+      const pingStatus = document.createElement('span');
+      pingStatus.className =
+        device.pingStatus === 'ok'
+          ? 'ping-status ping-status--ok'
+          : 'ping-status ping-status--error';
+      pingStatus.title = device.pingStatus === 'ok' ? 'Ping reachable' : 'Ping unreachable';
+      pingStatus.setAttribute('aria-label', pingStatus.title);
+      info.appendChild(pingStatus);
+    }
 
     const subtitle = document.createElement('span');
     subtitle.className = 'subtitle';
@@ -151,6 +165,19 @@
 
     const list = document.createElement('div');
     list.className = 'command-list';
+
+    if (state.isDevicePingEnabled) {
+      const pingButton = document.createElement('button');
+      pingButton.className = 'command-button';
+      pingButton.appendChild(createIconSpan('📶'));
+      pingButton.appendChild(document.createTextNode('Ping devices'));
+      pingButton.title = 'Ping all configured devices';
+      pingButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        vscode.postMessage({ type: 'pingAllDevices' });
+      });
+      list.appendChild(pingButton);
+    }
 
     const openLogsButton = document.createElement('button');
     openLogsButton.className = 'command-button';
@@ -338,11 +365,13 @@
       case 'initDevices':
         state.devices = message.devices || [];
         state.groups = message.groups || [];
+        state.isDevicePingEnabled = message.isDevicePingEnabled === true;
         renderDevices();
         break;
       case 'devicesUpdated':
         state.devices = message.devices || [];
         state.groups = message.groups || [];
+        state.isDevicePingEnabled = message.isDevicePingEnabled === true;
         renderDevices();
         break;
     }

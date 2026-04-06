@@ -98,7 +98,10 @@ describe('Sidebar integration', () => {
       () => undefined,
       () => undefined,
       () => undefined,
-      () => undefined
+      () => undefined,
+      () => undefined,
+      () => false,
+      () => new Map()
     );
 
     const view = createWebviewView();
@@ -144,7 +147,10 @@ describe('Sidebar integration', () => {
       () => undefined,
       () => undefined,
       () => undefined,
-      () => undefined
+      () => undefined,
+      () => undefined,
+      () => false,
+      () => new Map()
     );
 
     const view = createWebviewView();
@@ -160,6 +166,7 @@ describe('Sidebar integration', () => {
         }),
       ],
       groups: [{ name: 'Lab' }, { name: 'Field' }],
+      isDevicePingEnabled: false,
     });
   });
 });

@@ -105,4 +105,14 @@ describe('configuration', () => {
       }),
     ]);
   });
+
+  it('resolves ping settings with optional interval', async () => {
+    await workspace.getConfiguration('embeddedLogger').update('enableDevicePing', true);
+    await workspace.getConfiguration('embeddedLogger').update('devicePingIntervalSeconds', 15);
+
+    const config = getEmbeddedLoggerConfiguration();
+
+    expect(config.enableDevicePing).toBe(true);
+    expect(config.devicePingIntervalSeconds).toBe(15);
+  });
 });

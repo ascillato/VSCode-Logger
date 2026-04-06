@@ -20,6 +20,14 @@ interface LoggerDefaults {
   defaultSshCommands: SshCommandDefinition[];
 }
 
+function normalizeDevicePingIntervalSeconds(value: unknown): number | undefined {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return undefined;
+  }
+  const normalized = Math.floor(value);
+  return normalized > 0 ? normalized : undefined;
+}
+
 export interface EmbeddedLoggerDeviceConfigurationScope {
   config: vscode.WorkspaceConfiguration;
   target: vscode.ConfigurationTarget;
@@ -269,12 +277,18 @@ export async function updateEmbeddedLoggerDeviceConfiguration(
 export function getEmbeddedLoggerConfiguration(): {
   devices: EmbeddedDevice[];
   maxLinesPerTab: number;
+  enableDevicePing: boolean;
+  devicePingIntervalSeconds?: number;
 } {
   const config = vscode.workspace.getConfiguration('embeddedLogger');
   const defaults = getLoggerDefaults(config);
   const devices = config.get<EmbeddedDevice[]>('devices', []);
   const resolvedDevices = devices.map((device) => applyDeviceDefaults(device, defaults));
   const maxLinesPerTab = Math.max(1, config.get<number>('maxLinesPerTab', 100000) || 100000);
+  const enableDevicePing = config.get<boolean>('enableDevicePing', false) ?? false;
+  const devicePingIntervalSeconds = normalizeDevicePingIntervalSeconds(
+    config.get<number | null>('devicePingIntervalSeconds', null)
+  );
 
-  return { devices: resolvedDevices, maxLinesPerTab };
+  return { devices: resolvedDevices, maxLinesPerTab, enableDevicePing, devicePingIntervalSeconds };
 }
