@@ -1266,11 +1266,30 @@
     });
   }
 
+  function closeSearchMode(side) {
+    if (state.connectionState !== 'connected') {
+      return;
+    }
+    resetStatus();
+    const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
+    if (!snapshot.search) {
+      return;
+    }
+
+    const requestId = side === 'remote' ? requestIds.remote : getActiveRequestId();
+    requestList(snapshot.location, snapshot.search.basePath, requestId);
+    clearSelection(side === 'remote' ? 'remote' : 'right');
+  }
+
   function openFindDialog(side) {
     if (state.connectionState !== 'connected') {
       return;
     }
     const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
+    if (snapshot.search) {
+      closeSearchMode(side);
+      return;
+    }
     const location = side === 'remote' ? 'remote' : getActiveRightLocation();
     if (location === 'local' && !isLinuxHost) {
       return;

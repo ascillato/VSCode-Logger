@@ -163,8 +163,15 @@ svg.action__icon {
 }
 
 .action--search-active {
-    background: var(--vscode-button-secondaryBackground, #cca700);
-    color: var(--vscode-button-secondaryForeground, #1e1e1e);
+    background: var(--vscode-editorWarning-foreground, #cca700);
+    color: #111111;
+    border-color: var(--vscode-editorWarning-foreground, #cca700);
+}
+
+.action--search-active:hover,
+.action--search-active:focus {
+    background: var(--vscode-editorWarning-foreground, #cca700);
+    color: #111111;
     border-color: var(--vscode-editorWarning-foreground, #cca700);
 }
 
@@ -625,19 +632,40 @@ svg.action__icon {
 }
 
 .find-grid__field--name,
+.find-grid__field--size,
+.find-grid__field--time,
 .find-grid__field--full {
     grid-column: 1 / -1;
+}
+
+.find-size-row {
+    display: grid;
+    grid-template-columns: minmax(14rem, 1fr) auto;
+    gap: 0.75rem;
+    align-items: end;
 }
 
 .find-time-row {
     display: flex;
     gap: 0.75rem;
-    align-items: stretch;
+    align-items: end;
     flex-wrap: wrap;
+}
+
+.find-time-row .dialog__fieldset {
+    flex: 0 1 auto;
+}
+
+.find-time-row .dialog__field--inline input {
+    width: 6rem;
 }
 
 @media (max-width: 900px) {
     .find-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .find-size-row {
         grid-template-columns: 1fr;
     }
 }

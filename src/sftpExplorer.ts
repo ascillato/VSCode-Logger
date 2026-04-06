@@ -3594,61 +3594,70 @@ export class SftpExplorerPanel {
                             <span class="dialog__field-label">by Name</span>
                             <input id="findByName" type="text" spellcheck="false" />
                         </label>
-                        <label class="dialog__checkbox">
+                        <label class="dialog__checkbox find-grid__field--full">
                             <input id="findNameCaseSensitive" type="checkbox" />
                             <span>Case Sensitive</span>
                         </label>
 
-                        <label class="dialog__field">
-                            <span class="dialog__field-label">by Size</span>
-                            <input id="findBySize" type="text" spellcheck="false" placeholder="50M" title="Example: 50M" />
-                        </label>
-                        <fieldset class="dialog__fieldset">
-                            <legend class="dialog__field-label">Size mode</legend>
-                            <label class="dialog__radio">
-                                <input type="radio" name="findSizeMode" value="bigger" />
-                                <span>bigger</span>
+                        <div class="find-grid__field--size">
+                            <label class="dialog__field">
+                                <span class="dialog__field-label">by Size</span>
+                                <div class="find-size-row">
+                                    <input id="findBySize" type="text" spellcheck="false" placeholder="50M" title="Example: 50M" />
+                                    <fieldset class="dialog__fieldset">
+                                        <legend class="dialog__field-label">Size mode</legend>
+                                        <label class="dialog__radio">
+                                            <input type="radio" name="findSizeMode" value="bigger" />
+                                            <span>bigger</span>
+                                        </label>
+                                        <label class="dialog__radio">
+                                            <input type="radio" name="findSizeMode" value="smaller" />
+                                            <span>smaller</span>
+                                        </label>
+                                        <label class="dialog__radio">
+                                            <input type="radio" name="findSizeMode" value="exactly" checked />
+                                            <span>exactly</span>
+                                        </label>
+                                    </fieldset>
+                                </div>
                             </label>
-                            <label class="dialog__radio">
-                                <input type="radio" name="findSizeMode" value="smaller" />
-                                <span>smaller</span>
-                            </label>
-                            <label class="dialog__radio">
-                                <input type="radio" name="findSizeMode" value="exactly" checked />
-                                <span>exactly</span>
-                            </label>
-                        </fieldset>
+                        </div>
 
-                        <fieldset class="dialog__fieldset">
-                            <legend class="dialog__field-label">by Time</legend>
-                            <label class="dialog__radio">
-                                <input type="radio" name="findTimeKind" value="modified" checked />
-                                <span>modified</span>
-                            </label>
-                            <label class="dialog__radio">
-                                <input type="radio" name="findTimeKind" value="accessed" />
-                                <span>accessed</span>
-                            </label>
-                            <label class="dialog__radio">
-                                <input type="radio" name="findTimeKind" value="changed" />
-                                <span>metadata changed</span>
-                            </label>
-                        </fieldset>
-                        <div class="find-time-row">
-                            <fieldset class="dialog__fieldset dialog__fieldset--inline">
-                                <legend class="dialog__field-label">in</legend>
-                                <label class="dialog__radio">
-                                    <input type="radio" name="findTimeComparator" value="inLast" checked />
-                                    <span>in last</span>
-                                </label>
-                                <label class="dialog__radio">
-                                    <input type="radio" name="findTimeComparator" value="moreThan" />
-                                    <span>more than</span>
-                                </label>
-                            </fieldset>
-                            <label class="dialog__field dialog__field--inline">
-                                <input id="findTimeDays" type="text" spellcheck="false" inputmode="numeric" />
-                                <span class="dialog__field-suffix">days</span>
+                        <div class="find-grid__field--time">
+                            <label class="dialog__field">
+                                <span class="dialog__field-label">by Time</span>
+                                <div class="find-time-row">
+                                    <fieldset class="dialog__fieldset">
+                                        <legend class="sr-only">Time type</legend>
+                                        <label class="dialog__radio">
+                                            <input type="radio" name="findTimeKind" value="modified" checked />
+                                            <span>modified</span>
+                                        </label>
+                                        <label class="dialog__radio">
+                                            <input type="radio" name="findTimeKind" value="accessed" />
+                                            <span>accessed</span>
+                                        </label>
+                                        <label class="dialog__radio">
+                                            <input type="radio" name="findTimeKind" value="changed" />
+                                            <span>metadata changed</span>
+                                        </label>
+                                    </fieldset>
+                                    <fieldset class="dialog__fieldset dialog__fieldset--inline">
+                                        <legend class="dialog__field-label">in</legend>
+                                        <label class="dialog__radio">
+                                            <input type="radio" name="findTimeComparator" value="inLast" checked />
+                                            <span>in last</span>
+                                        </label>
+                                        <label class="dialog__radio">
+                                            <input type="radio" name="findTimeComparator" value="moreThan" />
+                                            <span>more than</span>
+                                        </label>
+                                    </fieldset>
+                                    <label class="dialog__field dialog__field--inline">
+                                        <input id="findTimeDays" type="text" spellcheck="false" inputmode="numeric" />
+                                        <span class="dialog__field-suffix">days</span>
+                                    </label>
+                                </div>
                             </label>
                         </div>
 
