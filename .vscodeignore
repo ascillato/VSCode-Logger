@@ -11,6 +11,8 @@ coverage/**
 AGENTS.md
 .gitignore
 .github/**
+node_modules/**
+scripts/**
 VSCode-Logger.code-workspace
 Makefile
 .prettierignore
