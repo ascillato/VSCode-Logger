@@ -114,7 +114,15 @@ const spellcheckSkipWords = [
   "resizer",
   "resizable",
   "31mred",
-  "systemctl"
+  "systemctl",
+  "linux",
+  "maxdepth",
+  "iname",
+  "atime",
+  "ctime",
+  "mtime",
+  "abc",
+  "ugo"
 ];
 
 export default defineConfig([

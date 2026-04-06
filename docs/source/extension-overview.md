@@ -79,6 +79,9 @@ This project was designed around the following principles:
 -   **Targeted refresh behavior**: Sidebar/device updates and SFTP
     preset updates send focused payloads rather than forcing full
     extension reloads.
+-   **Search result reuse in SFTP**: The SFTP explorer preserves active
+    `find`/`grep` result views across refreshes and reconnects instead
+    of dropping users back into plain directory listings.
 
 ------------------------------------------------------------------------
 
@@ -118,8 +121,9 @@ This project was designed around the following principles:
     groups, devices, SSH commands, fingerprints, and SFTP presets from a
     structured table UI instead of only editing raw JSON.
 -   **SFTP explorer is integrated into the same device model**: It
-    reuses device credentials, host-key expectations, presets, and
-    terminal actions, which makes navigation consistent across features.
+    reuses device credentials, host-key expectations, presets, terminal
+    actions, and the same host-side command execution model for file
+    search, which makes navigation consistent across features.
 -   **Responsive layout and theme integration**: The Webviews use VS Code
     theme variables and preserve a native-feeling workflow inside the
     editor.
@@ -197,7 +201,8 @@ the Webviews, and key configuration and security considerations.
 - **Log panel host (`src/logPanel/`)**: `logPanel.ts` creates a Webview panel per remote or local log source, injects assets via `html.ts`, validates inbound Webview messages with `messageParser.ts`, persists presets and highlights through `stateStore.ts`, and manages auto-save streams through `autoSaveManager.ts`. It owns a `LogSession` for remote devices.
 - **`LogSession` pipeline (`src/logSession/`)**: `logSession.ts` orchestrates streaming using `authenticationProvider.ts` (secrets and key loading), `connectionManager.ts` (SSH clients, channels, stream lifecycle), `hostKeyVerifier.ts` and `fingerprintPersistence.ts` (verification and capture), and `reconnectionController.ts` (retry strategy).
 - **SSH helpers (`src/sshCommandRunner.ts`, `src/sshTerminal.ts`)**: Execute one-off SSH commands from the devices view or spawn an interactive SSH terminal using the same validation and authentication pipeline as log streaming.
-- **SFTP explorer (`src/sftpExplorer.ts` + `media/sftpExplorer.*`)**: Hosts the dual-pane file explorer, transfers, permissions editing, quick search, path presets, and integrated terminal or run actions while reusing device authentication and bastion support.
+- **SFTP explorer (`src/sftpExplorer.ts` + `media/sftpExplorer.*`)**: Hosts the dual-pane file explorer, transfers, permissions editing, quick search, `find`/`grep` dialogs, search-result snapshots, path presets, and integrated terminal or run actions while reusing device authentication and bastion support.
+- **SFTP search compiler (`src/sftpSearch.ts`)**: Centralizes validation and shell-safe command compilation for the SFTP explorer's `find` and optional `grep` filters so the preview shown in the Webview matches what the extension host executes.
 - **Webview clients (`media/loggerPanel/`, `media/loggerPanel.css`)**: The `loggerPanel.js` entrypoint composes `state.js`, `rendering.js`, and `messaging.js` to parse severity, apply filters and highlights, manage bookmarks and presets, enforce the max-lines cap, and render the terminal-like UI for both remote and local logs.
 
 ## Data and control flow
@@ -224,7 +229,7 @@ graph TD
     K --> L[Apply filters, presets, max-line cap, and formatting]
     L --> O[Render log entries and statuses in Webview]
     O -- Export/preset/bookmark requests --> P[Extension persists workspace state or writes file]
-    S --> T[Browse files, transfer data, save presets]
+    S --> T[Browse files, transfer data, search with find/grep, save presets]
     Q --> O
     F -- Status updates --> O
 ```
@@ -245,7 +250,7 @@ Each class has a narrowly scoped role to keep concerns separated:
 - **`deviceManagerPanel`** provides schema-aware editing, import/export, and save flows for the current configuration model.
 - **`sshCommandRunner`** executes sanitized one-off commands with the same credential and endpoint model used elsewhere.
 - **`sshTerminal`** provides an interactive pseudoterminal session with the same authentication and host-key guarantees.
-- **`sftpExplorer`** provides a dual-pane file workflow built on the same device identity, secret handling, and bastion support.
+- **`sftpExplorer`** provides a dual-pane file workflow built on the same device identity, secret handling, bastion support, and host-side `find`/`grep` execution for search results with relative paths and metadata.
 - **Webview clients (`loggerPanel.js`, `sidebarView.js`, `deviceManager.js`, `sftpExplorer.js`)** manage UI state and issue explicit `postMessage` requests back to the extension host.
 
 ### Data flow: device configuration to Webview rendering
@@ -372,6 +377,26 @@ flowchart LR
 6. **Configuration changes**: When `embeddedLogger` settings change, the devices tree and devices Webview refresh with updated devices, groups, defaults, and commands. Active log panels continue using their existing session until reopened or reconnected.
 7. **Security boundaries**: Secrets stay in secret storage or transient prompts, SSH and file operations stay in extension-host code, and Webviews remain limited to rendering and explicit message passing.
 
+## SFTP search flow
+
+The SFTP explorer supports a search workflow that combines `find` with
+optional `grep` content filters:
+
+1. The user clicks the magnifier button in a pane toolbar.
+2. `media/sftpExplorer.js` opens the search dialog, keeps the current
+   pane path as the base directory, and asks the extension host for a
+   live preview of the compiled command.
+3. `src/sftpSearch.ts` validates the requested filters and produces the
+   exact shell command string for the preview and execution path.
+4. `src/sftpExplorer.ts` runs the command over SSH for remote panes, or
+   locally for the right pane when VS Code itself is running on Linux.
+5. The resulting file list is converted into an SFTP snapshot with file
+   size, permissions, modified time, and a `relativePath` column so
+   files found in subdirectories still fit the normal table layout.
+6. The Webview marks the pane as a search-result view, highlights the
+   search button, and keeps standard selection, context-menu, transfer,
+   and refresh interactions available for the result set.
+
 ## Extending the Current Design
 
 For the current architecture, these are the safest extension points:
@@ -383,5 +408,6 @@ For the current architecture, these are the safest extension points:
 - add new log-panel UI behavior in `media/loggerPanel.*`
 - add new SSH connection behavior inside `src/logSession/`
 - extend SFTP behavior in `src/sftpExplorer.ts`
+- update shared SFTP `find`/`grep` command rules in `src/sftpSearch.ts`
 
 Keep extension-host logic in `src/` and DOM/state logic in `media/`. That separation is still the clearest architectural boundary in the current codebase.

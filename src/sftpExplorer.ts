@@ -22,6 +22,11 @@ import { SshCommandRunner } from './sshCommandRunner';
 import { SshTerminalSession } from './sshTerminal';
 import { getDeviceColorIcon } from './deviceColor';
 import { sanitizeSftpPresets, updateEmbeddedLoggerDeviceConfiguration } from './configuration';
+import {
+  compileSftpSearchCommand,
+  normalizeSftpSearchOptions,
+  type SftpSearchOptions,
+} from './sftpSearch';
 
 type ForwardingClient = Client & {
   forwardOut(
@@ -42,6 +47,14 @@ interface ExplorerEntry {
   modified?: number;
   permissions?: string;
   isExecutable?: boolean;
+  fullPath?: string;
+  relativePath?: string;
+}
+
+interface SearchSnapshotState {
+  basePath: string;
+  command: string;
+  options: SftpSearchOptions;
 }
 
 interface DirectorySnapshot {
@@ -50,6 +63,8 @@ interface DirectorySnapshot {
   isRoot: boolean;
   entries: ExplorerEntry[];
   location: 'remote' | 'local';
+  emptyMessage?: string;
+  search?: SearchSnapshotState;
 }
 
 interface InitResponse {
@@ -111,6 +126,13 @@ interface SftpPresetsMessage {
   presets: string[];
 }
 
+interface SearchCommandPreviewMessage {
+  type: 'searchCommandPreview';
+  requestId: string;
+  command?: string;
+  error?: string;
+}
+
 type ConfirmationResponse = { type: 'confirmationResult'; requestId: string; confirmed: boolean };
 type InputResponse = { type: 'inputResult'; requestId: string; value?: string };
 
@@ -123,7 +145,8 @@ type WebviewResponse =
   | InputResponse
   | ConnectionStatusMessage
   | PermissionsInfoMessage
-  | SftpPresetsMessage;
+  | SftpPresetsMessage
+  | SearchCommandPreviewMessage;
 
 type WebviewRequest =
   | { type: 'requestInit' }
@@ -193,7 +216,21 @@ type WebviewRequest =
   | { type: 'deleteEntries'; location: 'remote' | 'local'; paths: string[]; requestId: string }
   | { type: 'requestConfirmation'; message: string; requestId: string }
   | { type: 'requestInput'; prompt: string; value?: string; requestId: string }
-  | { type: 'saveSftpPresets'; location: 'remote' | 'local'; presets: string[] };
+  | { type: 'saveSftpPresets'; location: 'remote' | 'local'; presets: string[] }
+  | {
+      type: 'previewSearchCommand';
+      location: 'remote' | 'local';
+      basePath: string;
+      options: SftpSearchOptions;
+      requestId: string;
+    }
+  | {
+      type: 'searchEntries';
+      location: 'remote' | 'local';
+      basePath: string;
+      options: SftpSearchOptions;
+      requestId: string;
+    };
 
 interface HostKeyMismatch {
   expected: string;
@@ -242,6 +279,8 @@ type ClientWithSftp = Client & {
   sftp(callback: (err: Error | undefined, sftp?: SftpClient) => void): void;
 };
 
+type PaneRequestId = 'remote' | 'local' | 'rightRemote';
+
 /**
  * Error describing a host key fingerprint mismatch.
  */
@@ -288,6 +327,8 @@ export class SftpExplorerPanel {
   private readonly viewedTempFiles = new Map<string, { remotePath: string }>();
   private readonly isTestMode: boolean;
   private readonly testEntries: Map<string, ExplorerEntry[]> = new Map();
+  private readonly testFileContents = new Map<string, string>();
+  private readonly activeSearches = new Map<PaneRequestId, SearchSnapshotState>();
   private readonly testInputQueue: string[] = [];
 
   readonly onDidDispose = this.onDidDisposeEmitter.event;
@@ -414,6 +455,13 @@ export class SftpExplorerPanel {
     this.testEntries.set('/alpha', alphaEntries);
     this.testEntries.set('/alpha/alpha-sub', alphaSubEntries);
     this.testEntries.set('/bravo', bravoEntries);
+
+    this.testFileContents.set('/alpha-file.txt', 'alpha file contents');
+    this.testFileContents.set('/alpha-two.log', 'alpha two log entry');
+    this.testFileContents.set('/charlie.txt', 'charlie entry');
+    this.testFileContents.set('/alpha/alpha-child.txt', 'child alpha entry');
+    this.testFileContents.set('/alpha/alpha-sub/nested.txt', 'nested alpha content');
+    this.testFileContents.set('/bravo/bravo.txt', 'bravo entry');
   }
 
   private normalizeTestPath(dirPath: string): string {
@@ -465,6 +513,84 @@ export class SftpExplorerPanel {
     };
   }
 
+  private buildTestSearchSnapshot(
+    location: 'remote' | 'local',
+    search: SearchSnapshotState
+  ): DirectorySnapshot {
+    const normalizedBasePath = this.normalizeTestPath(search.basePath);
+    const command = compileSftpSearchCommand(normalizedBasePath, search.options);
+    const matches = this.collectTestSearchEntries(normalizedBasePath, search.options);
+    return {
+      path: normalizedBasePath,
+      parentPath: normalizedBasePath === '/' ? '/' : path.posix.dirname(normalizedBasePath),
+      isRoot: normalizedBasePath === '/',
+      entries: matches,
+      location,
+      emptyMessage: 'No files found',
+      search: {
+        basePath: normalizedBasePath,
+        command: command.command,
+        options: normalizeSftpSearchOptions(search.options),
+      },
+    };
+  }
+
+  private collectTestSearchEntries(
+    basePath: string,
+    rawOptions: Partial<SftpSearchOptions> | undefined
+  ): ExplorerEntry[] {
+    const options = normalizeSftpSearchOptions(rawOptions);
+    const includeSubdirectories = options.includeSubdirectories;
+    const matches: ExplorerEntry[] = [];
+
+    for (const [directory, entries] of this.testEntries.entries()) {
+      if (!directory.startsWith(basePath)) {
+        continue;
+      }
+      for (const entry of entries) {
+        if (entry.type !== 'file') {
+          continue;
+        }
+        const fullPath =
+          directory === '/'
+            ? path.posix.join('/', entry.name)
+            : path.posix.join(directory, entry.name);
+        const relativePath = path.posix.relative(basePath, fullPath);
+        if (!relativePath || relativePath.startsWith('..')) {
+          continue;
+        }
+        if (!includeSubdirectories && relativePath.includes('/')) {
+          continue;
+        }
+        if (options.name && !entry.name.toLowerCase().includes(options.name.toLowerCase())) {
+          continue;
+        }
+        if (options.content) {
+          const content = this.testFileContents.get(fullPath) ?? '';
+          const haystack = options.contentCaseSensitive ? content : content.toLowerCase();
+          const needle = options.contentCaseSensitive
+            ? options.content
+            : options.content.toLowerCase();
+          if (!haystack.includes(needle)) {
+            continue;
+          }
+        }
+        matches.push({
+          ...entry,
+          fullPath,
+          relativePath,
+          permissions: entry.permissions ?? 'rw-r--r--',
+        });
+      }
+    }
+
+    return matches.sort((a, b) =>
+      (a.relativePath ?? a.name).localeCompare(b.relativePath ?? b.name, undefined, {
+        sensitivity: 'base',
+      })
+    );
+  }
+
   private handleTestMessage(message: WebviewRequest): boolean {
     switch (message.type) {
       case 'requestInput': {
@@ -475,6 +601,32 @@ export class SftpExplorerPanel {
       case 'requestPermissionsInfo': {
         const info = this.buildTestPermissionsInfo(message.path, message.location);
         this.postMessage({ type: 'permissionsInfo', requestId: message.requestId, info });
+        return true;
+      }
+      case 'previewSearchCommand': {
+        try {
+          const preview = this.previewSearchCommand(message.basePath, message.options);
+          this.postMessage({
+            type: 'searchCommandPreview',
+            requestId: message.requestId,
+            command: preview.command,
+          });
+        } catch (err: unknown) {
+          this.postMessage({
+            type: 'searchCommandPreview',
+            requestId: message.requestId,
+            error: this.getErrorMessage(err),
+          });
+        }
+        return true;
+      }
+      case 'searchEntries': {
+        void this.searchAndPost(
+          message.location,
+          message.basePath,
+          message.options,
+          this.toPaneRequestId(message.requestId)
+        );
         return true;
       }
       case 'deleteEntry':
@@ -523,30 +675,12 @@ export class SftpExplorerPanel {
           break;
         case 'deleteEntry': {
           const refreshDir = await this.deleteEntry(message.location, message.path);
-          await this.listAndPost(
-            message.location,
-            refreshDir,
-            message.requestId,
-            message.requestId === 'rightRemote'
-              ? 'right'
-              : message.requestId === 'remote'
-                ? 'left'
-                : undefined
-          );
+          await this.refreshAfterMutation(message.location, refreshDir, message.requestId);
           break;
         }
         case 'deleteEntries': {
           const refreshDir = await this.deleteEntries(message.location, message.paths);
-          await this.listAndPost(
-            message.location,
-            refreshDir,
-            message.requestId,
-            message.requestId === 'rightRemote'
-              ? 'right'
-              : message.requestId === 'remote'
-                ? 'left'
-                : undefined
-          );
+          await this.refreshAfterMutation(message.location, refreshDir, message.requestId);
           break;
         }
         case 'renameEntry': {
@@ -555,30 +689,12 @@ export class SftpExplorerPanel {
             message.path,
             message.newName
           );
-          await this.listAndPost(
-            message.location,
-            refreshDir,
-            message.requestId,
-            message.requestId === 'rightRemote'
-              ? 'right'
-              : message.requestId === 'remote'
-                ? 'left'
-                : undefined
-          );
+          await this.refreshAfterMutation(message.location, refreshDir, message.requestId);
           break;
         }
         case 'duplicateEntry': {
           const refreshDir = await this.duplicateEntry(message.location, message.path);
-          await this.listAndPost(
-            message.location,
-            refreshDir,
-            message.requestId,
-            message.requestId === 'rightRemote'
-              ? 'right'
-              : message.requestId === 'remote'
-                ? 'left'
-                : undefined
-          );
+          await this.refreshAfterMutation(message.location, refreshDir, message.requestId);
           break;
         }
         case 'createDirectory': {
@@ -587,57 +703,29 @@ export class SftpExplorerPanel {
             message.path,
             message.name
           );
-          await this.listAndPost(
-            message.location,
-            refreshDir,
-            message.requestId,
-            message.requestId === 'rightRemote'
-              ? 'right'
-              : message.requestId === 'remote'
-                ? 'left'
-                : undefined
-          );
+          await this.refreshAfterMutation(message.location, refreshDir, message.requestId);
           break;
         }
         case 'createFile': {
           const refreshDir = await this.createFile(message.location, message.path, message.name);
-          await this.listAndPost(
-            message.location,
-            refreshDir,
-            message.requestId,
-            message.requestId === 'rightRemote'
-              ? 'right'
-              : message.requestId === 'remote'
-                ? 'left'
-                : undefined
-          );
+          await this.refreshAfterMutation(message.location, refreshDir, message.requestId);
           break;
         }
         case 'copyEntry': {
           const refreshDir = await this.copyEntry(message.from, message.toDirectory);
-          await this.listAndPost(
+          await this.refreshAfterMutation(
             message.toDirectory.location,
             refreshDir,
-            message.requestId,
-            message.requestId === 'rightRemote'
-              ? 'right'
-              : message.requestId === 'remote'
-                ? 'left'
-                : undefined
+            message.requestId
           );
           break;
         }
         case 'copyEntries': {
           const refreshDir = await this.copyEntries(message.items, message.toDirectory);
-          await this.listAndPost(
+          await this.refreshAfterMutation(
             message.toDirectory.location,
             refreshDir,
-            message.requestId,
-            message.requestId === 'rightRemote'
-              ? 'right'
-              : message.requestId === 'remote'
-                ? 'left'
-                : undefined
+            message.requestId
           );
           break;
         }
@@ -671,16 +759,7 @@ export class SftpExplorerPanel {
             owner,
             group
           );
-          await this.listAndPost(
-            message.location,
-            parent,
-            message.requestId,
-            message.requestId === 'rightRemote'
-              ? 'right'
-              : message.requestId === 'remote'
-                ? 'left'
-                : undefined
-          );
+          await this.refreshAfterMutation(message.location, parent, message.requestId);
           break;
         }
         case 'updatePermissionsBatch': {
@@ -696,16 +775,7 @@ export class SftpExplorerPanel {
             owner,
             group
           );
-          await this.listAndPost(
-            message.location,
-            parent,
-            message.requestId,
-            message.requestId === 'rightRemote'
-              ? 'right'
-              : message.requestId === 'remote'
-                ? 'left'
-                : undefined
-          );
+          await this.refreshAfterMutation(message.location, parent, message.requestId);
           break;
         }
         case 'requestConfirmation': {
@@ -737,10 +807,36 @@ export class SftpExplorerPanel {
           await this.saveSftpPresets(message.location, message.presets);
           break;
         }
+        case 'previewSearchCommand': {
+          const preview = this.previewSearchCommand(message.basePath, message.options);
+          this.postMessage({
+            type: 'searchCommandPreview',
+            requestId: message.requestId,
+            command: preview.command,
+          });
+          break;
+        }
+        case 'searchEntries': {
+          await this.searchAndPost(
+            message.location,
+            message.basePath,
+            message.options,
+            this.toPaneRequestId(message.requestId)
+          );
+          break;
+        }
       }
     } catch (err: unknown) {
       const messageText =
         err instanceof HostKeyMismatchError ? err.message : this.getErrorMessage(err);
+      if (message.type === 'previewSearchCommand') {
+        this.postMessage({
+          type: 'searchCommandPreview',
+          requestId: message.requestId,
+          error: messageText,
+        });
+        return;
+      }
       this.postMessage({ type: 'error', message: messageText });
       vscode.window.showErrorMessage(messageText);
     }
@@ -871,6 +967,9 @@ export class SftpExplorerPanel {
     requestId: string,
     context: 'left' | 'right' | undefined = undefined
   ): Promise<void> {
+    if (this.isPaneRequestId(requestId)) {
+      this.activeSearches.delete(requestId);
+    }
     if (this.isTestMode) {
       const snapshot = this.buildTestSnapshot(location, dirPath, context);
       this.postMessage({ type: 'listResponse', requestId, snapshot });
@@ -878,6 +977,172 @@ export class SftpExplorerPanel {
     }
     const snapshot = await this.buildSnapshot(location, dirPath, context);
     this.postMessage({ type: 'listResponse', requestId, snapshot });
+  }
+
+  private previewSearchCommand(
+    basePath: string,
+    options: Partial<SftpSearchOptions> | undefined
+  ): SearchSnapshotState {
+    const normalizedOptions = normalizeSftpSearchOptions(options);
+    const compiled = compileSftpSearchCommand(basePath, normalizedOptions);
+    return {
+      basePath,
+      command: compiled.command,
+      options: normalizedOptions,
+    };
+  }
+
+  private async searchAndPost(
+    location: 'remote' | 'local',
+    basePath: string,
+    options: Partial<SftpSearchOptions> | undefined,
+    requestId: PaneRequestId
+  ): Promise<void> {
+    const context =
+      requestId === 'remote' ? 'left' : requestId === 'rightRemote' ? 'right' : undefined;
+    const search = this.previewSearchCommand(basePath, options);
+    const snapshot = this.isTestMode
+      ? this.buildTestSearchSnapshot(location, search)
+      : await this.buildSearchSnapshot(location, search, context);
+    this.activeSearches.set(requestId, search);
+    this.postMessage({ type: 'listResponse', requestId, snapshot });
+    const resultCount = snapshot.entries.length;
+    this.postMessage({
+      type: 'status',
+      message: `Found ${resultCount} file${resultCount === 1 ? '' : 's'} from ${search.basePath}.`,
+    });
+  }
+
+  private async refreshAfterMutation(
+    location: 'remote' | 'local',
+    refreshDir: string,
+    requestId: string
+  ): Promise<void> {
+    const paneRequestId = this.toPaneRequestId(requestId);
+    const activeSearch = this.activeSearches.get(paneRequestId);
+    if (activeSearch && location === this.getSearchLocationForRequestId(paneRequestId)) {
+      await this.searchAndPost(
+        location,
+        activeSearch.basePath,
+        activeSearch.options,
+        paneRequestId
+      );
+      return;
+    }
+
+    await this.listAndPost(
+      location,
+      refreshDir,
+      requestId,
+      requestId === 'rightRemote' ? 'right' : requestId === 'remote' ? 'left' : undefined
+    );
+  }
+
+  private async buildSearchSnapshot(
+    location: 'remote' | 'local',
+    search: SearchSnapshotState,
+    context: 'left' | 'right' | undefined = undefined
+  ): Promise<DirectorySnapshot> {
+    const normalizedBasePath = this.normalizePath(location, search.basePath);
+    await this.ensureDirectoryExists(location, normalizedBasePath);
+    if (location === 'local' && process.platform !== 'linux') {
+      throw new Error('Local file search is only supported when VS Code is running on Linux.');
+    }
+
+    if (location === 'remote') {
+      if (context === 'right') {
+        this.remotePaths.right = normalizedBasePath;
+      } else {
+        this.remotePaths.left = normalizedBasePath;
+      }
+    }
+
+    const command = compileSftpSearchCommand(normalizedBasePath, search.options);
+    const output =
+      location === 'remote'
+        ? await this.execRemoteCommand(command.command)
+        : await this.execLocalCommand(command.command);
+    const entries = await this.buildSearchEntries(location, normalizedBasePath, output);
+    return {
+      path: normalizedBasePath,
+      parentPath: this.getParentDir(location, normalizedBasePath),
+      isRoot: this.isRoot(location, normalizedBasePath),
+      entries,
+      location,
+      emptyMessage: 'No files found',
+      search: {
+        basePath: normalizedBasePath,
+        command: command.command,
+        options: normalizeSftpSearchOptions(search.options),
+      },
+    };
+  }
+
+  private async buildSearchEntries(
+    location: 'remote' | 'local',
+    basePath: string,
+    output: string
+  ): Promise<ExplorerEntry[]> {
+    const relativePaths = output
+      .split(/\r?\n/g)
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => line.replace(/^\.\//, ''))
+      .filter(Boolean);
+
+    const entries: ExplorerEntry[] = [];
+    for (const relativePath of relativePaths) {
+      const fullPath =
+        location === 'remote'
+          ? path.posix.join(basePath, relativePath)
+          : path.join(basePath, relativePath);
+      const stats = await this.getEntryStats(location, fullPath);
+      if (!stats.isFile()) {
+        continue;
+      }
+
+      const mode = stats.mode;
+      entries.push({
+        name: location === 'remote' ? path.posix.basename(fullPath) : path.basename(fullPath),
+        type: 'file',
+        size: stats.size,
+        modified:
+          stats.mtime instanceof Date
+            ? stats.mtime.getTime()
+            : stats.mtimeMs !== undefined
+              ? Number(stats.mtimeMs)
+              : stats.mtime !== undefined
+                ? Number(stats.mtime) * 1000
+                : undefined,
+        permissions: this.formatPermissions(mode),
+        isExecutable: this.isExecutable(mode),
+        fullPath,
+        relativePath,
+      });
+    }
+
+    return [...entries].sort((a, b) =>
+      (a.relativePath ?? a.name).localeCompare(b.relativePath ?? b.name, undefined, {
+        sensitivity: 'base',
+      })
+    );
+  }
+
+  private async execLocalCommand(command: string): Promise<string> {
+    const { stdout } = await execFileAsync('sh', ['-lc', command], { maxBuffer: 10 * 1024 * 1024 });
+    return stdout;
+  }
+
+  private isPaneRequestId(requestId: string): requestId is PaneRequestId {
+    return requestId === 'remote' || requestId === 'local' || requestId === 'rightRemote';
+  }
+
+  private toPaneRequestId(requestId: string): PaneRequestId {
+    return requestId === 'rightRemote' ? 'rightRemote' : requestId === 'local' ? 'local' : 'remote';
+  }
+
+  private getSearchLocationForRequestId(requestId: PaneRequestId): 'remote' | 'local' {
+    return requestId === 'local' ? 'local' : 'remote';
   }
 
   private async buildSnapshot(
@@ -1398,9 +1663,21 @@ export class SftpExplorerPanel {
   }
 
   private async refreshRemoteViewsAfterReconnect(): Promise<void> {
-    const leftPath = this.remotePaths.left ?? this.remoteHome ?? '/';
-    await this.listAndPost('remote', leftPath, 'remote', 'left');
+    const leftSearch = this.activeSearches.get('remote');
+    if (leftSearch) {
+      await this.searchAndPost('remote', leftSearch.basePath, leftSearch.options, 'remote');
+    } else {
+      const leftPath = this.remotePaths.left ?? this.remoteHome ?? '/';
+      await this.listAndPost('remote', leftPath, 'remote', 'left');
+    }
 
+    const rightSearch = this.activeSearches.get('rightRemote');
+    if (rightSearch) {
+      await this.searchAndPost('remote', rightSearch.basePath, rightSearch.options, 'rightRemote');
+      return;
+    }
+
+    const leftPath = this.remotePaths.left ?? this.remoteHome ?? '/';
     const rightPath = this.remotePaths.right ?? this.remoteHome;
     if (rightPath && rightPath !== leftPath) {
       await this.listAndPost('remote', rightPath, 'rightRemote', 'right');
@@ -2735,7 +3012,7 @@ export class SftpExplorerPanel {
     <link href="${styleUriString}" rel="stylesheet" />
     <title>SFTP Explorer</title>
 </head>
-<body data-test-mode="${this.isTestMode ? 'true' : 'false'}">
+<body data-test-mode="${this.isTestMode ? 'true' : 'false'}" data-host-os="${process.platform}">
     <div class="explorer" id="explorer">
         <header class="explorer__header">
             <h2>${this.escapeHtml(this.device.name)} — SFTP Explorer</h2>
@@ -2873,6 +3150,30 @@ export class SftpExplorerPanel {
                                     stroke-width="1.8"
                                     stroke-linecap="round"
                                     stroke-linejoin="round"
+                                />
+                            </svg>
+                        </button>
+                        <button
+                            id="remoteFind"
+                            class="action action--icon"
+                            title="find files"
+                            aria-label="find files"
+                        >
+                            <svg class="action__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                <circle
+                                    cx="10.5"
+                                    cy="10.5"
+                                    r="5.75"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                />
+                                <path
+                                    d="m15 15 4.5 4.5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linecap="round"
                                 />
                             </svg>
                         </button>
@@ -3089,6 +3390,30 @@ export class SftpExplorerPanel {
                             </svg>
                         </button>
                         <button
+                            id="localFind"
+                            class="action action--icon"
+                            title="find files"
+                            aria-label="find files"
+                        >
+                            <svg class="action__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                <circle
+                                    cx="10.5"
+                                    cy="10.5"
+                                    r="5.75"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                />
+                                <path
+                                    d="m15 15 4.5 4.5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linecap="round"
+                                />
+                            </svg>
+                        </button>
+                        <button
                             id="localToRemote"
                             class="action action--icon"
                             disabled
@@ -3253,6 +3578,131 @@ export class SftpExplorerPanel {
                 <footer class="dialog__actions">
                     <button class="action action--primary" id="permissionsSave" title="Save permissions">Save</button>
                     <button class="action" id="permissionsCancel" title="Cancel changes">Cancel</button>
+                </footer>
+            </div>
+        </div>
+        <div class="dialog dialog--hidden" id="findDialog" role="dialog" aria-modal="true" aria-labelledby="findDialogTitle" aria-hidden="true">
+            <div class="dialog__content dialog__content--wide">
+                <header class="dialog__header">
+                    <h3 class="dialog__title" id="findDialogTitle">Find files</h3>
+                    <button class="dialog__close" id="findDialogDismiss" aria-label="Cancel" title="Cancel">✕</button>
+                </header>
+                <div class="dialog__body">
+                    <div class="dialog__target" id="findDialogTarget"></div>
+                    <div class="find-grid">
+                        <label class="dialog__field find-grid__field find-grid__field--name">
+                            <span class="dialog__field-label">by Name</span>
+                            <input id="findByName" type="text" spellcheck="false" />
+                        </label>
+                        <label class="dialog__checkbox find-grid__field--full">
+                            <input id="findNameCaseSensitive" type="checkbox" />
+                            <span>Case Sensitive</span>
+                        </label>
+
+                        <div class="find-grid__field--size">
+                            <label class="dialog__field">
+                                <span class="dialog__field-label">by Size</span>
+                                <div class="find-size-row">
+                                    <input id="findBySize" type="text" spellcheck="false" placeholder="50M" title="Example: 50M" />
+                                    <fieldset class="dialog__fieldset">
+                                        <legend class="dialog__field-label">Size mode</legend>
+                                        <label class="dialog__radio">
+                                            <input type="radio" name="findSizeMode" value="bigger" />
+                                            <span>bigger</span>
+                                        </label>
+                                        <label class="dialog__radio">
+                                            <input type="radio" name="findSizeMode" value="smaller" />
+                                            <span>smaller</span>
+                                        </label>
+                                        <label class="dialog__radio">
+                                            <input type="radio" name="findSizeMode" value="exactly" checked />
+                                            <span>exactly</span>
+                                        </label>
+                                    </fieldset>
+                                </div>
+                            </label>
+                        </div>
+
+                        <div class="find-grid__field--time">
+                            <label class="dialog__field">
+                                <span class="dialog__field-label">by Time</span>
+                                <div class="find-time-row">
+                                    <fieldset class="dialog__fieldset">
+                                        <legend class="sr-only">Time type</legend>
+                                        <label class="dialog__radio">
+                                            <input type="radio" name="findTimeKind" value="modified" checked />
+                                            <span>modified</span>
+                                        </label>
+                                        <label class="dialog__radio">
+                                            <input type="radio" name="findTimeKind" value="accessed" />
+                                            <span>accessed</span>
+                                        </label>
+                                        <label class="dialog__radio">
+                                            <input type="radio" name="findTimeKind" value="changed" />
+                                            <span>metadata changed</span>
+                                        </label>
+                                    </fieldset>
+                                    <fieldset class="dialog__fieldset dialog__fieldset--inline">
+                                        <legend class="dialog__field-label">in</legend>
+                                        <label class="dialog__radio">
+                                            <input type="radio" name="findTimeComparator" value="inLast" checked />
+                                            <span>in last</span>
+                                        </label>
+                                        <label class="dialog__radio">
+                                            <input type="radio" name="findTimeComparator" value="moreThan" />
+                                            <span>more than</span>
+                                        </label>
+                                    </fieldset>
+                                    <label class="dialog__field dialog__field--inline">
+                                        <input id="findTimeDays" type="text" spellcheck="false" inputmode="numeric" />
+                                        <span class="dialog__field-suffix">days</span>
+                                    </label>
+                                </div>
+                            </label>
+                        </div>
+
+                        <label class="dialog__field find-grid__field--full">
+                            <span class="dialog__field-label">by Permissions</span>
+                            <input id="findByPermissions" type="text" spellcheck="false" placeholder="644" />
+                        </label>
+
+                        <label class="dialog__field find-grid__field--full">
+                            <span class="dialog__field-label">Exclude path</span>
+                            <input id="findExcludePath" type="text" spellcheck="false" />
+                        </label>
+                        <label class="dialog__checkbox find-grid__field--full">
+                            <input id="findIncludeSubdirectories" type="checkbox" checked />
+                            <span>include subdirectories</span>
+                        </label>
+
+                        <label class="dialog__field find-grid__field--full">
+                            <span class="dialog__field-label">by content</span>
+                            <input id="findByContent" type="text" spellcheck="false" />
+                        </label>
+                        <div class="dialog__checkbox-group find-grid__field--full">
+                            <label class="dialog__checkbox">
+                                <input id="findContentCaseSensitive" type="checkbox" />
+                                <span>case sensitive</span>
+                            </label>
+                            <label class="dialog__checkbox">
+                                <input id="findContentWholeWord" type="checkbox" />
+                                <span>whole word only</span>
+                            </label>
+                            <label class="dialog__checkbox">
+                                <input id="findContentExactLine" type="checkbox" />
+                                <span>exact line match</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="dialog__command">
+                        <span class="dialog__field-label">Command</span>
+                        <code class="dialog__command-text" id="findCommandPreview"></code>
+                    </div>
+                    <div class="dialog__error" id="findDialogError" role="status" aria-live="polite"></div>
+                </div>
+                <footer class="dialog__actions">
+                    <button class="action action--primary" id="findDialogSubmit" title="Find files">Find</button>
+                    <button class="action action--secondary" id="findDialogCancel" title="Cancel search">Cancel</button>
                 </footer>
             </div>
         </div>
