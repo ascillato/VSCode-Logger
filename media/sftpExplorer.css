@@ -158,6 +158,16 @@ svg.action__icon {
     cursor: not-allowed;
 }
 
+.action--hidden {
+    display: none;
+}
+
+.action--search-active {
+    background: var(--vscode-button-secondaryBackground, #cca700);
+    color: var(--vscode-button-secondaryForeground, #1e1e1e);
+    border-color: var(--vscode-editorWarning-foreground, #cca700);
+}
+
 .mode-picker select {
     background: var(--vscode-dropdown-background);
     color: var(--vscode-dropdown-foreground);
@@ -308,6 +318,10 @@ svg.action__icon {
     isolation: isolate;
 }
 
+.list--search-results .entry {
+    grid-template-columns: minmax(calc(var(--name-col-width) + var(--name-col-padding)), 1.6fr) minmax(6rem, 0.8fr) minmax(7rem, 0.9fr) minmax(10rem, 1fr) minmax(14rem, 1.3fr);
+}
+
 .entry[data-type='directory'] {
     font-weight: 600;
 }
@@ -333,6 +347,10 @@ svg.action__icon {
 .entry__cell--permissions {
     font-family: var(--vscode-editor-font-family, ui-monospace, SFMono-Regular, SFMono, Menlo, Monaco, Consolas, 'Liberation Mono',
             'Courier New', monospace);
+}
+
+.entry__cell--relative-path {
+    color: var(--vscode-descriptionForeground);
 }
 
 .entry__icon {
@@ -452,6 +470,11 @@ svg.action__icon {
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
+.dialog__content--wide {
+    max-width: 760px;
+    width: min(760px, calc(100vw - 2rem));
+}
+
 .dialog__header,
 .dialog__actions {
     display: flex;
@@ -529,6 +552,11 @@ svg.action__icon {
     gap: 0.25rem;
 }
 
+.dialog__field--inline {
+    flex-direction: row;
+    align-items: center;
+}
+
 .dialog__field-label {
     font-size: 0.9rem;
     color: var(--vscode-descriptionForeground);
@@ -540,6 +568,78 @@ svg.action__icon {
     border: 1px solid var(--vscode-input-border, transparent);
     padding: 0.35rem 0.5rem;
     border-radius: 3px;
+}
+
+.dialog__field-suffix {
+    color: var(--vscode-descriptionForeground);
+}
+
+.dialog__fieldset {
+    border: 1px solid var(--vscode-editorGroup-border);
+    border-radius: 4px;
+    padding: 0.5rem 0.65rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    min-width: 0;
+}
+
+.dialog__fieldset--inline {
+    flex: 1 1 auto;
+}
+
+.dialog__radio,
+.dialog__checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.dialog__checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.dialog__command {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.dialog__command-text {
+    display: block;
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: var(--vscode-textCodeBlock-background, rgba(127, 127, 127, 0.12));
+    border: 1px solid var(--vscode-editorGroup-border);
+    border-radius: 4px;
+    padding: 0.5rem 0.65rem;
+    font-family: var(--vscode-editor-font-family, ui-monospace, monospace);
+}
+
+.find-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0.75rem;
+}
+
+.find-grid__field--name,
+.find-grid__field--full {
+    grid-column: 1 / -1;
+}
+
+.find-time-row {
+    display: flex;
+    gap: 0.75rem;
+    align-items: stretch;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 900px) {
+    .find-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .dialog__error {

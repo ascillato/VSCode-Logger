@@ -24,9 +24,15 @@
     sftpPresetsRemote: [],
     sftpPresetsLocal: [],
     presetsDialogLocation: 'remote',
+    searchDrafts: {
+      remote: createSearchOptions(),
+      rightLocal: createSearchOptions(),
+      rightRemote: createSearchOptions(),
+    },
   };
 
   const isTestMode = document.body?.dataset.testMode === 'true';
+  const isLinuxHost = /^lin/.test(document.body?.dataset.hostOs || '');
 
   const selectionAnchors = {
     remote: undefined,
@@ -58,12 +64,14 @@
     remoteRefresh: document.getElementById('remoteRefresh'),
     remoteNewFolder: document.getElementById('remoteNewFolder'),
     remoteNewFile: document.getElementById('remoteNewFile'),
+    remoteFind: document.getElementById('remoteFind'),
     remoteToLocal: document.getElementById('remoteToLocal'),
     localHome: document.getElementById('localHome'),
     localUp: document.getElementById('localUp'),
     localRefresh: document.getElementById('localRefresh'),
     localNewFolder: document.getElementById('localNewFolder'),
     localNewFile: document.getElementById('localNewFile'),
+    localFind: document.getElementById('localFind'),
     localToRemote: document.getElementById('localToRemote'),
     rightMode: document.getElementById('rightMode'),
     contextMenu: document.getElementById('contextMenu'),
@@ -101,6 +109,24 @@
     sftpPresetsSave: document.getElementById('sftpPresetsSave'),
     sftpPresetsCancel: document.getElementById('sftpPresetsCancel'),
     sftpPresetsDismiss: document.getElementById('sftpPresetsDismiss'),
+    findDialog: document.getElementById('findDialog'),
+    findDialogTarget: document.getElementById('findDialogTarget'),
+    findDialogDismiss: document.getElementById('findDialogDismiss'),
+    findDialogCancel: document.getElementById('findDialogCancel'),
+    findDialogSubmit: document.getElementById('findDialogSubmit'),
+    findDialogError: document.getElementById('findDialogError'),
+    findByName: document.getElementById('findByName'),
+    findNameCaseSensitive: document.getElementById('findNameCaseSensitive'),
+    findBySize: document.getElementById('findBySize'),
+    findTimeDays: document.getElementById('findTimeDays'),
+    findByPermissions: document.getElementById('findByPermissions'),
+    findExcludePath: document.getElementById('findExcludePath'),
+    findIncludeSubdirectories: document.getElementById('findIncludeSubdirectories'),
+    findByContent: document.getElementById('findByContent'),
+    findContentCaseSensitive: document.getElementById('findContentCaseSensitive'),
+    findContentWholeWord: document.getElementById('findContentWholeWord'),
+    findContentExactLine: document.getElementById('findContentExactLine'),
+    findCommandPreview: document.getElementById('findCommandPreview'),
   };
 
   const contextMenuState = {
@@ -120,6 +146,17 @@
   const pending = {
     inputs: new Map(),
     permissions: new Map(),
+    searchPreviewRequestId: undefined,
+  };
+
+  const searchDialogState = {
+    side: 'remote',
+    location: 'remote',
+    requestId: requestIds.remote,
+    draftKey: 'remote',
+    basePath: '',
+    previewRequestId: undefined,
+    submitting: false,
   };
 
   const presetInputs = [];
@@ -162,6 +199,27 @@
       entries: [],
       location: 'remote',
       selected: [],
+      search: undefined,
+      emptyMessage: '',
+    };
+  }
+
+  function createSearchOptions() {
+    return {
+      name: '',
+      nameCaseSensitive: false,
+      sizeValue: '',
+      sizeMode: 'exactly',
+      timeKind: 'modified',
+      timeComparator: 'inLast',
+      timeDays: '',
+      permissions: '',
+      excludePath: '',
+      includeSubdirectories: true,
+      content: '',
+      contentCaseSensitive: false,
+      contentWholeWordOnly: false,
+      contentExactLineMatch: false,
     };
   }
 
@@ -221,6 +279,9 @@
   }
 
   function getEntryPath(snapshot, entry) {
+    if (entry.fullPath) {
+      return entry.fullPath;
+    }
     if (!snapshot.path || snapshot.path === '/') {
       return `/${entry.name}`;
     }
@@ -228,6 +289,17 @@
       return `${snapshot.path}${entry.name}`;
     }
     return `${snapshot.path}/${entry.name}`;
+  }
+
+  function getSearchDraftKeyForSide(side) {
+    if (side === 'remote') {
+      return 'remote';
+    }
+    return getActiveRightLocation() === 'local' ? 'rightLocal' : 'rightRemote';
+  }
+
+  function getSearchDraftForSide(side) {
+    return state.searchDrafts[getSearchDraftKeyForSide(side)];
   }
 
   function getSelectedEntries(snapshot) {
@@ -298,6 +370,13 @@
         path: rightSnapshot.path,
         selected: getSelectedEntries(rightSnapshot).map((entry) => entry.name),
         mode: state.rightMode,
+      },
+      search: {
+        dialogOpen: !elements.findDialog?.classList.contains('dialog--hidden'),
+        remoteActive: Boolean(state.remote.search),
+        rightActive: Boolean(rightSnapshot.search),
+        previewCommand: elements.findCommandPreview?.textContent || '',
+        previewError: elements.findDialogError?.textContent || '',
       },
     };
   }
@@ -370,6 +449,19 @@
         break;
       case 'focusSide':
         focusList(side);
+        break;
+      case 'openFindDialog':
+        openFindDialog(side);
+        break;
+      case 'setFindOptions':
+        applyFindOptions(message.options || {});
+        break;
+      case 'submitFind':
+        submitFindDialog();
+        break;
+      case 'setRightMode':
+        elements.rightMode.value = message.mode === 'remote' ? 'remote' : 'local';
+        elements.rightMode.dispatchEvent(new Event('change', { bubbles: true }));
         break;
       default:
         break;
@@ -597,6 +689,11 @@
    * Renders both left and right explorer panes and updates toolbar state.
    */
   function renderLists() {
+    elements.remoteList.classList.toggle('list--search-results', Boolean(state.remote.search));
+    elements.localList.classList.toggle(
+      'list--search-results',
+      Boolean(getActiveRightSnapshot().search)
+    );
     renderPane(elements.remoteList, state.remote, 'remote');
     renderPane(elements.localList, getActiveRightSnapshot(), 'right');
     updatePaths();
@@ -619,7 +716,7 @@
     if (snapshot.entries.length === 0) {
       const emptyRow = document.createElement('div');
       emptyRow.className = 'list__empty';
-      emptyRow.textContent = 'Folder empty';
+      emptyRow.textContent = snapshot.emptyMessage || 'Folder empty';
       frag.appendChild(emptyRow);
     }
     const selectedEntries = getSelectedEntries(snapshot);
@@ -660,15 +757,29 @@
       modifiedCell.className = 'entry__cell entry__cell--modified';
       modifiedCell.textContent = formatModified(entry);
 
+      const relativePathCell = document.createElement('div');
+      relativePathCell.className = 'entry__cell entry__cell--relative-path';
+      relativePathCell.textContent = entry.relativePath || entry.name;
+      if (entry.relativePath) {
+        relativePathCell.title = entry.relativePath;
+      }
+
       const selected = selectedEntries.some((selectedEntry) => selectedEntry.name === entry.name);
       if (selected) {
         row.classList.add('entry--selected');
+      }
+
+      if (snapshot.search) {
+        row.classList.add('entry--search-result');
       }
 
       row.appendChild(nameCell);
       row.appendChild(sizeCell);
       row.appendChild(permissionCell);
       row.appendChild(modifiedCell);
+      if (snapshot.search) {
+        row.appendChild(relativePathCell);
+      }
       row.addEventListener('click', (event) => handleEntryClick(side, snapshot, entry, event));
       row.addEventListener('contextmenu', (event) => handleEntryContextMenu(side, entry, event));
       frag.appendChild(row);
@@ -1082,11 +1193,150 @@
     hidePresetsDialog();
   }
 
+  function getRadioValue(name, fallback) {
+    const selected = document.querySelector(`input[name="${name}"]:checked`);
+    return selected?.value || fallback;
+  }
+
+  function setRadioValue(name, value) {
+    const input = document.querySelector(`input[name="${name}"][value="${value}"]`);
+    if (input) {
+      input.checked = true;
+    }
+  }
+
+  function collectFindOptions() {
+    return {
+      name: elements.findByName.value.trim(),
+      nameCaseSensitive: elements.findNameCaseSensitive.checked,
+      sizeValue: elements.findBySize.value.trim(),
+      sizeMode: getRadioValue('findSizeMode', 'exactly'),
+      timeKind: getRadioValue('findTimeKind', 'modified'),
+      timeComparator: getRadioValue('findTimeComparator', 'inLast'),
+      timeDays: elements.findTimeDays.value.trim(),
+      permissions: elements.findByPermissions.value.trim(),
+      excludePath: elements.findExcludePath.value.trim(),
+      includeSubdirectories: elements.findIncludeSubdirectories.checked,
+      content: elements.findByContent.value.trim(),
+      contentCaseSensitive: elements.findContentCaseSensitive.checked,
+      contentWholeWordOnly: elements.findContentWholeWord.checked,
+      contentExactLineMatch: elements.findContentExactLine.checked,
+    };
+  }
+
+  function applyFindOptions(options) {
+    elements.findByName.value = options.name || '';
+    elements.findNameCaseSensitive.checked = Boolean(options.nameCaseSensitive);
+    elements.findBySize.value = options.sizeValue || '';
+    setRadioValue('findSizeMode', options.sizeMode || 'exactly');
+    setRadioValue('findTimeKind', options.timeKind || 'modified');
+    setRadioValue('findTimeComparator', options.timeComparator || 'inLast');
+    elements.findTimeDays.value = options.timeDays || '';
+    elements.findByPermissions.value = options.permissions || '';
+    elements.findExcludePath.value = options.excludePath || '';
+    elements.findIncludeSubdirectories.checked = options.includeSubdirectories !== false;
+    elements.findByContent.value = options.content || '';
+    elements.findContentCaseSensitive.checked = Boolean(options.contentCaseSensitive);
+    elements.findContentWholeWord.checked = Boolean(options.contentWholeWordOnly);
+    elements.findContentExactLine.checked = Boolean(options.contentExactLineMatch);
+    scheduleSearchPreview();
+  }
+
+  function setFindDialogError(message) {
+    elements.findDialogError.textContent = message || '';
+    elements.findDialogSubmit.disabled =
+      state.connectionState !== 'connected' || Boolean(message) || searchDialogState.submitting;
+  }
+
+  function scheduleSearchPreview() {
+    if (!elements.findDialog || elements.findDialog.classList.contains('dialog--hidden')) {
+      return;
+    }
+    const draft = collectFindOptions();
+    state.searchDrafts[searchDialogState.draftKey] = draft;
+    const requestId = createRequestId();
+    searchDialogState.previewRequestId = requestId;
+    pending.searchPreviewRequestId = requestId;
+    vscode.postMessage({
+      type: 'previewSearchCommand',
+      location: searchDialogState.location,
+      basePath: searchDialogState.basePath,
+      options: draft,
+      requestId,
+    });
+  }
+
+  function openFindDialog(side) {
+    if (state.connectionState !== 'connected') {
+      return;
+    }
+    const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
+    const location = side === 'remote' ? 'remote' : getActiveRightLocation();
+    if (location === 'local' && !isLinuxHost) {
+      return;
+    }
+
+    searchDialogState.side = side;
+    searchDialogState.location = location;
+    searchDialogState.requestId = side === 'remote' ? requestIds.remote : getActiveRequestId();
+    searchDialogState.draftKey = getSearchDraftKeyForSide(side);
+    searchDialogState.basePath = snapshot.path;
+    searchDialogState.submitting = false;
+
+    const titleLocation = location === 'remote' ? 'remote' : 'local';
+    elements.findDialogTarget.textContent = `Find files from ${titleLocation}: ${snapshot.path}`;
+    applyFindOptions(snapshot.search?.options || getSearchDraftForSide(side));
+    elements.findCommandPreview.textContent = snapshot.search?.command || '';
+    setFindDialogError('');
+    elements.findDialog.classList.remove('dialog--hidden');
+    elements.findDialog.setAttribute('aria-hidden', 'false');
+    elements.findByName.focus();
+    scheduleSearchPreview();
+  }
+
+  function hideFindDialog() {
+    elements.findDialog.classList.add('dialog--hidden');
+    elements.findDialog.setAttribute('aria-hidden', 'true');
+    searchDialogState.submitting = false;
+    setFindDialogError('');
+  }
+
+  function submitFindDialog() {
+    if (state.connectionState !== 'connected') {
+      return;
+    }
+    if (elements.findDialogSubmit.disabled) {
+      return;
+    }
+    searchDialogState.submitting = true;
+    setFindDialogError(elements.findDialogError.textContent);
+    const options = collectFindOptions();
+    state.searchDrafts[searchDialogState.draftKey] = options;
+    vscode.postMessage({
+      type: 'searchEntries',
+      location: searchDialogState.location,
+      basePath: searchDialogState.basePath,
+      options,
+      requestId: searchDialogState.requestId,
+    });
+    hideFindDialog();
+  }
+
+  function handleSearchCommandPreview(message) {
+    if (message.requestId !== pending.searchPreviewRequestId) {
+      return;
+    }
+    elements.findCommandPreview.textContent = message.command || '';
+    setFindDialogError(message.error || '');
+  }
+
   function updateButtons() {
     const remoteSelected = getSelectedEntries(state.remote).length > 0;
     const rightSnapshot = getActiveRightSnapshot();
     const rightSelected = getSelectedEntries(rightSnapshot).length > 0;
     const disabled = state.connectionState !== 'connected';
+    const rightLocation = getActiveRightLocation();
+    const showLocalFind = rightLocation === 'remote' || isLinuxHost;
 
     elements.remoteHome.disabled = disabled;
     elements.remoteToLocal.disabled = disabled || !remoteSelected;
@@ -1094,6 +1344,7 @@
     elements.remoteRefresh.disabled = disabled;
     elements.remoteNewFolder.disabled = disabled;
     elements.remoteNewFile.disabled = disabled;
+    elements.remoteFind.disabled = disabled;
     elements.remoteOpenTerminal.disabled = disabled;
     elements.remotePath.disabled = disabled;
     elements.remotePresetToggle.disabled = disabled;
@@ -1105,11 +1356,18 @@
     elements.localRefresh.disabled = disabled;
     elements.localNewFolder.disabled = disabled;
     elements.localNewFile.disabled = disabled;
+    elements.localFind.disabled = disabled;
     elements.localOpenTerminal.disabled = disabled;
     elements.localPath.disabled = disabled;
     elements.rightPresetToggle.disabled = disabled;
     elements.rightPresetManage.disabled = disabled;
     elements.rightMode.disabled = disabled;
+
+    elements.remoteFind.classList.toggle('action--search-active', Boolean(state.remote.search));
+    elements.localFind.classList.toggle('action--search-active', Boolean(rightSnapshot.search));
+    elements.localFind.classList.toggle('action--hidden', !showLocalFind);
+    elements.localFind.title = 'find files';
+    elements.localFind.setAttribute('aria-label', 'find files');
 
     if (disabled) {
       closePresetMenus();
@@ -1173,10 +1431,19 @@
     const snapshot = { ...message.snapshot, selected: [] };
     if (message.requestId === requestIds.remote) {
       state.remote = snapshot;
+      if (snapshot.search) {
+        state.searchDrafts.remote = snapshot.search.options;
+      }
     } else if (message.requestId === requestIds.local) {
       state.rightLocal = snapshot;
+      if (snapshot.search) {
+        state.searchDrafts.rightLocal = snapshot.search.options;
+      }
     } else if (message.requestId === requestIds.rightRemote) {
       state.rightRemote = snapshot;
+      if (snapshot.search) {
+        state.searchDrafts.rightRemote = snapshot.search.options;
+      }
     }
     clearSelectionAnchorByRequestId(message.requestId);
     const shouldAutoSelect = consumeAutoSelect(message.requestId);
@@ -1291,6 +1558,17 @@
   function refresh(side) {
     resetStatus();
     const snapshot = side === 'remote' ? state.remote : getActiveRightSnapshot();
+    if (snapshot.search) {
+      vscode.postMessage({
+        type: 'searchEntries',
+        location: snapshot.location,
+        basePath: snapshot.search.basePath,
+        options: snapshot.search.options,
+        requestId: side === 'remote' ? requestIds.remote : getActiveRequestId(),
+      });
+      clearSelection(side === 'remote' ? 'remote' : 'right');
+      return;
+    }
     const location = side === 'remote' ? 'remote' : getActiveRightLocation();
     requestList(
       location,
@@ -1516,6 +1794,8 @@
   elements.localNewFolder.addEventListener('click', () => createEntry('right', 'directory'));
   elements.remoteNewFile.addEventListener('click', () => createEntry('remote', 'file'));
   elements.localNewFile.addEventListener('click', () => createEntry('right', 'file'));
+  elements.remoteFind.addEventListener('click', () => openFindDialog('remote'));
+  elements.localFind.addEventListener('click', () => openFindDialog('right'));
   elements.remoteToLocal.addEventListener('click', () => copyBetweenPanels('remoteToRight'));
   elements.localToRemote.addEventListener('click', () => copyBetweenPanels('rightToRemote'));
   elements.remoteOpenTerminal.addEventListener('click', () => openTerminal('remote'));
@@ -1566,6 +1846,32 @@
   elements.sftpPresetsSave.addEventListener('click', () => savePresets());
   elements.sftpPresetsCancel.addEventListener('click', () => hidePresetsDialog());
   elements.sftpPresetsDismiss.addEventListener('click', () => hidePresetsDialog());
+  elements.findDialogDismiss.addEventListener('click', () => hideFindDialog());
+  elements.findDialogCancel.addEventListener('click', () => hideFindDialog());
+  elements.findDialogSubmit.addEventListener('click', () => submitFindDialog());
+
+  [
+    elements.findByName,
+    elements.findNameCaseSensitive,
+    elements.findBySize,
+    elements.findTimeDays,
+    elements.findByPermissions,
+    elements.findExcludePath,
+    elements.findIncludeSubdirectories,
+    elements.findByContent,
+    elements.findContentCaseSensitive,
+    elements.findContentWholeWord,
+    elements.findContentExactLine,
+  ].forEach((input) => {
+    input?.addEventListener('input', scheduleSearchPreview);
+    input?.addEventListener('change', scheduleSearchPreview);
+  });
+
+  ['findSizeMode', 'findTimeKind', 'findTimeComparator'].forEach((name) => {
+    document.querySelectorAll(`input[name="${name}"]`).forEach((input) => {
+      input.addEventListener('change', scheduleSearchPreview);
+    });
+  });
 
   elements.contextRun.addEventListener('click', () => {
     hideContextMenu();
@@ -1597,6 +1903,10 @@
   });
 
   window.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !elements.findDialog.classList.contains('dialog--hidden')) {
+      hideFindDialog();
+      return;
+    }
     if (event.key === 'Escape' && !elements.confirmDialog.classList.contains('dialog--hidden')) {
       hideConfirmation(false);
     }
@@ -1711,6 +2021,17 @@
   elements.confirmDialog.addEventListener('click', (event) => {
     if (event.target === elements.confirmDialog) {
       hideConfirmation(false);
+    }
+  });
+  elements.findDialog.addEventListener('click', (event) => {
+    if (event.target === elements.findDialog) {
+      hideFindDialog();
+    }
+  });
+  elements.findDialog.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' && event.target instanceof HTMLInputElement) {
+      event.preventDefault();
+      submitFindDialog();
     }
   });
 
@@ -1881,6 +2202,9 @@
           elements.rightPresetMenu,
           state.rightMode === 'local' ? state.sftpPresetsLocal : state.sftpPresetsRemote
         );
+        break;
+      case 'searchCommandPreview':
+        handleSearchCommandPreview(message);
         break;
       case 'testCommand':
         handleTestCommand(message);

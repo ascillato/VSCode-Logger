@@ -67,6 +67,18 @@ suite('SFTP Explorer keyboard E2E', function () {
     return message.state;
   }
 
+  async function waitForStateMatch(predicate, timeoutMs = 5000) {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      const state = await getState();
+      if (predicate(state)) {
+        return state;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    throw new Error('Timed out waiting for state match.');
+  }
+
   async function simulateKey(side, key, options = {}) {
     await sendTestCommand({
       command: 'simulateKey',
@@ -98,6 +110,22 @@ suite('SFTP Explorer keyboard E2E', function () {
 
   async function contextSelect(side) {
     await sendTestCommand({ command: 'contextSelect', side });
+  }
+
+  async function openFindDialog(side) {
+    await sendTestCommand({ command: 'openFindDialog', side });
+  }
+
+  async function setFindOptions(options) {
+    await sendTestCommand({ command: 'setFindOptions', options });
+  }
+
+  async function submitFind() {
+    await sendTestCommand({ command: 'submitFind' });
+  }
+
+  async function setRightMode(mode) {
+    await sendTestCommand({ command: 'setRightMode', mode });
   }
 
   async function waitForStateReady() {
@@ -280,5 +308,40 @@ suite('SFTP Explorer keyboard E2E', function () {
     await expectNoMessage(
       (message) => message.type === 'viewContent' || message.type === 'listEntries'
     );
+  });
+
+  test('find dialog previews and submits a remote search', async () => {
+    drainMessages();
+    await openFindDialog('remote');
+    await setFindOptions({ name: 'alpha' });
+    let state = await waitForStateMatch(
+      (candidate) =>
+        candidate.search.dialogOpen && candidate.search.previewCommand.includes('find .')
+    );
+    assert.strictEqual(state.search.dialogOpen, true);
+    assert.ok(state.search.previewCommand.includes('find .'));
+
+    const waitSearch = waitForMessage((message) => message.type === 'searchEntries');
+    await submitFind();
+    const searchMessage = await waitSearch;
+    assert.strictEqual(searchMessage.location, 'remote');
+    assert.strictEqual(searchMessage.basePath, '/');
+    assert.strictEqual(searchMessage.options.name, 'alpha');
+  });
+
+  test('remote search results activate result mode on the right pane', async () => {
+    drainMessages();
+    await setRightMode('remote');
+    await openFindDialog('right');
+    await setFindOptions({ name: 'bravo' });
+    const waitSearch = waitForMessage(
+      (message) => message.type === 'searchEntries' && message.requestId === 'rightRemote'
+    );
+    await submitFind();
+    await waitSearch;
+
+    const state = await getState();
+    assert.strictEqual(state.right.mode, 'remote');
+    assert.strictEqual(state.search.rightActive, true);
   });
 });
