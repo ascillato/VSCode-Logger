@@ -366,6 +366,8 @@ describe('DeviceManagerPanel', () => {
         defaultEnableSftpExplorer: true,
         defaultEnableWebBrowser: false,
         defaultEnableEmbeddedWebBrowser: true,
+        enableDevicePing: false,
+        devicePingIntervalSeconds: '',
         defaultSshCommands: [
           {
             name: ' Deploy ',
@@ -415,6 +417,8 @@ describe('DeviceManagerPanel', () => {
       'embeddedLogger.defaultEnableSftpExplorer': true,
       'embeddedLogger.defaultEnableWebBrowser': false,
       'embeddedLogger.defaultEnableEmbeddedWebBrowser': true,
+      'embeddedLogger.enableDevicePing': false,
+      'embeddedLogger.devicePingIntervalSeconds': null,
       'embeddedLogger.defaultSshCommands': [
         {
           name: 'Deploy',
@@ -474,6 +478,8 @@ describe('DeviceManagerPanel', () => {
           'embeddedLogger.defaultEnableSftpExplorer': true,
           'embeddedLogger.defaultEnableWebBrowser': false,
           'embeddedLogger.defaultEnableEmbeddedWebBrowser': true,
+          'embeddedLogger.enableDevicePing': true,
+          'embeddedLogger.devicePingIntervalSeconds': 30,
           'embeddedLogger.defaultSshCommands': [
             {
               name: 'Restart',
@@ -519,6 +525,8 @@ describe('DeviceManagerPanel', () => {
         defaultEnableSftpExplorer: true,
         defaultEnableWebBrowser: false,
         defaultEnableEmbeddedWebBrowser: true,
+        enableDevicePing: true,
+        devicePingIntervalSeconds: 30,
         defaultSshCommands: [
           {
             name: 'Restart',
@@ -565,6 +573,8 @@ describe('DeviceManagerPanel', () => {
           'embeddedLogger.defaultEnableSftpExplorer': true,
           'embeddedLogger.defaultEnableWebBrowser': false,
           'embeddedLogger.defaultEnableEmbeddedWebBrowser': false,
+          'embeddedLogger.enableDevicePing': false,
+          'embeddedLogger.devicePingIntervalSeconds': null,
           'embeddedLogger.defaultSshCommands': [],
           'embeddedLogger.maxLinesPerTab': 100000,
           'embeddedLogger.devices': [

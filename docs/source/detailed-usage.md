@@ -74,6 +74,8 @@ The Device Manager is the fastest way to work with the current schema because it
   - `embeddedLogger.defaultEnableSftpExplorer`
   - `embeddedLogger.defaultEnableWebBrowser`
   - `embeddedLogger.defaultEnableEmbeddedWebBrowser`
+  - `embeddedLogger.enableDevicePing`
+  - `embeddedLogger.devicePingIntervalSeconds`
   - `embeddedLogger.defaultSshCommands`
   - `embeddedLogger.maxLinesPerTab`
 - The **Groups** table edits `embeddedLogger.groups`, which controls the ordered collapsible sections shown in the Devices view.
@@ -104,6 +106,8 @@ If you prefer raw JSON, add entries like the following to your VS Code settings:
   "embeddedLogger.defaultEnableSftpExplorer": true,
   "embeddedLogger.defaultEnableWebBrowser": false,
   "embeddedLogger.defaultEnableEmbeddedWebBrowser": false,
+  "embeddedLogger.enableDevicePing": true,
+  "embeddedLogger.devicePingIntervalSeconds": 30,
   "embeddedLogger.defaultSshCommands": [
     {
         "name": "🔁 Reboot",
@@ -244,6 +248,7 @@ The Devices view shows device cards, optionally grouped under the ordered names 
 
 Each device always exposes **Open Logs**. Depending on configuration, it can also show:
 
+- **Ping devices** (when `embeddedLogger.enableDevicePing` is enabled)
 - **Open SSH Terminal**
 - **Open SFTP Explorer**
 - **Open External Web Browser**
@@ -259,6 +264,7 @@ Right-clicking a device title or host opens a small context menu with:
 
 The command palette also exposes:
 
+- **Embedded Logger: Ping Configured Devices**
 - **Embedded Logger: Open Local Log File**
 - **Embedded Logger: Edit Devices Configuration**
 - **Embedded Logger: Remove Stored Passwords**

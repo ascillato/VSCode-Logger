@@ -462,6 +462,22 @@
           "default": 100000,
           "description": "Maximum number of log lines retained per log tab before older lines are discarded.",
           "minimum": 1
+        },
+        "embeddedLogger.enableDevicePing": {
+          "type": "boolean",
+          "scope": "resource",
+          "default": false,
+          "description": "Enable ping checks for configured devices and show ping indicators in the Devices view."
+        },
+        "embeddedLogger.devicePingIntervalSeconds": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "scope": "resource",
+          "default": null,
+          "minimum": 1,
+          "description": "Optional ping interval in seconds. Leave empty to ping only when the Ping button is pressed."
         }
       }
     },
@@ -491,7 +507,8 @@
       "onCommand:embeddedLogger.clearStoredPasswords",
       "onCommand:embeddedLogger.openSftpExplorer",
       "onCommand:embeddedLogger.openWebBrowser",
-      "onCommand:embeddedLogger.openEmbeddedWebBrowser"
+      "onCommand:embeddedLogger.openEmbeddedWebBrowser",
+      "onCommand:embeddedLogger.pingAllDevices"
     ],
     "commands": [
       {
@@ -524,10 +541,20 @@
       {
         "command": "embeddedLogger.openEmbeddedWebBrowser",
         "title": "Open Embedded Web Browser"
+      },
+      {
+        "command": "embeddedLogger.pingAllDevices",
+        "title": "Ping Configured Devices",
+        "icon": "$(pulse)"
       }
     ],
     "menus": {
       "view/title": [
+        {
+          "command": "embeddedLogger.pingAllDevices",
+          "when": "view == embeddedLogger.devicesView && embeddedLogger.devicePingEnabled",
+          "group": "navigation@0"
+        },
         {
           "command": "embeddedLogger.openLocalLogFile",
           "when": "view == embeddedLogger.devicesView",

@@ -48,6 +48,10 @@ interface OpenEmbeddedWebBrowserMessage {
   deviceId: string;
 }
 
+interface PingAllDevicesMessage {
+  type: 'pingAllDevices';
+}
+
 interface CopyDeviceNameMessage {
   type: 'copyDeviceName';
   deviceId: string;
@@ -68,8 +72,15 @@ type IncomingMessage =
   | OpenSftpExplorerMessage
   | OpenWebBrowserMessage
   | OpenEmbeddedWebBrowserMessage
+  | PingAllDevicesMessage
   | CopyDeviceNameMessage
   | CopyDeviceUrlMessage;
+
+type PingStatus = 'ok' | 'error';
+
+interface DeviceWebviewState extends EmbeddedDevice {
+  pingStatus?: PingStatus;
+}
 
 /**
  * Webview provider for the Embedded Devices side panel.
@@ -106,7 +117,10 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
     private readonly onOpenSshTerminal: (deviceId: string) => void,
     private readonly onOpenSftpExplorer: (deviceId: string) => void,
     private readonly onOpenWebBrowser: (deviceId: string) => void,
-    private readonly onOpenEmbeddedWebBrowser: (deviceId: string) => void
+    private readonly onOpenEmbeddedWebBrowser: (deviceId: string) => void,
+    private readonly onPingAllDevices: () => void,
+    private readonly isDevicePingEnabled: () => boolean,
+    private readonly getDevicePingStatuses: () => ReadonlyMap<string, PingStatus>
   ) {}
 
   /**
@@ -157,6 +171,9 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
         case 'openEmbeddedWebBrowser':
           this.onOpenEmbeddedWebBrowser(message.deviceId);
           break;
+        case 'pingAllDevices':
+          this.onPingAllDevices();
+          break;
         case 'copyDeviceName':
           void this.copyToClipboard(message.name, 'Device name');
           break;
@@ -180,6 +197,7 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
       type: 'devicesUpdated',
       devices: this.getDevicesForWebview(),
       groups: this.getGroupsForWebview(),
+      isDevicePingEnabled: this.isDevicePingEnabled(),
     });
   }
 
@@ -194,6 +212,7 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
       type: 'initDevices',
       devices: this.getDevicesForWebview(),
       groups: this.getGroupsForWebview(),
+      isDevicePingEnabled: this.isDevicePingEnabled(),
     });
   }
 
@@ -202,7 +221,8 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
    *
    * @returns The device list with required defaults.
    */
-  private getDevicesForWebview(): EmbeddedDevice[] {
+  private getDevicesForWebview(): DeviceWebviewState[] {
+    const statuses = this.getDevicePingStatuses();
     return this.getDevices().map((device) => ({
       ...device,
       enableSshTerminal: Boolean(device.enableSshTerminal),
@@ -210,6 +230,7 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
       enableWebBrowser: Boolean(device.enableWebBrowser),
       enableEmbeddedWebBrowser: Boolean(device.enableEmbeddedWebBrowser),
       sshCommands: Array.isArray(device.sshCommands) ? device.sshCommands : [],
+      pingStatus: statuses.get(device.id),
     }));
   }
 

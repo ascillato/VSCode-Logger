@@ -10,6 +10,8 @@ const state = {
     defaultEnableSftpExplorer: true,
     defaultEnableWebBrowser: false,
     defaultEnableEmbeddedWebBrowser: false,
+    enableDevicePing: false,
+    devicePingIntervalSeconds: '',
     defaultSshCommands: [],
     maxLinesPerTab: 100000,
   },
@@ -208,6 +210,9 @@ function renderDefaults() {
     !!state.defaults.defaultEnableWebBrowser;
   document.getElementById('defaultEnableEmbeddedWebBrowser').checked =
     !!state.defaults.defaultEnableEmbeddedWebBrowser;
+  document.getElementById('enableDevicePing').checked = !!state.defaults.enableDevicePing;
+  document.getElementById('devicePingIntervalSeconds').value =
+    state.defaults.devicePingIntervalSeconds ?? '';
   renderSshCommandsEditor(
     state.defaults.defaultSshCommands,
     document.getElementById('defaultSshCommands'),
@@ -1060,6 +1065,8 @@ function collectDefaults() {
     defaultEnableWebBrowser: document.getElementById('defaultEnableWebBrowser').checked,
     defaultEnableEmbeddedWebBrowser: document.getElementById('defaultEnableEmbeddedWebBrowser')
       .checked,
+    enableDevicePing: document.getElementById('enableDevicePing').checked,
+    devicePingIntervalSeconds: document.getElementById('devicePingIntervalSeconds').value,
     defaultSshCommands: state.defaults.defaultSshCommands,
   };
 }
@@ -1242,6 +1249,11 @@ function buildHelpJson() {
     'embeddedLogger.defaultEnableSftpExplorer': !!defaults.defaultEnableSftpExplorer,
     'embeddedLogger.defaultEnableWebBrowser': !!defaults.defaultEnableWebBrowser,
     'embeddedLogger.defaultEnableEmbeddedWebBrowser': !!defaults.defaultEnableEmbeddedWebBrowser,
+    'embeddedLogger.enableDevicePing': !!defaults.enableDevicePing,
+    'embeddedLogger.devicePingIntervalSeconds':
+      defaults.devicePingIntervalSeconds !== '' && defaults.devicePingIntervalSeconds !== undefined
+        ? Number(defaults.devicePingIntervalSeconds)
+        : null,
     'embeddedLogger.maxLinesPerTab': defaults.maxLinesPerTab ?? 100000,
     'embeddedLogger.defaultSshCommands': defaults.defaultSshCommands ?? [],
     'embeddedLogger.groups': state.groups.filter((group) => (group.name ?? '').trim().length > 0),

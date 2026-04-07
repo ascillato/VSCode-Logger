@@ -17,6 +17,8 @@ const importedSettingsKeys = [
   'embeddedLogger.defaultEnableSftpExplorer',
   'embeddedLogger.defaultEnableWebBrowser',
   'embeddedLogger.defaultEnableEmbeddedWebBrowser',
+  'embeddedLogger.enableDevicePing',
+  'embeddedLogger.devicePingIntervalSeconds',
   'embeddedLogger.defaultSshCommands',
   'embeddedLogger.maxLinesPerTab',
   'embeddedLogger.devices',
@@ -47,6 +49,8 @@ interface DefaultsPayload {
   defaultEnableSftpExplorer: boolean;
   defaultEnableWebBrowser: boolean;
   defaultEnableEmbeddedWebBrowser: boolean;
+  enableDevicePing?: boolean;
+  devicePingIntervalSeconds?: number | string | null;
   defaultSshCommands: SshCommandDefinition[];
   maxLinesPerTab: number;
 }
@@ -95,6 +99,8 @@ interface ExportedSettingsPayload {
   'embeddedLogger.defaultEnableSftpExplorer': boolean;
   'embeddedLogger.defaultEnableWebBrowser': boolean;
   'embeddedLogger.defaultEnableEmbeddedWebBrowser': boolean;
+  'embeddedLogger.enableDevicePing': boolean;
+  'embeddedLogger.devicePingIntervalSeconds': number | null;
   'embeddedLogger.defaultSshCommands': SshCommandDefinition[];
   'embeddedLogger.maxLinesPerTab': number;
   'embeddedLogger.groups': GroupPayload[];
@@ -269,6 +275,10 @@ export class DeviceManagerPanel {
             <input type="checkbox" id="defaultEnableEmbeddedWebBrowser" />
             <span>Enable embedded web browser</span>
           </label>
+          <label class="field checkbox">
+            <input type="checkbox" id="enableDevicePing" />
+            <span>Enable device ping</span>
+          </label>
         </div>
         <div class="divider" aria-hidden="true"></div>
         <div class="grid grid-3">
@@ -283,6 +293,10 @@ export class DeviceManagerPanel {
           <label class="field">
             <span>Max lines per tab</span>
             <input type="number" id="maxLinesPerTab" min="1" />
+          </label>
+          <label class="field">
+            <span>Ping interval (seconds)</span>
+            <input type="number" id="devicePingIntervalSeconds" min="1" />
           </label>
         </div>
         <div class="divider" aria-hidden="true"></div>
@@ -476,6 +490,17 @@ export class DeviceManagerPanel {
           tolerateUnregistered: 'embeddedLogger.defaultEnableEmbeddedWebBrowser',
         },
         {
+          run: () => config.update('enableDevicePing', normalizedDefaults.enableDevicePing, target),
+        },
+        {
+          run: () =>
+            config.update(
+              'devicePingIntervalSeconds',
+              normalizedDefaults.devicePingIntervalSeconds ?? null,
+              target
+            ),
+        },
+        {
           run: () =>
             config.update('defaultSshCommands', normalizedDefaults.defaultSshCommands, target),
         },
@@ -621,6 +646,8 @@ export class DeviceManagerPanel {
       'defaultEnableSftpExplorer',
       'defaultEnableWebBrowser',
       'defaultEnableEmbeddedWebBrowser',
+      'enableDevicePing',
+      'devicePingIntervalSeconds',
       'defaultSshCommands',
       'maxLinesPerTab',
       'groups',
@@ -672,6 +699,8 @@ export class DeviceManagerPanel {
     defaultEnableSftpExplorer: boolean;
     defaultEnableWebBrowser: boolean;
     defaultEnableEmbeddedWebBrowser: boolean;
+    enableDevicePing: boolean;
+    devicePingIntervalSeconds?: number;
     defaultSshCommands: SshCommandDefinition[];
     maxLinesPerTab: number;
   } {
@@ -682,6 +711,8 @@ export class DeviceManagerPanel {
     const defaultEnableSftpExplorer = Boolean(defaults.defaultEnableSftpExplorer);
     const defaultEnableWebBrowser = Boolean(defaults.defaultEnableWebBrowser);
     const defaultEnableEmbeddedWebBrowser = Boolean(defaults.defaultEnableEmbeddedWebBrowser);
+    const enableDevicePing = Boolean(defaults.enableDevicePing);
+    const devicePingIntervalSeconds = this.toOptionalNumber(defaults.devicePingIntervalSeconds);
     const defaultSshCommands = this.normalizeSshCommands(defaults.defaultSshCommands);
 
     return {
@@ -691,6 +722,8 @@ export class DeviceManagerPanel {
       defaultEnableSftpExplorer,
       defaultEnableWebBrowser,
       defaultEnableEmbeddedWebBrowser,
+      enableDevicePing,
+      devicePingIntervalSeconds,
       defaultSshCommands,
       maxLinesPerTab,
     };
@@ -706,6 +739,9 @@ export class DeviceManagerPanel {
       defaultEnableWebBrowser: config.get<boolean>('defaultEnableWebBrowser', false) ?? false,
       defaultEnableEmbeddedWebBrowser:
         config.get<boolean>('defaultEnableEmbeddedWebBrowser', false) ?? false,
+      enableDevicePing: config.get<boolean>('enableDevicePing', false) ?? false,
+      devicePingIntervalSeconds:
+        config.get<number | null>('devicePingIntervalSeconds', null) ?? undefined,
       defaultSshCommands: config.get<SshCommandDefinition[]>('defaultSshCommands', []) ?? [],
       maxLinesPerTab: config.get<number>('maxLinesPerTab', 100000) ?? 100000,
     };
@@ -744,6 +780,9 @@ export class DeviceManagerPanel {
       'embeddedLogger.defaultEnableWebBrowser': normalizedDefaults.defaultEnableWebBrowser,
       'embeddedLogger.defaultEnableEmbeddedWebBrowser':
         normalizedDefaults.defaultEnableEmbeddedWebBrowser,
+      'embeddedLogger.enableDevicePing': normalizedDefaults.enableDevicePing,
+      'embeddedLogger.devicePingIntervalSeconds':
+        normalizedDefaults.devicePingIntervalSeconds ?? null,
       'embeddedLogger.defaultSshCommands': normalizedDefaults.defaultSshCommands,
       'embeddedLogger.maxLinesPerTab': normalizedDefaults.maxLinesPerTab,
       'embeddedLogger.groups': normalizedGroups,
@@ -780,6 +819,11 @@ export class DeviceManagerPanel {
       defaultEnableEmbeddedWebBrowser: this.readRequiredBoolean(
         data,
         'embeddedLogger.defaultEnableEmbeddedWebBrowser'
+      ),
+      enableDevicePing: this.readRequiredBoolean(data, 'embeddedLogger.enableDevicePing'),
+      devicePingIntervalSeconds: this.readOptionalPositiveNumber(
+        data['embeddedLogger.devicePingIntervalSeconds'],
+        'embeddedLogger.devicePingIntervalSeconds'
       ),
       defaultSshCommands: this.validateSshCommands(
         data['embeddedLogger.defaultSshCommands'],
@@ -1261,7 +1305,7 @@ export class DeviceManagerPanel {
       );
   }
 
-  private toOptionalNumber(value: number | string | undefined): number | undefined {
+  private toOptionalNumber(value: number | string | null | undefined): number | undefined {
     if (value === undefined || value === null || value === '') {
       return undefined;
     }
