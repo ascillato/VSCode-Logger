@@ -63,6 +63,7 @@
     border-radius: 4px;
     border: 1px solid var(--vscode-panel-border);
     background: var(--vscode-sideBar-background);
+    overflow: hidden;
     width: 100%;
 }
 
@@ -160,6 +161,9 @@
     padding: 6px 8px;
     padding-left: 8px;
     min-height: 18px;
+    background:
+        linear-gradient(rgba(255, 255, 255, 0.01), rgba(255, 255, 255, 0.01)),
+        var(--vscode-sideBar-background);
 }
 
 .command-group summary::-webkit-details-marker {
@@ -170,14 +174,21 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-    padding: 0 8px 8px 8px;
+    padding: 6px 8px 8px 8px;
+    background:
+        linear-gradient(rgba(255, 255, 255, 0.01), rgba(255, 255, 255, 0.01)),
+        var(--vscode-sideBar-background);
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
 }
 
 .command-button {
     padding: 6px 8px;
     border-radius: 4px;
     border: 1px solid var(--vscode-panel-border);
-    background: var(--vscode-button-secondaryBackground);
+    background:
+        linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05)),
+        var(--vscode-button-secondaryBackground);
     color: var(--vscode-button-secondaryForeground);
     cursor: pointer;
     text-align: left;
@@ -189,7 +200,9 @@
 
 .command-button:hover,
 .command-button:focus-visible {
-    background: var(--vscode-button-secondaryHoverBackground);
+    background:
+        linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08)),
+        var(--vscode-button-secondaryHoverBackground);
     border-color: var(--vscode-focusBorder);
 }
 

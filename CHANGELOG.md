@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Improved wording in UI for passwords.
 - Enabled for new installations the global defaults for SSH terminal, SFTP explorer, external web browser, embedded web browser, and device ping.
+- Lighten device options background color.
 
 ### Deprecated
 - None.
