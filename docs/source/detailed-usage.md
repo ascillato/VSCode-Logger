@@ -106,8 +106,8 @@ If you prefer raw JSON, add entries like the following to your VS Code settings:
   "embeddedLogger.defaultLogCommand": "tail -F /var/log/syslog",
   "embeddedLogger.defaultEnableSshTerminal": true,
   "embeddedLogger.defaultEnableSftpExplorer": true,
-  "embeddedLogger.defaultEnableWebBrowser": false,
-  "embeddedLogger.defaultEnableEmbeddedWebBrowser": false,
+  "embeddedLogger.defaultEnableWebBrowser": true,
+  "embeddedLogger.defaultEnableEmbeddedWebBrowser": true,
   "embeddedLogger.enableDevicePing": true,
   "embeddedLogger.devicePingIntervalSeconds": 30,
   "embeddedLogger.defaultSshCommands": [

@@ -142,9 +142,9 @@ function getLoggerDefaults(config: vscode.WorkspaceConfiguration): LoggerDefault
     config.get<string>('defaultLogCommand', 'tail -F /var/log/syslog') || 'tail -F /var/log/syslog';
   const defaultEnableSshTerminal = config.get<boolean>('defaultEnableSshTerminal', true) ?? true;
   const defaultEnableSftpExplorer = config.get<boolean>('defaultEnableSftpExplorer', true) ?? true;
-  const defaultEnableWebBrowser = config.get<boolean>('defaultEnableWebBrowser', false) ?? false;
+  const defaultEnableWebBrowser = config.get<boolean>('defaultEnableWebBrowser', true) ?? true;
   const defaultEnableEmbeddedWebBrowser =
-    config.get<boolean>('defaultEnableEmbeddedWebBrowser', false) ?? false;
+    config.get<boolean>('defaultEnableEmbeddedWebBrowser', true) ?? true;
   const defaultSshCommands = config.get<SshCommandDefinition[]>('defaultSshCommands', []) || [];
 
   return {
@@ -285,7 +285,7 @@ export function getEmbeddedLoggerConfiguration(): {
   const devices = config.get<EmbeddedDevice[]>('devices', []);
   const resolvedDevices = devices.map((device) => applyDeviceDefaults(device, defaults));
   const maxLinesPerTab = Math.max(1, config.get<number>('maxLinesPerTab', 100000) || 100000);
-  const enableDevicePing = config.get<boolean>('enableDevicePing', false) ?? false;
+  const enableDevicePing = config.get<boolean>('enableDevicePing', true) ?? true;
   const devicePingIntervalSeconds = normalizeDevicePingIntervalSeconds(
     config.get<number | null>('devicePingIntervalSeconds', null)
   );

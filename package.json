@@ -71,13 +71,13 @@
         "embeddedLogger.defaultEnableWebBrowser": {
           "type": "boolean",
           "scope": "resource",
-          "default": false,
+          "default": true,
           "description": "Whether devices without an explicit enableWebBrowser flag should show the external web browser action."
         },
         "embeddedLogger.defaultEnableEmbeddedWebBrowser": {
           "type": "boolean",
           "scope": "resource",
-          "default": false,
+          "default": true,
           "description": "Whether devices without an explicit enableEmbeddedWebBrowser flag should show the embedded web browser action."
         },
         "embeddedLogger.defaultSshCommands": {
@@ -466,7 +466,7 @@
         "embeddedLogger.enableDevicePing": {
           "type": "boolean",
           "scope": "resource",
-          "default": false,
+          "default": true,
           "description": "Enable ping checks for configured devices and show ping indicators in the Devices view."
         },
         "embeddedLogger.devicePingIntervalSeconds": {

@@ -28,6 +28,32 @@ beforeEach(() => {
 });
 
 describe('configuration', () => {
+  it('uses enabled feature defaults when related settings are unset', async () => {
+    const devices: EmbeddedDevice[] = [
+      {
+        id: 'device-a',
+        name: 'Device A',
+        host: '10.0.0.1',
+        username: 'root',
+      },
+    ];
+
+    await workspace.getConfiguration('embeddedLogger').update('devices', devices);
+
+    const config = getEmbeddedLoggerConfiguration();
+
+    expect(config.enableDevicePing).toBe(true);
+    expect(config.devices).toEqual([
+      expect.objectContaining({
+        id: 'device-a',
+        enableSshTerminal: true,
+        enableSftpExplorer: true,
+        enableWebBrowser: true,
+        enableEmbeddedWebBrowser: true,
+      }),
+    ]);
+  });
+
   it('prepends shared SSH commands before per-device commands by default', async () => {
     const devices: EmbeddedDevice[] = [
       {

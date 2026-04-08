@@ -77,6 +77,26 @@ describe('DeviceManagerPanel', () => {
     expect(html).toContain('aria-label="Export Settings"');
   });
 
+  it('reports enabled global defaults when no defaults are configured yet', async () => {
+    const panel = createPanel();
+
+    panel.__fireMessage({ type: 'requestState' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(panel.webview.postMessage).toHaveBeenCalledWith({
+      type: 'init',
+      defaults: expect.objectContaining({
+        defaultEnableSshTerminal: true,
+        defaultEnableSftpExplorer: true,
+        defaultEnableWebBrowser: true,
+        defaultEnableEmbeddedWebBrowser: true,
+        enableDevicePing: true,
+      }),
+      devices: [],
+      groups: [],
+    });
+  });
+
   it('routes per-device password reset messages to clearStoredPasswords command with device id', async () => {
     const panel = createPanel();
     (commands.executeCommand as ReturnType<typeof vi.fn>).mockClear();

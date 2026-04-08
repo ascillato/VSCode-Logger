@@ -744,10 +744,10 @@ export class DeviceManagerPanel {
         config.get<string>('defaultLogCommand', defaultLogCommandValue) ?? defaultLogCommandValue,
       defaultEnableSshTerminal: config.get<boolean>('defaultEnableSshTerminal', true) ?? true,
       defaultEnableSftpExplorer: config.get<boolean>('defaultEnableSftpExplorer', true) ?? true,
-      defaultEnableWebBrowser: config.get<boolean>('defaultEnableWebBrowser', false) ?? false,
+      defaultEnableWebBrowser: config.get<boolean>('defaultEnableWebBrowser', true) ?? true,
       defaultEnableEmbeddedWebBrowser:
-        config.get<boolean>('defaultEnableEmbeddedWebBrowser', false) ?? false,
-      enableDevicePing: config.get<boolean>('enableDevicePing', false) ?? false,
+        config.get<boolean>('defaultEnableEmbeddedWebBrowser', true) ?? true,
+      enableDevicePing: config.get<boolean>('enableDevicePing', true) ?? true,
       devicePingIntervalSeconds:
         config.get<number | null>('devicePingIntervalSeconds', null) ?? undefined,
       defaultSshCommands: config.get<SshCommandDefinition[]>('defaultSshCommands', []) ?? [],
