@@ -7,6 +7,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import type { EmbeddedDevice, EmbeddedDeviceGroup } from './deviceTree';
+import type { DevicePingState, DevicePingStatus } from './devicePing';
 
 interface SidebarMessage {
   type: 'openDevice';
@@ -48,10 +49,6 @@ interface OpenEmbeddedWebBrowserMessage {
   deviceId: string;
 }
 
-interface PingAllDevicesMessage {
-  type: 'pingAllDevices';
-}
-
 interface CopyDeviceNameMessage {
   type: 'copyDeviceName';
   deviceId: string;
@@ -72,14 +69,13 @@ type IncomingMessage =
   | OpenSftpExplorerMessage
   | OpenWebBrowserMessage
   | OpenEmbeddedWebBrowserMessage
-  | PingAllDevicesMessage
   | CopyDeviceNameMessage
   | CopyDeviceUrlMessage;
 
-type PingStatus = 'ok' | 'error';
-
 interface DeviceWebviewState extends EmbeddedDevice {
-  pingStatus?: PingStatus;
+  pingStatus?: DevicePingStatus;
+  pingCompletedAt?: number;
+  pingShowDetailedTooltip?: boolean;
 }
 
 /**
@@ -118,9 +114,8 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
     private readonly onOpenSftpExplorer: (deviceId: string) => void,
     private readonly onOpenWebBrowser: (deviceId: string) => void,
     private readonly onOpenEmbeddedWebBrowser: (deviceId: string) => void,
-    private readonly onPingAllDevices: () => void,
     private readonly isDevicePingEnabled: () => boolean,
-    private readonly getDevicePingStatuses: () => ReadonlyMap<string, PingStatus>
+    private readonly getDevicePingStatuses: () => ReadonlyMap<string, DevicePingState>
   ) {}
 
   /**
@@ -171,9 +166,6 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
         case 'openEmbeddedWebBrowser':
           this.onOpenEmbeddedWebBrowser(message.deviceId);
           break;
-        case 'pingAllDevices':
-          this.onPingAllDevices();
-          break;
         case 'copyDeviceName':
           void this.copyToClipboard(message.name, 'Device name');
           break;
@@ -223,15 +215,20 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
    */
   private getDevicesForWebview(): DeviceWebviewState[] {
     const statuses = this.getDevicePingStatuses();
-    return this.getDevices().map((device) => ({
-      ...device,
-      enableSshTerminal: Boolean(device.enableSshTerminal),
-      enableSftpExplorer: Boolean(device.enableSftpExplorer),
-      enableWebBrowser: Boolean(device.enableWebBrowser),
-      enableEmbeddedWebBrowser: Boolean(device.enableEmbeddedWebBrowser),
-      sshCommands: Array.isArray(device.sshCommands) ? device.sshCommands : [],
-      pingStatus: statuses.get(device.id),
-    }));
+    return this.getDevices().map((device) => {
+      const pingState = statuses.get(device.id);
+      return {
+        ...device,
+        enableSshTerminal: Boolean(device.enableSshTerminal),
+        enableSftpExplorer: Boolean(device.enableSftpExplorer),
+        enableWebBrowser: Boolean(device.enableWebBrowser),
+        enableEmbeddedWebBrowser: Boolean(device.enableEmbeddedWebBrowser),
+        sshCommands: Array.isArray(device.sshCommands) ? device.sshCommands : [],
+        pingStatus: pingState?.status,
+        pingCompletedAt: pingState?.completedAt,
+        pingShowDetailedTooltip: pingState?.showDetailedTooltip,
+      };
+    });
   }
 
   private getGroupsForWebview(): EmbeddedDeviceGroup[] {

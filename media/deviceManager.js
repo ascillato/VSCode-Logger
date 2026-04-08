@@ -225,6 +225,15 @@ function renderDefaults() {
   );
 }
 
+function sanitizeOptionalPositiveIntegerInput(value) {
+  const trimmed = String(value ?? '').trim();
+  if (!trimmed) {
+    return '';
+  }
+
+  return /^\d+$/.test(trimmed) ? trimmed : '';
+}
+
 function renderDevices() {
   const tbody = document.getElementById('devicesBody');
   tbody.innerHTML = '';
@@ -1066,7 +1075,9 @@ function collectDefaults() {
     defaultEnableEmbeddedWebBrowser: document.getElementById('defaultEnableEmbeddedWebBrowser')
       .checked,
     enableDevicePing: document.getElementById('enableDevicePing').checked,
-    devicePingIntervalSeconds: document.getElementById('devicePingIntervalSeconds').value,
+    devicePingIntervalSeconds: sanitizeOptionalPositiveIntegerInput(
+      document.getElementById('devicePingIntervalSeconds').value
+    ),
     defaultSshCommands: state.defaults.defaultSshCommands,
   };
 }
@@ -1354,6 +1365,12 @@ function init() {
   document.getElementById('exportSettings').addEventListener('click', exportSettings);
   document.getElementById('clearPasswords').addEventListener('click', clearStoredPasswords);
   document.getElementById('saveChanges').addEventListener('click', save);
+  document.getElementById('devicePingIntervalSeconds').addEventListener('input', (event) => {
+    const sanitized = sanitizeOptionalPositiveIntegerInput(event.target.value);
+    if (event.target.value !== sanitized) {
+      event.target.value = sanitized;
+    }
+  });
   window.addEventListener('message', handleMessage);
   window.addEventListener('resize', () => {
     setupTableColumns();

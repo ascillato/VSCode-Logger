@@ -119,15 +119,22 @@
     border-radius: 50%;
     display: inline-flex;
     border: 1px solid var(--vscode-panel-border);
+    background: transparent;
     flex: 0 0 auto;
+}
+
+.ping-status--pending {
+    border-color: var(--vscode-descriptionForeground);
 }
 
 .ping-status--ok {
     background: #2ea043;
+    border-color: #2ea043;
 }
 
 .ping-status--error {
     background: #d73a49;
+    border-color: #d73a49;
 }
 
 .device-card .subtitle {

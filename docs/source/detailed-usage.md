@@ -78,6 +78,8 @@ The Device Manager is the fastest way to work with the current schema because it
   - `embeddedLogger.devicePingIntervalSeconds`
   - `embeddedLogger.defaultSshCommands`
   - `embeddedLogger.maxLinesPerTab`
+- Leave **Ping interval (seconds)** empty to disable background ping scheduling and use only the top-level **Ping Configured Devices** action.
+- When pinging is enabled and the interval is empty or greater than `3600`, the green/red ping indicator tooltip shows the last result time as `HH:MM:SS` for startup, toolbar-triggered, and timer-triggered pings.
 - The **Groups** table edits `embeddedLogger.groups`, which controls the ordered collapsible sections shown in the Devices view.
 - The **Devices** table edits `embeddedLogger.devices`, including device colors, host fingerprints, secondary hosts, whether shared SSH commands should be shown, device-specific SSH commands, SFTP presets, and bastion settings.
 - Per-device feature toggles in the table are **tri-state**:
@@ -248,12 +250,13 @@ The Devices view shows device cards, optionally grouped under the ordered names 
 
 Each device always exposes **Open Logs**. Depending on configuration, it can also show:
 
-- **Ping devices** (when `embeddedLogger.enableDevicePing` is enabled)
 - **Open SSH Terminal**
 - **Open SFTP Explorer**
 - **Open External Web Browser**
 - **Open Embedded Web Browser**
 - Shared SSH command buttons first when `showDefaultSshCommands` is enabled, followed by device-specific `sshCommands`
+
+When `embeddedLogger.enableDevicePing` is enabled, the view title shows **Ping Configured Devices**. The dot next to each device name reflects the most recent ping result. If the ping interval is blank or greater than `3600`, hovering a green or red dot after the startup ping, a toolbar-triggered ping, or a timer-triggered ping shows the result plus the completion time as `HH:MM:SS`.
 
 Commands with `openSshPanel: true` reuse the SSH terminal flow: the extension opens a terminal, runs the command immediately, and keeps the session open for follow-up input.
 

@@ -296,7 +296,13 @@ export class DeviceManagerPanel {
           </label>
           <label class="field">
             <span>Ping interval (seconds)</span>
-            <input type="number" id="devicePingIntervalSeconds" min="1" />
+            <input
+              type="text"
+              id="devicePingIntervalSeconds"
+              inputmode="numeric"
+              pattern="[0-9]*"
+              placeholder="Leave blank for manual ping only"
+            />
           </label>
         </div>
         <div class="divider" aria-hidden="true"></div>
@@ -712,7 +718,9 @@ export class DeviceManagerPanel {
     const defaultEnableWebBrowser = Boolean(defaults.defaultEnableWebBrowser);
     const defaultEnableEmbeddedWebBrowser = Boolean(defaults.defaultEnableEmbeddedWebBrowser);
     const enableDevicePing = Boolean(defaults.enableDevicePing);
-    const devicePingIntervalSeconds = this.toOptionalNumber(defaults.devicePingIntervalSeconds);
+    const devicePingIntervalSeconds = this.toOptionalPositiveInteger(
+      defaults.devicePingIntervalSeconds
+    );
     const defaultSshCommands = this.normalizeSshCommands(defaults.defaultSshCommands);
 
     return {
@@ -1311,6 +1319,19 @@ export class DeviceManagerPanel {
     }
     const num = Number(value);
     return Number.isFinite(num) ? num : undefined;
+  }
+
+  private toOptionalPositiveInteger(value: number | string | null | undefined): number | undefined {
+    if (value === undefined || value === null || value === '') {
+      return undefined;
+    }
+
+    const num = Number(value);
+    if (!Number.isInteger(num) || num <= 0) {
+      return undefined;
+    }
+
+    return num;
   }
 
   private toOptionalTriState(value: boolean | TriStateSelection | undefined): boolean | undefined {

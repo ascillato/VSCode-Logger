@@ -11,6 +11,7 @@
     devices: [],
     groups: [],
     expandedGroups: {},
+    expandedDevices: {},
     isDevicePingEnabled: false,
   };
 
@@ -110,6 +111,27 @@
     return typeof device.group === 'string' ? device.group.trim() : '';
   }
 
+  function formatPingCompletedAt(timestamp) {
+    const date = new Date(timestamp);
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    return `${hours}:${minutes}:${seconds}`;
+  }
+
+  function getPingStatusTitle(device) {
+    if (device.pingStatus === 'pending') {
+      return 'Ping in progress';
+    }
+
+    const baseTitle = device.pingStatus === 'ok' ? 'Ping reachable' : 'Ping unreachable';
+    if (device.pingShowDetailedTooltip === true && typeof device.pingCompletedAt === 'number') {
+      return `${baseTitle}\n${formatPingCompletedAt(device.pingCompletedAt)}`;
+    }
+
+    return baseTitle;
+  }
+
   function createDeviceCard(device) {
     const card = document.createElement('div');
     card.className = 'device-card';
@@ -117,7 +139,10 @@
     const sshCommands = device.sshCommands || [];
     const commandsSection = document.createElement('details');
     commandsSection.className = 'command-group';
-    commandsSection.open = false;
+    commandsSection.open = Boolean(state.expandedDevices[device.id]);
+    commandsSection.addEventListener('toggle', () => {
+      state.expandedDevices[device.id] = commandsSection.open;
+    });
 
     const summary = document.createElement('summary');
     summary.className = 'command-summary';
@@ -142,14 +167,13 @@
     info.appendChild(title);
     if (
       state.isDevicePingEnabled &&
-      (device.pingStatus === 'ok' || device.pingStatus === 'error')
+      (device.pingStatus === 'pending' ||
+        device.pingStatus === 'ok' ||
+        device.pingStatus === 'error')
     ) {
       const pingStatus = document.createElement('span');
-      pingStatus.className =
-        device.pingStatus === 'ok'
-          ? 'ping-status ping-status--ok'
-          : 'ping-status ping-status--error';
-      pingStatus.title = device.pingStatus === 'ok' ? 'Ping reachable' : 'Ping unreachable';
+      pingStatus.className = `ping-status ping-status--${device.pingStatus}`;
+      pingStatus.title = getPingStatusTitle(device);
       pingStatus.setAttribute('aria-label', pingStatus.title);
       info.appendChild(pingStatus);
     }
@@ -165,19 +189,6 @@
 
     const list = document.createElement('div');
     list.className = 'command-list';
-
-    if (state.isDevicePingEnabled) {
-      const pingButton = document.createElement('button');
-      pingButton.className = 'command-button';
-      pingButton.appendChild(createIconSpan('📶'));
-      pingButton.appendChild(document.createTextNode('Ping devices'));
-      pingButton.title = 'Ping all configured devices';
-      pingButton.addEventListener('click', (event) => {
-        event.stopPropagation();
-        vscode.postMessage({ type: 'pingAllDevices' });
-      });
-      list.appendChild(pingButton);
-    }
 
     const openLogsButton = document.createElement('button');
     openLogsButton.className = 'command-button';

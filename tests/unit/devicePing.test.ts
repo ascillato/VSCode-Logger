@@ -1,4 +1,5 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { EventEmitter } from 'events';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const spawnMock = vi.fn<(...args: unknown[]) => EventEmitter>();
 
@@ -6,8 +7,7 @@ vi.mock('child_process', () => ({
   spawn: (...args: Parameters<typeof spawnMock>) => spawnMock(...args),
 }));
 
-import { EventEmitter } from 'events';
-import { pingHost } from '../../src/devicePing';
+import { isDetailedPingTooltipIntervalEligible, pingHost } from '../../src/devicePing';
 
 beforeEach(() => {
   spawnMock.mockReset();
@@ -37,5 +37,15 @@ describe('devicePing', () => {
     });
 
     await expect(pingHost('device.local')).resolves.toBe(false);
+  });
+
+  it('marks blank or long intervals as eligible for detailed tooltips', () => {
+    expect(isDetailedPingTooltipIntervalEligible(undefined)).toBe(true);
+    expect(isDetailedPingTooltipIntervalEligible(3601)).toBe(true);
+  });
+
+  it('keeps short or one-hour intervals on the simple tooltip', () => {
+    expect(isDetailedPingTooltipIntervalEligible(3600)).toBe(false);
+    expect(isDetailedPingTooltipIntervalEligible(30)).toBe(false);
   });
 });

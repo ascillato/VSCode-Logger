@@ -239,6 +239,45 @@ describe('DeviceManagerPanel', () => {
     ]);
   });
 
+  it('saves a blank ping interval as null instead of forcing a default value', async () => {
+    const panel = createPanel();
+    const config = workspace.getConfiguration('embeddedLogger');
+    const updateSpy = vi.spyOn(config, 'update');
+
+    panel.__fireMessage({
+      type: 'save',
+      defaults: {
+        defaultPort: 22,
+        defaultLogCommand: 'tail -F /var/log/syslog',
+        defaultEnableSshTerminal: true,
+        defaultEnableSftpExplorer: true,
+        defaultEnableWebBrowser: false,
+        defaultEnableEmbeddedWebBrowser: false,
+        enableDevicePing: true,
+        devicePingIntervalSeconds: '',
+        defaultSshCommands: [],
+        maxLinesPerTab: 100000,
+      },
+      devices: [
+        {
+          id: 'device-a',
+          name: 'Device A',
+          host: '10.0.0.1',
+          username: 'root',
+        },
+      ],
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(updateSpy).toHaveBeenCalledWith('devicePingIntervalSeconds', null, expect.anything());
+    expect(panel.webview.postMessage).toHaveBeenCalledWith({
+      type: 'saveResult',
+      success: true,
+      message: 'Saved settings.',
+    });
+  });
+
   it('stores disabled default SSH commands explicitly on device entries', async () => {
     const panel = createPanel();
     const config = workspace.getConfiguration('embeddedLogger');

@@ -14,6 +14,7 @@ import { LogSession } from '../../src/logSession';
 import { SshCommandRunner } from '../../src/sshCommandRunner';
 import { SidebarViewProvider } from '../../src/sidebarView';
 import { createMockClient } from '../mocks/ssh';
+import type { DevicePingState } from '../../src/devicePing';
 import {
   createExtensionContext,
   createWebviewView,
@@ -99,7 +100,6 @@ describe('Sidebar integration', () => {
       () => undefined,
       () => undefined,
       () => undefined,
-      () => undefined,
       () => false,
       () => new Map()
     );
@@ -148,7 +148,6 @@ describe('Sidebar integration', () => {
       () => undefined,
       () => undefined,
       () => undefined,
-      () => undefined,
       () => false,
       () => new Map()
     );
@@ -167,6 +166,78 @@ describe('Sidebar integration', () => {
       ],
       groups: [{ name: 'Lab' }, { name: 'Field' }],
       isDevicePingEnabled: false,
+    });
+  });
+
+  it('posts ping tooltip metadata for sidebar status rendering', () => {
+    resetWorkspaceConfiguration();
+    const context = createExtensionContext();
+    const devices: EmbeddedDevice[] = [
+      {
+        id: 'device-1',
+        name: 'Detailed Ping Device',
+        host: 'logs.example.com',
+        username: 'root',
+      },
+      {
+        id: 'device-2',
+        name: 'Simple Ping Device',
+        host: 'logs-2.example.com',
+        username: 'root',
+      },
+    ];
+    const pingStates = new Map<string, DevicePingState>([
+      [
+        'device-1',
+        {
+          status: 'ok',
+          completedAt: 1712515200000,
+          showDetailedTooltip: true,
+        },
+      ],
+      [
+        'device-2',
+        {
+          status: 'error',
+        },
+      ],
+    ]);
+
+    const sidebar = new SidebarViewProvider(
+      context,
+      () => devices,
+      () => [],
+      () => undefined,
+      () => undefined,
+      () => undefined,
+      () => undefined,
+      () => undefined,
+      () => undefined,
+      () => true,
+      () => pingStates
+    );
+
+    const view = createWebviewView();
+    sidebar.resolveWebviewView(view as unknown as vscode.WebviewView);
+
+    expect(view.webview.postMessage).toHaveBeenCalledWith({
+      type: 'initDevices',
+      devices: [
+        expect.objectContaining({
+          id: 'device-1',
+          pingStatus: 'ok',
+          pingCompletedAt: 1712515200000,
+          pingShowDetailedTooltip: true,
+        }),
+        expect.objectContaining({
+          id: 'device-2',
+          pingStatus: 'error',
+          pingCompletedAt: undefined,
+          pingShowDetailedTooltip: undefined,
+        }),
+      ],
+      groups: [],
+      isDevicePingEnabled: true,
     });
   });
 });

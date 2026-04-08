@@ -6,7 +6,19 @@
 
 import { spawn } from 'child_process';
 
-export type DevicePingStatus = 'ok' | 'error';
+export type DevicePingStatus = 'pending' | 'ok' | 'error';
+
+export interface DevicePingState {
+  status: DevicePingStatus;
+  completedAt?: number;
+  showDetailedTooltip?: boolean;
+}
+
+export function isDetailedPingTooltipIntervalEligible(
+  intervalSeconds: number | undefined
+): boolean {
+  return intervalSeconds === undefined || intervalSeconds > 3600;
+}
 
 function getPingCommand(host: string): { command: string; args: string[] } {
   if (process.platform === 'win32') {

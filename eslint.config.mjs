@@ -122,7 +122,8 @@ const spellcheckSkipWords = [
   "ctime",
   "mtime",
   "abc",
-  "ugo"
+  "ugo",
+  "tooltips"
 ];
 
 export default defineConfig([

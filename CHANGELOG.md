@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
-## [1.9.0] - 2026-04-11 [FIND]
+## [1.9.0] - 2026-04-07 [FIND]
 
 ### Added
 - Added optional re-run ssh command for ssh terminals on reconnection.

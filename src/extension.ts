@@ -22,14 +22,19 @@ import {
 } from './configuration';
 import { PasswordManager } from './passwordManager';
 import { DeviceManagerPanel } from './deviceManagerPanel';
-import { pingHost, type DevicePingStatus } from './devicePing';
+import {
+  isDetailedPingTooltipIntervalEligible,
+  pingHost,
+  type DevicePingState,
+  type DevicePingStatus,
+} from './devicePing';
 
 // Map of deviceId to existing log panels so multiple clicks reuse tabs.
 const panelMap: Map<string, LogPanel> = new Map();
 const sftpPanels: Set<SftpExplorerPanel> = new Set();
 let activePanel: LogPanel | undefined;
 let sidebarProvider: SidebarViewProvider | undefined;
-const pingStatusByDeviceId: Map<string, DevicePingStatus> = new Map();
+const pingStatusByDeviceId: Map<string, DevicePingState> = new Map();
 let pingIntervalHandle: NodeJS.Timeout | undefined;
 let isPingInProgress = false;
 
@@ -358,7 +363,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
     prunePingStatuses();
     sidebarProvider?.refreshDevices();
   };
-  const pingAllDevices = async (): Promise<void> => {
+  const shouldShowDetailedPingTooltip = (): boolean =>
+    isDetailedPingTooltipIntervalEligible(getDevicePingIntervalSeconds());
+  const pingAllDevices = async ({
+    showPending = false,
+  }: { showPending?: boolean } = {}): Promise<void> => {
     if (!isDevicePingEnabled() || isPingInProgress) {
       return;
     }
@@ -370,13 +379,26 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
 
     isPingInProgress = true;
     try {
+      const showDetailedTooltip = shouldShowDetailedPingTooltip();
+      if (showPending) {
+        devices.forEach((device) => {
+          pingStatusByDeviceId.set(device.id, { status: 'pending' });
+        });
+        refreshSidebarDevices();
+      }
+
       await Promise.all(
         devices.map(async (device) => {
           const reachable = await pingHost(device.host);
-          pingStatusByDeviceId.set(device.id, reachable ? 'ok' : 'error');
+          const status: DevicePingStatus = reachable ? 'ok' : 'error';
+          pingStatusByDeviceId.set(device.id, {
+            status,
+            completedAt: showDetailedTooltip ? Date.now() : undefined,
+            showDetailedTooltip: showDetailedTooltip || undefined,
+          });
+          refreshSidebarDevices();
         })
       );
-      refreshSidebarDevices();
     } finally {
       isPingInProgress = false;
     }
@@ -681,9 +703,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
       const device = findDevice(deviceId);
       void openEmbeddedWebBrowser(device);
     },
-    () => {
-      void pingAllDevices();
-    },
     isDevicePingEnabled,
     () => pingStatusByDeviceId
   );
@@ -708,7 +727,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
 
   context.subscriptions.push(
     vscode.commands.registerCommand('embeddedLogger.pingAllDevices', async () => {
-      await pingAllDevices();
+      await pingAllDevices({ showPending: true });
     })
   );
 
