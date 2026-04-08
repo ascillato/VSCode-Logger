@@ -15,6 +15,8 @@ declare module 'ssh2' {
     password?: string;
     privateKey?: string | Buffer;
     passphrase?: string;
+    keepaliveInterval?: number;
+    keepaliveCountMax?: number;
     hostHash?: string;
     hostVerifier?: (key: string | Buffer) => boolean;
   }

@@ -13,6 +13,9 @@ import type { AuthenticationResult } from './authenticationProvider';
 import type { FingerprintPersistence } from './fingerprintPersistence';
 import type { HostKeyVerifier } from './hostKeyVerifier';
 
+const SSH_KEEPALIVE_INTERVAL_MS = 5000;
+const SSH_KEEPALIVE_COUNT_MAX = 3;
+
 type ForwardingClient = Client & {
   forwardOut(
     srcIP: string,
@@ -151,6 +154,8 @@ export class ConnectionManager {
           host: bastion.host,
           port: bastionPort,
           username: bastion.username,
+          keepaliveInterval: SSH_KEEPALIVE_INTERVAL_MS,
+          keepaliveCountMax: SSH_KEEPALIVE_COUNT_MAX,
           ...request.bastionAuthentication,
           hostHash: 'sha256',
           hostVerifier: (key) =>
@@ -217,6 +222,8 @@ export class ConnectionManager {
           port,
           username,
           sock,
+          keepaliveInterval: SSH_KEEPALIVE_INTERVAL_MS,
+          keepaliveCountMax: SSH_KEEPALIVE_COUNT_MAX,
           ...request.authentication,
           hostHash: 'sha256',
           hostVerifier: (key) => this.hostVerifier.verify(key, expectedFingerprint),

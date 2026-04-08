@@ -65,6 +65,8 @@ describe('LogSession (integration)', () => {
     expect(lines).toEqual(['first line', 'second line']);
     expect(closed).toBe(1);
     expect(statuses.some((status) => status.includes('Streaming logs'))).toBe(true);
+    expect(client.lastConnectConfig?.keepaliveInterval).toBe(5000);
+    expect(client.lastConnectConfig?.keepaliveCountMax).toBe(3);
     const configuration = workspace.getConfiguration('embeddedLogger');
     const devices = configuration.get<EmbeddedDevice[]>('devices', []);
     expect(devices.find((entry) => entry.id === device.id)?.hostFingerprint).toBeDefined();
