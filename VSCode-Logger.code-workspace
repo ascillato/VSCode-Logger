@@ -81,6 +81,11 @@
             "task": "Linter_fix",
             "description": "",
           },
+          {
+            "label": "$(extensions-refresh) Reload Extensions",
+            "task": "Reload_Extensions",
+            "description": "",
+          },
         ],
       },
       {
@@ -282,6 +287,17 @@
           "panel": "new",
           "focus": true,
         },
+      },
+      {
+        "label": "Reload_Extensions",
+        "type": "shell",
+        "command": "${command:workbench.action.restartExtensionHost}",
+        "problemMatcher": [],
+        "group": {
+          "kind": "build",
+          "isDefault": false,
+        },
+        "detail": "This task restarts the VS Code extension host.",
       },
       {
         "label": "NewTerminal",
