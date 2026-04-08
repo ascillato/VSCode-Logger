@@ -1,0 +1,392 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('vscode', () => import('../mocks/vscode'));
+vi.mock('../../src/passwordManager', () => ({
+  PasswordManager: class {
+    getPassword = vi.fn(async () => 'mock-password');
+    getPassphrase = vi.fn(async () => undefined);
+  },
+}));
+
+type MockClientRecord = {
+  connectConfig: Record<string, unknown> | undefined;
+  shellOptions: Record<string, unknown> | undefined;
+  shellChannel: {
+    writes: string[];
+    write: (value: string) => boolean;
+    setWindow: (rows: number, columns: number, pixelHeight: number, pixelWidth: number) => void;
+    stderr: {
+      emit: (event: string, data: Buffer) => void;
+    };
+    emit: (event: string, ...args: unknown[]) => void;
+    end: () => unknown;
+  };
+  sftpSession: {
+    uploads: Array<{ localPath: string; remotePath: string }>;
+  };
+  end: () => unknown;
+};
+
+type EventListener = (...args: unknown[]) => void;
+type ShellCallback = (
+  err: Error | undefined,
+  stream: {
+    write: (value: string) => boolean;
+    on: (event: string, listener: EventListener) => unknown;
+    stderr: { on: (event: string, listener: EventListener) => unknown };
+  }
+) => void;
+type SftpCallback = (
+  err: Error | undefined,
+  sftp: {
+    fastPut: (localPath: string, remotePath: string, callback: (err?: Error) => void) => void;
+    end: () => void;
+  }
+) => void;
+type ForwardOutCallback = (
+  err: Error | undefined,
+  stream: {
+    on: (event: string, listener: EventListener) => unknown;
+    stderr: { on: (event: string, listener: EventListener) => unknown };
+    write: (value: string) => boolean;
+  }
+) => void;
+
+const { sshMockState, fsMockState } = vi.hoisted(() => ({
+  sshMockState: {
+    clients: [] as MockClientRecord[],
+  },
+  fsMockState: {
+    readFile: vi.fn(),
+    mkdtemp: vi.fn(),
+    writeFile: vi.fn(),
+    rm: vi.fn(),
+  },
+}));
+
+vi.mock('fs/promises', () => ({
+  readFile: fsMockState.readFile,
+  mkdtemp: fsMockState.mkdtemp,
+  writeFile: fsMockState.writeFile,
+  rm: fsMockState.rm,
+}));
+
+vi.mock('ssh2', () => {
+  class MockEmitter {
+    private readonly listeners = new Map<string, EventListener[]>();
+
+    on(event: string, listener: EventListener): this {
+      const current = this.listeners.get(event) ?? [];
+      current.push(listener);
+      this.listeners.set(event, current);
+      return this;
+    }
+
+    once(event: string, listener: EventListener): this {
+      const onceListener: EventListener = (...args: unknown[]): void => {
+        this.off(event, onceListener);
+        listener(...args);
+      };
+      return this.on(event, onceListener);
+    }
+
+    off(event: string, listener: EventListener): this {
+      const current = this.listeners.get(event) ?? [];
+      this.listeners.set(
+        event,
+        current.filter((candidate) => candidate !== listener)
+      );
+      return this;
+    }
+
+    emit(event: string, ...args: unknown[]): void {
+      for (const listener of this.listeners.get(event) ?? []) {
+        listener(...args);
+      }
+    }
+
+    removeAllListeners(): this {
+      this.listeners.clear();
+      return this;
+    }
+  }
+
+  class MockShellChannel extends MockEmitter {
+    readonly stderr = new MockEmitter();
+    readonly writes: string[] = [];
+    readonly write = vi.fn((value: string) => {
+      this.writes.push(value);
+      return true;
+    });
+    readonly setWindow = vi.fn();
+    readonly end = vi.fn(() => {
+      this.emit('close');
+      return this;
+    });
+  }
+
+  class MockSftpSession {
+    readonly uploads: Array<{ localPath: string; remotePath: string }> = [];
+    readonly fastPut = vi.fn(
+      (localPath: string, remotePath: string, callback: (err?: Error) => void) => {
+        this.uploads.push({ localPath, remotePath });
+        callback(undefined);
+      }
+    );
+    readonly end = vi.fn();
+  }
+
+  class MockClient extends MockEmitter {
+    connectConfig: Record<string, unknown> | undefined;
+    shellOptions: Record<string, unknown> | undefined;
+    readonly shellChannel = new MockShellChannel();
+    readonly sftpSession = new MockSftpSession();
+    readonly connect = vi.fn((config: Record<string, unknown>) => {
+      this.connectConfig = config;
+      queueMicrotask(() => this.emit('ready'));
+      return this;
+    });
+    readonly shell = vi.fn((options: Record<string, unknown>, callback: ShellCallback) => {
+      this.shellOptions = options;
+      callback(undefined, this.shellChannel);
+      return this;
+    });
+    readonly sftp = vi.fn((callback: SftpCallback) => {
+      callback(undefined, this.sftpSession);
+      return this;
+    });
+    readonly forwardOut = vi.fn(
+      (
+        _srcIp: string,
+        _srcPort: number,
+        _dstIp: string,
+        _dstPort: number,
+        callback: ForwardOutCallback
+      ) => {
+        callback(undefined, this.shellChannel);
+      }
+    );
+    readonly end = vi.fn(() => {
+      this.emit('close');
+      return this;
+    });
+
+    constructor() {
+      super();
+      sshMockState.clients.push(this);
+    }
+  }
+
+  return { Client: MockClient };
+});
+
+import type { EmbeddedDevice } from '../../src/deviceTree';
+import { SshTerminalSession } from '../../src/sshTerminal';
+import { createExtensionContext, resetWindowResponses, window, workspace } from '../mocks/vscode';
+
+const baseDevice: EmbeddedDevice = {
+  id: 'device-1',
+  name: 'Terminal Device',
+  host: 'device.local',
+  username: 'root',
+};
+
+const flushAsync = async (): Promise<void> => {
+  for (let index = 0; index < 10; index += 1) {
+    await Promise.resolve();
+  }
+};
+
+beforeEach(() => {
+  sshMockState.clients.length = 0;
+  fsMockState.readFile.mockReset();
+  fsMockState.mkdtemp.mockReset();
+  fsMockState.writeFile.mockReset();
+  fsMockState.rm.mockReset();
+  resetWindowResponses();
+  workspace.isTrusted = true;
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+});
+
+describe('SshTerminalSession', () => {
+  it('opens a shell, writes the initial path and command, forwards data, and resizes the terminal', async () => {
+    const context = createExtensionContext();
+    const writes: string[] = [];
+    const closes = vi.fn();
+    const session = new SshTerminalSession(
+      baseDevice,
+      context,
+      '/var/log/my app',
+      ' tail -f /var/log/syslog '
+    );
+
+    session.onDidWrite((value) => writes.push(value));
+    session.onDidClose(closes);
+
+    session.open({ columns: 100, rows: 40 });
+    await flushAsync();
+
+    const client = sshMockState.clients[0];
+    const shell = client.shellChannel;
+
+    expect(client.connectConfig).toEqual(
+      expect.objectContaining({
+        host: 'device.local',
+        port: 22,
+        username: 'root',
+        password: 'mock-password',
+      })
+    );
+    expect(client.shellOptions).toEqual(
+      expect.objectContaining({
+        term: 'xterm-color',
+        cols: 100,
+        rows: 40,
+      })
+    );
+    expect(shell.writes).toEqual(["cd -- '/var/log/my app'\n", 'tail -f /var/log/syslog\n']);
+
+    shell.emit('data', Buffer.from('hello\nworld'));
+    shell.stderr.emit('data', Buffer.from('warn\n'));
+    session.handleInput('ls');
+    session.handleInput('\r');
+    session.setDimensions({ columns: 120, rows: 50 });
+
+    expect(shell.write).toHaveBeenCalledWith('ls');
+    expect(shell.write).toHaveBeenCalledWith('\r');
+    expect(shell.setWindow).toHaveBeenCalledWith(50, 120, 50, 120);
+    expect(writes).toContain('Connected to Terminal Device\r\n');
+    expect(writes).toContain('hello\r\nworld');
+    expect(writes).toContain('warn\r\n');
+
+    session.close();
+
+    expect(closes).toHaveBeenCalledOnce();
+    expect(shell.end).toHaveBeenCalled();
+    expect(client.end).toHaveBeenCalled();
+  });
+
+  it('uploads an initial script and executes the remote wrapper command', async () => {
+    const context = createExtensionContext();
+    fsMockState.mkdtemp.mockResolvedValue('/tmp/upload-dir');
+    fsMockState.writeFile.mockResolvedValue(undefined);
+    fsMockState.rm.mockResolvedValue(undefined);
+
+    const session = new SshTerminalSession(
+      baseDevice,
+      context,
+      undefined,
+      'echo ready',
+      false,
+      '#!/bin/sh\necho deployed\n'
+    );
+
+    session.open();
+    await flushAsync();
+
+    const client = sshMockState.clients[0];
+    const shell = client.shellChannel;
+
+    expect(fsMockState.mkdtemp).toHaveBeenCalled();
+    expect(fsMockState.writeFile).toHaveBeenCalledWith(
+      '/tmp/upload-dir/command.sh',
+      '#!/bin/sh\necho deployed\n',
+      'utf8'
+    );
+    expect(client.sftpSession.uploads).toHaveLength(1);
+    expect(client.sftpSession.uploads[0].localPath).toBe('/tmp/upload-dir/command.sh');
+    expect(client.sftpSession.uploads[0].remotePath).toMatch(/^\/tmp\/embedded-logger-.*\.sh$/);
+    expect(shell.writes).toHaveLength(1);
+    expect(shell.writes[0]).toMatch(
+      /^echo ready && chmod 0777 '\/tmp\/embedded-logger-.*\.sh' && '\/tmp\/embedded-logger-.*\.sh'\n$/
+    );
+    expect(fsMockState.rm).toHaveBeenCalledWith('/tmp/upload-dir', {
+      recursive: true,
+      force: true,
+    });
+  });
+
+  it('reconnects after an unexpected disconnect and reruns the initial command when configured', async () => {
+    vi.useFakeTimers();
+
+    const context = createExtensionContext();
+    const writes: string[] = [];
+    const session = new SshTerminalSession(baseDevice, context, undefined, 'top', true);
+
+    session.onDidWrite((value) => writes.push(value));
+
+    session.open({ columns: 80, rows: 24 });
+    await flushAsync();
+
+    const firstClient = sshMockState.clients[0];
+    const firstShell = firstClient.shellChannel;
+
+    expect(firstShell.writes).toEqual(['top\n']);
+
+    firstShell.emit('close');
+    await flushAsync();
+
+    expect(writes.some((value) => value.includes('Retrying in 5 seconds'))).toBe(true);
+
+    await vi.advanceTimersByTimeAsync(5000);
+    await flushAsync();
+
+    const secondClient = sshMockState.clients[1];
+    const secondShell = secondClient.shellChannel;
+
+    expect(sshMockState.clients).toHaveLength(2);
+    expect(secondShell.writes).toEqual(['top\n']);
+  });
+
+  it('treats user exit as a clean close and does not reconnect', async () => {
+    vi.useFakeTimers();
+
+    const context = createExtensionContext();
+    const writes: string[] = [];
+    const closes = vi.fn();
+    const session = new SshTerminalSession(baseDevice, context);
+
+    session.onDidWrite((value) => writes.push(value));
+    session.onDidClose(closes);
+
+    session.open();
+    await flushAsync();
+
+    const firstClient = sshMockState.clients[0];
+    const firstShell = firstClient.shellChannel;
+
+    session.handleInput('exit');
+    session.handleInput('\r');
+    firstShell.emit('exit', 0, null);
+    firstShell.emit('close');
+    await flushAsync();
+    await vi.advanceTimersByTimeAsync(5000);
+    await flushAsync();
+
+    expect(closes).toHaveBeenCalledOnce();
+    expect(sshMockState.clients).toHaveLength(1);
+    expect(writes.some((value) => value.includes('Retrying in 5 seconds'))).toBe(false);
+  });
+
+  it('reports workspace trust errors and closes without connecting', async () => {
+    const context = createExtensionContext();
+    const closes = vi.fn();
+    const session = new SshTerminalSession(baseDevice, context);
+
+    workspace.isTrusted = false;
+    session.onDidClose(closes);
+
+    session.open();
+    await flushAsync();
+
+    expect(window.showErrorMessage).toHaveBeenCalledWith(
+      'Workspace trust is required before connecting to devices.'
+    );
+    expect(closes).toHaveBeenCalledOnce();
+    expect(sshMockState.clients).toHaveLength(0);
+  });
+});

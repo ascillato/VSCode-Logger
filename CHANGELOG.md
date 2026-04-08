@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [x.x.x] - XXXX-XX-XX [UNRELEASED]
+
+### Added
+- Increased code test coverage.
+
+### Changed
+- None.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- None.
+
+### Security
+- None.
+
+----------------------------------------
+
 ## [1.9.1] - 2026-04-08 [LIVE-LOG-RECONNECT-FIX]
 
 ### Added

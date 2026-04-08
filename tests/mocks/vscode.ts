@@ -37,6 +37,8 @@ interface MockWebviewView extends vscode.WebviewView {
   __fireMessage: (message: unknown) => void;
 }
 
+type EventListener<T> = (event: T) => unknown;
+
 const initialConfigurationState: Record<string, unknown> = {
   devices: [],
 };
@@ -53,6 +55,8 @@ let openTextDocumentContent = '';
 let clipboardText = '';
 const mockFileSystem = new Map<string, Uint8Array>();
 const createdWebviews: MockWebviewPanel[] = [];
+const saveTextDocumentListeners: Array<(doc: vscode.TextDocument) => void> = [];
+const closeTextDocumentListeners: Array<(doc: vscode.TextDocument) => void> = [];
 
 const createMockWebview = (): MockWebview => {
   const listeners: Array<(message: unknown) => void> = [];
@@ -139,6 +143,28 @@ export const workspace: typeof vscode.workspace = {
   name: 'mock-workspace',
   getConfiguration: () => workspaceConfiguration as unknown as vscode.WorkspaceConfiguration,
   onDidChangeConfiguration: vi.fn(() => ({ dispose: () => undefined })),
+  onDidSaveTextDocument: vi.fn((listener: (doc: vscode.TextDocument) => void) => {
+    saveTextDocumentListeners.push(listener);
+    return {
+      dispose: () => {
+        const index = saveTextDocumentListeners.indexOf(listener);
+        if (index >= 0) {
+          saveTextDocumentListeners.splice(index, 1);
+        }
+      },
+    };
+  }),
+  onDidCloseTextDocument: vi.fn((listener: (doc: vscode.TextDocument) => void) => {
+    closeTextDocumentListeners.push(listener);
+    return {
+      dispose: () => {
+        const index = closeTextDocumentListeners.indexOf(listener);
+        if (index >= 0) {
+          closeTextDocumentListeners.splice(index, 1);
+        }
+      },
+    };
+  }),
   fs: {
     writeFile: async (uri: vscode.Uri, content: Uint8Array) => {
       mockFileSystem.set((uri as unknown as MockUri).fsPath, content);
@@ -266,6 +292,25 @@ export const MarkdownString = class MockMarkdownString implements vscode.Markdow
   value = '';
 } as unknown as typeof vscode.MarkdownString;
 
+export const EventEmitter = class MockEventEmitter<T> implements vscode.EventEmitter<T> {
+  private readonly listeners = new Set<EventListener<T>>();
+
+  readonly event: vscode.Event<T> = (listener: EventListener<T>) => {
+    this.listeners.add(listener);
+    return { dispose: () => this.listeners.delete(listener) };
+  };
+
+  fire(data: T): void {
+    for (const listener of this.listeners) {
+      listener(data);
+    }
+  }
+
+  dispose(): void {
+    this.listeners.clear();
+  }
+} as unknown as typeof vscode.EventEmitter;
+
 export const ThemeColor = class MockThemeColor implements vscode.ThemeColor {
   constructor(public readonly id: string) {}
 } as unknown as typeof vscode.ThemeColor;
@@ -276,6 +321,25 @@ export const ThemeIcon = class MockThemeIcon implements vscode.ThemeIcon {
     public readonly color?: vscode.ThemeColor
   ) {}
 } as unknown as typeof vscode.ThemeIcon;
+
+export const TreeItemCollapsibleState = {
+  None: 0,
+  Collapsed: 1,
+  Expanded: 2,
+};
+
+export const TreeItem = class MockTreeItem implements vscode.TreeItem {
+  tooltip?: string | vscode.MarkdownString;
+  description?: string | boolean;
+  iconPath?: vscode.IconPath;
+  command?: vscode.Command;
+  contextValue?: string;
+
+  constructor(
+    public readonly label: string,
+    public readonly collapsibleState: vscode.TreeItemCollapsibleState = TreeItemCollapsibleState.None
+  ) {}
+} as unknown as typeof vscode.TreeItem;
 
 export const StatusBarAlignment = {
   Left: 1,
@@ -378,10 +442,20 @@ export const resetWindowResponses = (): void => {
   (window.createWebviewPanel as ReturnType<typeof vi.fn>).mockClear?.();
   (window.registerWebviewViewProvider as ReturnType<typeof vi.fn>).mockClear?.();
   (workspace.onDidChangeConfiguration as ReturnType<typeof vi.fn>).mockClear?.();
+  (workspace.onDidSaveTextDocument as ReturnType<typeof vi.fn>).mockClear?.();
+  (workspace.onDidCloseTextDocument as ReturnType<typeof vi.fn>).mockClear?.();
   (commands.registerCommand as ReturnType<typeof vi.fn>).mockClear?.();
   (commands.executeCommand as ReturnType<typeof vi.fn>).mockClear?.();
   (commands.getCommands as ReturnType<typeof vi.fn>).mockClear?.();
   (env.openExternal as ReturnType<typeof vi.fn>).mockClear?.();
+};
+
+export const fireDidSaveTextDocument = (doc: vscode.TextDocument): void => {
+  saveTextDocumentListeners.forEach((listener) => listener(doc));
+};
+
+export const fireDidCloseTextDocument = (doc: vscode.TextDocument): void => {
+  closeTextDocumentListeners.forEach((listener) => listener(doc));
 };
 
 export const getStoredSecrets = (context: vscode.ExtensionContext): StoredSecret[] => {
@@ -420,9 +494,12 @@ export default {
   commands,
   extensions,
   SecretStorageChangeEvent,
+  EventEmitter,
   MarkdownString,
   ThemeColor,
   ThemeIcon,
+  TreeItem,
+  TreeItemCollapsibleState,
   StatusBarAlignment,
   ViewColumn,
 };
