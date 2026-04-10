@@ -601,7 +601,7 @@
     "@vitest/coverage-v8": "^4.1.2",
     "@vscode/test-electron": "^2.4.1",
     "cloc": "^2.6.0-cloc",
-    "cspell": "^9.7.0",
+    "cspell": "^10.0.0",
     "esbuild": "^0.28.0",
     "eslint": "^10.1.0",
     "eslint-config-prettier": "^10.1.8",
