@@ -123,6 +123,7 @@ export class DeviceManagerPanel {
 
   private constructor(
     private readonly extensionUri: vscode.Uri,
+    private readonly extensionVersion: string,
     panel: vscode.WebviewPanel
   ) {
     this.panel = panel;
@@ -166,7 +167,7 @@ export class DeviceManagerPanel {
     this.panel.webview.html = this.buildHtml(this.panel.webview);
   }
 
-  static createOrShow(extensionUri: vscode.Uri): void {
+  static createOrShow(extensionUri: vscode.Uri, extensionVersion: string): void {
     const column = vscode.window.activeTextEditor?.viewColumn;
 
     if (DeviceManagerPanel.currentPanel) {
@@ -188,7 +189,7 @@ export class DeviceManagerPanel {
       }
     );
 
-    DeviceManagerPanel.currentPanel = new DeviceManagerPanel(extensionUri, panel);
+    DeviceManagerPanel.currentPanel = new DeviceManagerPanel(extensionUri, extensionVersion, panel);
   }
 
   dispose(): void {
@@ -208,6 +209,8 @@ export class DeviceManagerPanel {
       .toString();
     const nonce = getNonce();
 
+    const pageTitle = `Embedded Device Logger v${this.extensionVersion}`;
+
     return `<!DOCTYPE html>
 <html lang="en">
   <head>
@@ -215,13 +218,13 @@ export class DeviceManagerPanel {
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}'; style-src ${webview.cspSource} 'unsafe-inline';" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="${stylesUri}" />
-    <title>Embedded Devices Manager</title>
+    <title>${pageTitle}</title>
   </head>
   <body>
     <main class="container">
       <header class="header">
         <div>
-          <h1>Embedded Device Logger</h1>
+          <h1>${pageTitle}</h1>
           <p>Manage devices and default configuration.</p>
         </div>
         <div class="header-actions">

@@ -115,11 +115,11 @@
 }
 
 .ping-status {
-    width: 9px;
-    height: 9px;
+    width: 4.5px;
+    height: 4.5px;
     border-radius: 50%;
     display: inline-flex;
-    border: 1px solid var(--vscode-panel-border);
+    border: 0.5px solid var(--vscode-panel-border);
     background: transparent;
     flex: 0 0 auto;
 }

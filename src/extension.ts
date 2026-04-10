@@ -43,6 +43,15 @@ export interface ExtensionTestApi {
   getSftpPanels(): SftpExplorerPanel[];
 }
 
+function getExtensionVersion(packageJson: unknown): string {
+  if (typeof packageJson !== 'object' || packageJson === null) {
+    return 'unknown';
+  }
+
+  const version = (packageJson as { version?: unknown }).version;
+  return typeof version === 'string' ? version : 'unknown';
+}
+
 /**
  * Validates the SSH-related fields for a configured device.
  *
@@ -721,7 +730,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
 
   context.subscriptions.push(
     vscode.commands.registerCommand('embeddedLogger.editDevicesConfig', () => {
-      DeviceManagerPanel.createOrShow(context.extensionUri);
+      DeviceManagerPanel.createOrShow(
+        context.extensionUri,
+        getExtensionVersion(context.extension.packageJSON as unknown)
+      );
     })
   );
 

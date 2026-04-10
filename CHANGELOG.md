@@ -7,13 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
-## [x.x.x] - XXXX-XX-XX [UNRELEASED]
+## [1.9.2] - 2026-04-09 [UI-IMPROVEMENT]
 
 ### Added
 - Increased code test coverage.
 
 ### Changed
-- None.
+- Reduced the size of the ping dot next to device's name.
+- The title of the Settings panel now shows the actual version of the extension.
 
 ### Deprecated
 - None.
