@@ -124,7 +124,11 @@ const spellcheckSkipWords = [
   "abc",
   "ugo",
   "tooltips",
-  "resizes"
+  "resizes",
+  "reposts",
+  "filesystem",
+  "rwxr",
+  "printf"
 ];
 
 export default defineConfig([
