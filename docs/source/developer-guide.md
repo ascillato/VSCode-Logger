@@ -7,6 +7,8 @@ Embedded Device Logger welcomes contributions from the community. Please review 
 - Repository: https://github.com/ascillato/VSCode-Logger
 - Architecture and docs site: https://ascillato.github.io/VSCode-Logger/index.html
 
+**NOTE:** The following actions can be also being run from VSCode Bottom bar if opening from `VSCode-Logger.code-workspace`.
+
 ## Build and run from source
 
 Use Node.js `25.8.2` to match CI and the repository `.nvmrc`.
