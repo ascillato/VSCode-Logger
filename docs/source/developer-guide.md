@@ -11,7 +11,7 @@ Embedded Device Logger welcomes contributions from the community. Please review 
 
 ## Build and run from source
 
-Use Node.js `25.8.2` to match CI and the repository `.nvmrc`.
+Use Node.js `25.2.1` or greater.
 
 1. Clone the repository.
 2. Install dependencies and compile:
@@ -64,7 +64,7 @@ make docs
 ```
 The generated HTML lives at `docs/build/html/index.html`.
 
-Continuous integration builds and publishes the site from `main` to `gh-pages`.
+Continuous integration builds and publishes the site from to *GitHub Pages*.
 
 ## How to contribute
 
