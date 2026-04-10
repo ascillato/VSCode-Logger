@@ -42,7 +42,7 @@ If you like the extension, please [rate it](https://marketplace.visualstudio.com
 ## Getting started
 
 - Install the extension as explained under [Installation](#installation).
-- Open it by clicking on the terminal icon of the side bar.
+- Open it by clicking on the terminal icon in the Activity Bar.
 - Configure your devices by clicking on the pencil icon. Add them under the `embeddedLogger.devices` setting as explained in [Configuration](#configuration), then open the **Embedded Logger** view from the activity bar.
 
 ## Installation
@@ -60,7 +60,7 @@ For more information visit the [Embedded Device Logger extension](https://market
 
 You can manage configuration in two ways:
 
-- Use the **Device Manager** by clicking the pencil icon in the Devices view title or running **Embedded Logger: Edit Devices Configuration**.
+- Use the **Device Manager** by clicking the pencil icon in the Devices view title or running **Edit Devices Configuration**.
 - Edit `settings.json` directly.
 
 ### Device Manager
@@ -267,10 +267,9 @@ Right-clicking a device title or host opens a small context menu with:
 
 The command palette also exposes:
 
-- **Embedded Logger: Ping Configured Devices**
-- **Embedded Logger: Open Local Log File**
-- **Embedded Logger: Edit Devices Configuration**
-- **Embedded Logger: Remove Stored Passwords**
+- **Open Local Log File**
+- **Edit Devices Configuration**
+- **Remove Stored Passwords**
 - **Open SFTP Explorer**
 - **Open External Web Browser**
 - **Open Embedded Web Browser**
@@ -384,7 +383,7 @@ Behavior is the same for both actions:
 ## Notes
 
 - **Colorization of lines** is performed based on the log level (DEBUG, INFO, ERROR, etc). If these keys are not present in the log, no colorization is applied.
-- **Filtering presets** are stored per-device in the workspace state using the key `embeddedLogger.presets.<deviceId>`.
+- **Filtering presets** are stored per panel target in the workspace state using the key `embeddedLogger.presets.<targetId>`. For remote devices, `targetId` is the device ID.
   - Open the filter preset dropdown (caret button next to **Text Filter**) to pick an existing preset or clear the current selection. The dropdown supports keyboard navigation (ArrowDown to open; Escape to close).
   - Saving a preset now uses the current text filter value as the preset name and stores the active min-level and filter text together. The **Save preset** button enables when the text filter is non-empty and differs from the active preset.
   - Changing the text filter clears the active preset selection so you do not overwrite an existing preset unintentionally.
