@@ -609,7 +609,7 @@
     "eslint-plugin-spellcheck": "^0.0.20",
     "globals": "^17.4.0",
     "mocha": "^11.7.5",
-    "prettier": "^3.8.1",
+    "prettier": "^3.8.2",
     "typedoc": "^0.28.18",
     "typescript": "^6.0.2",
     "vitest": "^4.0.17"
