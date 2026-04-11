@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [1.9.3] - 2026-04-09 [UI-IMPROVEMENT-2]
+
+### Added
+- None.
+
+### Changed
+- Fixed ping dot next to device's name to be a circle instead of an oval.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- None.
+
+### Security
+- Updated dependencies to latest.
+
+----------------------------------------
+
 ## [1.9.2] - 2026-04-09 [UI-IMPROVEMENT]
 
 ### Added

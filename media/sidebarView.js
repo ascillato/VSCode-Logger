@@ -132,6 +132,16 @@
     return baseTitle;
   }
 
+  function getPingStatusSymbol(status) {
+    if (status === 'pending') {
+      return '⚫';
+    }
+    if (status === 'ok') {
+      return '🟢';
+    }
+    return '🔴';
+  }
+
   function createDeviceCard(device) {
     const card = document.createElement('div');
     card.className = 'device-card';
@@ -165,6 +175,13 @@
     attachDeviceContextMenu(title);
     info.appendChild(createDeviceColorSwatch(device.color));
     info.appendChild(title);
+
+    const subtitle = document.createElement('span');
+    subtitle.className = 'subtitle';
+    subtitle.textContent = device.host;
+    attachDeviceContextMenu(subtitle);
+    info.appendChild(subtitle);
+
     if (
       state.isDevicePingEnabled &&
       (device.pingStatus === 'pending' ||
@@ -173,16 +190,11 @@
     ) {
       const pingStatus = document.createElement('span');
       pingStatus.className = `ping-status ping-status--${device.pingStatus}`;
+      pingStatus.textContent = getPingStatusSymbol(device.pingStatus);
       pingStatus.title = getPingStatusTitle(device);
       pingStatus.setAttribute('aria-label', pingStatus.title);
       info.appendChild(pingStatus);
     }
-
-    const subtitle = document.createElement('span');
-    subtitle.className = 'subtitle';
-    subtitle.textContent = device.host;
-    attachDeviceContextMenu(subtitle);
-    info.appendChild(subtitle);
 
     summary.appendChild(info);
     commandsSection.appendChild(summary);
