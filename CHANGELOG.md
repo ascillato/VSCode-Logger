@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [1.9.5] - 2026-04-17 [UI-IMPROVEMENT-3]
+
+### Added
+- None.
+
+### Changed
+- Fixed highlight when hovering devices names in devices list.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- None.
+
+### Security
+- Updated dependencies to latest.
+
+----------------------------------------
+
 ## [1.9.3] - 2026-04-09 [UI-IMPROVEMENT-2]
 
 ### Added
