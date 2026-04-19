@@ -4,12 +4,13 @@
  * @packageDocumentation
  */
 
-import { createHash } from 'crypto';
+import { scrypt, webcrypto, type ScryptOptions } from 'crypto';
 import * as vscode from 'vscode';
 import type { EmbeddedDevice } from './deviceTree';
 
 interface WorkspaceScope {
   id: string;
+  legacyId: string;
   label: string;
 }
 
@@ -25,6 +26,14 @@ const PASSWORD_PREFIX = 'embeddedLogger.password.';
 const PASSWORD_METADATA_PREFIX = 'embeddedLogger.passwordMetadata.';
 const PASSPHRASE_PREFIX = 'embeddedLogger.passphrase.';
 const PASSPHRASE_METADATA_PREFIX = 'embeddedLogger.passphraseMetadata.';
+const STORAGE_KEY_DERIVATION_VERSION = 'version-1';
+const STORAGE_KEY_BYTES = 32;
+const SCRYPT_OPTIONS: ScryptOptions = {
+  cost: 16384,
+  blockSize: 8,
+  parallelization: 1,
+  maxmem: 64 * 1024 * 1024,
+};
 
 type SecretKind = 'password' | 'passphrase';
 
@@ -115,9 +124,9 @@ export class PasswordManager {
   ): Promise<string | undefined> {
     const host = device.host.trim();
     const username = device.username.trim();
-    const workspaceScope = this.getWorkspaceScope();
+    const workspaceScope = await this.getWorkspaceScope();
     const config = SECRET_CONFIG[kind];
-    const key = this.buildKey(config.prefix, device, workspaceScope.id);
+    const key = await this.buildKey(config.prefix, device, workspaceScope.id);
 
     const existing = await this.context.secrets.get(key);
     if (existing) {
@@ -129,6 +138,17 @@ export class PasswordManager {
         workspaceLabel: workspaceScope.label,
       });
       return existing;
+    }
+
+    const legacyScoped = await this.tryMigrateLegacyScopedSecret(
+      config,
+      device,
+      host,
+      username,
+      workspaceScope
+    );
+    if (legacyScoped) {
+      return legacyScoped;
     }
 
     const migrated = await this.tryReuseStoredSecret(kind, device, host, username, workspaceScope);
@@ -157,9 +177,9 @@ export class PasswordManager {
   ): Promise<void> {
     const host = device.host.trim();
     const username = device.username.trim();
-    const workspaceScope = this.getWorkspaceScope();
+    const workspaceScope = await this.getWorkspaceScope();
     const config = SECRET_CONFIG[kind];
-    const key = this.buildKey(config.prefix, device, workspaceScope.id);
+    const key = await this.buildKey(config.prefix, device, workspaceScope.id);
 
     await this.context.secrets.store(key, value);
     await this.saveMetadata(config.metadataPrefix, device.id, {
@@ -212,7 +232,9 @@ export class PasswordManager {
 
     const isSameHost = metadata.host === host;
     const isSameUser = metadata.username === username;
-    const isSameWorkspace = metadata.workspaceId === workspaceScope.id;
+    const isSameWorkspace =
+      metadata.workspaceId === workspaceScope.id ||
+      metadata.workspaceId === workspaceScope.legacyId;
 
     const requiresPrompt = !isSameHost || !isSameUser || !isSameWorkspace;
     if (requiresPrompt) {
@@ -229,28 +251,109 @@ export class PasswordManager {
       }
     }
 
-    await this.context.secrets.store(
-      this.buildKey(config.prefix, device, workspaceScope.id),
-      candidate
-    );
+    const key = await this.buildKey(config.prefix, device, workspaceScope.id);
+
+    await this.context.secrets.store(key, candidate);
     await this.saveMetadata(config.metadataPrefix, device.id, {
-      key: this.buildKey(config.prefix, device, workspaceScope.id),
+      key,
       host,
       username,
       workspaceId: workspaceScope.id,
       workspaceLabel: workspaceScope.label,
     });
+    await this.deleteCurrentWorkspaceLegacyScopedKey(
+      config.prefix,
+      device.id,
+      metadata,
+      workspaceScope
+    );
 
     return candidate;
   }
 
-  private buildKey(prefix: string, device: EmbeddedDevice, workspaceId: string): string {
-    const hostHash = this.hashValue(device.host.trim().toLowerCase());
-    const userHash = this.hashValue(device.username.trim());
-    return `${prefix}${device.id}.${workspaceId}.${hostHash}.${userHash}`;
+  private async tryMigrateLegacyScopedSecret(
+    config: SecretConfig,
+    device: EmbeddedDevice,
+    host: string,
+    username: string,
+    workspaceScope: WorkspaceScope
+  ): Promise<string | undefined> {
+    const legacyKey = await this.buildLegacyScopedKey(
+      config.prefix,
+      device.id,
+      workspaceScope.legacyId,
+      host,
+      username
+    );
+    const legacyValue = await this.context.secrets.get(legacyKey);
+    if (!legacyValue) {
+      return undefined;
+    }
+
+    const key = await this.buildKey(config.prefix, device, workspaceScope.id);
+    await this.context.secrets.store(key, legacyValue);
+    await this.saveMetadata(config.metadataPrefix, device.id, {
+      key,
+      host,
+      username,
+      workspaceId: workspaceScope.id,
+      workspaceLabel: workspaceScope.label,
+    });
+    await this.context.secrets.delete(legacyKey);
+
+    return legacyValue;
   }
 
-  private getWorkspaceScope(): WorkspaceScope {
+  private async deleteCurrentWorkspaceLegacyScopedKey(
+    prefix: string,
+    deviceId: string,
+    metadata: PasswordMetadata,
+    workspaceScope: WorkspaceScope
+  ): Promise<void> {
+    if (metadata.workspaceId !== workspaceScope.legacyId) {
+      return;
+    }
+
+    const legacyKey = await this.buildLegacyScopedKey(
+      prefix,
+      deviceId,
+      metadata.workspaceId,
+      metadata.host,
+      metadata.username
+    );
+    if (metadata.key === legacyKey) {
+      await this.context.secrets.delete(metadata.key);
+    }
+  }
+
+  private async buildKey(
+    prefix: string,
+    device: EmbeddedDevice,
+    workspaceId: string
+  ): Promise<string> {
+    const material = JSON.stringify({
+      deviceId: device.id,
+      workspaceId,
+      host: device.host.trim().toLowerCase(),
+      username: device.username.trim(),
+    });
+    const digest = await this.deriveStorageIdentifier(`${prefix}secret`, material);
+    return `${prefix}${device.id}.${digest}`;
+  }
+
+  private async buildLegacyScopedKey(
+    prefix: string,
+    deviceId: string,
+    workspaceId: string,
+    host: string,
+    username: string
+  ): Promise<string> {
+    const hostHash = await this.legacySha256(host.trim().toLowerCase());
+    const userHash = await this.legacySha256(username.trim());
+    return `${prefix}${deviceId}.${workspaceId}.${hostHash}.${userHash}`;
+  }
+
+  private async getWorkspaceScope(): Promise<WorkspaceScope> {
     const workspaceFile = vscode.workspace.workspaceFile?.fsPath;
     const folderUris = vscode.workspace.workspaceFolders
       ?.map((folder) => folder.uri.toString())
@@ -261,7 +364,8 @@ export class PasswordManager {
       folderUris?.map((folder) => folder.split('/').pop() ?? folder).join(', ') ??
       'global';
     return {
-      id: this.hashValue(identifierSource),
+      id: await this.deriveStorageIdentifier('workspace', identifierSource),
+      legacyId: await this.legacySha256(identifierSource),
       label,
     };
   }
@@ -333,7 +437,28 @@ export class PasswordManager {
     return choice === reuseOption;
   }
 
-  private hashValue(value: string): string {
-    return createHash('sha256').update(value).digest('hex');
+  private async deriveStorageIdentifier(purpose: string, value: string): Promise<string> {
+    const salt = `embeddedLogger.${purpose}.${STORAGE_KEY_DERIVATION_VERSION}`;
+    const derived = await this.deriveScrypt(value, salt);
+    return `${STORAGE_KEY_DERIVATION_VERSION}.${derived.toString('hex')}`;
+  }
+
+  private deriveScrypt(value: string, salt: string): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      scrypt(value, salt, STORAGE_KEY_BYTES, SCRYPT_OPTIONS, (error, derivedKey) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+
+        resolve(derivedKey);
+      });
+    });
+  }
+
+  private async legacySha256(value: string): Promise<string> {
+    const encoded = new TextEncoder().encode(value);
+    const digest = await webcrypto.subtle.digest('SHA-256', encoded);
+    return Buffer.from(digest).toString('hex');
   }
 }

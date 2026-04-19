@@ -5,6 +5,7 @@ vi.mock('vscode', () => import('../mocks/vscode'));
 import type { EmbeddedDevice } from '../../src/deviceTree';
 import { PasswordManager } from '../../src/passwordManager';
 import {
+  computeHash,
   createExtensionContext,
   getStoredSecrets,
   resetWindowResponses,
@@ -20,6 +21,17 @@ const device: EmbeddedDevice = {
   host: '10.0.0.2',
   username: 'root',
 };
+const derivedPasswordKeyPattern = /^embeddedLogger\.password\.device-1\.version-1\.[0-9a-f]{64}$/;
+const derivedWorkspaceKeyPattern = /^version-1\.[0-9a-f]{64}$/;
+
+const buildLegacyScopedKey = (
+  prefix: string,
+  candidate: EmbeddedDevice,
+  workspaceSource = 'file:///workspace'
+): string =>
+  `${prefix}${candidate.id}.${computeHash(workspaceSource)}.${computeHash(
+    candidate.host.trim().toLowerCase()
+  )}.${computeHash(candidate.username.trim())}`;
 
 afterEach(() => {
   resetWindowResponses();
@@ -36,6 +48,9 @@ describe('PasswordManager', () => {
 
     expect(password).toBe('super-secret');
     expect(window.showInputBox).not.toHaveBeenCalled();
+
+    const secretEntry = getStoredSecrets(context).find((entry) => entry.value === 'super-secret');
+    expect(secretEntry?.key).toMatch(derivedPasswordKeyPattern);
   });
 
   it('migrates secrets when user confirms reuse', async () => {
@@ -53,6 +68,34 @@ describe('PasswordManager', () => {
     const keys = secrets.map((entry) => entry.key);
     expect(keys).not.toContain(legacyKey);
     expect(keys.length).toBe(2); // password + metadata
+  });
+
+  it('migrates legacy SHA-256 scoped secrets into the derived key format', async () => {
+    const context = createExtensionContext();
+    const manager = new PasswordManager(context);
+    const legacyScopedKey = buildLegacyScopedKey('embeddedLogger.password.', device);
+
+    await context.secrets.store(legacyScopedKey, 'legacy-scoped-secret');
+
+    const password = await manager.getPassword(device);
+
+    expect(password).toBe('legacy-scoped-secret');
+    expect(window.showInputBox).not.toHaveBeenCalled();
+    expect(window.showWarningMessage).not.toHaveBeenCalled();
+
+    const secrets = getStoredSecrets(context);
+    const keys = secrets.map((entry) => entry.key);
+    const migrated = secrets.find((entry) => entry.value === 'legacy-scoped-secret');
+    const metadata = secrets.find(
+      (entry) => entry.key === 'embeddedLogger.passwordMetadata.device-1'
+    );
+
+    expect(keys).not.toContain(legacyScopedKey);
+    expect(migrated?.key).toMatch(derivedPasswordKeyPattern);
+    expect(JSON.parse(metadata?.value ?? '{}')).toMatchObject({
+      key: migrated?.key,
+      workspaceId: expect.stringMatching(derivedWorkspaceKeyPattern),
+    });
   });
 
   it('prompts the user when no stored password exists', async () => {

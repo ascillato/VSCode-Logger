@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [1.9.8] - UNRELEASED [PASSWORDS-IMPROVEMENTS]
+
+### Added
+- More unit tests.
+
+### Changed
+- Migrate password hash scheme to comply with CWE-916.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- Security warning of CWE-916.
+
+### Security
+- Fixed security warning of CWE-916 (how passwords are hashed).
+
+----------------------------------------
+
 ## [1.9.7] - UNRELEASED [DOC-IMPROVEMENTS]
 
 ### Added

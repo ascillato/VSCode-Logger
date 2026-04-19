@@ -220,6 +220,7 @@ If no password is stored yet, the extension prompts for it when connecting and s
 - Otherwise, it prompts for a password when needed.
 - Device and bastion passwords/passphrases are stored in **VS Code Secret Storage**.
 - `password` and `privateKeyPassphrase` fields are migrated into Secret Storage on activation when possible.
+- Stored credential lookup keys are versioned and derived with a memory hard key derivation function. Older stored credentials that used the previous scoped key format are upgraded automatically the next time the device or bastion credential is used.
 - Use **Embedded Logger: Remove Stored Passwords** or the Device Manager button to clear stored device and bastion credentials.
 - Private key paths can include `~` and `${env:VAR}` expansions.
 
