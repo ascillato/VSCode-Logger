@@ -152,8 +152,6 @@ def generate_coverage_report(
                 "<!-- Automatically generated coverage summary; do not edit manually. -->",
                 "Generated from `coverage/coverage-summary.json`.",
                 "",
-                "The target is to reach more than 80 percent of code being tested per file.",
-                "",
                 "### Overall coverage",
                 overview_table,
                 "",

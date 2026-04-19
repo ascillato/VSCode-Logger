@@ -118,6 +118,8 @@ Complexity metrics are not available yet. Run the docs build after installing No
 
 The coverage summary is generated automatically when running the test suite (for example, via `npm test` or `make test`) and exported into the documentation metrics.
 
+The target is to reach more than 80 percent of code being tested per file.
+
 :::{ifconfig} have_coverage_report
 ```{include} _generated/coverage-report.md
 :relative-images:
