@@ -480,6 +480,139 @@ html_theme_options = {
 # user starts in dark mode
 default_dark_mode = True
 
+# Render Mermaid after sphinx-rtd-dark-mode applies the stored/default theme,
+# otherwise diagrams can pick a different theme on the first page load.
+mermaid_js_priority = 900
+mermaid_init_js_priority = 900
+mermaid_version = "11.12.1"
+mermaid_include_elk = "0.2.0"
+_mermaid_js_url = (
+    f"https://cdn.jsdelivr.net/npm/mermaid@{mermaid_version}/dist/mermaid.esm.min.mjs"
+)
+_mermaid_elk_js_url = (
+    "https://cdn.jsdelivr.net/npm/"
+    f"@mermaid-js/layout-elk@{mermaid_include_elk}/dist/mermaid-layout-elk.esm.min.mjs"
+)
+_mermaid_default_page_theme = "dark" if default_dark_mode else "light"
+mermaid_init_js = f"""
+import mermaid from "{_mermaid_js_url}";
+import elkLayouts from "{_mermaid_elk_js_url}";
+
+mermaid.registerLayoutLoaders(elkLayouts);
+
+const defaultPageTheme = "{_mermaid_default_page_theme}";
+
+const getStoredTheme = () => {{
+  try {{
+    return window.localStorage.getItem("theme");
+  }} catch {{
+    return null;
+  }}
+}};
+
+const getPageTheme = () => {{
+  const storedTheme = getStoredTheme();
+  if (storedTheme === "dark" || storedTheme === "light") {{
+    return storedTheme;
+  }}
+
+  return document.documentElement.getAttribute("data-theme") === "dark"
+    ? "dark"
+    : defaultPageTheme;
+}};
+
+const getMermaidTheme = () => getPageTheme() === "dark" ? "dark" : "default";
+
+const initializeMermaid = () => {{
+  mermaid.initialize({{
+    startOnLoad: false,
+    theme: getMermaidTheme(),
+  }});
+}};
+
+const rememberMermaidSources = () => {{
+  document.querySelectorAll(".mermaid").forEach((diagram) => {{
+    if (!diagram.dataset.mermaidSource) {{
+      diagram.dataset.mermaidSource = diagram.textContent;
+    }}
+  }});
+}};
+
+const applyMermaidZoom = () => {{
+  if (!window.d3) {{
+    return;
+  }}
+
+  window.d3.selectAll(".mermaid[data-zoom-id] svg").each(function () {{
+    if (this.dataset.zoomApplied === "true") {{
+      return;
+    }}
+
+    const svg = window.d3.select(this);
+    if (svg.select("g.wrapper").empty()) {{
+      svg.html("<g class='wrapper'>" + svg.html() + "</g>");
+    }}
+
+    const inner = svg.select("g.wrapper");
+    const zoom = window.d3.zoom().on("zoom", (event) => {{
+      inner.attr("transform", event.transform);
+    }});
+
+    svg.call(zoom);
+    this.dataset.zoomApplied = "true";
+  }});
+}};
+
+const renderMermaidForTheme = async () => {{
+  const diagrams = Array.from(document.querySelectorAll(".mermaid"));
+  if (diagrams.length === 0) {{
+    return;
+  }}
+
+  rememberMermaidSources();
+  initializeMermaid();
+
+  diagrams.forEach((diagram) => {{
+    const source = diagram.dataset.mermaidSource;
+    if (!source) {{
+      return;
+    }}
+
+    diagram.removeAttribute("data-processed");
+    diagram.replaceChildren(document.createTextNode(source));
+  }});
+
+  await mermaid.run({{ nodes: diagrams }});
+  applyMermaidZoom();
+}};
+
+initializeMermaid();
+
+if (document.readyState === "loading") {{
+  document.addEventListener("DOMContentLoaded", rememberMermaidSources, {{ once: true }});
+}} else {{
+  rememberMermaidSources();
+}}
+
+let activePageTheme = getPageTheme();
+const themeObserver = new MutationObserver(() => {{
+  const nextPageTheme = getPageTheme();
+  if (nextPageTheme === activePageTheme) {{
+    return;
+  }}
+
+  activePageTheme = nextPageTheme;
+  renderMermaidForTheme().catch((error) => {{
+    console.error("Unable to redraw Mermaid diagrams for theme change.", error);
+  }});
+}});
+
+themeObserver.observe(document.documentElement, {{
+  attributes: true,
+  attributeFilter: ["data-theme"],
+}});
+"""
+
 # Ensure syntax highlighting adapts to the user's theme.
 pygments_style = "sphinx"
 pygments_dark_style = "native"

@@ -178,14 +178,14 @@ The extension depends on the `ssh2` library. To ensure that this dependency is r
 
 ------------------------------------------------------------------------
 
-# Code Overview
+## Code Overview
 
-This document explains how the VSCode-Logger extension streams logs from
+This section explains how the VSCode-Logger extension streams logs from
 embedded Linux devices into Visual Studio Code. It covers the activation
 lifecycle, major components, data flows between the extension host and
 the Webviews, and key configuration and security considerations.
 
-## Activation and configuration
+### Activation and configuration
 - **Activation trigger**: The extension activates when VS Code loads the workspace or when a contributed view or command is invoked.
 - **Configuration resolution**: Devices come from `embeddedLogger.devices`, groups come from `embeddedLogger.groups`, and device defaults are enriched from `embeddedLogger.defaultPort`, `embeddedLogger.defaultLogCommand`, `embeddedLogger.defaultEnableSshTerminal`, `embeddedLogger.defaultEnableSftpExplorer`, `embeddedLogger.defaultEnableWebBrowser`, `embeddedLogger.defaultEnableEmbeddedWebBrowser`, `embeddedLogger.defaultSshCommands`, `embeddedLogger.maxLinesPerTab`, `embeddedLogger.enableDevicePing`, and `embeddedLogger.devicePingIntervalSeconds`.
 - **Ping behavior**: Leaving `embeddedLogger.devicePingIntervalSeconds` empty disables background ping scheduling so checks run from **Ping Configured Devices** only. When pinging is enabled and the interval is empty or greater than `3600`, startup, manual, and timer-triggered ping results expose `HH:MM:SS` in the hover text for the green/red status dot.
@@ -193,7 +193,7 @@ the Webviews, and key configuration and security considerations.
 - **Settings migration**: During activation, plaintext passwords and passphrases in settings are migrated into VS Code Secret Storage, and workspace-state SFTP presets are migrated into `embeddedLogger.devices` when possible.
 - **View and command registration**: Activation registers the tree view, the devices Webview, Device Manager commands, local-log opening, SSH command and terminal handlers, SFTP explorer handlers, browser actions, and `embeddedLogger.openDevice` so selecting a device opens or reuses its log panel.
 
-## Major components
+### Major components
 - **Configuration helpers (`src/configuration.ts`)**: Centralize reading extension settings, applying defaults, resolving groups, sanitizing SFTP presets, merging shared SSH commands, and surfacing the max-lines limit.
 - **Device tree (`src/deviceTree.ts`)**: Supplies the Activity Bar tree view, including collapsible groups and per-device color icons.
 - **Sidebar view (`src/sidebarView.ts` + `media/sidebarView.*`)**: Renders the devices Webview with grouped cards, ping status indicators, and quick actions for logs, SSH commands, SSH terminal, SFTP explorer, and browser actions.
@@ -206,7 +206,7 @@ the Webviews, and key configuration and security considerations.
 - **SFTP search compiler (`src/sftpSearch.ts`)**: Centralizes validation and shell-safe command compilation for the SFTP explorer's `find` and optional `grep` filters so the preview shown in the Webview matches what the extension host executes.
 - **Webview clients (`media/loggerPanel/`, `media/loggerPanel.css`)**: The `loggerPanel.js` entrypoint composes `state.js`, `rendering.js`, and `messaging.js` to parse severity, apply filters and highlights, manage bookmarks and presets, enforce the max-lines cap, and render the terminal-like UI for both remote and local logs.
 
-## Data and control flow
+### Data and control flow
 
 ```mermaid
 :zoom: 100%
@@ -235,7 +235,7 @@ graph TD
     F -- Status updates --> O
 ```
 
-## High-level design and data flow
+### High-level design and data flow
 
 The extension follows a **configuration -> device selection -> credential
 resolution -> connection -> stream or remote action -> Webview**
@@ -254,7 +254,7 @@ Each class has a narrowly scoped role to keep concerns separated:
 - **`sftpExplorer`** provides a dual-pane file workflow built on the same device identity, secret handling, bastion support, and host-side `find`/`grep` execution for search results with relative paths and metadata.
 - **Webview clients (`loggerPanel.js`, `sidebarView.js`, `deviceManager.js`, `sftpExplorer.js`)** manage UI state and issue explicit `postMessage` requests back to the extension host.
 
-### Data flow: device configuration to Webview rendering
+#### Data flow: device configuration to Webview rendering
 
 ```mermaid
 :zoom: 100%
@@ -286,7 +286,7 @@ sequenceDiagram
     Webview-->>User: Rendered logs, filters, highlights, bookmarks
 ```
 
-### Log streaming sequence (status + reconnection aware)
+#### Log streaming sequence (status + reconnection aware)
 
 ```mermaid
 :zoom: 100%
@@ -320,7 +320,7 @@ sequenceDiagram
     Session->>SSH: end()
 ```
 
-### SSH command execution sequence
+#### SSH command execution sequence
 
 ```mermaid
 :zoom: 100%
@@ -345,7 +345,7 @@ sequenceDiagram
     Extension-->>User: showInformationMessage / showErrorMessage
 ```
 
-### SSH connection flow (primary/secondary hosts, bastion, and secret retrieval)
+#### SSH connection flow (primary/secondary hosts, bastion, and secret retrieval)
 
 ```mermaid
 :zoom: 100%
@@ -369,7 +369,7 @@ flowchart LR
     P --> Q["Render in Webview (loggerPanel.js)"]
 ```
 
-## Lifecycle details
+### Lifecycle details
 1. **Panel creation**: Each remote device or imported local log file opens in its own log Webview panel. Existing panels are reactivated instead of duplicated when the same source is selected again.
 2. **Session management**: `LogSession` tracks connection lifecycle events such as connecting, streaming, disconnecting, reconnect countdowns, and errors. SSH resources are disposed when panels close or the extension deactivates.
 3. **Back-pressure handling**: Incoming data is buffered until complete lines are available so log entries are not split mid-line.
@@ -378,7 +378,7 @@ flowchart LR
 6. **Configuration changes**: When `embeddedLogger` settings change, the devices tree and devices Webview refresh with updated devices, groups, defaults, and commands. Active log panels continue using their existing session until reopened or reconnected.
 7. **Security boundaries**: Secrets stay in secret storage or transient prompts, SSH and file operations stay in extension-host code, and Webviews remain limited to rendering and explicit message passing.
 
-## SFTP search flow
+### SFTP search flow
 
 The SFTP explorer supports a search workflow that combines `find` with
 optional `grep` content filters:
@@ -398,7 +398,7 @@ optional `grep` content filters:
    search button, and keeps standard selection, context-menu, transfer,
    and refresh interactions available for the result set.
 
-## Extending the Current Design
+### Extending the Current Design
 
 For the current architecture, these are the safest extension points:
 

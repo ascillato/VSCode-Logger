@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [1.9.7] - UNRELEASED [DOC-IMPROVEMENTS]
+
+### Added
+- None.
+
+### Changed
+- Merged Code Overview into Architecture Overview doc.
+- Updated screenshots.
+- Updated copyright year on License.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- Initial dark theme wrongly applied to mermaid diagrams.
+
+### Security
+- None.
+
+----------------------------------------
+
 ## [1.9.5] - 2026-04-17 [UI-IMPROVEMENT-3]
 
 ### Added
