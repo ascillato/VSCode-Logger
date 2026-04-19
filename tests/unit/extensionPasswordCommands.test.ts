@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('vscode', () => import('../mocks/vscode'));
 
 import type { EmbeddedDevice } from '../../src/deviceTree';
-import { activate } from '../../src/extension';
+import { activate, deactivate } from '../../src/extension';
 import { PasswordManager } from '../../src/passwordManager';
 import {
   commands,
@@ -69,11 +69,102 @@ const storeCredentials = async (
 };
 
 afterEach(() => {
+  deactivate();
   resetWorkspaceConfiguration();
   resetWindowResponses();
 });
 
 describe('clearStoredPasswords command', () => {
+  it('migrates legacy device and bastion credentials and removes them from configuration', async () => {
+    const legacyDevice: EmbeddedDevice = {
+      id: 'legacy-device',
+      name: 'Legacy Device',
+      host: '10.0.0.12',
+      username: 'root',
+      password: 'device-password',
+      privateKeyPassphrase: 'device-passphrase',
+      bastion: {
+        host: 'jump.local',
+        username: 'jump',
+        password: 'bastion-password',
+        privateKeyPassphrase: 'bastion-passphrase',
+      },
+    };
+    await workspace.getConfiguration('embeddedLogger').update('devices', [legacyDevice]);
+    const context = createExtensionContext();
+
+    await context.secrets.store('embeddedLogger.password.legacy-device', 'old-device-password');
+    await context.secrets.store('embeddedLogger.passphrase.legacy-device', 'old-device-passphrase');
+    await context.secrets.store(
+      'embeddedLogger.password.legacy-device-bastion',
+      'old-bastion-password'
+    );
+    await context.secrets.store(
+      'embeddedLogger.passphrase.legacy-device-bastion',
+      'old-bastion-passphrase'
+    );
+
+    await activate(context);
+
+    const storedSecrets = getStoredSecrets(context);
+    const secretKeys = storedSecrets.map((entry) => entry.key);
+    expect(secretKeys).not.toContain('embeddedLogger.password.legacy-device');
+    expect(secretKeys).not.toContain('embeddedLogger.passphrase.legacy-device');
+    expect(secretKeys).not.toContain('embeddedLogger.password.legacy-device-bastion');
+    expect(secretKeys).not.toContain('embeddedLogger.passphrase.legacy-device-bastion');
+    expect(storedSecrets).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ value: 'device-password' }),
+        expect.objectContaining({ value: 'device-passphrase' }),
+        expect.objectContaining({ value: 'bastion-password' }),
+        expect.objectContaining({ value: 'bastion-passphrase' }),
+      ])
+    );
+
+    expect(workspace.getConfiguration('embeddedLogger').get('devices', [])).toEqual([
+      expect.objectContaining({
+        id: 'legacy-device',
+        bastion: expect.not.objectContaining({
+          password: expect.anything(),
+          privateKeyPassphrase: expect.anything(),
+        }),
+      }),
+    ]);
+    expect(
+      workspace.getConfiguration('embeddedLogger').get<EmbeddedDevice[]>('devices', [])[0]
+    ).toEqual(
+      expect.not.objectContaining({
+        password: expect.anything(),
+        privateKeyPassphrase: expect.anything(),
+      })
+    );
+  });
+
+  it('removes passphrase-only legacy fields from configuration after migration', async () => {
+    const legacyDevice: EmbeddedDevice = {
+      id: 'passphrase-only',
+      name: 'Passphrase Only',
+      host: '10.0.0.13',
+      username: 'root',
+      privateKeyPassphrase: 'key-secret',
+    };
+    await workspace.getConfiguration('embeddedLogger').update('devices', [legacyDevice]);
+    const context = createExtensionContext();
+
+    await activate(context);
+
+    expect(getStoredSecrets(context)).toEqual(
+      expect.arrayContaining([expect.objectContaining({ value: 'key-secret' })])
+    );
+    expect(
+      workspace.getConfiguration('embeddedLogger').get<EmbeddedDevice[]>('devices', [])[0]
+    ).toEqual(
+      expect.not.objectContaining({
+        privateKeyPassphrase: expect.anything(),
+      })
+    );
+  });
+
   it('resets credentials per device (including bastion) without affecting others', async () => {
     await workspace.getConfiguration('embeddedLogger').update('devices', devices);
     const context = createExtensionContext();

@@ -18,12 +18,12 @@ Unit tests live in `tests/unit` and currently cover:
 - device manager behavior
 - device ping helpers
 - device tree rendering and refresh behavior
-- extension command handlers for passwords, SFTP preset migration, and web browser actions
+- extension command handlers for passwords, SFTP preset migration, SFTP explorer launch, SSH terminal and command routing, web browser actions, local log files, and remote log panel reuse
 - log panel host behavior, auto-save lifecycle, and Webview message parsing
 - log session orchestration, connection management, fingerprint persistence, SSH authentication resolution, and host key verification
 - logger panel and sidebar Webview messaging, refresh payloads, clipboard actions, and command routing
 - password storage and migration
-- SFTP explorer panel state, seeded test-mode flows, search snapshots, preset persistence, and reconnect countdown behavior
+- SFTP explorer panel state, seeded test-mode flows, production Webview message routing, local and remote filesystem operations, search snapshots, preset persistence, authentication helpers, and reconnect behavior
 - SFTP search command compilation and validation
 - SSH command runner validation and execution
 - SSH terminal session lifecycle, reconnect handling, and initial command or script execution

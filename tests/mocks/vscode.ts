@@ -56,6 +56,7 @@ let openTextDocumentContent = '';
 let clipboardText = '';
 const mockFileSystem = new Map<string, Uint8Array>();
 const createdWebviews: MockWebviewPanel[] = [];
+const configurationChangeListeners: Array<(event: vscode.ConfigurationChangeEvent) => void> = [];
 const saveTextDocumentListeners: Array<(doc: vscode.TextDocument) => void> = [];
 const closeTextDocumentListeners: Array<(doc: vscode.TextDocument) => void> = [];
 
@@ -143,7 +144,17 @@ export const workspace: typeof vscode.workspace = {
   ] as unknown as vscode.WorkspaceFolder[],
   name: 'mock-workspace',
   getConfiguration: () => workspaceConfiguration as unknown as vscode.WorkspaceConfiguration,
-  onDidChangeConfiguration: vi.fn(() => ({ dispose: () => undefined })),
+  onDidChangeConfiguration: vi.fn((listener: (event: vscode.ConfigurationChangeEvent) => void) => {
+    configurationChangeListeners.push(listener);
+    return {
+      dispose: () => {
+        const index = configurationChangeListeners.indexOf(listener);
+        if (index >= 0) {
+          configurationChangeListeners.splice(index, 1);
+        }
+      },
+    };
+  }),
   onDidSaveTextDocument: vi.fn((listener: (doc: vscode.TextDocument) => void) => {
     saveTextDocumentListeners.push(listener);
     return {
@@ -455,6 +466,7 @@ export const resetWindowResponses = (): void => {
   quickPickResponse = undefined;
   clipboardText = '';
   createdWebviews.length = 0;
+  configurationChangeListeners.length = 0;
   (window.showInputBox as ReturnType<typeof vi.fn>).mockClear();
   (window.showWarningMessage as ReturnType<typeof vi.fn>).mockClear();
   (window.showInformationMessage as ReturnType<typeof vi.fn>).mockClear?.();
@@ -474,6 +486,13 @@ export const resetWindowResponses = (): void => {
   (commands.executeCommand as ReturnType<typeof vi.fn>).mockClear?.();
   (commands.getCommands as ReturnType<typeof vi.fn>).mockClear?.();
   (env.openExternal as ReturnType<typeof vi.fn>).mockClear?.();
+};
+
+export const fireDidChangeConfiguration = (section: string): void => {
+  const event = {
+    affectsConfiguration: (candidate: string) => candidate === section,
+  } as vscode.ConfigurationChangeEvent;
+  configurationChangeListeners.forEach((listener) => listener(event));
 };
 
 export const fireDidSaveTextDocument = (doc: vscode.TextDocument): void => {

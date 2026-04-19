@@ -73,6 +73,15 @@ function validateSshDevice(device: EmbeddedDevice): string | undefined {
   return undefined;
 }
 
+function hasLegacyCredentialFields(device: EmbeddedDevice): boolean {
+  return (
+    device.password !== undefined ||
+    device.privateKeyPassphrase !== undefined ||
+    device.bastion?.password !== undefined ||
+    device.bastion?.privateKeyPassphrase !== undefined
+  );
+}
+
 /**
  * Migrates passwords into VS Code SecretStorage.
  *
@@ -185,7 +194,7 @@ async function migrateLegacyPasswords(
     const folderInspection = folderConfig.inspect<EmbeddedDevice[]>('devices');
     const folderValue = folderInspection?.workspaceFolderValue;
 
-    if (!folderValue || !folderValue.some((device) => device.password !== undefined)) {
+    if (!folderValue || !folderValue.some(hasLegacyCredentialFields)) {
       continue;
     }
 
@@ -205,7 +214,7 @@ async function migrateLegacyPasswords(
   }
 
   const workspaceValue = inspection?.workspaceValue;
-  if (workspaceValue && workspaceValue.some((device) => device.password !== undefined)) {
+  if (workspaceValue && workspaceValue.some(hasLegacyCredentialFields)) {
     removalAttempted = true;
 
     try {
@@ -222,7 +231,7 @@ async function migrateLegacyPasswords(
   }
 
   const globalValue = inspection?.globalValue;
-  if (globalValue && globalValue.some((device) => device.password !== undefined)) {
+  if (globalValue && globalValue.some(hasLegacyCredentialFields)) {
     removalAttempted = true;
 
     try {
