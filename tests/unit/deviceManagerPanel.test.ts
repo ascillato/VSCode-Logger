@@ -259,6 +259,241 @@ describe('DeviceManagerPanel', () => {
     ]);
   });
 
+  it('normalizes defaults, devices, groups, and SSH command payload variants', () => {
+    createPanel();
+    const manager = (DeviceManagerPanel as unknown as { currentPanel: unknown }).currentPanel as {
+      normalizeDefaults: (defaults: Record<string, unknown>) => Record<string, unknown>;
+      normalizeGroups: (groups: unknown) => Array<{ name: string }>;
+      normalizeDevice: (device: Record<string, unknown>) => Record<string, unknown>;
+      normalizeSshCommands: (value: unknown) => Array<Record<string, unknown>>;
+      parsePresetText: (value?: string) => string[];
+      toOptionalNumber: (value: unknown) => number | undefined;
+      toOptionalPositiveInteger: (value: unknown) => number | undefined;
+      toOptionalTriState: (value: unknown) => boolean | undefined;
+    };
+
+    expect(
+      manager.normalizeDefaults({
+        defaultPort: 'bad',
+        defaultLogCommand: '   ',
+        defaultEnableSshTerminal: 1,
+        defaultEnableSftpExplorer: '',
+        defaultEnableWebBrowser: true,
+        defaultEnableEmbeddedWebBrowser: false,
+        enableDevicePing: true,
+        devicePingIntervalSeconds: '0',
+        defaultSshCommands: JSON.stringify([
+          { name: ' Follow ', command: ' tail -f /var/log/syslog ', openSshPanel: true },
+          { name: '', command: 'ignored' },
+        ]),
+        maxLinesPerTab: 'not-a-number',
+      })
+    ).toEqual(
+      expect.objectContaining({
+        defaultPort: 22,
+        defaultLogCommand: 'tail -F /var/log/syslog',
+        defaultEnableSshTerminal: true,
+        defaultEnableSftpExplorer: false,
+        devicePingIntervalSeconds: undefined,
+        maxLinesPerTab: 100000,
+        defaultSshCommands: [
+          {
+            name: 'Follow',
+            command: 'tail -f /var/log/syslog',
+            openSshPanel: true,
+            rerunOnReconnection: undefined,
+            copyAndRunScript: undefined,
+            script: undefined,
+          },
+        ],
+      })
+    );
+
+    expect(manager.normalizeGroups([{ name: ' Group A ' }, { name: ' ' }, undefined])).toEqual([
+      { name: 'Group A' },
+    ]);
+    expect(manager.normalizeGroups('bad')).toEqual([]);
+    expect(manager.parsePresetText(undefined)).toEqual([]);
+    expect(
+      manager.parsePresetText(Array.from({ length: 12 }, (_, index) => `/p${index}`).join('\n'))
+    ).toHaveLength(10);
+    expect(manager.toOptionalNumber('abc')).toBeUndefined();
+    expect(manager.toOptionalPositiveInteger('5')).toBe(5);
+    expect(manager.toOptionalPositiveInteger('5.5')).toBeUndefined();
+    expect(manager.toOptionalTriState('enabled')).toBe(true);
+    expect(manager.toOptionalTriState('disabled')).toBe(false);
+    expect(manager.toOptionalTriState('default')).toBeUndefined();
+
+    expect(
+      manager.normalizeDevice({
+        id: ' device-a ',
+        group: ' Lab ',
+        color: ' white ',
+        name: ' Device A ',
+        host: ' 10.0.0.10 ',
+        hostFingerprint: ' SHA256:host ',
+        secondaryHost: ' backup.local ',
+        secondaryHostFingerprint: ' SHA256:backup ',
+        port: '2222',
+        username: ' root ',
+        password: ' secret ',
+        privateKeyPath: ' ~/.ssh/id ',
+        privateKeyPassphrase: ' pass ',
+        logCommand: ' journalctl -f ',
+        enableSshTerminal: 'enabled',
+        enableSftpExplorer: 'disabled',
+        enableWebBrowser: true,
+        enableEmbeddedWebBrowser: false,
+        webBrowserUrl: ' http://device ',
+        showDefaultSshCommands: false,
+        bastionHost: ' jump.local ',
+        bastionHostFingerprint: ' SHA256:jump ',
+        bastionPort: '2200',
+        bastionUsername: ' jump ',
+        bastionPassword: ' jump-secret ',
+        bastionPrivateKeyPath: ' ~/.ssh/jump ',
+        bastionPrivateKeyPassphrase: ' jump-pass ',
+        sftpPresetsRemote: '/var/log\n/opt/app',
+        sftpPresetsLocal: '/tmp',
+        sshCommands: [
+          {
+            name: ' Deploy ',
+            command: '',
+            copyAndRunScript: true,
+            script: '#!/bin/sh\r\necho ok\r\n',
+          },
+        ],
+      })
+    ).toEqual(
+      expect.objectContaining({
+        id: 'device-a',
+        group: 'Lab',
+        color: 'white',
+        host: '10.0.0.10',
+        port: 2222,
+        enableSshTerminal: true,
+        enableSftpExplorer: false,
+        enableWebBrowser: true,
+        enableEmbeddedWebBrowser: false,
+        showDefaultSshCommands: false,
+        bastion: expect.objectContaining({
+          host: 'jump.local',
+          port: 2200,
+          username: 'jump',
+        }),
+        sftpPresetsRemote: ['/var/log', '/opt/app'],
+        sftpPresetsLocal: ['/tmp'],
+        sshCommands: [
+          expect.objectContaining({
+            name: 'Deploy',
+            copyAndRunScript: true,
+            script: '#!/bin/sh\necho ok\n',
+          }),
+        ],
+      })
+    );
+  });
+
+  it('validates imported settings and reports malformed nested payloads', () => {
+    createPanel();
+    const manager = (DeviceManagerPanel as unknown as { currentPanel: unknown }).currentPanel as {
+      validateImportedSettings: (raw: unknown) => unknown;
+      validateGroups: (value: unknown, key: string) => unknown;
+      validateSshCommands: (value: unknown, key: string) => unknown;
+      validateOptionalPresetArray: (value: unknown, key: string) => unknown;
+      validateOptionalBastion: (value: unknown, key: string) => unknown;
+      readOptionalString: (value: unknown, key: string, allowBlank?: boolean) => string | undefined;
+      readOptionalBoolean: (value: unknown, key: string) => boolean | undefined;
+      readOptionalPositiveNumber: (value: unknown, key: string) => number | undefined;
+      requireStringValue: (value: unknown, key: string, allowBlank?: boolean) => string;
+      requireBooleanValue: (value: unknown, key: string) => boolean;
+      requirePositiveNumber: (value: unknown, key: string) => number;
+      normalizeSshCommands: (value: unknown) => unknown;
+    };
+    const validImport = {
+      'embeddedLogger.defaultPort': '22',
+      'embeddedLogger.defaultLogCommand': 'journalctl -f',
+      'embeddedLogger.defaultEnableSshTerminal': true,
+      'embeddedLogger.defaultEnableSftpExplorer': true,
+      'embeddedLogger.defaultEnableWebBrowser': false,
+      'embeddedLogger.defaultEnableEmbeddedWebBrowser': false,
+      'embeddedLogger.enableDevicePing': true,
+      'embeddedLogger.devicePingIntervalSeconds': '',
+      'embeddedLogger.defaultSshCommands': [{ name: 'Uptime', command: 'uptime' }],
+      'embeddedLogger.maxLinesPerTab': 1000,
+      'embeddedLogger.groups': [{ name: 'Lab' }],
+      'embeddedLogger.devices': [
+        {
+          id: 'device-a',
+          name: 'Device A',
+          host: '10.0.0.10',
+          username: 'root',
+          showDefaultSshCommands: true,
+          sftpPresetsRemote: ['/var/log'],
+        },
+      ],
+    };
+
+    expect(manager.validateImportedSettings(validImport)).toEqual(
+      expect.objectContaining({
+        groups: [{ name: 'Lab' }],
+        devices: [
+          expect.not.objectContaining({
+            showDefaultSshCommands: expect.anything(),
+          }),
+        ],
+      })
+    );
+
+    expect(() => manager.validateImportedSettings(null)).toThrow(
+      'The imported settings file must contain a JSON object.'
+    );
+    expect(() => manager.validateImportedSettings({})).toThrow(
+      'Imported settings are missing required key'
+    );
+    expect(() =>
+      manager.validateImportedSettings({ ...validImport, 'embeddedLogger.devices': 'bad' })
+    ).toThrow('embeddedLogger.devices must be an array.');
+    expect(() => manager.validateGroups('bad', 'groups')).toThrow(
+      'groups must be an array of group objects.'
+    );
+    expect(() => manager.validateGroups([null], 'groups')).toThrow('groups[0] must be an object.');
+    expect(() => manager.validateSshCommands('bad', 'commands')).toThrow(
+      'commands must be an array'
+    );
+    expect(() => manager.validateSshCommands([{}], 'commands')).toThrow(
+      'commands[0].name must be a string.'
+    );
+    expect(() =>
+      manager.validateSshCommands([{ name: 'Script', copyAndRunScript: true }], 'commands')
+    ).toThrow('commands[0].script is required when copyAndRunScript is enabled.');
+    expect(() => manager.validateOptionalPresetArray([1], 'presets')).toThrow(
+      'presets must be an array of strings.'
+    );
+    expect(() => manager.validateOptionalBastion('bad', 'bastion')).toThrow(
+      'bastion must be an object.'
+    );
+    expect(manager.readOptionalString('', 'key')).toBeUndefined();
+    expect(manager.readOptionalString('  ', 'key')).toBeUndefined();
+    expect(manager.readOptionalString('  ', 'key', true)).toBe('  ');
+    expect(() => manager.readOptionalString(1, 'key')).toThrow('key must be a string.');
+    expect(manager.readOptionalBoolean(undefined, 'flag')).toBeUndefined();
+    expect(() => manager.readOptionalBoolean('true', 'flag')).toThrow('flag must be a boolean.');
+    expect(manager.readOptionalPositiveNumber('', 'count')).toBeUndefined();
+    expect(() => manager.requireStringValue('', 'name')).toThrow('name is required.');
+    expect(() => manager.requireBooleanValue('false', 'flag')).toThrow('flag must be a boolean.');
+    expect(() => manager.requirePositiveNumber(0, 'port')).toThrow(
+      'port must be a number greater than or equal to 1.'
+    );
+    expect(() => manager.normalizeSshCommands('{bad json')).toThrow(
+      'SSH commands must be valid JSON'
+    );
+    expect(() => manager.normalizeSshCommands({})).toThrow('SSH commands must be an array.');
+    expect(() =>
+      manager.normalizeSshCommands([{ name: 'Deploy', copyAndRunScript: true }])
+    ).toThrow('SSH command at index 0 has copyAndRunScript enabled but no script.');
+  });
+
   it('saves a blank ping interval as null instead of forcing a default value', async () => {
     const panel = createPanel();
     const config = workspace.getConfiguration('embeddedLogger');

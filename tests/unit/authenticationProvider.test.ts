@@ -188,4 +188,72 @@ describe('AuthenticationProvider', () => {
       `Failed to read private key from ${path.resolve(path.join(os.homedir(), '.ssh/missing'))}: ENOENT`
     );
   });
+
+  it('resolves bastion password authentication and rejects missing bastion passwords', async () => {
+    const context = createExtensionContext();
+    const bastion: BastionConfig = {
+      host: 'jump.local',
+      username: 'jump',
+    };
+    const passwordManager = {
+      getPassword: vi.fn(async () => 'jump-password'),
+      getPassphrase: vi.fn(),
+    };
+    const provider = new AuthenticationProvider(baseDevice, context, {
+      passwordManager: passwordManager as never,
+    });
+
+    await expect(provider.getBastionAuthentication(bastion)).resolves.toEqual({
+      password: 'jump-password',
+    });
+    expect(passwordManager.getPassword).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'device-1-bastion',
+        host: 'jump.local',
+        username: 'jump',
+      }),
+      expect.objectContaining({ onPrompt: undefined })
+    );
+
+    const missingProvider = new AuthenticationProvider(baseDevice, context, {
+      passwordManager: {
+        getPassword: vi.fn(async () => ''),
+        getPassphrase: vi.fn(),
+      } as never,
+    });
+
+    await expect(missingProvider.getBastionAuthentication(bastion)).rejects.toThrow(
+      'Password or private key is required to connect to the bastion host.'
+    );
+  });
+
+  it('returns undefined passphrases for blank key prompts and wraps empty key files', async () => {
+    const context = createExtensionContext();
+    const passwordManager = {
+      getPassphrase: vi.fn(async () => ''),
+      getPassword: vi.fn(),
+    };
+    readFileMock.mockResolvedValueOnce(Buffer.from('KEY DATA'));
+    const provider = new AuthenticationProvider(
+      {
+        ...baseDevice,
+        privateKeyPath: '${env:MISSING_AUTH_KEY_DIR}/id_device',
+      },
+      context,
+      {
+        passwordManager: passwordManager as never,
+      }
+    );
+
+    await expect(provider.getDeviceAuthentication()).resolves.toEqual({
+      privateKey: Buffer.from('KEY DATA'),
+      passphrase: undefined,
+    });
+    expect(readFileMock).toHaveBeenCalledWith(path.resolve('/id_device'));
+
+    readFileMock.mockResolvedValueOnce(Buffer.alloc(0));
+    await expect(provider.getDeviceAuthentication()).rejects.toThrow(
+      'The private key file is empty.'
+    );
+  });
 });

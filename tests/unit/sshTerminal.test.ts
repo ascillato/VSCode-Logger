@@ -489,6 +489,36 @@ describe('SshTerminalSession', () => {
         }
       ).validateDeviceConfiguration()
     ).toBe('Device "Terminal Device" is missing a bastion host.');
+    expect(
+      (
+        new SshTerminalSession(
+          { ...baseDevice, bastion: { host: 'jump.local', username: ' ', port: 22 } },
+          context
+        ) as unknown as {
+          validateDeviceConfiguration: () => string | undefined;
+        }
+      ).validateDeviceConfiguration()
+    ).toBe('Device "Terminal Device" is missing a bastion username.');
+    expect(
+      (
+        new SshTerminalSession(
+          { ...baseDevice, bastion: { host: 'jump.local', username: 'jump', port: 0 } },
+          context
+        ) as unknown as {
+          validateDeviceConfiguration: () => string | undefined;
+        }
+      ).validateDeviceConfiguration()
+    ).toBe('Device "Terminal Device" has an invalid bastion port.');
+    expect(
+      (
+        new SshTerminalSession(
+          { ...baseDevice, bastion: { host: '', username: 'jump' } },
+          context
+        ) as unknown as {
+          getBastionConfig: () => unknown;
+        }
+      ).getBastionConfig()
+    ).toBeUndefined();
   });
 
   it('loads private keys and reports empty key files', async () => {
@@ -517,6 +547,88 @@ describe('SshTerminalSession', () => {
         process.env.SSH_TERMINAL_KEY_DIR = previousEnv;
       }
     }
+  });
+
+  it('returns private-key authentication for devices and bastion hosts', async () => {
+    const context = createExtensionContext();
+    fsMockState.readFile.mockResolvedValue(Buffer.from('PRIVATE KEY'));
+
+    const session = new SshTerminalSession(
+      {
+        ...baseDevice,
+        privateKeyPath: '/keys/id_device',
+        bastion: {
+          host: 'jump.local',
+          username: 'jump',
+          privateKeyPath: '/keys/id_jump',
+        },
+      },
+      context
+    ) as unknown as {
+      getAuthentication: () => Promise<{ privateKey?: Buffer; passphrase?: string }>;
+      getBastionConfig: () => { host: string; username: string; privateKeyPath?: string };
+      getBastionAuthentication: (bastion: {
+        host: string;
+        username: string;
+        privateKeyPath?: string;
+      }) => Promise<{ privateKey?: Buffer; passphrase?: string }>;
+    };
+
+    await expect(session.getAuthentication()).resolves.toEqual({
+      privateKey: Buffer.from('PRIVATE KEY'),
+      passphrase: undefined,
+    });
+    await expect(session.getBastionAuthentication(session.getBastionConfig())).resolves.toEqual({
+      privateKey: Buffer.from('PRIVATE KEY'),
+      passphrase: undefined,
+    });
+  });
+
+  it('retries secondary terminal endpoints and ignores duplicate close paths', async () => {
+    const context = createExtensionContext();
+    const closes = vi.fn();
+    const session = new SshTerminalSession(
+      { ...baseDevice, secondaryHost: 'backup.local' },
+      context
+    ) as SshTerminalSession & {
+      start: () => Promise<void>;
+      connect: ReturnType<typeof vi.fn>;
+      handleConnectionLost: () => void;
+      scheduleReconnect: () => void;
+      closed?: boolean;
+      userRequestedClose?: boolean;
+    };
+    session.onDidClose(closes);
+    session.connect = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('primary down'))
+      .mockResolvedValueOnce(undefined);
+
+    session.setDimensions({ columns: 90, rows: 30 });
+    await session.start();
+
+    expect(session.connect).toHaveBeenNthCalledWith(
+      1,
+      { host: 'device.local', fingerprint: undefined, label: 'primary' },
+      { password: 'mock-password' },
+      undefined,
+      undefined,
+      undefined
+    );
+    expect(session.connect).toHaveBeenNthCalledWith(
+      2,
+      { host: 'backup.local', fingerprint: undefined, label: 'secondary' },
+      { password: 'mock-password' },
+      undefined,
+      undefined,
+      undefined
+    );
+
+    session.close();
+    session.close();
+    session.handleConnectionLost();
+    session.scheduleReconnect();
+    expect(closes).toHaveBeenCalledOnce();
   });
 
   it('does not rerun the initial command on reconnect unless configured', async () => {
@@ -594,5 +706,110 @@ describe('SshTerminalSession', () => {
     await vi.advanceTimersByTimeAsync(5000);
 
     expect(sshMockState.clients).toHaveLength(0);
+  });
+
+  it('reports direct connection and shell setup failures', async () => {
+    const context = createExtensionContext();
+    const networkSession = new SshTerminalSession(baseDevice, context) as unknown as {
+      connect: (
+        endpoint: { host: string; label: 'primary' },
+        auth: { password: string }
+      ) => Promise<void>;
+    };
+
+    const networkPromise = networkSession.connect(
+      { host: 'device.local', label: 'primary' },
+      { password: 'secret' }
+    );
+    const networkClient = sshMockState.clients[0];
+    networkClient.emit('error', new Error('network down'));
+
+    await expect(networkPromise).rejects.toThrow('SSH error: network down');
+
+    const shellSession = new SshTerminalSession(baseDevice, context) as unknown as {
+      connect: (
+        endpoint: { host: string; label: 'primary' },
+        auth: { password: string }
+      ) => Promise<void>;
+    };
+    const shellPromise = shellSession.connect(
+      { host: 'device.local', label: 'primary' },
+      { password: 'secret' }
+    );
+    const shellClient = sshMockState.clients[1];
+    shellClient.shell.mockImplementationOnce((_options, callback) => {
+      callback(new Error('shell denied'), undefined as never);
+      return shellClient;
+    });
+
+    await expect(shellPromise).rejects.toThrow('shell denied');
+  });
+
+  it('reports bastion forwarding failures and normalizes tunnel errors', async () => {
+    const context = createExtensionContext();
+    const session = new SshTerminalSession(
+      {
+        ...baseDevice,
+        bastion: {
+          host: 'jump.local',
+          username: 'jump',
+        },
+      },
+      context
+    ) as unknown as {
+      connectThroughBastion: (
+        endpoint: { host: string; label: 'primary' },
+        auth: { password: string },
+        bastion: { host: string; username: string },
+        bastionAuth: { password: string }
+      ) => Promise<void>;
+    };
+
+    const forwardPromise = session.connectThroughBastion(
+      { host: 'device.local', label: 'primary' },
+      { password: 'device' },
+      { host: 'jump.local', username: 'jump' },
+      { password: 'jump' }
+    );
+    const bastionClient = sshMockState.clients[0];
+    bastionClient.forwardOut.mockImplementationOnce(
+      (_srcIp, _srcPort, _dstIp, _dstPort, callback) => {
+        callback(new Error('forward denied'), undefined as never);
+        return bastionClient;
+      }
+    );
+
+    await expect(forwardPromise).rejects.toThrow('forward denied');
+
+    const failingTunnelSession = new SshTerminalSession(
+      {
+        ...baseDevice,
+        bastion: {
+          host: 'jump.local',
+          username: 'jump',
+        },
+      },
+      context
+    ) as unknown as {
+      connectDirect: ReturnType<typeof vi.fn>;
+      connectThroughBastion: (
+        endpoint: { host: string; label: 'primary' },
+        auth: { password: string },
+        bastion: { host: string; username: string },
+        bastionAuth: { password: string }
+      ) => Promise<void>;
+    };
+    failingTunnelSession.connectDirect = vi.fn(() =>
+      Promise.reject(new Error('plain tunnel failure'))
+    );
+
+    await expect(
+      failingTunnelSession.connectThroughBastion(
+        { host: 'device.local', label: 'primary' },
+        { password: 'device' },
+        { host: 'jump.local', username: 'jump' },
+        { password: 'jump' }
+      )
+    ).rejects.toThrow('plain tunnel failure');
   });
 });

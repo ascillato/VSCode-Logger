@@ -108,4 +108,28 @@ describe('AutoSaveManager', () => {
     await expect(manager.stop()).resolves.toBe(true);
     await expect(manager.stop({ silent: true })).resolves.toBe(false);
   });
+
+  it('handles already-closed streams, non-Error stream failures, and inactive writes', async () => {
+    const stream = new MockWriteStream();
+    stream.closed = true;
+    createWriteStreamMock.mockReturnValue(stream);
+    const manager = new AutoSaveManager();
+    const onError = vi.fn();
+    const onStop = vi.fn();
+
+    manager.writeLine('ignored', onError, onStop);
+    expect(onError).not.toHaveBeenCalled();
+
+    await manager.start('/tmp/closed.log', onError, onStop);
+    await expect(manager.stop()).resolves.toBe(true);
+    expect(stream.end).not.toHaveBeenCalled();
+
+    const failingStream = new MockWriteStream();
+    createWriteStreamMock.mockReturnValue(failingStream);
+    await manager.start('/tmp/non-error.log', onError, onStop);
+    failingStream.emit('error', '');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(onError).toHaveBeenCalledWith('Auto-save failed.');
+  });
 });

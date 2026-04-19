@@ -369,4 +369,98 @@ describe('LogPanel (unit)', () => {
     remotePanel.dispose();
     localPanel.dispose();
   });
+
+  it('covers session callbacks, reconnect failures, dispose guards, and fallback messages', async () => {
+    const context = createExtensionContext();
+    const panel = new LogPanel(context, { type: 'remote', device }, () => undefined);
+    const webviewPanel = getCreatedWebviews()[0];
+    const postMessage = webviewPanel.webview.postMessage as unknown as vi.Mock;
+    const firstSession = logSessionInstances[0];
+
+    (firstSession.callbacks.onError as (message: string) => void)('stream failed');
+    (firstSession.callbacks.onStatus as (message: string) => void)('connecting');
+    expect(postMessage).toHaveBeenCalledWith({ type: 'error', message: 'stream failed' });
+    expect(postMessage).toHaveBeenCalledWith({ type: 'status', message: 'connecting' });
+
+    vi.spyOn(panel as never, 'createSession').mockReturnValueOnce({
+      start: vi.fn(() => Promise.reject(new Error('plain reconnect failure'))),
+      dispose: vi.fn(),
+    } as never);
+    webviewPanel.__fireMessage({ type: 'requestReconnect' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(postMessage).toHaveBeenCalledWith({
+      type: 'error',
+      message: 'plain reconnect failure',
+    });
+
+    expect(
+      (
+        panel as unknown as {
+          getErrorMessage: (err: unknown) => string;
+          formatTimestamp: (value: number) => string;
+          sanitizeLogLine: (line: string) => string;
+        }
+      ).getErrorMessage({ toString: () => 'object failure' })
+    ).toBe('object failure');
+    expect(
+      (
+        panel as unknown as {
+          formatTimestamp: (value: number) => string;
+        }
+      ).formatTimestamp(Number.NaN)
+    ).toEqual(expect.any(String));
+    expect(
+      (
+        panel as unknown as {
+          sanitizeLogLine: (line: string) => string;
+        }
+      ).sanitizeLogLine('')
+    ).toBe('');
+
+    panel.dispose();
+    panel.dispose();
+    webviewPanel.dispose();
+    expect(firstSession.dispose).toHaveBeenCalled();
+  });
+
+  it('covers export and source-file fallback error messages', async () => {
+    const context = createExtensionContext();
+    const panel = new LogPanel(
+      context,
+      {
+        type: 'local',
+        id: 'local-errors',
+        name: 'Local',
+        lines: [],
+        filePath: '/tmp/local-errors.log',
+      },
+      () => undefined
+    );
+    const webviewPanel = getCreatedWebviews()[0];
+
+    setSaveDialogResponse(undefined);
+    webviewPanel.__fireMessage({ type: 'exportLogs', lines: ['a'] });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(window.showInformationMessage).not.toHaveBeenCalledWith(
+      expect.stringContaining('Exported')
+    );
+
+    vi.spyOn(workspace.fs, 'writeFile').mockRejectedValueOnce('');
+    setSaveDialogResponse('/tmp/export-fails.log');
+    webviewPanel.__fireMessage({ type: 'exportLogs', lines: ['a'] });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(window.showErrorMessage).toHaveBeenCalledWith('Failed to export logs.');
+
+    vi.spyOn(workspace, 'openTextDocument').mockRejectedValueOnce('');
+    webviewPanel.__fireMessage({ type: 'openSourceFile' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(window.showErrorMessage).toHaveBeenCalledWith('Failed to open log file.');
+
+    vi.spyOn(workspace.fs, 'readFile').mockRejectedValueOnce('');
+    webviewPanel.__fireMessage({ type: 'refreshSourceFile' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(window.showErrorMessage).toHaveBeenCalledWith('Failed to read log file.');
+
+    panel.dispose();
+  });
 });

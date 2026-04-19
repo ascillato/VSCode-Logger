@@ -13,6 +13,7 @@ import {
   setInputBoxResponse,
   setWarningMessageResponse,
   window,
+  workspace,
 } from '../mocks/vscode';
 
 const device: EmbeddedDevice = {
@@ -164,5 +165,70 @@ describe('PasswordManager', () => {
 
     setWarningMessageResponse('Reuse saved passphrase');
     await expect(manager.getPassphrase(renamedUser)).resolves.toBe('key-secret');
+  });
+
+  it('handles declined legacy reuse, cancelled prompts, and malformed metadata', async () => {
+    const context = createExtensionContext();
+    const manager = new PasswordManager(context);
+
+    await context.secrets.store('embeddedLogger.password.device-1', 'legacy-secret');
+    setWarningMessageResponse('Enter a new password');
+    await expect(manager.getPassword(device)).resolves.toBeUndefined();
+    expect(getStoredSecrets(context).map((entry) => entry.key)).toContain(
+      'embeddedLogger.password.device-1'
+    );
+
+    await context.secrets.store(
+      'embeddedLogger.passwordMetadata.device-1',
+      JSON.stringify({
+        key: 'some-key',
+        host: device.host,
+        username: device.username,
+      })
+    );
+    await expect(manager.getPassword(device)).resolves.toBeUndefined();
+
+    const onPrompt = vi.fn();
+    await expect(
+      manager.getPassword({ ...device, id: 'new-device' }, { onPrompt })
+    ).resolves.toBeUndefined();
+    expect(onPrompt).toHaveBeenCalledOnce();
+  });
+
+  it('clears metadata-backed secrets and supports workspace-file scoped keys', async () => {
+    const context = createExtensionContext();
+    const manager = new PasswordManager(context);
+    const originalWorkspaceFile = workspace.workspaceFile;
+    const originalWorkspaceFolders = workspace.workspaceFolders;
+    const originalName = workspace.name;
+
+    workspace.workspaceFile = {
+      fsPath: '/workspace/project.code-workspace',
+      toString: () => 'file:///workspace/project.code-workspace',
+    } as never;
+    workspace.workspaceFolders = undefined;
+    workspace.name = undefined;
+
+    try {
+      await manager.storePassword(device, 'workspace-file-secret');
+      const storedBeforeClear = getStoredSecrets(context);
+      const secretKey = storedBeforeClear.find(
+        (entry) => entry.value === 'workspace-file-secret'
+      )?.key;
+      expect(secretKey).toMatch(derivedPasswordKeyPattern);
+
+      await context.secrets.store('embeddedLogger.passphrase.device-1', 'legacy-passphrase');
+      await manager.clearPassword(device.id);
+
+      const keys = getStoredSecrets(context).map((entry) => entry.key);
+      expect(keys).not.toContain(secretKey);
+      expect(keys).not.toContain('embeddedLogger.passwordMetadata.device-1');
+      expect(keys).not.toContain('embeddedLogger.passphrase.device-1');
+      expect(keys).not.toContain('embeddedLogger.passphraseMetadata.device-1');
+    } finally {
+      workspace.workspaceFile = originalWorkspaceFile;
+      workspace.workspaceFolders = originalWorkspaceFolders;
+      workspace.name = originalName;
+    }
   });
 });

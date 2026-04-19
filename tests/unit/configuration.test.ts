@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('vscode', () => import('../mocks/vscode'));
 
 import {
+  getEmbeddedLoggerDeviceConfigurationScopes,
   getEmbeddedLoggerConfiguration,
   getEmbeddedLoggerGroups,
   mergeSftpPresets,
@@ -146,6 +147,14 @@ describe('configuration', () => {
 
     expect(config.enableDevicePing).toBe(true);
     expect(config.devicePingIntervalSeconds).toBe(15);
+
+    await workspace.getConfiguration('embeddedLogger').update('devicePingIntervalSeconds', 0);
+    expect(getEmbeddedLoggerConfiguration().devicePingIntervalSeconds).toBeUndefined();
+
+    await workspace
+      .getConfiguration('embeddedLogger')
+      .update('devicePingIntervalSeconds', Number.NaN);
+    expect(getEmbeddedLoggerConfiguration().devicePingIntervalSeconds).toBeUndefined();
   });
 
   it('normalizes groups, device defaults, SFTP presets, and SSH command definitions', async () => {
@@ -225,6 +234,99 @@ describe('configuration', () => {
         ],
       })
     );
+  });
+
+  it('preserves disabled defaults and filters malformed group and command values', async () => {
+    const config = workspace.getConfiguration('embeddedLogger');
+    await config.update('groups', 'not-an-array');
+    await config.update('defaultPort', 0);
+    await config.update('defaultEnableSshTerminal', false);
+    await config.update('defaultEnableSftpExplorer', false);
+    await config.update('defaultEnableWebBrowser', false);
+    await config.update('defaultEnableEmbeddedWebBrowser', false);
+    await config.update('defaultSshCommands', 'not-an-array');
+    await config.update('devices', [
+      {
+        id: 'device-a',
+        name: 'Device A',
+        host: '10.0.0.1',
+        username: 'root',
+        sshCommands: [
+          [],
+          { name: 'No rerun', command: 'uptime', openSshPanel: false, rerunOnReconnection: true },
+        ],
+      },
+    ] satisfies EmbeddedDevice[]);
+
+    const resolved = getEmbeddedLoggerConfiguration();
+
+    expect(getEmbeddedLoggerGroups()).toEqual([]);
+    expect(resolved.devices[0]).toEqual(
+      expect.objectContaining({
+        port: 22,
+        enableSshTerminal: false,
+        enableSftpExplorer: false,
+        enableWebBrowser: false,
+        enableEmbeddedWebBrowser: false,
+        sshCommands: [
+          expect.objectContaining({
+            name: 'No rerun',
+            openSshPanel: undefined,
+            rerunOnReconnection: undefined,
+          }),
+        ],
+      })
+    );
+  });
+
+  it('reports workspace, folder, and global device configuration scopes', async () => {
+    const originalFolders = workspace.workspaceFolders;
+    const originalGetConfiguration = workspace.getConfiguration;
+    const folderDevices = [
+      { id: 'folder-device', name: 'Folder', host: 'folder.local', username: 'root' },
+    ] satisfies EmbeddedDevice[];
+    const workspaceDevices = [
+      { id: 'workspace-device', name: 'Workspace', host: 'workspace.local', username: 'root' },
+    ] satisfies EmbeddedDevice[];
+    const globalDevices = [
+      { id: 'global-device', name: 'Global', host: 'global.local', username: 'root' },
+    ] satisfies EmbeddedDevice[];
+    const folderConfig = {
+      inspect: vi.fn(() => ({ workspaceFolderValue: folderDevices })),
+      update: vi.fn(),
+    };
+    const rootConfig = {
+      inspect: vi.fn(() => ({
+        workspaceValue: workspaceDevices,
+        globalValue: globalDevices,
+      })),
+      update: vi.fn(),
+    };
+
+    workspace.workspaceFolders = [
+      {
+        uri: {
+          fsPath: '/workspace/project',
+          toString: () => 'file:///workspace/project',
+        },
+      },
+    ] as typeof workspace.workspaceFolders;
+    workspace.getConfiguration = vi.fn((_section: string, resource?: unknown) =>
+      resource ? folderConfig : rootConfig
+    ) as typeof workspace.getConfiguration;
+
+    try {
+      const scopes = getEmbeddedLoggerDeviceConfigurationScopes();
+
+      expect(scopes.map((scope) => scope.devices[0]?.id)).toEqual([
+        'folder-device',
+        'workspace-device',
+        'global-device',
+      ]);
+    } finally {
+      workspace.workspaceFolders = originalFolders;
+      workspace.getConfiguration = originalGetConfiguration;
+    }
   });
 
   it('sanitizes and merges SFTP presets with duplicate and limit handling', () => {

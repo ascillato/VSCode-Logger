@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
-## [1.9.8] - UNRELEASED [PASSWORDS-IMPROVEMENTS]
+## [1.9.8] - 2026-04-20 [PASSWORDS-IMPROVEMENTS]
 
 ### Added
 - More unit tests.
@@ -29,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
-## [1.9.7] - UNRELEASED [DOC-IMPROVEMENTS]
+## [1.9.7] - 2026-04-18 [DOC-IMPROVEMENTS]
 
 ### Added
 - None.

@@ -1211,6 +1211,18 @@ describe('SftpExplorerPanel', () => {
     const explorer = panel as unknown as {
       remoteHome?: string;
       openTerminal: (location: 'remote' | 'local', directoryPath: string) => Promise<void>;
+      deleteEntries: (location: 'remote' | 'local', paths: string[]) => Promise<string>;
+      applyPermissionsBatch: (
+        location: 'remote' | 'local',
+        paths: string[],
+        mode: number
+      ) => Promise<string>;
+      refreshAfterMutation: (
+        location: 'remote' | 'local',
+        refreshDir: string,
+        requestId: string
+      ) => Promise<void>;
+      listAndPost: ReturnType<typeof vi.fn>;
     };
     explorer.remoteHome = '/';
     const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'sftp-terminal-test-'));
@@ -1234,10 +1246,26 @@ describe('SftpExplorerPanel', () => {
           pty: expect.any(Object),
         })
       );
+      await explorer.openTerminal('remote', '');
+      await explorer.openTerminal('local', '');
+      expect(window.createTerminal).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: `Local: ${path.basename(os.homedir()) || os.homedir()}`,
+          cwd: os.homedir(),
+        })
+      );
 
       await expect(explorer.openTerminal('local', file)).rejects.toThrow(
         `Target path is not a directory: ${file}`
       );
+
+      await expect(explorer.deleteEntries('local', [])).resolves.toBe(os.homedir());
+      await expect(explorer.applyPermissionsBatch('local', [], 0o644)).resolves.toBe(os.homedir());
+      explorer.listAndPost = vi.fn(async () => undefined);
+      await explorer.refreshAfterMutation('remote', '/alpha', 'rightRemote');
+      await explorer.refreshAfterMutation('local', folder, 'custom');
+      expect(explorer.listAndPost).toHaveBeenCalledWith('remote', '/alpha', 'rightRemote', 'right');
+      expect(explorer.listAndPost).toHaveBeenCalledWith('local', folder, 'custom', undefined);
     } finally {
       panel.dispose();
       await fs.rm(tempDir, { recursive: true, force: true });
@@ -1941,6 +1969,12 @@ describe('SftpExplorerPanel', () => {
         group?: number | string
       ) => Promise<{ owner?: number; group?: number }>;
       execRemoteCommand: (command: string) => Promise<string>;
+      searchAndPost: (
+        location: 'remote' | 'local',
+        basePath: string,
+        options: Record<string, unknown>,
+        requestId: 'remote' | 'local' | 'rightRemote'
+      ) => Promise<void>;
     };
     const sftp = new MemorySftp();
     explorer.sftp = sftp;
@@ -2045,6 +2079,42 @@ describe('SftpExplorerPanel', () => {
       'Names may only include letters, numbers, underscore, dash, or dot.'
     );
 
+    explorer.client = {
+      exec: (_command, callback) => {
+        const stream = new Readable({ read: () => undefined }) as Readable & {
+          stderr: Readable;
+          emit: (event: string, ...args: unknown[]) => boolean;
+        };
+        stream.stderr = new Readable({ read: () => undefined });
+        callback(undefined, stream);
+        queueMicrotask(() => {
+          stream.emit('exit', 2);
+          stream.emit('close');
+        });
+      },
+      end: vi.fn(),
+    };
+    await expect(explorer.execRemoteCommand('bad')).rejects.toThrow('Command exited with code 2');
+
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'sftp-search-and-post-'));
+    try {
+      await fs.writeFile(path.join(tempDir, 'one.txt'), 'one');
+      await explorer.searchAndPost(
+        'local',
+        tempDir,
+        { name: 'one', includeSubdirectories: false },
+        'local'
+      );
+      expect(
+        getCreatedWebviews()[0].webview.postMessage as unknown as vi.Mock
+      ).toHaveBeenCalledWith({
+        type: 'status',
+        message: `Found 1 file from ${tempDir}.`,
+      });
+    } finally {
+      await fs.rm(tempDir, { recursive: true, force: true });
+    }
+
     panel.dispose();
   });
 
@@ -2139,6 +2209,343 @@ describe('SftpExplorerPanel', () => {
         'Unable to change owner or group because current identifiers are unavailable.'
       );
       getEntryStatsSpy.mockRestore();
+    } finally {
+      panel.dispose();
+      await fs.rm(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it('covers additional test-mode message branches and search filtering paths', async () => {
+    const panel = createExplorer();
+    const webviewPanel = getCreatedWebviews()[0];
+    const postMessage = webviewPanel.webview.postMessage as unknown as vi.Mock;
+    const explorer = panel as unknown as {
+      collectTestSearchEntries: (
+        basePath: string,
+        options: Record<string, unknown>
+      ) => Array<{ fullPath?: string; relativePath?: string }>;
+      handleTestMessage: (message: Record<string, unknown>) => boolean;
+    };
+
+    expect(
+      explorer.collectTestSearchEntries('/alpha', {
+        name: 'nested',
+        includeSubdirectories: true,
+        content: 'nested alpha',
+        contentCaseSensitive: true,
+      })
+    ).toEqual([
+      expect.objectContaining({
+        fullPath: '/alpha/alpha-sub/nested.txt',
+        relativePath: 'alpha-sub/nested.txt',
+      }),
+    ]);
+    expect(
+      explorer.collectTestSearchEntries('/alpha', {
+        name: 'missing',
+        includeSubdirectories: true,
+      })
+    ).toEqual([]);
+    expect(
+      explorer.collectTestSearchEntries('/alpha', {
+        content: 'MISSING',
+        includeSubdirectories: true,
+        contentCaseSensitive: true,
+      })
+    ).toEqual([]);
+
+    const ignoredMessages = [
+      { type: 'deleteEntry', location: 'remote', path: '/alpha', requestId: 'remote' },
+      { type: 'deleteEntries', location: 'remote', paths: ['/alpha'], requestId: 'remote' },
+      { type: 'renameEntry', location: 'remote', path: '/a', newName: 'b', requestId: 'remote' },
+      { type: 'duplicateEntry', location: 'remote', path: '/a', requestId: 'remote' },
+      { type: 'createDirectory', location: 'remote', path: '/', name: 'x', requestId: 'remote' },
+      { type: 'createFile', location: 'remote', path: '/', name: 'x', requestId: 'remote' },
+      {
+        type: 'copyEntry',
+        from: { location: 'remote', path: '/a' },
+        toDirectory: { location: 'local', path: '/tmp' },
+        requestId: 'local',
+      },
+      {
+        type: 'copyEntries',
+        items: [{ location: 'remote', path: '/a' }],
+        toDirectory: { location: 'local', path: '/tmp' },
+        requestId: 'local',
+      },
+      {
+        type: 'updatePermissions',
+        location: 'remote',
+        path: '/a',
+        mode: 0o644,
+        requestId: 'remote',
+      },
+      {
+        type: 'updatePermissionsBatch',
+        location: 'remote',
+        paths: ['/a'],
+        mode: 0o644,
+        requestId: 'remote',
+      },
+      { type: 'runEntry', location: 'remote', path: '/a', requestId: 'remote' },
+      { type: 'viewContent', location: 'remote', path: '/a' },
+      { type: 'openTerminal', location: 'remote', path: '/a' },
+      { type: 'requestConfirmation', message: 'Continue?', requestId: 'confirm' },
+    ];
+
+    for (const message of ignoredMessages) {
+      expect(explorer.handleTestMessage(message)).toBe(true);
+    }
+    expect(explorer.handleTestMessage({ type: 'requestInit' })).toBe(false);
+    expect(postMessage).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'error' }));
+
+    panel.dispose();
+  });
+
+  it('covers SFTP snapshot, lookup, and lifecycle error branches', async () => {
+    const panel = createProductionExplorer();
+    const webviewPanel = getCreatedWebviews()[0];
+    const postMessage = webviewPanel.webview.postMessage as unknown as vi.Mock;
+    const explorer = panel as unknown as {
+      sftp?: MemorySftp;
+      sftpReady?: Promise<MemorySftp>;
+      hasEverConnected?: boolean;
+      remoteHome?: string;
+      remotePaths: { left?: string; right?: string };
+      viewedTempFiles: Map<string, { remotePath: string }>;
+      ensureSftp: () => Promise<MemorySftp>;
+      createSftpConnection: ReturnType<typeof vi.fn>;
+      buildSearchEntries: (
+        location: 'remote' | 'local',
+        basePath: string,
+        output: string
+      ) => Promise<Array<{ fullPath: string; relativePath: string; modified?: number }>>;
+      buildSearchSnapshot: (
+        location: 'remote' | 'local',
+        search: { basePath: string; command: string; options: Record<string, unknown> },
+        context?: 'left' | 'right'
+      ) => Promise<unknown>;
+      buildSnapshot: (
+        location: 'remote' | 'local',
+        dirPath: string,
+        context?: 'left' | 'right'
+      ) => Promise<{ path: string }>;
+      getRemoteHome: () => Promise<string>;
+      getEntryStats: (location: 'remote' | 'local', targetPath: string) => Promise<Stats>;
+      resolveOwnerGroupIds: (
+        location: 'remote' | 'local',
+        owner?: number | string,
+        group?: number | string
+      ) => Promise<{ owner?: number; group?: number }>;
+      applyMode: (location: 'remote' | 'local', targetPath: string, mode?: number) => Promise<void>;
+      refreshRemoteViewsAfterReconnect: () => Promise<void>;
+      searchAndPost: ReturnType<typeof vi.fn>;
+      listAndPost: ReturnType<typeof vi.fn>;
+      cleanupTempFiles: () => Promise<void>;
+      startReconnectCountdown: () => void;
+      handleDisconnect: () => void;
+      updateConnectionStatus: (
+        state: 'connected' | 'disconnected' | 'reconnecting',
+        countdownSeconds?: number,
+        overrideMessage?: string
+      ) => void;
+    };
+    const sftp = new MemorySftp();
+    explorer.sftp = sftp;
+
+    const getEntryStatsSpy = vi
+      .spyOn(explorer, 'getEntryStats' as never)
+      .mockImplementation(async (_location: 'remote' | 'local', targetPath: string) => {
+        if (targetPath.endsWith('dir')) {
+          return {
+            isFile: () => false,
+            isDirectory: () => true,
+            size: 0,
+            mode: 0o755,
+          };
+        }
+        if (targetPath.endsWith('date.txt')) {
+          return {
+            isFile: () => true,
+            isDirectory: () => false,
+            size: 10,
+            mode: 0o644,
+            mtime: new Date('2025-01-01T00:00:00Z'),
+          };
+        }
+        return {
+          isFile: () => true,
+          isDirectory: () => false,
+          size: 20,
+          mode: 0o755,
+          mtimeMs: undefined,
+          mtime: undefined,
+        };
+      });
+
+    await expect(
+      explorer.buildSearchEntries('remote', '/base', './date.txt\n./dir\n./plain.txt\n')
+    ).resolves.toEqual([
+      expect.objectContaining({
+        fullPath: '/base/date.txt',
+        relativePath: 'date.txt',
+        modified: Date.parse('2025-01-01T00:00:00Z'),
+      }),
+      expect.objectContaining({
+        fullPath: '/base/plain.txt',
+        relativePath: 'plain.txt',
+        modified: undefined,
+      }),
+    ]);
+    getEntryStatsSpy.mockRestore();
+
+    await expect(explorer.buildSnapshot('remote', '', 'left')).resolves.toEqual(
+      expect.objectContaining({ path: '/' })
+    );
+    expect(explorer.remotePaths.left).toBe('/');
+
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: String.fromCharCode(97, 105, 120) });
+    try {
+      await expect(
+        explorer.buildSearchSnapshot('local', {
+          basePath: os.homedir(),
+          command: '',
+          options: {},
+        })
+      ).rejects.toThrow('Local file search is only supported');
+    } finally {
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    }
+
+    explorer.sftp = undefined;
+    explorer.sftpReady = Promise.resolve(sftp);
+    await expect(explorer.ensureSftp()).resolves.toBe(sftp);
+    explorer.sftp = undefined;
+    explorer.sftpReady = undefined;
+    explorer.createSftpConnection = vi.fn(async () => sftp);
+    await expect(explorer.ensureSftp()).resolves.toBe(sftp);
+    expect(explorer.hasEverConnected).toBe(true);
+
+    const brokenHome = new MemorySftp();
+    brokenHome.realpath = (_pathValue, callback) => callback(undefined, undefined);
+    explorer.sftp = brokenHome;
+    explorer.remoteHome = undefined;
+    await expect(explorer.getRemoteHome()).rejects.toThrow(
+      'Unable to resolve remote home directory.'
+    );
+
+    sftp.stat = (_targetPath, callback) => callback(undefined, undefined);
+    explorer.sftp = sftp;
+    await expect(explorer.getEntryStats('remote', '/missing')).rejects.toThrow(
+      'Unable to read remote file information.'
+    );
+
+    explorer.searchAndPost = vi.fn(async () => undefined);
+    explorer.listAndPost = vi.fn(async () => undefined);
+    explorer.remoteHome = '/';
+    explorer.remotePaths = { left: '/same', right: '/same' };
+    await explorer.refreshRemoteViewsAfterReconnect();
+    expect(explorer.listAndPost).toHaveBeenCalledWith('remote', '/same', 'remote', 'left');
+    expect(explorer.listAndPost).toHaveBeenCalledTimes(1);
+
+    await expect(
+      explorer.resolveOwnerGroupIds('remote', undefined, 'missing_group')
+    ).rejects.toThrow('Unable to resolve group name "missing_group".');
+    await expect(explorer.applyMode('remote', '/script.sh', undefined)).resolves.toBeUndefined();
+
+    explorer.updateConnectionStatus('disconnected');
+    expect(postMessage).toHaveBeenCalledWith({
+      type: 'connectionStatus',
+      state: 'disconnected',
+      countdownSeconds: undefined,
+      message: 'Disconnected. Reconnecting…',
+    });
+
+    explorer.viewedTempFiles.set('/tmp/does-not-exist-sftp-test', { remotePath: '/script.sh' });
+    await expect(explorer.cleanupTempFiles()).resolves.toBeUndefined();
+
+    panel.dispose();
+  });
+
+  it('routes SFTP endpoint connections and skips dot entries during directory downloads', async () => {
+    const panel = createProductionExplorer();
+    const explorer = panel as unknown as {
+      sftp?: {
+        readdir: (
+          dirPath: string,
+          callback: (err: Error | undefined, items?: unknown[]) => void
+        ) => void;
+      };
+      connectThroughBastion: ReturnType<typeof vi.fn>;
+      connectDirect: ReturnType<typeof vi.fn>;
+      connectToEndpoint: (
+        endpoint: { host: string; label: 'primary' },
+        auth: { password: string },
+        expectedFingerprint?: { display: string; hex: string },
+        bastion?: { host: string; username: string },
+        bastionAuth?: { password: string },
+        expectedBastionFingerprint?: { display: string; hex: string }
+      ) => Promise<MemorySftp>;
+      downloadDirectory: (
+        remoteSource: string,
+        localDestination: string,
+        mode?: number
+      ) => Promise<void>;
+      downloadFile: ReturnType<typeof vi.fn>;
+      applyMode: ReturnType<typeof vi.fn>;
+    };
+    const sftp = new MemorySftp();
+    explorer.connectThroughBastion = vi.fn(async () => sftp);
+    explorer.connectDirect = vi.fn(async () => sftp);
+
+    await expect(
+      explorer.connectToEndpoint(
+        { host: 'device.local', label: 'primary' },
+        { password: 'device' },
+        undefined,
+        { host: 'jump.local', username: 'jump' },
+        { password: 'jump' }
+      )
+    ).resolves.toBe(sftp);
+    expect(explorer.connectThroughBastion).toHaveBeenCalledWith(
+      { host: 'device.local', label: 'primary' },
+      { password: 'device' },
+      undefined,
+      { host: 'jump.local', username: 'jump' },
+      { password: 'jump' },
+      undefined
+    );
+
+    await expect(
+      explorer.connectToEndpoint({ host: 'device.local', label: 'primary' }, { password: 'device' })
+    ).resolves.toBe(sftp);
+    expect(explorer.connectDirect).toHaveBeenCalledWith(
+      { host: 'device.local', label: 'primary' },
+      { password: 'device' },
+      undefined
+    );
+
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'sftp-dot-download-'));
+    explorer.sftp = {
+      readdir: (_dirPath, callback) =>
+        callback(undefined, [
+          { filename: '.', attrs: { isDirectory: () => true, mode: 0o755 } },
+          { filename: '..', attrs: { isDirectory: () => true, mode: 0o755 } },
+          { filename: 'plain.txt', attrs: { isDirectory: () => false, mode: 0o644 } },
+        ]),
+    };
+    explorer.downloadFile = vi.fn(async () => undefined);
+    explorer.applyMode = vi.fn(async () => undefined);
+
+    try {
+      await explorer.downloadDirectory('/remote', path.join(tempDir, 'downloaded'), 0o755);
+      expect(explorer.downloadFile).toHaveBeenCalledTimes(1);
+      expect(explorer.downloadFile).toHaveBeenCalledWith(
+        '/remote/plain.txt',
+        path.join(tempDir, 'downloaded', 'plain.txt'),
+        0o644
+      );
     } finally {
       panel.dispose();
       await fs.rm(tempDir, { recursive: true, force: true });

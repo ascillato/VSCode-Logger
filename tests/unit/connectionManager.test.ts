@@ -389,4 +389,62 @@ describe('ConnectionManager', () => {
         error.received === 'SHA256:new'
     );
   });
+
+  it('falls back to direct connections without bastion authentication and normalizes non-Error tunnel failures', async () => {
+    const stream = new MockSshChannel();
+    const client = createMockClient();
+    vi.spyOn(client, 'exec').mockImplementation((_command, callback) => {
+      callback(undefined, stream as never);
+      return client;
+    });
+    const callbacks = {
+      onStatus: vi.fn(),
+      onError: vi.fn(),
+      onClose: vi.fn(),
+    };
+    const hostVerifier = {
+      getExpectedFingerprint: vi.fn(() => undefined),
+      reset: vi.fn(),
+      verify: vi.fn(() => true),
+      getLastSeen: vi.fn(() => undefined),
+      getFailure: vi.fn(() => undefined),
+    };
+    const manager = new ConnectionManager(
+      callbacks,
+      { persistIfMissing: vi.fn(async () => undefined) } as never,
+      hostVerifier as never,
+      {
+        createClient: () => client as never,
+        createForwardingClient: () => createMockClient() as never,
+      }
+    );
+
+    await expect(
+      manager.connect({
+        endpoint,
+        authentication,
+        logCommand: 'tail -f /var/log/syslog',
+        device: { ...baseDevice, port: undefined },
+        bastion: { host: 'jump.local', username: 'jump' },
+      })
+    ).resolves.toEqual({ client, stream });
+    expect(client.lastConnectConfig).toEqual(
+      expect.objectContaining({ host: 'device.local', port: 22 })
+    );
+
+    expect(
+      (
+        manager as unknown as {
+          normalizeError: (err: unknown, fallbackMessage: string) => Error;
+        }
+      ).normalizeError('plain failure', 'fallback').message
+    ).toBe('plain failure');
+    expect(
+      (
+        manager as unknown as {
+          normalizeError: (err: unknown, fallbackMessage: string) => Error;
+        }
+      ).normalizeError(undefined, 'fallback').message
+    ).toBe('fallback');
+  });
 });

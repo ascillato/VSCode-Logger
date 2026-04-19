@@ -110,4 +110,48 @@ describe('FingerprintPersistence', () => {
 
     expect(updateSpy).not.toHaveBeenCalled();
   });
+
+  it('chooses available configuration scopes and preserves bastion data without a provider value', async () => {
+    resetWorkspaceConfiguration();
+    const config = workspace.getConfiguration('embeddedLogger');
+    vi.spyOn(config, 'inspect').mockReturnValueOnce({
+      key: 'devices',
+      defaultValue: [{ ...baseDevice }],
+      globalValue: [{ ...baseDevice }],
+    } as never);
+    const updateSpy = vi.spyOn(config, 'update');
+    const device = { ...baseDevice };
+    const persistence = new FingerprintPersistence(
+      device,
+      createExtensionContext(),
+      () => undefined
+    );
+    const bastionEndpoint = { host: 'bastion.local', label: 'bastion' as const };
+
+    await persistence.updateDeviceHostFingerprint('SHA256:bastion', bastionEndpoint);
+
+    expect(updateSpy).toHaveBeenCalledWith(
+      'devices',
+      [expect.objectContaining({ bastion: baseDevice.bastion })],
+      ConfigurationTarget.Global
+    );
+    expect(device.bastion).toEqual(baseDevice.bastion);
+    expect(bastionEndpoint.fingerprint).toBe('SHA256:bastion');
+
+    vi.spyOn(config, 'inspect').mockReturnValueOnce({
+      key: 'devices',
+      defaultValue: [{ ...baseDevice }],
+      workspaceFolderValue: [{ ...baseDevice }],
+    } as never);
+    await persistence.updateDeviceHostFingerprint('SHA256:primary-folder', {
+      host: 'device.local',
+      label: 'primary',
+    });
+
+    expect(updateSpy).toHaveBeenLastCalledWith(
+      'devices',
+      [expect.objectContaining({ hostFingerprint: 'SHA256:primary-folder' })],
+      ConfigurationTarget.WorkspaceFolder
+    );
+  });
 });
