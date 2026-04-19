@@ -4,7 +4,7 @@
  * @packageDocumentation
  */
 
-import { createHash } from 'crypto';
+import { pbkdf2Sync } from 'crypto';
 import * as vscode from 'vscode';
 import type { EmbeddedDevice } from './deviceTree';
 
@@ -334,6 +334,12 @@ export class PasswordManager {
   }
 
   private hashValue(value: string): string {
-    return createHash('sha256').update(value).digest('hex');
+    return pbkdf2Sync(
+      value,
+      'password-manager-key-derivation-v1',
+      210_000,
+      32,
+      'sha256'
+    ).toString('hex');
   }
 }
