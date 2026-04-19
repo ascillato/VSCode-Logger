@@ -96,17 +96,19 @@ Coverage is collected by Vitest with the V8 provider using the configuration in 
 Current coverage settings:
 
 - include `src/**/*.ts`
-- exclude tests, generated output, docs, and dependency directories
+- exclude tests, generated output, docs, dependency directories, declaration files, and type-only modules
 - generate `text`, `json-summary`, and `lcov` reports
+
+The coverage goal is at least 80% per runtime source file. Type-only files such as `.d.ts` files and `src/**/types.ts` are excluded because they do not emit executable runtime code and cannot be meaningfully covered by tests.
 
 Running `npm run test:coverage` produces artifacts under `coverage/`, including:
 
 - `coverage/coverage-summary.json`
 - `coverage/lcov.info`
 
-Running `npm run coverage:report` converts the JSON summary into the Markdown report at `docs/source/_generated/coverage-report.md`, which is then consumed by the documentation site.
+Running `npm run coverage:report` converts the JSON summary into the Markdown report at `docs/source/_generated/coverage-report.md`, which is then consumed by the documentation site. The generated report includes coverage percentage spans that the documentation theme can style as low, medium, or high coverage.
 
-If `python` is not available in `PATH`, the coverage script falls back to `python3` first:
+The coverage report command tries `python3` first and then falls back to `python`:
 
 ```bash
 python3 docs/source/coverage_report.py || python docs/source/coverage_report.py

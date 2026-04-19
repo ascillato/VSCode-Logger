@@ -8,6 +8,16 @@ from typing import Any, Iterable
 _COVERAGE_METRICS = ("lines", "statements", "functions", "branches")
 
 
+def _coverage_class(percentage: float) -> str:
+    """Return the coverage status class for a percentage value."""
+
+    if percentage < 50:
+        return "coverage-pct--low"
+    if percentage < 80:
+        return "coverage-pct--medium"
+    return "coverage-pct--high"
+
+
 def _format_table(
     headers: list[str],
     rows: list[list[str]],
@@ -41,7 +51,12 @@ def _format_coverage_cell(stat: Any) -> str:
             if isinstance(percentage, (int, float))
             else (covered / total * 100 if total else 0.0)
         )
-        return f"{pct_value:.1f}% ({int(covered)}/{int(total)})"
+        pct_text = f"{pct_value:.1f}%"
+        pct_class = _coverage_class(pct_value)
+        return (
+            f'<span class="coverage-pct {pct_class}">{pct_text}</span> '
+            f"({int(covered)}/{int(total)})"
+        )
 
     return "—"
 

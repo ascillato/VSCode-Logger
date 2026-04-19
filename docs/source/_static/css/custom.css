@@ -32,3 +32,19 @@ table.align-default th {
   height: 100%;
   width: 100%;
 }
+
+.coverage-pct {
+  font-weight: 700;
+}
+
+.coverage-pct--low {
+  color: #d73a49;
+}
+
+.coverage-pct--medium {
+  color: #b7791f;
+}
+
+.coverage-pct--high {
+  color: #22863a;
+}
