@@ -224,7 +224,11 @@ describe('SshTerminalSession', () => {
       ' tail -f /var/log/syslog '
     );
 
-    session.onDidWrite((value) => writes.push(value));
+    session.onDidWrite((value: unknown) => {
+      if (typeof value === 'string') {
+        writes.push(value);
+      }
+    });
     session.onDidClose(closes);
 
     session.open({ columns: 100, rows: 40 });
@@ -317,7 +321,11 @@ describe('SshTerminalSession', () => {
     const writes: string[] = [];
     const session = new SshTerminalSession(baseDevice, context, undefined, 'top', true);
 
-    session.onDidWrite((value) => writes.push(value));
+    session.onDidWrite((value: unknown) => {
+      if (typeof value === 'string') {
+        writes.push(value);
+      }
+    });
 
     session.open({ columns: 80, rows: 24 });
     await flushAsync();
@@ -387,6 +395,204 @@ describe('SshTerminalSession', () => {
       'Workspace trust is required before connecting to devices.'
     );
     expect(closes).toHaveBeenCalledOnce();
+    expect(sshMockState.clients).toHaveLength(0);
+  });
+
+  it('validates device configuration and helper methods directly', async () => {
+    const context = createExtensionContext();
+    const session = new SshTerminalSession(
+      {
+        ...baseDevice,
+        bastion: {
+          host: ' jump.local ',
+          username: ' jump ',
+          privateKeyPath: ' ~/.ssh/id_jump ',
+        },
+      },
+      context
+    ) as unknown as {
+      validateDeviceConfiguration: () => string | undefined;
+      getBastionConfig: () => {
+        host: string;
+        username: string;
+        port: number;
+        privateKeyPath?: string;
+      };
+      getBastionDevice: (bastion: { host: string; username: string }) => EmbeddedDevice;
+      quotePath: (value: string) => string;
+      normalizeInitialCommand: (value: string | undefined) => string | undefined;
+      isExitCommand: (value: string) => boolean;
+      isCleanExit: (code?: number | null, signal?: string | null) => boolean;
+      getErrorMessage: (err: unknown) => string;
+      toError: (err: unknown, fallbackMessage: string) => Error;
+    };
+
+    expect(session.validateDeviceConfiguration()).toBeUndefined();
+    expect(session.getBastionConfig()).toEqual(
+      expect.objectContaining({
+        host: 'jump.local',
+        username: 'jump',
+        port: 22,
+        privateKeyPath: '~/.ssh/id_jump',
+      })
+    );
+    expect(session.getBastionDevice({ host: 'jump.local', username: 'jump' })).toEqual(
+      expect.objectContaining({
+        id: 'device-1-bastion',
+        name: 'Terminal Device bastion',
+        host: 'jump.local',
+        username: 'jump',
+      })
+    );
+    expect(session.quotePath("/tmp/it's here")).toBe("'/tmp/it'\\''s here'");
+    expect(session.normalizeInitialCommand(' uptime ')).toBe('uptime');
+    expect(() => session.normalizeInitialCommand('bad\ncommand')).toThrow(
+      'SSH command must not contain control characters or new lines.'
+    );
+    expect(session.isExitCommand('\u001b[31mexit 0\r')).toBe(true);
+    expect(session.isExitCommand('logout\n')).toBe(true);
+    expect(session.isExitCommand('echo exit\n')).toBe(false);
+    expect(session.isCleanExit(0, null)).toBe(true);
+    expect(session.isCleanExit(1, null)).toBe(false);
+    expect(session.isCleanExit(0, 'TERM')).toBe(false);
+    expect(session.getErrorMessage('plain')).toBe('plain');
+    expect(session.toError(undefined, 'fallback').message).toBe('undefined');
+
+    expect(
+      (
+        new SshTerminalSession({ ...baseDevice, host: ' ' }, context) as unknown as {
+          validateDeviceConfiguration: () => string | undefined;
+        }
+      ).validateDeviceConfiguration()
+    ).toBe('Device "Terminal Device" is missing a host.');
+    expect(
+      (
+        new SshTerminalSession({ ...baseDevice, username: ' ' }, context) as unknown as {
+          validateDeviceConfiguration: () => string | undefined;
+        }
+      ).validateDeviceConfiguration()
+    ).toBe('Device "Terminal Device" is missing a username.');
+    expect(
+      (
+        new SshTerminalSession({ ...baseDevice, port: -1 }, context) as unknown as {
+          validateDeviceConfiguration: () => string | undefined;
+        }
+      ).validateDeviceConfiguration()
+    ).toBe('Device "Terminal Device" has an invalid port.');
+    expect(
+      (
+        new SshTerminalSession(
+          { ...baseDevice, bastion: { host: ' ', username: 'jump' } },
+          context
+        ) as unknown as {
+          validateDeviceConfiguration: () => string | undefined;
+        }
+      ).validateDeviceConfiguration()
+    ).toBe('Device "Terminal Device" is missing a bastion host.');
+  });
+
+  it('loads private keys and reports empty key files', async () => {
+    const context = createExtensionContext();
+    const session = new SshTerminalSession(baseDevice, context) as unknown as {
+      loadPrivateKey: (filePath: string) => Promise<Buffer>;
+      expandPath: (value: string) => string;
+    };
+    const previousEnv = process.env.SSH_TERMINAL_KEY_DIR;
+    process.env.SSH_TERMINAL_KEY_DIR = '/keys';
+    fsMockState.readFile.mockResolvedValueOnce(Buffer.from('PRIVATE KEY'));
+    fsMockState.readFile.mockResolvedValueOnce(Buffer.alloc(0));
+
+    try {
+      expect(session.expandPath('${env:SSH_TERMINAL_KEY_DIR}/id_test')).toBe('/keys/id_test');
+      await expect(session.loadPrivateKey('/keys/id_test')).resolves.toEqual(
+        Buffer.from('PRIVATE KEY')
+      );
+      await expect(session.loadPrivateKey('/keys/empty')).rejects.toThrow(
+        'The private key file is empty.'
+      );
+    } finally {
+      if (previousEnv === undefined) {
+        delete process.env.SSH_TERMINAL_KEY_DIR;
+      } else {
+        process.env.SSH_TERMINAL_KEY_DIR = previousEnv;
+      }
+    }
+  });
+
+  it('does not rerun the initial command on reconnect unless configured', async () => {
+    vi.useFakeTimers();
+
+    const context = createExtensionContext();
+    const session = new SshTerminalSession(baseDevice, context, undefined, 'top', false);
+
+    session.open({ columns: 80, rows: 24 });
+    await flushAsync();
+
+    const firstShell = sshMockState.clients[0].shellChannel;
+    expect(firstShell.writes).toEqual(['top\n']);
+
+    firstShell.emit('close');
+    await vi.advanceTimersByTimeAsync(5000);
+    await flushAsync();
+
+    const secondShell = sshMockState.clients[1].shellChannel;
+    expect(secondShell.writes).toEqual([]);
+  });
+
+  it('connects through a bastion host before opening the shell', async () => {
+    const context = createExtensionContext();
+    const session = new SshTerminalSession(
+      {
+        ...baseDevice,
+        port: 2201,
+        bastion: {
+          host: 'jump.local',
+          username: 'jump',
+          port: 2200,
+        },
+      },
+      context
+    );
+
+    session.open();
+    await flushAsync();
+
+    const bastionClient = sshMockState.clients[0];
+    const tunneledClient = sshMockState.clients[1];
+
+    expect(bastionClient.connectConfig).toEqual(
+      expect.objectContaining({ host: 'jump.local', port: 2200, username: 'jump' })
+    );
+    expect(tunneledClient.connectConfig).toEqual(
+      expect.objectContaining({ host: 'device.local', port: 2201, sock: expect.any(Object) })
+    );
+  });
+
+  it('keeps only one reconnect timer and clears it when the terminal closes', async () => {
+    vi.useFakeTimers();
+
+    const context = createExtensionContext();
+    const writes: string[] = [];
+    const session = new SshTerminalSession(baseDevice, context) as SshTerminalSession & {
+      scheduleReconnect: () => void;
+      reconnectTimer?: NodeJS.Timeout;
+    };
+    session.onDidWrite((value: unknown) => {
+      if (typeof value === 'string') {
+        writes.push(value);
+      }
+    });
+
+    session.scheduleReconnect();
+    const firstTimer = session.reconnectTimer;
+    session.scheduleReconnect();
+
+    expect(session.reconnectTimer).toBe(firstTimer);
+    expect(writes.filter((value) => value.includes('Retrying in 5 seconds'))).toHaveLength(1);
+
+    session.close();
+    await vi.advanceTimersByTimeAsync(5000);
+
     expect(sshMockState.clients).toHaveLength(0);
   });
 });

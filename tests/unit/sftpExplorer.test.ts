@@ -1,6 +1,9 @@
+import type { Stats } from 'fs';
 import * as fs from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
+import pathPosix from 'path/posix';
+import { Readable, Writable } from 'stream';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('vscode', () => import('../mocks/vscode'));
@@ -34,6 +37,152 @@ const createExplorer = (deviceOverrides: Partial<EmbeddedDevice> = {}): SftpExpl
   const device = { ...baseDevice, ...deviceOverrides };
   return new SftpExplorerPanel(context, device);
 };
+
+type RemoteNode = {
+  type: 'file' | 'directory';
+  content?: string;
+  mode: number;
+  uid?: number;
+  gid?: number;
+};
+
+const createRemoteStat = (node: RemoteNode) =>
+  ({
+    mode: node.mode,
+    size: Buffer.byteLength(node.content ?? ''),
+    uid: node.uid,
+    gid: node.gid,
+    mtime: 1000,
+    isDirectory: () => node.type === 'directory',
+    isFile: () => node.type === 'file',
+  }) as unknown as Stats;
+
+class MemorySftp {
+  readonly nodes = new Map<string, RemoteNode>([
+    ['/', { type: 'directory', mode: 0o755 }],
+    ['/alpha', { type: 'directory', mode: 0o755 }],
+    ['/alpha/child.txt', { type: 'file', content: 'child', mode: 0o644, uid: 1000, gid: 1000 }],
+    ['/script.sh', { type: 'file', content: '#!/bin/sh\n', mode: 0o755 }],
+  ]);
+
+  private normalize(value: string): string {
+    const normalized = pathPosix.normalize(value || '/');
+    return normalized.startsWith('/') ? normalized : `/${normalized}`;
+  }
+
+  private parentOf(value: string): string {
+    return pathPosix.dirname(this.normalize(value));
+  }
+
+  readdir(dirPath: string, callback: (err: Error | undefined, list?: unknown[]) => void): void {
+    const directory = this.normalize(dirPath);
+    const parent = this.nodes.get(directory);
+    if (!parent || parent.type !== 'directory') {
+      callback(new Error('Not a directory'));
+      return;
+    }
+    const entries = [...this.nodes.entries()]
+      .filter(([entryPath]) => entryPath !== directory && this.parentOf(entryPath) === directory)
+      .map(([entryPath, node]) => ({
+        filename: pathPosix.basename(entryPath),
+        longname: '',
+        attrs: createRemoteStat(node),
+      }));
+    callback(undefined, entries);
+  }
+
+  realpath(_pathValue: string, callback: (err: Error | undefined, absPath?: string) => void): void {
+    callback(undefined, '/');
+  }
+
+  stat(targetPath: string, callback: (err: Error | undefined, stats?: Stats) => void): void {
+    const node = this.nodes.get(this.normalize(targetPath));
+    callback(node ? undefined : new Error('missing'), node ? createRemoteStat(node) : undefined);
+  }
+
+  unlink(targetPath: string, callback: (err?: Error) => void): void {
+    this.nodes.delete(this.normalize(targetPath));
+    callback();
+  }
+
+  rename(source: string, destination: string, callback: (err?: Error) => void): void {
+    const sourcePath = this.normalize(source);
+    const destinationPath = this.normalize(destination);
+    const node = this.nodes.get(sourcePath);
+    if (!node) {
+      callback(new Error('missing'));
+      return;
+    }
+    this.nodes.delete(sourcePath);
+    this.nodes.set(destinationPath, node);
+    for (const [entryPath, entryNode] of [...this.nodes.entries()]) {
+      if (entryPath.startsWith(`${sourcePath}/`)) {
+        this.nodes.delete(entryPath);
+        this.nodes.set(`${destinationPath}${entryPath.slice(sourcePath.length)}`, entryNode);
+      }
+    }
+    callback();
+  }
+
+  mkdir(dirPath: string, callback: (err?: Error) => void): void {
+    this.nodes.set(this.normalize(dirPath), { type: 'directory', mode: 0o755 });
+    callback();
+  }
+
+  rmdir(dirPath: string, callback: (err?: Error) => void): void {
+    this.nodes.delete(this.normalize(dirPath));
+    callback();
+  }
+
+  fastGet(remotePath: string, localPath: string, callback: (err?: Error) => void): void {
+    const node = this.nodes.get(this.normalize(remotePath));
+    void fs.writeFile(localPath, node?.content ?? '').then(() => callback(), callback);
+  }
+
+  fastPut(localPath: string, remotePath: string, callback: (err?: Error) => void): void {
+    void fs.readFile(localPath, 'utf8').then((content) => {
+      this.nodes.set(this.normalize(remotePath), { type: 'file', content, mode: 0o644 });
+      callback();
+    }, callback);
+  }
+
+  createReadStream(remotePath: string): Readable {
+    const node = this.nodes.get(this.normalize(remotePath));
+    return Readable.from([node?.content ?? '']);
+  }
+
+  createWriteStream(remotePath: string): Writable {
+    const chunks: Buffer[] = [];
+    return new Writable({
+      write: (chunk: Buffer | string, _encoding: BufferEncoding, callback) => {
+        chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : Buffer.from(chunk));
+        callback();
+      },
+      final: (callback) => {
+        this.nodes.set(this.normalize(remotePath), {
+          type: 'file',
+          content: Buffer.concat(chunks).toString('utf8'),
+          mode: 0o644,
+        });
+        callback();
+      },
+    });
+  }
+
+  setstat(
+    targetPath: string,
+    attrs: { mode?: number; uid?: number; gid?: number },
+    callback: (err?: Error) => void
+  ): void {
+    const node = this.nodes.get(this.normalize(targetPath));
+    if (!node) {
+      callback(new Error('missing'));
+      return;
+    }
+    this.nodes.set(this.normalize(targetPath), { ...node, ...attrs });
+    callback();
+  }
+}
 
 beforeEach(() => {
   resetWindowResponses();
@@ -781,6 +930,202 @@ describe('SftpExplorerPanel', () => {
       } else {
         process.env.SFTP_EXPLORER_TEST_DIR = previousEnv;
       }
+      await fs.rm(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it('covers remote SFTP helpers with an in-memory SFTP session', async () => {
+    const panel = createExplorer();
+    const explorer = panel as unknown as {
+      sftp: MemorySftp;
+      client?: {
+        exec: (
+          command: string,
+          callback: (
+            err: Error | undefined,
+            stream: Readable & {
+              stderr: Readable;
+              emit: (event: string, ...args: unknown[]) => boolean;
+            }
+          ) => void
+        ) => void;
+        end: () => void;
+      };
+      remoteHome?: string;
+      listRemote: (dirPath: string) => Promise<Array<{ name: string; type: string }>>;
+      getRemoteHome: () => Promise<string>;
+      createDirectory: (
+        location: 'remote' | 'local',
+        directoryPath: string,
+        name: string
+      ) => Promise<string>;
+      createFile: (
+        location: 'remote' | 'local',
+        directoryPath: string,
+        name: string
+      ) => Promise<string>;
+      renameEntry: (
+        location: 'remote' | 'local',
+        targetPath: string,
+        newName: string
+      ) => Promise<string>;
+      duplicateEntry: (location: 'remote' | 'local', targetPath: string) => Promise<string>;
+      copyEntry: (
+        from: { location: 'remote' | 'local'; path: string },
+        toDirectory: { location: 'remote' | 'local'; path: string }
+      ) => Promise<string>;
+      copyEntries: (
+        items: { location: 'remote' | 'local'; path: string }[],
+        toDirectory: { location: 'remote' | 'local'; path: string }
+      ) => Promise<string>;
+      applyPermissions: (
+        location: 'remote' | 'local',
+        targetPath: string,
+        mode: number,
+        owner?: number,
+        group?: number
+      ) => Promise<string>;
+      applyPermissionsBatch: (
+        location: 'remote' | 'local',
+        paths: string[],
+        mode: number
+      ) => Promise<string>;
+      getPermissionsInfo: (
+        location: 'remote' | 'local',
+        targetPath: string
+      ) => Promise<{
+        path: string;
+        ownerName?: string;
+        groupName?: string;
+      }>;
+      buildSearchEntries: (
+        location: 'remote' | 'local',
+        basePath: string,
+        output: string
+      ) => Promise<Array<{ fullPath: string; relativePath: string }>>;
+      deleteEntry: (location: 'remote' | 'local', targetPath: string) => Promise<string>;
+      deleteEntries: (location: 'remote' | 'local', paths: string[]) => Promise<string>;
+    };
+    const sftp = new MemorySftp();
+    explorer.sftp = sftp;
+    explorer.remoteHome = '/';
+    explorer.client = {
+      exec: (command, callback) => {
+        const stream = new Readable({ read: () => undefined }) as Readable & {
+          stderr: Readable;
+          emit: (event: string, ...args: unknown[]) => boolean;
+        };
+        stream.stderr = new Readable({ read: () => undefined });
+        callback(undefined, stream);
+        queueMicrotask(() => {
+          if (command.startsWith('getent passwd')) {
+            stream.emit('data', Buffer.from('root:x:0:0:root:/root:/bin/sh\n'));
+            stream.emit('exit', 0);
+          } else if (command.startsWith('getent group')) {
+            stream.emit('data', Buffer.from('root:x:0:\n'));
+            stream.emit('exit', 0);
+          } else {
+            stream.emit('data', Buffer.from('1000\n'));
+            stream.emit('exit', 0);
+          }
+          stream.emit('close');
+        });
+      },
+      end: vi.fn(),
+    };
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'sftp-remote-test-'));
+
+    try {
+      expect(await explorer.getRemoteHome()).toBe('/');
+      expect(await explorer.listRemote('/')).toEqual([
+        expect.objectContaining({ name: 'alpha', type: 'directory' }),
+        expect.objectContaining({ name: 'script.sh', type: 'file' }),
+      ]);
+
+      await expect(explorer.createDirectory('remote', '/', 'bravo')).resolves.toBe('/');
+      await expect(explorer.createFile('remote', '/bravo', 'note.txt')).resolves.toBe('/bravo');
+      expect(sftp.nodes.has('/bravo/note.txt')).toBe(true);
+
+      await expect(explorer.renameEntry('remote', '/bravo/note.txt', 'renamed.txt')).resolves.toBe(
+        '/bravo'
+      );
+      expect(sftp.nodes.has('/bravo/renamed.txt')).toBe(true);
+
+      await expect(explorer.duplicateEntry('remote', '/script.sh')).resolves.toBe('/');
+      expect(sftp.nodes.has('/script (copy 1).sh')).toBe(true);
+
+      await expect(explorer.duplicateEntry('remote', '/alpha')).resolves.toBe('/');
+      expect(sftp.nodes.has('/alpha (copy 1)/child.txt')).toBe(true);
+
+      await expect(
+        explorer.copyEntry(
+          { location: 'remote', path: '/script.sh' },
+          { location: 'remote', path: '/bravo' }
+        )
+      ).resolves.toBe('/bravo');
+      expect(sftp.nodes.has('/bravo/script.sh')).toBe(true);
+
+      await expect(explorer.copyEntries([], { location: 'remote', path: '/bravo' })).resolves.toBe(
+        '/bravo'
+      );
+
+      const localFile = path.join(tempDir, 'upload.txt');
+      await fs.writeFile(localFile, 'upload');
+      await expect(
+        explorer.copyEntry(
+          { location: 'local', path: localFile },
+          { location: 'remote', path: '/bravo' }
+        )
+      ).resolves.toBe('/bravo');
+      expect(sftp.nodes.get('/bravo/upload.txt')?.content).toBe('upload');
+
+      await expect(
+        explorer.copyEntry(
+          { location: 'remote', path: '/script.sh' },
+          { location: 'local', path: tempDir }
+        )
+      ).resolves.toBe(tempDir);
+      await expect(fs.readFile(path.join(tempDir, 'script.sh'), 'utf8')).resolves.toContain(
+        '#!/bin/sh'
+      );
+
+      await expect(
+        explorer.applyPermissions('remote', '/script.sh', 0o600, 1001, 1002)
+      ).resolves.toBe('/');
+      expect(sftp.nodes.get('/script.sh')).toEqual(
+        expect.objectContaining({ mode: 0o600, uid: 1001, gid: 1002 })
+      );
+
+      await expect(
+        explorer.applyPermissionsBatch('remote', ['/script.sh', '/bravo/upload.txt'], 0o644)
+      ).resolves.toBe('/');
+      await expect(explorer.applyPermissionsBatch('remote', [], 0o644)).resolves.toBe('/');
+
+      await expect(explorer.getPermissionsInfo('remote', '/script.sh')).resolves.toEqual(
+        expect.objectContaining({
+          path: '/script.sh',
+          ownerName: 'root',
+          groupName: 'root',
+        })
+      );
+
+      await expect(
+        explorer.buildSearchEntries('remote', '/', './script.sh\n./bravo/upload.txt\n')
+      ).resolves.toEqual([
+        expect.objectContaining({
+          fullPath: '/bravo/upload.txt',
+          relativePath: 'bravo/upload.txt',
+        }),
+        expect.objectContaining({ fullPath: '/script.sh', relativePath: 'script.sh' }),
+      ]);
+
+      await expect(explorer.deleteEntry('remote', '/bravo/upload.txt')).resolves.toBe('/bravo');
+      expect(sftp.nodes.has('/bravo/upload.txt')).toBe(false);
+      await expect(explorer.deleteEntries('remote', ['/alpha (copy 1)'])).resolves.toBe('/');
+      expect(sftp.nodes.has('/alpha (copy 1)')).toBe(false);
+      await expect(explorer.deleteEntries('remote', [])).resolves.toBe('/');
+    } finally {
+      panel.dispose();
       await fs.rm(tempDir, { recursive: true, force: true });
     }
   });

@@ -18,6 +18,8 @@ export default defineConfig({
         'dist/**',
         'docs/**',
         'node_modules/**',
+        '**/*.d.ts',
+        'src/**/types.ts',
       ],
     },
   },

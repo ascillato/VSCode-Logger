@@ -51,6 +51,7 @@ let warningMessageResponse: string | undefined;
 let inputBoxResponse: string | undefined;
 let saveDialogResponse: MockUri | undefined;
 let openDialogResponse: MockUri[] | undefined;
+let quickPickResponse: unknown;
 let openTextDocumentContent = '';
 let clipboardText = '';
 const mockFileSystem = new Map<string, Uint8Array>();
@@ -198,6 +199,7 @@ export const window: typeof vscode.window = {
   showErrorMessage: vi.fn(() => Promise.resolve(undefined)),
   showSaveDialog: vi.fn(() => Promise.resolve(saveDialogResponse)),
   showOpenDialog: vi.fn(() => Promise.resolve(openDialogResponse)),
+  showQuickPick: vi.fn((items: unknown[]) => Promise.resolve(quickPickResponse ?? items[0])),
   createWebviewPanel: vi.fn(
     (
       _viewType,
@@ -216,6 +218,11 @@ export const window: typeof vscode.window = {
         },
         dispose: () => disposables.forEach((listener) => listener()),
         reveal: vi.fn(),
+        onDidChangeViewState: vi.fn((listener: (event: unknown) => void) => {
+          void listener;
+          return { dispose: () => undefined };
+        }),
+        active: true,
       } as unknown as MockWebviewPanel;
       panel.__fireMessage = (message: unknown) =>
         (webview as MockWebview & { __fireMessage?: (message: unknown) => void }).__fireMessage?.(
@@ -227,6 +234,8 @@ export const window: typeof vscode.window = {
   ),
   registerWebviewViewProvider: vi.fn(() => ({ dispose: () => undefined })),
   showTextDocument: vi.fn(() => Promise.resolve(undefined)),
+  createTerminal: vi.fn(() => ({ show: vi.fn(), dispose: vi.fn() })),
+  withProgress: vi.fn((_options: unknown, task: () => unknown) => Promise.resolve(task())),
 } as unknown as typeof vscode.window;
 
 export enum ConfigurationTarget {
@@ -346,6 +355,10 @@ export const StatusBarAlignment = {
   Right: 2,
 };
 
+export const ProgressLocation = {
+  Notification: 15,
+};
+
 export const ViewColumn = {
   Active: -1,
   One: 1,
@@ -386,6 +399,11 @@ export const createExtensionContext = (): vscode.ExtensionContext => {
       get: (key: string, defaultValue?: unknown) => workspaceState.get(key) ?? defaultValue,
       update: updateMemento,
     },
+    extension: {
+      packageJSON: {
+        version: '1.2.3',
+      },
+    },
   } as unknown as vscode.ExtensionContext;
 };
 
@@ -421,6 +439,10 @@ export const setOpenDialogResponse = (...values: string[]): void => {
   openDialogResponse = values.length ? values.map((value) => createMockUri(value)) : undefined;
 };
 
+export const setQuickPickResponse = (value?: unknown): void => {
+  quickPickResponse = value;
+};
+
 export const setOpenTextDocumentContent = (value: string): void => {
   openTextDocumentContent = value;
 };
@@ -430,6 +452,7 @@ export const resetWindowResponses = (): void => {
   inputBoxResponse = undefined;
   saveDialogResponse = undefined;
   openDialogResponse = undefined;
+  quickPickResponse = undefined;
   clipboardText = '';
   createdWebviews.length = 0;
   (window.showInputBox as ReturnType<typeof vi.fn>).mockClear();
@@ -438,9 +461,12 @@ export const resetWindowResponses = (): void => {
   (window.showErrorMessage as ReturnType<typeof vi.fn>).mockClear?.();
   (window.showSaveDialog as ReturnType<typeof vi.fn>).mockClear?.();
   (window.showOpenDialog as ReturnType<typeof vi.fn>).mockClear?.();
+  (window.showQuickPick as ReturnType<typeof vi.fn>).mockClear?.();
   (window.showTextDocument as ReturnType<typeof vi.fn>).mockClear?.();
   (window.createWebviewPanel as ReturnType<typeof vi.fn>).mockClear?.();
   (window.registerWebviewViewProvider as ReturnType<typeof vi.fn>).mockClear?.();
+  (window.createTerminal as ReturnType<typeof vi.fn>).mockClear?.();
+  (window.withProgress as ReturnType<typeof vi.fn>).mockClear?.();
   (workspace.onDidChangeConfiguration as ReturnType<typeof vi.fn>).mockClear?.();
   (workspace.onDidSaveTextDocument as ReturnType<typeof vi.fn>).mockClear?.();
   (workspace.onDidCloseTextDocument as ReturnType<typeof vi.fn>).mockClear?.();
@@ -501,5 +527,6 @@ export default {
   TreeItem,
   TreeItemCollapsibleState,
   StatusBarAlignment,
+  ProgressLocation,
   ViewColumn,
 };

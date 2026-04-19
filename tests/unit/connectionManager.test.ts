@@ -219,4 +219,174 @@ describe('ConnectionManager', () => {
       'Connected to bastion. Tunneling to device.local:2222 ...'
     );
   });
+
+  it('reports direct SSH errors and close notifications through callbacks', async () => {
+    const client = createMockClient();
+    vi.spyOn(client, 'connect').mockImplementation(() => {
+      queueMicrotask(() => client.emit('error', new Error('network down')));
+      return client;
+    });
+    const callbacks = {
+      onStatus: vi.fn(),
+      onError: vi.fn(),
+      onClose: vi.fn(),
+    };
+    const hostVerifier = {
+      getExpectedFingerprint: vi.fn(() => undefined),
+      reset: vi.fn(),
+      verify: vi.fn(() => true),
+      getLastSeen: vi.fn(() => undefined),
+      getFailure: vi.fn(() => undefined),
+    };
+    const manager = new ConnectionManager(
+      callbacks,
+      { persistIfMissing: vi.fn(async () => undefined) } as never,
+      hostVerifier as never,
+      {
+        createClient: () => client as never,
+        createForwardingClient: () => createMockClient() as never,
+      }
+    );
+
+    await expect(
+      manager.connect({
+        endpoint,
+        authentication,
+        logCommand: 'tail -f /var/log/syslog',
+        device: baseDevice,
+      })
+    ).rejects.toThrow('network down');
+
+    expect(callbacks.onError).toHaveBeenCalledWith('SSH error: network down');
+
+    client.emit('close');
+    expect(callbacks.onStatus).toHaveBeenCalledWith('Connection closed.');
+    expect(callbacks.onClose).toHaveBeenCalled();
+  });
+
+  it('rejects when the log command cannot be started', async () => {
+    const client = createMockClient();
+    vi.spyOn(client, 'exec').mockImplementation((_command, callback) => {
+      callback(new Error('exec failed'), undefined as never);
+      return client;
+    });
+    const callbacks = {
+      onStatus: vi.fn(),
+      onError: vi.fn(),
+      onClose: vi.fn(),
+    };
+    const hostVerifier = {
+      getExpectedFingerprint: vi.fn(() => undefined),
+      reset: vi.fn(),
+      verify: vi.fn(() => true),
+      getLastSeen: vi.fn(() => undefined),
+      getFailure: vi.fn(() => undefined),
+    };
+    const manager = new ConnectionManager(
+      callbacks,
+      { persistIfMissing: vi.fn(async () => undefined) } as never,
+      hostVerifier as never,
+      {
+        createClient: () => client as never,
+        createForwardingClient: () => createMockClient() as never,
+      }
+    );
+
+    await expect(
+      manager.connect({
+        endpoint,
+        authentication,
+        logCommand: 'bad-command',
+        device: baseDevice,
+      })
+    ).rejects.toThrow('exec failed');
+  });
+
+  it('handles bastion forwarding and host-key failures', async () => {
+    const bastionClient = createMockClient();
+    vi.spyOn(bastionClient, 'forwardOut').mockImplementation(
+      (_srcIp, _srcPort, _dstIp, _dstPort, callback) => {
+        callback(new Error('forward denied'), undefined as never);
+      }
+    );
+    const callbacks = {
+      onStatus: vi.fn(),
+      onError: vi.fn(),
+      onClose: vi.fn(),
+    };
+    const hostVerifier = {
+      getExpectedFingerprint: vi.fn(() => undefined),
+      reset: vi.fn(),
+      verify: vi.fn(() => true),
+      getLastSeen: vi.fn(() => undefined),
+      getFailure: vi.fn(() => undefined),
+    };
+    const bastionVerifier = {
+      getExpectedFingerprint: vi.fn(() => undefined),
+      reset: vi.fn(),
+      verify: vi.fn(() => true),
+      getLastSeen: vi.fn(() => undefined),
+      getFailure: vi.fn(() => undefined),
+    };
+    const manager = new ConnectionManager(
+      callbacks,
+      { persistIfMissing: vi.fn(async () => undefined) } as never,
+      hostVerifier as never,
+      {
+        createClient: () => createMockClient() as never,
+        createForwardingClient: () => bastionClient as never,
+      },
+      bastionVerifier as never
+    );
+
+    await expect(
+      manager.connect({
+        endpoint,
+        authentication,
+        logCommand: 'journalctl -f',
+        device: baseDevice,
+        bastion: { host: 'jump.local', username: 'jump' },
+        bastionAuthentication: { password: 'jump-secret' },
+      })
+    ).rejects.toThrow('forward denied');
+
+    bastionClient.emit('close');
+    expect(callbacks.onStatus).toHaveBeenCalledWith('Bastion connection closed.');
+
+    const mismatchClient = createMockClient();
+    vi.spyOn(mismatchClient, 'connect').mockImplementation(() => {
+      queueMicrotask(() => mismatchClient.emit('error', new Error('Host key rejected')));
+      return mismatchClient;
+    });
+    const mismatchVerifier = {
+      ...bastionVerifier,
+      getFailure: vi.fn(() => ({ expected: 'SHA256:old', received: 'SHA256:new' })),
+    };
+    const mismatchManager = new ConnectionManager(
+      callbacks,
+      { persistIfMissing: vi.fn(async () => undefined) } as never,
+      hostVerifier as never,
+      {
+        createClient: () => createMockClient() as never,
+        createForwardingClient: () => mismatchClient as never,
+      },
+      mismatchVerifier as never
+    );
+
+    await expect(
+      mismatchManager.connect({
+        endpoint,
+        authentication,
+        logCommand: 'journalctl -f',
+        device: baseDevice,
+        bastion: { host: 'jump.local', username: 'jump' },
+        bastionAuthentication: { password: 'jump-secret' },
+      })
+    ).rejects.toSatisfy(
+      (error: unknown) =>
+        error instanceof HostKeyMismatchError &&
+        error.expected === 'SHA256:old' &&
+        error.received === 'SHA256:new'
+    );
+  });
 });

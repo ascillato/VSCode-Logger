@@ -128,7 +128,9 @@ const spellcheckSkipWords = [
   "reposts",
   "filesystem",
   "rwxr",
-  "printf"
+  "printf",
+  "uptime",
+  "31mexit"
 ];
 
 export default defineConfig([

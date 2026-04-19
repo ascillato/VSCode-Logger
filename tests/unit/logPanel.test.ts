@@ -38,6 +38,7 @@ import {
   resetCreatedWebviews,
   resetWindowResponses,
   Uri,
+  window,
   workspace,
   setSaveDialogResponse,
 } from '../mocks/vscode';
@@ -171,5 +172,201 @@ describe('LogPanel (unit)', () => {
     });
 
     panel.dispose();
+  });
+
+  it('sends initial data and local file lines after the webview is ready', async () => {
+    const context = createExtensionContext();
+    const panel = new LogPanel(
+      context,
+      {
+        type: 'local',
+        id: 'local-ready',
+        name: 'Imported',
+        lines: ['one', 'two\u001b[31m red\u001b[0m'],
+        filePath: '/tmp/imported.log',
+      },
+      () => undefined
+    );
+    const webviewPanel = getCreatedWebviews()[0];
+    const postMessage = webviewPanel.webview.postMessage as unknown as vi.Mock;
+
+    const startPromise = panel.start();
+    webviewPanel.__fireMessage({ type: 'ready' });
+    await startPromise;
+
+    expect(postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'initData',
+        deviceId: 'local-ready',
+        isLive: false,
+      })
+    );
+    expect(postMessage).toHaveBeenCalledWith({
+      type: 'initialLines',
+      lines: ['one', 'two red'],
+    });
+    expect(postMessage).toHaveBeenCalledWith({ type: 'status', message: 'Loaded 2 lines.' });
+
+    panel.dispose();
+  });
+
+  it('saves presets, deletes presets, stores highlights, and exports visible lines', async () => {
+    const context = createExtensionContext();
+    setSaveDialogResponse('/tmp/exported.log');
+    const panel = new LogPanel(context, { type: 'remote', device }, () => undefined);
+    const webviewPanel = getCreatedWebviews()[0];
+    const postMessage = webviewPanel.webview.postMessage as unknown as vi.Mock;
+
+    webviewPanel.__fireMessage({
+      type: 'requestSavePreset',
+      name: ' Errors ',
+      minLevel: 'error',
+      textFilter: 'panic',
+    });
+    webviewPanel.__fireMessage({
+      type: 'highlightsChanged',
+      highlights: [
+        {
+          id: 1,
+          key: 'panic',
+          baseColor: '#ff0000',
+          color: '#ffffff',
+          backgroundColor: '#ff0000',
+        },
+      ],
+    });
+    webviewPanel.__fireMessage({ type: 'deletePreset', name: 'Errors' });
+    webviewPanel.__fireMessage({ type: 'exportLogs', lines: ['a', 'b'] });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(postMessage).toHaveBeenCalledWith({
+      type: 'presetsUpdated',
+      presets: [{ name: 'Errors', minLevel: 'error', textFilter: 'panic' }],
+    });
+    expect(postMessage).toHaveBeenCalledWith({ type: 'presetsUpdated', presets: [] });
+    await expect(workspace.fs.readFile(Uri.file('/tmp/exported.log'))).resolves.toEqual(
+      Buffer.from('a\nb', 'utf8')
+    );
+    expect(window.showInformationMessage).toHaveBeenCalledWith(
+      'Exported 2 lines from Test Device.'
+    );
+
+    panel.dispose();
+  });
+
+  it('handles source-file commands and unavailable source actions', async () => {
+    const context = createExtensionContext();
+    const remotePanel = new LogPanel(context, { type: 'remote', device }, () => undefined);
+    const remoteWebview = getCreatedWebviews()[0];
+
+    remoteWebview.__fireMessage({ type: 'openSourceFile' });
+    remoteWebview.__fireMessage({ type: 'refreshSourceFile' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(window.showErrorMessage).toHaveBeenCalledWith(
+      'Edit is only available for imported log files.'
+    );
+    expect(window.showErrorMessage).toHaveBeenCalledWith(
+      'Refresh is only available for imported log files.'
+    );
+
+    const localPanel = new LogPanel(
+      context,
+      { type: 'local', id: 'local-open', name: 'Local', lines: [], filePath: '/tmp/missing.log' },
+      () => undefined
+    );
+    const localWebview = getCreatedWebviews()[1];
+    localWebview.__fireMessage({ type: 'openSourceFile' });
+    localWebview.__fireMessage({ type: 'refreshSourceFile' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(window.showTextDocument).toHaveBeenCalled();
+    expect(window.showErrorMessage).toHaveBeenCalledWith('Failed to read log file: File not found');
+
+    remotePanel.dispose();
+    localPanel.dispose();
+  });
+
+  it('posts session close, disconnect, auto-save, and host-key mismatch status messages', async () => {
+    const context = createExtensionContext();
+    setSaveDialogResponse('/tmp/live.log');
+    const panel = new LogPanel(context, { type: 'remote', device }, () => undefined);
+    const webviewPanel = getCreatedWebviews()[0];
+    const postMessage = webviewPanel.webview.postMessage as unknown as vi.Mock;
+    const firstSession = logSessionInstances[0];
+
+    (firstSession.callbacks.onClose as () => void)();
+    expect(postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'sessionClosed', message: 'Session closed.' })
+    );
+
+    webviewPanel.__fireMessage({ type: 'requestReconnect' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const secondSession = logSessionInstances[1];
+
+    webviewPanel.__fireMessage({ type: 'startAutoSave' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(postMessage).toHaveBeenCalledWith({
+      type: 'autoSaveStarted',
+      filePath: '/tmp/live.log',
+      fileName: 'live.log',
+    });
+
+    (
+      secondSession.callbacks.onHostKeyMismatch as (details: {
+        expected: string;
+        received: string;
+      }) => void
+    )({ expected: 'SHA256:old', received: 'SHA256:new' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(postMessage).toHaveBeenCalledWith({
+      type: 'hostKeyMismatch',
+      expected: 'SHA256:old',
+      received: 'SHA256:new',
+    });
+
+    webviewPanel.__fireMessage({ type: 'stopAutoSave', message: 'Stopped.' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    webviewPanel.__fireMessage({ type: 'requestDisconnect' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'sessionClosed', message: 'Disconnected.' })
+    );
+
+    panel.dispose();
+  });
+
+  it('reports cancelled auto-save when no destination is selected or no live session exists', async () => {
+    const context = createExtensionContext();
+    const remotePanel = new LogPanel(context, { type: 'remote', device }, () => undefined);
+    const remoteWebview = getCreatedWebviews()[0];
+    const remotePost = remoteWebview.webview.postMessage as unknown as vi.Mock;
+
+    setSaveDialogResponse(undefined);
+    remoteWebview.__fireMessage({ type: 'startAutoSave' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(remotePost).toHaveBeenCalledWith({
+      type: 'autoSaveStopped',
+      message: 'Auto-save cancelled.',
+    });
+
+    const localPanel = new LogPanel(
+      context,
+      { type: 'local', id: 'local-auto', name: 'Local', lines: [], filePath: '/tmp/local.log' },
+      () => undefined
+    );
+    const localWebview = getCreatedWebviews()[1];
+    const localPost = localWebview.webview.postMessage as unknown as vi.Mock;
+
+    localWebview.__fireMessage({ type: 'startAutoSave' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(localPost).toHaveBeenCalledWith({ type: 'autoSaveStopped', message: '' });
+
+    remotePanel.dispose();
+    localPanel.dispose();
   });
 });
