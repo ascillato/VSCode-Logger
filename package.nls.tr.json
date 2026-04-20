@@ -1,4 +1,6 @@
 {
+  "embeddedLogger.viewsContainers.activitybar.title": "Embedded Logger",
+  "embeddedLogger.views.devicesView.name": "Cihazlar",
   "embeddedLogger.commands.openLocalLogFile.title": "Yerel günlük dosyasını aç",
   "embeddedLogger.commands.editDevicesConfig.title": "Cihaz yapılandırmasını düzenle",
   "embeddedLogger.commands.pingAllDevices.title": "Yapılandırılmış cihazlara ping gönder"

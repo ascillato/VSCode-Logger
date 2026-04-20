@@ -1,4 +1,6 @@
 {
+  "embeddedLogger.viewsContainers.activitybar.title": "Embedded Logger",
+  "embeddedLogger.views.devicesView.name": "Geräte",
   "embeddedLogger.commands.openLocalLogFile.title": "Lokale Protokolldatei öffnen",
   "embeddedLogger.commands.editDevicesConfig.title": "Gerätekonfiguration bearbeiten",
   "embeddedLogger.commands.pingAllDevices.title": "Konfigurierte Geräte anpingen"

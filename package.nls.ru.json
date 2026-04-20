@@ -1,4 +1,6 @@
 {
+  "embeddedLogger.viewsContainers.activitybar.title": "Embedded Logger",
+  "embeddedLogger.views.devicesView.name": "Устройства",
   "embeddedLogger.commands.openLocalLogFile.title": "Открыть локальный файл журнала",
   "embeddedLogger.commands.editDevicesConfig.title": "Изменить конфигурацию устройств",
   "embeddedLogger.commands.pingAllDevices.title": "Проверить настроенные устройства"

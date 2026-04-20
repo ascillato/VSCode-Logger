@@ -1,4 +1,6 @@
 {
+  "embeddedLogger.viewsContainers.activitybar.title": "Embedded Logger",
+  "embeddedLogger.views.devicesView.name": "裝置",
   "embeddedLogger.commands.openLocalLogFile.title": "開啟本機記錄檔",
   "embeddedLogger.commands.editDevicesConfig.title": "編輯裝置設定",
   "embeddedLogger.commands.pingAllDevices.title": "Ping 已設定的裝置"

@@ -1,4 +1,6 @@
 {
+  "embeddedLogger.viewsContainers.activitybar.title": "Embedded Logger",
+  "embeddedLogger.views.devicesView.name": "Zařízení",
   "embeddedLogger.commands.openLocalLogFile.title": "Otevřít místní soubor protokolu",
   "embeddedLogger.commands.editDevicesConfig.title": "Upravit konfiguraci zařízení",
   "embeddedLogger.commands.pingAllDevices.title": "Otestovat nakonfigurovaná zařízení pingem"

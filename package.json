@@ -527,7 +527,7 @@
       "activitybar": [
         {
           "id": "embeddedLogger",
-          "title": "Embedded Logger",
+          "title": "%embeddedLogger.viewsContainers.activitybar.title%",
           "icon": "resources/terminal.svg"
         }
       ]
@@ -536,7 +536,7 @@
       "embeddedLogger": [
         {
           "id": "embeddedLogger.devicesView",
-          "name": "Devices",
+          "name": "%embeddedLogger.views.devicesView.name%",
           "type": "webview",
           "icon": "resources/terminal.svg"
         }
@@ -556,6 +556,7 @@
       {
         "command": "embeddedLogger.openLocalLogFile",
         "title": "%embeddedLogger.commands.openLocalLogFile.title%",
+        "shortTitle": "%embeddedLogger.commands.openLocalLogFile.title%",
         "icon": "$(file-text)"
       },
       {
@@ -565,6 +566,7 @@
       {
         "command": "embeddedLogger.editDevicesConfig",
         "title": "%embeddedLogger.commands.editDevicesConfig.title%",
+        "shortTitle": "%embeddedLogger.commands.editDevicesConfig.title%",
         "icon": "$(pencil)"
       },
       {
@@ -587,6 +589,7 @@
       {
         "command": "embeddedLogger.pingAllDevices",
         "title": "%embeddedLogger.commands.pingAllDevices.title%",
+        "shortTitle": "%embeddedLogger.commands.pingAllDevices.title%",
         "icon": "$(pulse)"
       }
     ],

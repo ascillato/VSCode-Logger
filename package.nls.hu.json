@@ -1,4 +1,6 @@
 {
+  "embeddedLogger.viewsContainers.activitybar.title": "Embedded Logger",
+  "embeddedLogger.views.devicesView.name": "Eszközök",
   "embeddedLogger.commands.openLocalLogFile.title": "Helyi naplófájl megnyitása",
   "embeddedLogger.commands.editDevicesConfig.title": "Eszközkonfiguráció szerkesztése",
   "embeddedLogger.commands.pingAllDevices.title": "Konfigurált eszközök pingelése"
