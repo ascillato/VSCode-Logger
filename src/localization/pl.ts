@@ -44,6 +44,8 @@ export const pl = createLocalizationBundle(
       panelTitle: 'Menedżer urządzeń wbudowanych',
       intro: 'Zarządzaj urządzeniami i konfiguracją domyślną.',
       language: 'Język rozszerzenia',
+      reloadToPersistNewDefaultSettings:
+        'Ustawienia zapisane. Załaduj ponownie okno lub host rozszerzenia, a następnie zapisz ponownie, aby utrwalić nowo dodane ustawienia domyślne.',
     },
   }
 );

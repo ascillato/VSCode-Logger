@@ -528,6 +528,7 @@ export class DeviceManagerPanel {
         },
         {
           run: () => config.update('language', normalizedDefaults.language, target),
+          tolerateUnregistered: 'embeddedLogger.language',
         },
         {
           run: () => config.update('enableDevicePing', normalizedDefaults.enableDevicePing, target),
@@ -563,7 +564,7 @@ export class DeviceManagerPanel {
             update.tolerateUnregistered &&
             this.isUnregisteredConfigurationError(error, update.tolerateUnregistered)
           ) {
-            saveMessage = getLocalizedStrings().deviceManager.reloadToPersistEmbeddedBrowserDefault;
+            saveMessage = getLocalizedStrings().deviceManager.reloadToPersistNewDefaultSettings;
             continue;
           }
 

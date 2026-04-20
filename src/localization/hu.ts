@@ -44,6 +44,8 @@ export const hu = createLocalizationBundle(
       panelTitle: 'Beágyazott eszközök kezelője',
       intro: 'Eszközök és alapértelmezett konfiguráció kezelése.',
       language: 'Bővítmény nyelve',
+      reloadToPersistNewDefaultSettings:
+        'A beállítások mentve. Töltse újra az ablakot vagy a bővítménygazdát, majd mentse újra az újonnan hozzáadott alapértelmezett beállítások megőrzéséhez.',
     },
   }
 );

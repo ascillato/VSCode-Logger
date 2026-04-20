@@ -44,6 +44,8 @@ export const fr = createLocalizationBundle(
       panelTitle: 'Gestionnaire des appareils embarqués',
       intro: 'Gérez les appareils et la configuration par défaut.',
       language: "Langue de l'extension",
+      reloadToPersistNewDefaultSettings:
+        "Paramètres enregistrés. Rechargez la fenêtre ou l'hôte d'extension, puis enregistrez à nouveau pour conserver les nouveaux paramètres par défaut.",
     },
   }
 );

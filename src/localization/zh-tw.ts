@@ -43,6 +43,8 @@ export const zhTw = createLocalizationBundle(
       panelTitle: '嵌入式裝置管理器',
       intro: '管理裝置和預設組態。',
       language: '擴充功能語言',
+      reloadToPersistNewDefaultSettings:
+        '設定已儲存。請重新載入視窗或擴充功能主機，然後再次儲存以保留新加入的預設設定。',
     },
   }
 );

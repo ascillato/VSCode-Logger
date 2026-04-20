@@ -44,6 +44,8 @@ export const cs = createLocalizationBundle(
       panelTitle: 'Správce embedded zařízení',
       intro: 'Spravujte zařízení a výchozí konfiguraci.',
       language: 'Jazyk rozšíření',
+      reloadToPersistNewDefaultSettings:
+        'Nastavení uloženo. Znovu načtěte okno nebo hostitele rozšíření a poté uložte znovu, aby se nově přidaná výchozí nastavení zachovala.',
     },
   }
 );

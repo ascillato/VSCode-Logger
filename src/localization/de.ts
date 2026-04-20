@@ -44,6 +44,8 @@ export const de = createLocalizationBundle(
       panelTitle: 'Manager für eingebettete Geräte',
       intro: 'Geräte und Standardkonfiguration verwalten.',
       language: 'Erweiterungssprache',
+      reloadToPersistNewDefaultSettings:
+        'Einstellungen gespeichert. Laden Sie das Fenster oder den Erweiterungshost neu und speichern Sie dann erneut, um neu hinzugefügte Standardeinstellungen beizubehalten.',
     },
   }
 );

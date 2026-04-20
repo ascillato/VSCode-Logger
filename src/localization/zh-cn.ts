@@ -43,6 +43,8 @@ export const zhCn = createLocalizationBundle(
       panelTitle: '嵌入式设备管理器',
       intro: '管理设备和默认配置。',
       language: '扩展语言',
+      reloadToPersistNewDefaultSettings:
+        '设置已保存。请重新加载窗口或扩展主机，然后再次保存以保留新添加的默认设置。',
     },
   }
 );

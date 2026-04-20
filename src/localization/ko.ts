@@ -43,6 +43,8 @@ export const ko = createLocalizationBundle(
       panelTitle: '임베디드 장치 관리자',
       intro: '장치와 기본 구성을 관리합니다.',
       language: '확장 언어',
+      reloadToPersistNewDefaultSettings:
+        '설정이 저장되었습니다. 새로 추가된 기본 설정을 유지하려면 창 또는 확장 호스트를 다시 로드한 다음 다시 저장하세요.',
     },
   }
 );

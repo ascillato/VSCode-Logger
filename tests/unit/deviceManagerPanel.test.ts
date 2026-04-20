@@ -209,7 +209,62 @@ describe('DeviceManagerPanel', () => {
       type: 'saveResult',
       success: true,
       message:
-        'Saved settings. Reload the window or extension host, then save again to persist the Embedded Web Browser default.',
+        'Saved settings. Reload the window or extension host, then save again to persist newly added default settings.',
+    });
+  });
+
+  it('keeps saving when the language setting is not registered until reload', async () => {
+    const panel = createPanel();
+    const config = workspace.getConfiguration('embeddedLogger');
+    const updateSpy = vi.spyOn(config, 'update').mockImplementation((key: string) => {
+      if (key === 'language') {
+        return Promise.reject(
+          new Error(
+            'Unable to write to User Settings because embeddedLogger.language is not a registered configuration.'
+          )
+        );
+      }
+
+      return Promise.resolve();
+    });
+
+    panel.__fireMessage({
+      type: 'save',
+      defaults: {
+        defaultPort: 22,
+        defaultLogCommand: 'tail -F /var/log/syslog',
+        defaultEnableSshTerminal: true,
+        defaultEnableSftpExplorer: true,
+        defaultEnableWebBrowser: false,
+        defaultEnableEmbeddedWebBrowser: false,
+        language: 'de',
+        defaultSshCommands: [],
+        maxLinesPerTab: 100000,
+      },
+      groups: [],
+      devices: [
+        {
+          id: 'device-a',
+          name: 'Device A',
+          host: '10.0.0.1',
+          username: 'root',
+        },
+      ],
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(updateSpy).toHaveBeenCalledWith('language', 'de', expect.anything());
+    expect(updateSpy).toHaveBeenCalledWith(
+      'devices',
+      expect.arrayContaining([expect.objectContaining({ id: 'device-a' })]),
+      expect.anything()
+    );
+    expect(panel.webview.postMessage).toHaveBeenCalledWith({
+      type: 'saveResult',
+      success: true,
+      message:
+        'Saved settings. Reload the window or extension host, then save again to persist newly added default settings.',
     });
   });
 

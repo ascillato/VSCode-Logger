@@ -146,6 +146,8 @@ export const en = {
     failedToImportSettingsWithMessage: 'Failed to import settings: {message}',
     reloadToPersistEmbeddedBrowserDefault:
       'Saved settings. Reload the window or extension host, then save again to persist the Embedded Web Browser default.',
+    reloadToPersistNewDefaultSettings:
+      'Saved settings. Reload the window or extension host, then save again to persist newly added default settings.',
   },
   sidebar: {
     title: 'Embedded Logger Devices',

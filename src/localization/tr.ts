@@ -44,6 +44,8 @@ export const tr = createLocalizationBundle(
       panelTitle: 'Gömülü Cihazlar Yöneticisi',
       intro: 'Cihazları ve varsayılan yapılandırmayı yönetin.',
       language: 'Eklenti dili',
+      reloadToPersistNewDefaultSettings:
+        'Ayarlar kaydedildi. Yeni eklenen varsayılan ayarları kalıcı hale getirmek için pencereyi veya eklenti ana bilgisayarını yeniden yükleyin ve tekrar kaydedin.',
     },
   }
 );

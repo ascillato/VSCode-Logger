@@ -150,6 +150,8 @@ export const it: typeof en = {
     failedToImportSettingsWithMessage: 'Impossibile importare le impostazioni: {message}',
     reloadToPersistEmbeddedBrowserDefault:
       "Impostazioni salvate. Ricarica la finestra o l'host dell'estensione, poi salva di nuovo per rendere persistente il browser web embedded predefinito.",
+    reloadToPersistNewDefaultSettings:
+      "Impostazioni salvate. Ricarica la finestra o l'host dell'estensione, poi salva di nuovo per rendere persistenti le nuove impostazioni predefinite.",
   },
   sidebar: {
     title: 'Dispositivi di Embedded Logger',

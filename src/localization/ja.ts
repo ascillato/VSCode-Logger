@@ -43,6 +43,8 @@ export const ja = createLocalizationBundle(
       panelTitle: '組み込みデバイス マネージャー',
       intro: 'デバイスと既定の構成を管理します。',
       language: '拡張機能の言語',
+      reloadToPersistNewDefaultSettings:
+        '設定を保存しました。新しく追加された既定の設定を保持するには、ウィンドウまたは拡張機能ホストを再読み込みしてから、もう一度保存してください。',
     },
   }
 );

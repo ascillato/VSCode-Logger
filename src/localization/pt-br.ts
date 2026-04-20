@@ -44,6 +44,8 @@ export const ptBr = createLocalizationBundle(
       panelTitle: 'Gerenciador de dispositivos embarcados',
       intro: 'Gerencie dispositivos e a configuração padrão.',
       language: 'Idioma da extensão',
+      reloadToPersistNewDefaultSettings:
+        'Configurações salvas. Recarregue a janela ou o host da extensão e salve novamente para persistir as novas configurações padrão.',
     },
   }
 );
