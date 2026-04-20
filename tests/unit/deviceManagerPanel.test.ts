@@ -62,7 +62,7 @@ describe('DeviceManagerPanel', () => {
     expect(html).toMatch(/<th>Select<\/th>\s*<th>ID<\/th>/);
     expect(html).toContain('<th>External Web Browser</th>');
     expect(html).toContain('<th>Embedded Web Browser</th>');
-    expect(html).toContain('<th>Show default SSH cmnds</th>');
+    expect(html).toContain('<th>Show default SSH commands</th>');
     expect(html).toContain('id="defaultEnableEmbeddedWebBrowser"');
     expect(html).toContain('<h2>Groups</h2>');
     expect(html).toContain('id="addGroup"');
@@ -209,8 +209,101 @@ describe('DeviceManagerPanel', () => {
       type: 'saveResult',
       success: true,
       message:
-        'Saved settings. Reload the window or extension host, then save again to persist the Embedded Web Browser default.',
+        'Saved settings. Reload the window or extension host, then save again to persist newly added default settings.',
     });
+  });
+
+  it('keeps saving when the language setting is not registered until reload', async () => {
+    const panel = createPanel();
+    const config = workspace.getConfiguration('embeddedLogger');
+    const updateSpy = vi.spyOn(config, 'update').mockImplementation((key: string) => {
+      if (key === 'language') {
+        return Promise.reject(
+          new Error(
+            'Unable to write to User Settings because embeddedLogger.language is not a registered configuration.'
+          )
+        );
+      }
+
+      return Promise.resolve();
+    });
+
+    panel.__fireMessage({
+      type: 'save',
+      defaults: {
+        defaultPort: 22,
+        defaultLogCommand: 'tail -F /var/log/syslog',
+        defaultEnableSshTerminal: true,
+        defaultEnableSftpExplorer: true,
+        defaultEnableWebBrowser: false,
+        defaultEnableEmbeddedWebBrowser: false,
+        language: 'de',
+        defaultSshCommands: [],
+        maxLinesPerTab: 100000,
+      },
+      groups: [],
+      devices: [
+        {
+          id: 'device-a',
+          name: 'Device A',
+          host: '10.0.0.1',
+          username: 'root',
+        },
+      ],
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(updateSpy).toHaveBeenCalledWith('language', 'de', expect.anything());
+    expect(updateSpy).toHaveBeenCalledWith(
+      'devices',
+      expect.arrayContaining([expect.objectContaining({ id: 'device-a' })]),
+      expect.anything()
+    );
+    expect(panel.webview.postMessage).toHaveBeenCalledWith({
+      type: 'saveResult',
+      success: true,
+      message:
+        'Saved settings. Reload the window or extension host, then save again to persist newly added default settings.',
+    });
+    expect(commands.executeCommand).not.toHaveBeenCalledWith('workbench.action.reloadWindow');
+  });
+
+  it('reloads the window after saving a changed language setting', async () => {
+    const panel = createPanel();
+
+    panel.__fireMessage({
+      type: 'save',
+      defaults: {
+        defaultPort: 22,
+        defaultLogCommand: 'tail -F /var/log/syslog',
+        defaultEnableSshTerminal: true,
+        defaultEnableSftpExplorer: true,
+        defaultEnableWebBrowser: false,
+        defaultEnableEmbeddedWebBrowser: false,
+        language: 'de',
+        defaultSshCommands: [],
+        maxLinesPerTab: 100000,
+      },
+      groups: [],
+      devices: [
+        {
+          id: 'device-a',
+          name: 'Device A',
+          host: '10.0.0.1',
+          username: 'root',
+        },
+      ],
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(panel.webview.postMessage).toHaveBeenCalledWith({
+      type: 'saveResult',
+      success: true,
+      message: 'Saved settings.',
+    });
+    expect(commands.executeCommand).toHaveBeenCalledWith('workbench.action.reloadWindow');
   });
 
   it('stores SFTP presets directly on device configuration entries', async () => {
@@ -711,6 +804,7 @@ describe('DeviceManagerPanel', () => {
       'embeddedLogger.defaultEnableSftpExplorer': true,
       'embeddedLogger.defaultEnableWebBrowser': false,
       'embeddedLogger.defaultEnableEmbeddedWebBrowser': true,
+      'embeddedLogger.language': 'vscode',
       'embeddedLogger.enableDevicePing': false,
       'embeddedLogger.devicePingIntervalSeconds': null,
       'embeddedLogger.defaultSshCommands': [
@@ -772,6 +866,7 @@ describe('DeviceManagerPanel', () => {
           'embeddedLogger.defaultEnableSftpExplorer': true,
           'embeddedLogger.defaultEnableWebBrowser': false,
           'embeddedLogger.defaultEnableEmbeddedWebBrowser': true,
+          'embeddedLogger.language': 'it',
           'embeddedLogger.enableDevicePing': true,
           'embeddedLogger.devicePingIntervalSeconds': 30,
           'embeddedLogger.defaultSshCommands': [
@@ -819,6 +914,7 @@ describe('DeviceManagerPanel', () => {
         defaultEnableSftpExplorer: true,
         defaultEnableWebBrowser: false,
         defaultEnableEmbeddedWebBrowser: true,
+        language: 'it',
         enableDevicePing: true,
         devicePingIntervalSeconds: 30,
         defaultSshCommands: [
@@ -834,7 +930,7 @@ describe('DeviceManagerPanel', () => {
       },
       groups: [{ name: 'Lab' }],
       devices: [
-        {
+        expect.objectContaining({
           id: 'device-a',
           group: 'Lab',
           name: 'Device A',
@@ -843,11 +939,11 @@ describe('DeviceManagerPanel', () => {
           showDefaultSshCommands: false,
           sftpPresetsRemote: ['/var/log'],
           sftpPresetsLocal: [],
-          bastion: {
+          bastion: expect.objectContaining({
             host: 'bastion.local',
             username: 'jump',
-          },
-        },
+          }),
+        }),
       ],
     });
   });

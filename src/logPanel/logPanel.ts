@@ -17,6 +17,7 @@ import { parseWebviewMessage } from './messageParser';
 import { WorkspaceStateStore } from './stateStore';
 import type { FilterPreset, LogPanelTarget } from './types';
 import { getDeviceColorIcon } from '../deviceColor';
+import { formatLocalizedString, getLocalizedStrings } from '../localization';
 
 /**
  * Lifecycle manager for a single log panel instance.
@@ -76,7 +77,7 @@ export class LogPanel {
 
     this.panel = vscode.window.createWebviewPanel(
       'embeddedLogger.logPanel',
-      `${this.targetName} Logs`,
+      formatLocalizedString(getLocalizedStrings().logPanel.logsTitle, { name: this.targetName }),
       vscode.ViewColumn.Active,
       {
         enableScripts: true,
@@ -206,7 +207,7 @@ export class LogPanel {
    */
   private createSession(): LogSession {
     if (!this.device) {
-      throw new Error('Cannot create a log session without a device.');
+      throw new Error(getLocalizedStrings().logPanelHost.cannotCreateWithoutDevice);
     }
 
     return new LogSession(
@@ -253,7 +254,9 @@ export class LogPanel {
     this.panel.webview.postMessage({ type: 'initialLines', lines: this.initialLines });
     this.panel.webview.postMessage({
       type: 'status',
-      message: `Loaded ${this.initialLines.length} lines.`,
+      message: formatLocalizedString(getLocalizedStrings().logPanelHost.loadedLines, {
+        count: this.initialLines.length,
+      }),
     });
   }
 
@@ -273,13 +276,23 @@ export class LogPanel {
     };
     const presets = await this.stateStore.savePreset(preset);
     this.panel.webview.postMessage({ type: 'presetsUpdated', presets });
-    vscode.window.showInformationMessage(`Preset "${preset.name}" saved for ${this.targetName}.`);
+    vscode.window.showInformationMessage(
+      formatLocalizedString(getLocalizedStrings().logPanelHost.presetSaved, {
+        name: preset.name,
+        target: this.targetName,
+      })
+    );
   }
 
   private async deletePreset(name: string): Promise<void> {
     const presets = await this.stateStore.deletePreset(name);
     this.panel.webview.postMessage({ type: 'presetsUpdated', presets });
-    vscode.window.showInformationMessage(`Preset "${name}" removed for ${this.targetName}.`);
+    vscode.window.showInformationMessage(
+      formatLocalizedString(getLocalizedStrings().logPanelHost.presetRemoved, {
+        name,
+        target: this.targetName,
+      })
+    );
   }
 
   /**
@@ -288,7 +301,7 @@ export class LogPanel {
   private async exportLogs(lines: string[]): Promise<void> {
     const uri = await vscode.window.showSaveDialog({
       filters: { Logs: ['log', 'txt'] },
-      saveLabel: 'Export logs',
+      saveLabel: getLocalizedStrings().logPanelHost.exportLogsSaveLabel,
     });
     if (!uri) {
       return;
@@ -297,12 +310,19 @@ export class LogPanel {
     try {
       await vscode.workspace.fs.writeFile(uri, content);
       vscode.window.showInformationMessage(
-        `Exported ${lines.length} lines from ${this.targetName}.`
+        formatLocalizedString(getLocalizedStrings().logPanelHost.exportedLines, {
+          count: lines.length,
+          target: this.targetName,
+        })
       );
     } catch (err: unknown) {
       const message = this.getErrorMessage(err);
       vscode.window.showErrorMessage(
-        message ? `Failed to export logs: ${message}` : 'Failed to export logs.'
+        message
+          ? formatLocalizedString(getLocalizedStrings().logPanelHost.failedToExportLogs, {
+              message,
+            })
+          : getLocalizedStrings().logPanelHost.failedToExportLogsFallback
       );
     }
   }
@@ -314,7 +334,7 @@ export class LogPanel {
 
   private async openSourceFile(): Promise<void> {
     if (!this.sourcePath) {
-      vscode.window.showErrorMessage('Edit is only available for imported log files.');
+      vscode.window.showErrorMessage(getLocalizedStrings().logPanelHost.editOnlyImported);
       return;
     }
 
@@ -324,14 +344,18 @@ export class LogPanel {
     } catch (err: unknown) {
       const message = this.getErrorMessage(err);
       vscode.window.showErrorMessage(
-        message ? `Failed to open log file: ${message}` : 'Failed to open log file.'
+        message
+          ? formatLocalizedString(getLocalizedStrings().logPanelHost.failedToOpenLogFile, {
+              message,
+            })
+          : getLocalizedStrings().logPanelHost.failedToOpenLogFileFallback
       );
     }
   }
 
   private async refreshFromSource(): Promise<void> {
     if (!this.sourcePath) {
-      vscode.window.showErrorMessage('Refresh is only available for imported log files.');
+      vscode.window.showErrorMessage(getLocalizedStrings().logPanelHost.refreshOnlyImported);
       return;
     }
 
@@ -341,7 +365,11 @@ export class LogPanel {
     } catch (err: unknown) {
       const message = this.getErrorMessage(err);
       vscode.window.showErrorMessage(
-        message ? `Failed to read log file: ${message}` : 'Failed to read log file.'
+        message
+          ? formatLocalizedString(getLocalizedStrings().logPanelHost.failedToReadLogFile, {
+              message,
+            })
+          : getLocalizedStrings().logPanelHost.failedToReadLogFileFallback
       );
       return;
     }
@@ -354,7 +382,10 @@ export class LogPanel {
     await this.panel.webview.postMessage({
       type: 'replaceLines',
       lines,
-      message: `Reloaded ${lines.length} lines from ${path.basename(this.sourcePath)}.`,
+      message: formatLocalizedString(getLocalizedStrings().logPanelHost.reloadedLinesFrom, {
+        count: lines.length,
+        file: path.basename(this.sourcePath),
+      }),
     });
   }
 
@@ -383,7 +414,7 @@ export class LogPanel {
     this.appendSessionClosedMarker(closedAt);
     this.panel.webview.postMessage({
       type: 'sessionClosed',
-      message: 'Session closed.',
+      message: getLocalizedStrings().logPanelHost.sessionClosed,
       closedAt,
     });
   }
@@ -400,7 +431,7 @@ export class LogPanel {
     void this.stopAutoSave({ message: '' });
     this.panel.webview.postMessage({
       type: 'sessionClosed',
-      message: 'Disconnected.',
+      message: getLocalizedStrings().logPanelHost.disconnected,
       closedAt,
     });
   }
@@ -412,7 +443,10 @@ export class LogPanel {
 
     this.session?.dispose();
     this.session = this.createSession();
-    await this.panel.webview.postMessage({ type: 'status', message: 'Reconnecting...' });
+    await this.panel.webview.postMessage({
+      type: 'status',
+      message: getLocalizedStrings().logPanelHost.reconnecting,
+    });
 
     try {
       await this.session.start();
@@ -420,7 +454,7 @@ export class LogPanel {
       const message = this.getErrorMessage(err);
       await this.panel.webview.postMessage({
         type: 'error',
-        message: message || 'Failed to reconnect.',
+        message: message || getLocalizedStrings().logPanelHost.failedToReconnect,
       });
     }
   }
@@ -439,18 +473,18 @@ export class LogPanel {
 
     const defaultUri = this.getDefaultAutoSaveUri();
     const selectedUri = await vscode.window.showSaveDialog({
-      title: 'Select log file to auto-save SSH output',
+      title: getLocalizedStrings().logPanelHost.autoSaveDialogTitle,
       defaultUri,
       filters: {
         Logs: ['log', 'txt'],
-        'All Files': ['*'],
+        [getLocalizedStrings().logPanelHost.allFiles]: ['*'],
       },
     });
 
     if (!selectedUri) {
       await this.panel.webview.postMessage({
         type: 'autoSaveStopped',
-        message: 'Auto-save cancelled.',
+        message: getLocalizedStrings().logPanelHost.autoSaveCancelled,
       });
       return;
     }
@@ -461,7 +495,11 @@ export class LogPanel {
         (message) => {
           void this.panel.webview.postMessage({
             type: 'autoSaveError',
-            message: message ? `Auto-save failed: ${message}` : 'Auto-save failed.',
+            message: message
+              ? formatLocalizedString(getLocalizedStrings().logPanelHost.autoSaveFailed, {
+                  message,
+                })
+              : getLocalizedStrings().logPanelHost.autoSaveFailedFallback,
           });
         },
         () => void this.stopAutoSave({ silent: true })
@@ -475,7 +513,9 @@ export class LogPanel {
       const message = this.getErrorMessage(err);
       await this.panel.webview.postMessage({
         type: 'autoSaveError',
-        message: message ? `Auto-save failed: ${message}` : 'Auto-save failed.',
+        message: message
+          ? formatLocalizedString(getLocalizedStrings().logPanelHost.autoSaveFailed, { message })
+          : getLocalizedStrings().logPanelHost.autoSaveFailedFallback,
       });
       void this.stopAutoSave({ silent: true });
     }
@@ -500,7 +540,11 @@ export class LogPanel {
   private appendSessionClosedMarker(closedAt: number): void {
     const timestamp = this.formatTimestamp(closedAt);
     this.writeAutoSaveLine('');
-    this.writeAutoSaveLine(`--- SSH session closed on ${timestamp}`);
+    this.writeAutoSaveLine(
+      formatLocalizedString(getLocalizedStrings().logPanelHost.sshSessionClosedOn, {
+        timestamp,
+      })
+    );
     this.writeAutoSaveLine('');
   }
 
@@ -531,7 +575,11 @@ export class LogPanel {
   }): Promise<void> {
     await this.panel.webview.postMessage({ type: 'hostKeyMismatch', ...details });
     void vscode.window.showErrorMessage(
-      `Host key verification failed for ${this.targetName}. Expected ${details.expected} but received ${details.received}. Update the fingerprint in settings to reconnect.`
+      formatLocalizedString(getLocalizedStrings().logPanelHost.hostKeyVerificationFailed, {
+        target: this.targetName,
+        expected: details.expected,
+        received: details.received,
+      })
     );
   }
 

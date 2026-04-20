@@ -1,0 +1,5 @@
+{
+  "embeddedLogger.commands.openLocalLogFile.title": "ローカル ログ ファイルを開く",
+  "embeddedLogger.commands.editDevicesConfig.title": "デバイス構成を編集",
+  "embeddedLogger.commands.pingAllDevices.title": "構成済みデバイスに ping"
+}

@@ -8,6 +8,7 @@
 import * as vscode from 'vscode';
 import { getDeviceColorIcon } from './deviceColor';
 import { getEmbeddedLoggerGroups } from './configuration';
+import { formatLocalizedString, getLocalizedStrings } from './localization';
 
 /**
  * Representation of a configured embedded device.
@@ -116,13 +117,12 @@ export class DeviceTreeDataProvider implements vscode.TreeDataProvider<DeviceTre
     }
 
     if ((!devices || devices.length === 0) && groups.length === 0) {
-      const item = new vscode.TreeItem(
-        'No devices configured. Update "embeddedLogger.devices" in settings.'
-      );
-      item.tooltip = 'Open settings to configure embedded devices.';
+      const strings = getLocalizedStrings().deviceTree;
+      const item = new vscode.TreeItem(strings.noDevicesConfigured);
+      item.tooltip = strings.openSettingsToConfigure;
       item.command = {
         command: 'workbench.action.openSettings',
-        title: 'Open Settings',
+        title: strings.openSettings,
         arguments: ['embeddedLogger.devices'],
       };
       return Promise.resolve([item as unknown as DeviceTreeItem]);
@@ -153,7 +153,7 @@ class DeviceItem extends vscode.TreeItem {
     this.iconPath = getDeviceColorIcon(device.color);
     this.command = {
       command: 'embeddedLogger.openDevice',
-      title: 'Open Device Logs',
+      title: getLocalizedStrings().deviceTree.openDeviceLogs,
       arguments: [device],
     };
     this.contextValue = 'embeddedLoggerDevice';
@@ -163,7 +163,9 @@ class DeviceItem extends vscode.TreeItem {
 class GroupItem extends vscode.TreeItem {
   constructor(public readonly groupName: string) {
     super(groupName, vscode.TreeItemCollapsibleState.Collapsed);
-    this.tooltip = `${groupName} group`;
+    this.tooltip = formatLocalizedString(getLocalizedStrings().deviceTree.groupTooltip, {
+      name: groupName,
+    });
     this.iconPath = new vscode.ThemeIcon('package');
     this.contextValue = 'embeddedLoggerDeviceGroup';
   }

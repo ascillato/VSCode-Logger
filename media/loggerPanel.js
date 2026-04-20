@@ -25,11 +25,21 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
  */
 (function () {
   const vscode = acquireVsCodeApi();
+  const i18n = window.embeddedLoggerI18n || {};
+
+  function t(keyPath, values = {}) {
+    const value = keyPath.split('.').reduce((current, key) => current?.[key], i18n);
+    const template = typeof value === 'string' ? value : keyPath;
+    return template.replace(/\{([^}]+)\}/g, (match, key) =>
+      values[key] === undefined ? match : String(values[key])
+    );
+  }
+
   const stateController = createStateController(vscode);
   const { schedulePersist, restoreStateFromSnapshot, persistState, nextEntryId, resetEntryIds } =
     stateController;
   const state = stateController.state;
-  const DEFAULT_CONNECTED_STATUS = 'Connected. Streaming logs...';
+  const DEFAULT_CONNECTED_STATUS = t('logPanel.connectedStreaming');
 
   const minLevelSelect = document.getElementById('minLevel');
   const textFilterInput = document.getElementById('textFilter');
@@ -78,13 +88,16 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
   let contextMenuSelectedText = '';
   const savedState = vscode.getState();
 
-  setButtonLabel(savePresetBtn, 'Save preset');
-  setButtonLabel(deletePresetBtn, 'Delete preset');
-  setButtonLabel(exportBtn, 'Export logs');
-  setButtonLabel(autoSaveToggle, state.autoSaveActive ? 'Stop auto-save' : 'Start auto-save');
-  setButtonLabel(clearLogsBtn, 'Clear logs');
-  setButtonLabel(editBtn, 'Edit log file');
-  setButtonLabel(refreshBtn, 'Refresh log file');
+  setButtonLabel(savePresetBtn, t('logPanel.savePreset'));
+  setButtonLabel(deletePresetBtn, t('logPanel.deletePreset'));
+  setButtonLabel(exportBtn, t('logPanel.exportLogs'));
+  setButtonLabel(
+    autoSaveToggle,
+    state.autoSaveActive ? t('logPanel.stopAutoSave') : t('logPanel.startAutoSave')
+  );
+  setButtonLabel(clearLogsBtn, t('logPanel.clearLogs'));
+  setButtonLabel(editBtn, t('logPanel.editLogFile'));
+  setButtonLabel(refreshBtn, t('logPanel.refreshLogFile'));
 
   setToggleState(wordWrapToggle, state.wordWrapEnabled);
   setToggleState(autoScrollToggle, state.autoScrollEnabled);
@@ -151,8 +164,8 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
     state.lineLimitReached = reached;
     if (lineLimitNotice) {
       lineLimitNotice.textContent = state.isLiveLog
-        ? LINE_LIMIT_NOTICE_LIVE
-        : LINE_LIMIT_NOTICE_OFFLINE;
+        ? t('logPanel.lineLimitLive') || LINE_LIMIT_NOTICE_LIVE
+        : t('logPanel.lineLimitOffline') || LINE_LIMIT_NOTICE_OFFLINE;
       lineLimitNotice.classList.toggle('hidden', !reached);
     }
     schedulePersist();
@@ -216,7 +229,7 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
       return;
     }
     highlightStatus.textContent =
-      state.highlights.length >= 10 ? 'You can highlight up to 10 keys.' : '';
+      state.highlights.length >= 10 ? t('logPanel.upToTenHighlights') : '';
   }
 
   function pushHighlightChanges() {
@@ -251,7 +264,7 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
       const input = document.createElement('input');
       input.type = 'text';
       input.value = highlight.key;
-      input.placeholder = 'Key to highlight';
+      input.placeholder = t('logPanel.keyToHighlight');
       input.className = 'highlight-input';
       input.addEventListener('input', () => {
         highlight.key = input.value;
@@ -266,7 +279,7 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
       remove.className = 'highlight-remove';
       remove.type = 'button';
       remove.textContent = '✕';
-      remove.title = 'Remove highlight';
+      remove.title = t('logPanel.removeHighlight');
       remove.addEventListener('click', () => {
         state.highlights = state.highlights.filter((item) => item.id !== highlight.id);
         renderHighlightRows();
@@ -370,7 +383,7 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
     }
     presetDropdown.innerHTML = '';
     const options = [
-      { value: '', label: '(no preset)' },
+      { value: '', label: t('logPanel.noPreset') },
       ...state.presets.map((p) => ({
         value: p.name,
         label: p.name,
@@ -405,7 +418,9 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
     if (!presetDropdownButton) {
       return;
     }
-    const label = activePresetName ? `Filter preset: ${activePresetName}` : 'Filter presets';
+    const label = activePresetName
+      ? t('logPanel.filterPresetNamed', { name: activePresetName })
+      : t('logPanel.filterPresets');
     presetDropdownButton.title = label;
     presetDropdownButton.setAttribute('aria-label', label);
     presetDropdownButton.setAttribute('aria-expanded', isPresetDropdownOpen ? 'true' : 'false');
@@ -732,7 +747,7 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
     dialog.className = 'bookmark-dialog__content';
 
     const title = document.createElement('h3');
-    title.textContent = 'Bookmark label';
+    title.textContent = t('logPanel.bookmarkLabel');
 
     const form = document.createElement('form');
     form.className = 'bookmark-dialog__form';
@@ -741,7 +756,7 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
     input.type = 'text';
     input.name = 'bookmarkLabel';
     input.className = 'bookmark-dialog__input';
-    input.placeholder = 'Enter bookmark label';
+    input.placeholder = t('logPanel.enterBookmarkLabel');
 
     const actions = document.createElement('div');
     actions.className = 'bookmark-dialog__actions';
@@ -749,11 +764,11 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
     const cancelButton = document.createElement('button');
     cancelButton.type = 'button';
     cancelButton.className = 'secondary';
-    cancelButton.textContent = 'Cancel';
+    cancelButton.textContent = t('common.cancel');
 
     const saveButton = document.createElement('button');
     saveButton.type = 'submit';
-    saveButton.textContent = 'Save';
+    saveButton.textContent = t('common.save');
 
     actions.appendChild(cancelButton);
     actions.appendChild(saveButton);
@@ -968,12 +983,12 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
     menu.id = 'bookmarkContextMenu';
     menu.className = 'bookmark-context-menu hidden';
     const actions = [
-      { action: 'add', label: 'Add bookmark' },
-      { action: 'edit', label: 'Edit bookmark label' },
-      { action: 'remove', label: 'Remove bookmark' },
-      { action: 'removeAll', label: 'Remove all bookmarks' },
-      { action: 'next', label: 'Go to next bookmark' },
-      { action: 'previous', label: 'Go to previous bookmark' },
+      { action: 'add', label: t('logPanel.addBookmark') },
+      { action: 'edit', label: t('logPanel.editBookmarkLabel') },
+      { action: 'remove', label: t('logPanel.removeBookmark') },
+      { action: 'removeAll', label: t('logPanel.removeAllBookmarks') },
+      { action: 'next', label: t('logPanel.goToNextBookmark') },
+      { action: 'previous', label: t('logPanel.goToPreviousBookmark') },
     ];
     const list = document.createElement('ul');
     for (const item of actions) {
@@ -1033,7 +1048,7 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
 
     const copyListItem = document.createElement('li');
     const copyButton = document.createElement('button');
-    copyButton.textContent = 'Copy';
+    copyButton.textContent = t('common.copy');
     copyButton.dataset.action = 'copy';
     copyListItem.appendChild(copyButton);
     list.insertBefore(copyListItem, list.firstChild);
@@ -1151,7 +1166,7 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
     const list = document.createElement('ul');
     const resetItem = document.createElement('li');
     const resetButton = document.createElement('button');
-    resetButton.textContent = 'Clear status message';
+    resetButton.textContent = t('logPanel.clearStatusMessage');
     resetButton.dataset.action = 'resetStatus';
     resetItem.appendChild(resetButton);
     list.appendChild(resetItem);
@@ -1276,7 +1291,7 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
     reconnectButton.classList.remove('hidden');
     reconnectButton.hidden = false;
     reconnectButton.textContent =
-      state.connectionState === 'connected' ? 'Disconnect' : 'Reconnect';
+      state.connectionState === 'connected' ? t('logPanel.disconnect') : t('logPanel.reconnect');
 
     const shouldDisable = options.preserveDisabled
       ? reconnectButton.disabled
@@ -1339,7 +1354,9 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
       return;
     }
 
-    const isWaitingForPassword = (text) => text === 'Waiting for the user to enter the password…';
+    const isWaitingForPassword = (text) =>
+      text === 'Waiting for the user to enter the password…' ||
+      text === t('logPanel.waitingForPassword');
 
     const appendStatusText = (container, text) => {
       if (!text) {
@@ -1412,7 +1429,7 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
   function setAutoSaveActive(active) {
     state.autoSaveActive = active;
     if (autoSaveToggle) {
-      const label = active ? 'Stop auto-save' : 'Start auto-save';
+      const label = active ? t('logPanel.stopAutoSave') : t('logPanel.startAutoSave');
       setButtonLabel(autoSaveToggle, label);
       autoSaveToggle.classList.toggle('auto-save-active', active);
       updateAutoSaveToggleState();
@@ -1449,14 +1466,18 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
    * @brief Starts a countdown and triggers a reconnect request after it elapses.
    * @param baseMessage Message to prefix the countdown with.
    */
-  function startReconnectCountdown(baseMessage = 'Connection closed.') {
+  function startReconnectCountdown(baseMessage = t('logPanel.connectionClosed')) {
     if (!state.isLiveLog || !state.autoReconnectEnabled || reconnectTimeoutId) {
       updateStatus(baseMessage, { disableButton: false });
       return;
     }
 
     reconnectCountdown = 5;
-    const renderCountdown = () => `${baseMessage} Retrying in ${reconnectCountdown} seconds...`;
+    const renderCountdown = () =>
+      t('logPanel.retryingInSeconds', {
+        message: baseMessage,
+        seconds: reconnectCountdown,
+      });
     updateStatus(renderCountdown(), { disableButton: false });
     reconnectIntervalId = window.setInterval(() => {
       reconnectCountdown -= 1;
@@ -1468,7 +1489,7 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
     reconnectTimeoutId = window.setTimeout(() => {
       clearReconnectTimers();
       setConnectionState('connecting');
-      updateStatus('Reconnecting...', { disableButton: true });
+      updateStatus(t('logPanel.reconnecting'), { disableButton: true });
       vscode.postMessage({ type: 'requestReconnect' });
     }, 5000);
   }
@@ -1481,11 +1502,11 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
     setConnectionState('disconnected');
     clearReconnectTimers();
     if (state.autoReconnectEnabled && state.isLiveLog) {
-      startReconnectCountdown(message || 'Connection closed.');
+      startReconnectCountdown(message || t('logPanel.connectionClosed'));
       return;
     }
 
-    updateStatus(message || 'Connection closed.', { disableButton: false });
+    updateStatus(message || t('logPanel.connectionClosed'), { disableButton: false });
   }
 
   function handleHostKeyMismatch(expected, received) {
@@ -1498,8 +1519,8 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
     setConnectionState('disconnected');
     const message =
       expected && received
-        ? `Host key verification failed. Expected ${expected} but received ${received}. Update the fingerprint to reconnect.`
-        : 'Host key verification failed. Update the stored fingerprint before reconnecting.';
+        ? t('logPanel.hostKeyFailedDetails', { expected, received })
+        : t('logPanel.hostKeyFailed');
     updateStatus(message, { disableButton: false });
   }
 
@@ -1510,9 +1531,9 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
    */
   function handleSessionClosed(message, closedAt) {
     const formattedTimestamp = formatLocalTimestamp(closedAt);
-    handleConnectionLoss(message || 'Session closed.');
+    handleConnectionLoss(message || t('logPanel.sessionClosed'));
     handleLogLine('', { className: 'session-closed-buffer', bypassFilters: true });
-    handleLogLine(`--- SSH session closed on ${formattedTimestamp}`, {
+    handleLogLine(t('logPanel.sshSessionClosedOn', { timestamp: formattedTimestamp }), {
       className: 'session-closed',
       bypassFilters: true,
     });
@@ -1530,7 +1551,7 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
     const pad = (num) => String(num).padStart(2, '0');
     const datePart = `${safeTimestamp.getFullYear()}-${pad(safeTimestamp.getMonth() + 1)}-${pad(safeTimestamp.getDate())}`;
     const timePart = `${pad(safeTimestamp.getHours())}:${pad(safeTimestamp.getMinutes())}:${pad(safeTimestamp.getSeconds())}`;
-    return `${datePart} at ${timePart}`;
+    return t('logPanel.dateAtTime', { date: datePart, time: timePart });
   }
 
   /**
@@ -1579,7 +1600,7 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
     }
 
     if (text.startsWith('Connection closed')) {
-      handleConnectionLoss('Connection closed.');
+      handleConnectionLoss(t('logPanel.connectionClosed'));
       return;
     }
 
@@ -1913,7 +1934,7 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
     if (!state.autoReconnectEnabled) {
       clearReconnectTimers();
     } else if (state.connectionState === 'disconnected') {
-      startReconnectCountdown('Connection closed.');
+      startReconnectCountdown(t('logPanel.connectionClosed'));
     }
     schedulePersist();
   });
@@ -1970,13 +1991,13 @@ import { registerMessageHandlers } from './loggerPanel/messaging.js';
         setToggleState(autoReconnectToggle, false);
       }
       setConnectionState('connecting');
-      updateStatus('Disconnecting...', { disableButton: true });
+      updateStatus(t('logPanel.disconnecting'), { disableButton: true });
       vscode.postMessage({ type: 'requestDisconnect' });
       return;
     }
 
     setConnectionState('connecting');
-    updateStatus('Reconnecting...', { disableButton: true, preserveDisabled: true });
+    updateStatus(t('logPanel.reconnecting'), { disableButton: true, preserveDisabled: true });
     vscode.postMessage({ type: 'requestReconnect' });
   });
 

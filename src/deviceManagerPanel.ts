@@ -8,6 +8,15 @@ import * as vscode from 'vscode';
 import type { EmbeddedDevice, SshCommandDefinition } from './deviceTree';
 import { sanitizeSftpPresets } from './configuration';
 import { normalizeStoredCommand, normalizeStoredScript } from './sshCommandExecution';
+import {
+  escapeHtml,
+  formatLocalizedString,
+  getLocalizedStrings,
+  getLanguagePreference,
+  isLanguagePreference,
+  languagePreferences,
+  type LanguagePreference,
+} from './localization';
 
 const defaultLogCommandValue = 'tail -F /var/log/syslog';
 const importedSettingsKeys = [
@@ -49,6 +58,7 @@ interface DefaultsPayload {
   defaultEnableSftpExplorer: boolean;
   defaultEnableWebBrowser: boolean;
   defaultEnableEmbeddedWebBrowser: boolean;
+  language?: LanguagePreference;
   enableDevicePing?: boolean;
   devicePingIntervalSeconds?: number | string | null;
   defaultSshCommands: SshCommandDefinition[];
@@ -99,6 +109,7 @@ interface ExportedSettingsPayload {
   'embeddedLogger.defaultEnableSftpExplorer': boolean;
   'embeddedLogger.defaultEnableWebBrowser': boolean;
   'embeddedLogger.defaultEnableEmbeddedWebBrowser': boolean;
+  'embeddedLogger.language'?: LanguagePreference;
   'embeddedLogger.enableDevicePing': boolean;
   'embeddedLogger.devicePingIntervalSeconds': number | null;
   'embeddedLogger.defaultSshCommands': SshCommandDefinition[];
@@ -167,7 +178,7 @@ export class DeviceManagerPanel {
     this.panel.webview.html = this.buildHtml(this.panel.webview);
   }
 
-  static createOrShow(extensionUri: vscode.Uri, extensionVersion: string): void {
+  static createOrShow(extensionUri: vscode.Uri, extensionVersion = 'unknown'): void {
     const column = vscode.window.activeTextEditor?.viewColumn;
 
     if (DeviceManagerPanel.currentPanel) {
@@ -177,7 +188,7 @@ export class DeviceManagerPanel {
 
     const panel = vscode.window.createWebviewPanel(
       DeviceManagerPanel.viewType,
-      'Embedded Devices Manager',
+      getLocalizedStrings().deviceManager.panelTitle,
       column ?? vscode.ViewColumn.Active,
       {
         enableScripts: true,
@@ -209,45 +220,55 @@ export class DeviceManagerPanel {
       .toString();
     const nonce = getNonce();
 
-    const pageTitle = `Embedded Device Logger v${this.extensionVersion}`;
+    const strings = getLocalizedStrings();
+    const dm = strings.deviceManager;
+    const common = strings.common;
+    const languageNames = strings.languageNames;
+    const pageTitle = formatLocalizedString(dm.title, { version: this.extensionVersion });
+    const e = escapeHtml;
+    const languageOptions = languagePreferences
+      .map((language) => {
+        return `<option value="${e(language)}">${e(languageNames[language])}</option>`;
+      })
+      .join('');
 
     return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${e(strings.htmlLang)}">
   <head>
     <meta charset="UTF-8" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}'; style-src ${webview.cspSource} 'unsafe-inline';" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="${stylesUri}" />
-    <title>${pageTitle}</title>
+    <title>${e(pageTitle)}</title>
   </head>
   <body>
     <main class="container">
       <header class="header">
         <div>
-          <h1>${pageTitle}</h1>
-          <p>Manage devices and default configuration.</p>
+          <h1>${e(pageTitle)}</h1>
+          <p>${e(dm.intro)}</p>
         </div>
         <div class="header-actions">
-          <button class="button button-danger" id="clearPasswords">Remove Stored Passwords</button>
+          <button class="button button-danger" id="clearPasswords">${e(dm.removeStoredPasswords)}</button>
           <button
             class="button button-icon button-emoji"
             id="importSettings"
-            title="Import Settings"
-            aria-label="Import Settings"
+            title="${e(common.importSettings)}"
+            aria-label="${e(common.importSettings)}"
           >
             📥
           </button>
           <button
             class="button button-icon button-emoji"
             id="exportSettings"
-            title="Export Settings"
-            aria-label="Export Settings"
+            title="${e(common.exportSettings)}"
+            aria-label="${e(common.exportSettings)}"
           >
             📤
           </button>
-          <button class="button" id="editJson">Edit in JSON</button>
-          <button class="button button-icon" id="helpButton" title="View configuration example">?</button>
-          <button class="button button-primary" id="saveChanges">Save changes</button>
+          <button class="button" id="editJson">${e(dm.editJson)}</button>
+          <button class="button button-icon" id="helpButton" title="${e(dm.viewConfigurationExample)}">?</button>
+          <button class="button button-primary" id="saveChanges">${e(dm.saveChanges)}</button>
         </div>
       </header>
 
@@ -256,61 +277,67 @@ export class DeviceManagerPanel {
       <section class="card">
         <div class="card-header">
           <div class="card-header-text">
-            <h2>Defaults</h2>
-            <p>Default values for all devices. Each device can change it in devices table if desired.</p>
+            <h2>${e(dm.defaults)}</h2>
+            <p>${e(dm.defaultsDescription)}</p>
           </div>
         </div>
         <div class="divider" aria-hidden="true"></div>
         <div class="grid grid-3">
           <label class="field checkbox">
             <input type="checkbox" id="defaultEnableSshTerminal" />
-            <span>Enable SSH terminal</span>
+            <span>${e(dm.enableSshTerminal)}</span>
           </label>
           <label class="field checkbox">
             <input type="checkbox" id="defaultEnableSftpExplorer" />
-            <span>Enable SFTP explorer</span>
+            <span>${e(dm.enableSftpExplorer)}</span>
           </label>
           <label class="field checkbox">
             <input type="checkbox" id="defaultEnableWebBrowser" />
-            <span>Enable external web browser</span>
+            <span>${e(dm.enableExternalWebBrowser)}</span>
           </label>
           <label class="field checkbox">
             <input type="checkbox" id="defaultEnableEmbeddedWebBrowser" />
-            <span>Enable embedded web browser</span>
+            <span>${e(dm.enableEmbeddedWebBrowser)}</span>
           </label>
           <label class="field checkbox">
             <input type="checkbox" id="enableDevicePing" />
-            <span>Enable device ping</span>
+            <span>${e(dm.enableDevicePing)}</span>
           </label>
         </div>
         <div class="divider" aria-hidden="true"></div>
         <div class="grid grid-3">
           <label class="field">
-            <span>Port</span>
+            <span>${e(dm.port)}</span>
             <input type="number" id="defaultPort" min="1" />
           </label>
           <label class="field">
-            <span>Log command</span>
+            <span>${e(dm.logCommand)}</span>
             <input type="text" id="defaultLogCommand" />
           </label>
           <label class="field">
-            <span>Max lines per tab</span>
+            <span>${e(dm.maxLinesPerTab)}</span>
             <input type="number" id="maxLinesPerTab" min="1" />
           </label>
           <label class="field">
-            <span>Ping interval (seconds)</span>
+            <span>${e(dm.pingIntervalSeconds)}</span>
             <input
               type="text"
               id="devicePingIntervalSeconds"
               inputmode="numeric"
               pattern="[0-9]*"
-              placeholder="Leave blank for manual ping only"
+              placeholder="${e(dm.pingIntervalPlaceholder)}"
             />
+          </label>
+          <label class="field">
+            <span>${e(dm.language)}</span>
+            <select id="extensionLanguage">
+              ${languageOptions}
+            </select>
           </label>
         </div>
         <div class="divider" aria-hidden="true"></div>
         <div class="field">
-          <span>SSH commands</span>
+          <span>${e(dm.sshCommands)}</span>
           <div id="defaultSshCommands"></div>
         </div>
       </section>
@@ -320,22 +347,22 @@ export class DeviceManagerPanel {
       <section class="card">
         <div class="card-header">
           <div class="card-header-text">
-            <h2>Groups</h2>
-            <p>Define optional groups to organize devices in the Embedded Devices view.</p>
+            <h2>${e(dm.groups)}</h2>
+            <p>${e(dm.groupsDescription)}</p>
           </div>
           <div class="card-header-actions">
-            <button class="button" id="addGroup">Add group</button>
+            <button class="button" id="addGroup">${e(dm.addGroup)}</button>
             <button class="button button-icon" id="moveSelectedGroupsUp" disabled>&uarr;</button>
             <button class="button button-icon" id="moveSelectedGroupsDown" disabled>&darr;</button>
-            <button class="button button-danger" id="removeSelectedGroups" disabled>Remove</button>
+            <button class="button button-danger" id="removeSelectedGroups" disabled>${e(common.remove)}</button>
           </div>
         </div>
         <div class="table-wrapper table-wrapper--groups">
           <table id="groupsTable">
             <thead>
               <tr>
-                <th>Select</th>
-                <th>Name</th>
+                <th>${e(common.select)}</th>
+                <th>${e(common.name)}</th>
               </tr>
             </thead>
             <tbody id="groupsBody"></tbody>
@@ -348,16 +375,16 @@ export class DeviceManagerPanel {
       <section class="card">
         <div class="card-header">
           <div class="card-header-text">
-            <h2>Devices</h2>
-            <p>Add or remove rows, then edit fields inline.</p>
+            <h2>${e(dm.devices)}</h2>
+            <p>${e(dm.devicesDescription)}</p>
           </div>
           <div class="card-header-actions">
-            <button class="button" id="addDevice">Add device</button>
+            <button class="button" id="addDevice">${e(dm.addDevice)}</button>
             <button
               class="button button-icon"
               id="moveSelectedUp"
-              title="Move selected devices up in the list"
-              aria-label="Move selected devices up"
+              title="${e(dm.moveSelectedDevicesUp)}"
+              aria-label="${e(dm.moveSelectedDevicesUp)}"
               disabled
             >
               &uarr;
@@ -365,8 +392,8 @@ export class DeviceManagerPanel {
             <button
               class="button button-icon"
               id="moveSelectedDown"
-              title="Move selected devices down in the list"
-              aria-label="Move selected devices down"
+              title="${e(dm.moveSelectedDevicesDown)}"
+              aria-label="${e(dm.moveSelectedDevicesDown)}"
               disabled
             >
               &darr;
@@ -374,12 +401,12 @@ export class DeviceManagerPanel {
             <button
               class="button"
               id="clearSelectedPasswords"
-              title="Remove stored passwords and passphrases for selected devices"
+              title="${e(dm.removeStoredPasswordsForSelectedDevices)}"
               disabled
             >
-              Reset password
+              ${e(dm.resetPassword)}
             </button>
-            <button class="button button-danger" id="removeSelectedDevices" disabled>Remove</button>
+            <button class="button button-danger" id="removeSelectedDevices" disabled>${e(common.remove)}</button>
           </div>
         </div>
         <div class="table-wrapper">
@@ -387,37 +414,37 @@ export class DeviceManagerPanel {
             <colgroup id="devicesColGroup"></colgroup>
             <thead>
               <tr>
-                <th>Select</th>
-                <th>ID</th>
-                <th>Group</th>
-                <th>Color</th>
-                <th>Name</th>
-                <th>Host</th>
-                <th>Port</th>
-                <th>User</th>
-                <th>Log command</th>
-                <th>Host fingerprint</th>
-                <th>Secondary host</th>
-                <th>Secondary fingerprint</th>
-                <th>SSH terminal</th>
-                <th>SFTP</th>
-                <th>SFTP presets (remote)</th>
-                <th>SFTP presets (local)</th>
-                <th>External Web Browser</th>
-                <th>Embedded Web Browser</th>
-                <th>Web URL</th>
-                <th>Private key path</th>
-                <th>Private key passphrase</th>
-                <th>Password (write only)</th>
-                <th>Show default SSH cmnds</th>
-                <th>SSH commands</th>
-                <th>Bastion host</th>
-                <th>Bastion port</th>
-                <th>Bastion user</th>
-                <th>Bastion fingerprint</th>
-                <th>Bastion key path</th>
-                <th>Bastion key passphrase</th>
-                <th>Bastion password (write only)</th>
+                <th>${e(common.select)}</th>
+                <th>${e(dm.columnId)}</th>
+                <th>${e(dm.columnGroup)}</th>
+                <th>${e(dm.columnColor)}</th>
+                <th>${e(common.name)}</th>
+                <th>${e(dm.columnHost)}</th>
+                <th>${e(dm.port)}</th>
+                <th>${e(dm.columnUser)}</th>
+                <th>${e(dm.logCommand)}</th>
+                <th>${e(dm.columnHostFingerprint)}</th>
+                <th>${e(dm.columnSecondaryHost)}</th>
+                <th>${e(dm.columnSecondaryFingerprint)}</th>
+                <th>${e(dm.columnSshTerminal)}</th>
+                <th>${e(dm.columnSftp)}</th>
+                <th>${e(dm.columnSftpPresetsRemote)}</th>
+                <th>${e(dm.columnSftpPresetsLocal)}</th>
+                <th>${e(dm.columnExternalWebBrowser)}</th>
+                <th>${e(dm.columnEmbeddedWebBrowser)}</th>
+                <th>${e(dm.columnWebUrl)}</th>
+                <th>${e(dm.columnPrivateKeyPath)}</th>
+                <th>${e(dm.columnPrivateKeyPassphrase)}</th>
+                <th>${e(dm.columnPasswordWriteOnly)}</th>
+                <th>${e(dm.columnShowDefaultSshCommands)}</th>
+                <th>${e(dm.sshCommands)}</th>
+                <th>${e(dm.columnBastionHost)}</th>
+                <th>${e(dm.columnBastionPort)}</th>
+                <th>${e(dm.columnBastionUser)}</th>
+                <th>${e(dm.columnBastionFingerprint)}</th>
+                <th>${e(dm.columnBastionKeyPath)}</th>
+                <th>${e(dm.columnBastionKeyPassphrase)}</th>
+                <th>${e(dm.columnBastionPasswordWriteOnly)}</th>
               </tr>
             </thead>
             <tbody id="devicesBody"></tbody>
@@ -425,6 +452,7 @@ export class DeviceManagerPanel {
         </div>
       </section>
     </main>
+    <script nonce="${nonce}">window.embeddedLoggerI18n = ${JSON.stringify(strings)};</script>
     <script nonce="${nonce}" src="${scriptUri}"></script>
   </body>
 </html>`;
@@ -452,7 +480,9 @@ export class DeviceManagerPanel {
       const normalizedDefaults = this.normalizeDefaults(defaults);
       const normalizedGroups = this.normalizeGroups(groups);
       const normalizedDevices = devices.map((device) => this.normalizeDevice(device));
-      let saveMessage = 'Saved settings.';
+      let saveMessage = getLocalizedStrings().deviceManager.savedSettings;
+      const previousLanguage = getLanguagePreference(config);
+      let shouldReloadAfterSave = false;
 
       const updates: Array<{
         run: () => Thenable<void>;
@@ -499,6 +529,13 @@ export class DeviceManagerPanel {
           tolerateUnregistered: 'embeddedLogger.defaultEnableEmbeddedWebBrowser',
         },
         {
+          run: async (): Promise<void> => {
+            await config.update('language', normalizedDefaults.language, target);
+            shouldReloadAfterSave = previousLanguage !== normalizedDefaults.language;
+          },
+          tolerateUnregistered: 'embeddedLogger.language',
+        },
+        {
           run: () => config.update('enableDevicePing', normalizedDefaults.enableDevicePing, target),
         },
         {
@@ -532,8 +569,7 @@ export class DeviceManagerPanel {
             update.tolerateUnregistered &&
             this.isUnregisteredConfigurationError(error, update.tolerateUnregistered)
           ) {
-            saveMessage =
-              'Saved settings. Reload the window or extension host, then save again to persist the Embedded Web Browser default.';
+            saveMessage = getLocalizedStrings().deviceManager.reloadToPersistNewDefaultSettings;
             continue;
           }
 
@@ -546,6 +582,12 @@ export class DeviceManagerPanel {
         success: true,
         message: saveMessage,
       });
+
+      if (shouldReloadAfterSave) {
+        void vscode.commands
+          .executeCommand('workbench.action.reloadWindow')
+          .then(undefined, () => undefined);
+      }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
       this.panel.webview.postMessage({ type: 'saveResult', success: false, message });
@@ -565,7 +607,7 @@ export class DeviceManagerPanel {
           )
         : undefined;
       const exportUri = await vscode.window.showSaveDialog({
-        saveLabel: 'Export settings',
+        saveLabel: getLocalizedStrings().deviceManager.exportSettingsSaveLabel,
         filters: { JSON: ['json'], All: ['*'] },
         defaultUri,
       });
@@ -573,7 +615,7 @@ export class DeviceManagerPanel {
       if (!exportUri) {
         this.panel.webview.postMessage({
           type: 'operationResult',
-          message: 'Export canceled.',
+          message: getLocalizedStrings().deviceManager.exportCanceled,
           variant: 'info',
         });
         return;
@@ -585,14 +627,18 @@ export class DeviceManagerPanel {
       await vscode.workspace.fs.writeFile(exportUri, content);
       this.panel.webview.postMessage({
         type: 'operationResult',
-        message: `Exported settings to ${exportUri.fsPath}.`,
+        message: formatLocalizedString(getLocalizedStrings().deviceManager.exportedSettingsTo, {
+          path: exportUri.fsPath,
+        }),
         variant: 'success',
       });
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
       this.panel.webview.postMessage({
         type: 'operationResult',
-        message: `Failed to export settings: ${message}`,
+        message: formatLocalizedString(getLocalizedStrings().deviceManager.failedToExportSettings, {
+          message,
+        }),
         variant: 'error',
       });
     }
@@ -605,13 +651,13 @@ export class DeviceManagerPanel {
         canSelectFolders: false,
         canSelectMany: false,
         filters: { JSON: ['json'], All: ['*'] },
-        openLabel: 'Import settings',
+        openLabel: getLocalizedStrings().deviceManager.importSettingsOpenLabel,
       });
 
       if (!selection?.length) {
         this.panel.webview.postMessage({
           type: 'operationResult',
-          message: 'Import canceled.',
+          message: getLocalizedStrings().deviceManager.importCanceled,
           variant: 'info',
         });
         return;
@@ -625,7 +671,9 @@ export class DeviceManagerPanel {
       this.panel.webview.postMessage({
         type: 'importResult',
         success: true,
-        message: `Imported settings from ${importUri.fsPath}. Review and click Save changes to apply them.`,
+        message: formatLocalizedString(getLocalizedStrings().deviceManager.importedSettingsFrom, {
+          path: importUri.fsPath,
+        }),
         ...this.buildWebviewState(imported.defaults, imported.groups, imported.devices),
       });
     } catch (error: unknown) {
@@ -633,7 +681,10 @@ export class DeviceManagerPanel {
       this.panel.webview.postMessage({
         type: 'importResult',
         success: false,
-        message: `Failed to import settings: ${message}`,
+        message: formatLocalizedString(
+          getLocalizedStrings().deviceManager.failedToImportSettingsWithMessage,
+          { message }
+        ),
       });
     }
   }
@@ -655,6 +706,7 @@ export class DeviceManagerPanel {
       'defaultEnableSftpExplorer',
       'defaultEnableWebBrowser',
       'defaultEnableEmbeddedWebBrowser',
+      'language',
       'enableDevicePing',
       'devicePingIntervalSeconds',
       'defaultSshCommands',
@@ -708,6 +760,7 @@ export class DeviceManagerPanel {
     defaultEnableSftpExplorer: boolean;
     defaultEnableWebBrowser: boolean;
     defaultEnableEmbeddedWebBrowser: boolean;
+    language: LanguagePreference;
     enableDevicePing: boolean;
     devicePingIntervalSeconds?: number;
     defaultSshCommands: SshCommandDefinition[];
@@ -720,6 +773,7 @@ export class DeviceManagerPanel {
     const defaultEnableSftpExplorer = Boolean(defaults.defaultEnableSftpExplorer);
     const defaultEnableWebBrowser = Boolean(defaults.defaultEnableWebBrowser);
     const defaultEnableEmbeddedWebBrowser = Boolean(defaults.defaultEnableEmbeddedWebBrowser);
+    const language = this.normalizeLanguage(defaults.language);
     const enableDevicePing = Boolean(defaults.enableDevicePing);
     const devicePingIntervalSeconds = this.toOptionalPositiveInteger(
       defaults.devicePingIntervalSeconds
@@ -733,6 +787,7 @@ export class DeviceManagerPanel {
       defaultEnableSftpExplorer,
       defaultEnableWebBrowser,
       defaultEnableEmbeddedWebBrowser,
+      language,
       enableDevicePing,
       devicePingIntervalSeconds,
       defaultSshCommands,
@@ -750,6 +805,7 @@ export class DeviceManagerPanel {
       defaultEnableWebBrowser: config.get<boolean>('defaultEnableWebBrowser', true) ?? true,
       defaultEnableEmbeddedWebBrowser:
         config.get<boolean>('defaultEnableEmbeddedWebBrowser', true) ?? true,
+      language: getLanguagePreference(config),
       enableDevicePing: config.get<boolean>('enableDevicePing', true) ?? true,
       devicePingIntervalSeconds:
         config.get<number | null>('devicePingIntervalSeconds', null) ?? undefined,
@@ -791,6 +847,7 @@ export class DeviceManagerPanel {
       'embeddedLogger.defaultEnableWebBrowser': normalizedDefaults.defaultEnableWebBrowser,
       'embeddedLogger.defaultEnableEmbeddedWebBrowser':
         normalizedDefaults.defaultEnableEmbeddedWebBrowser,
+      'embeddedLogger.language': normalizedDefaults.language,
       'embeddedLogger.enableDevicePing': normalizedDefaults.enableDevicePing,
       'embeddedLogger.devicePingIntervalSeconds':
         normalizedDefaults.devicePingIntervalSeconds ?? null,
@@ -831,6 +888,7 @@ export class DeviceManagerPanel {
         data,
         'embeddedLogger.defaultEnableEmbeddedWebBrowser'
       ),
+      language: this.normalizeLanguage(data['embeddedLogger.language']),
       enableDevicePing: this.readRequiredBoolean(data, 'embeddedLogger.enableDevicePing'),
       devicePingIntervalSeconds: this.readOptionalPositiveNumber(
         data['embeddedLogger.devicePingIntervalSeconds'],
@@ -1134,6 +1192,10 @@ export class DeviceManagerPanel {
     return value
       .map((group) => ({ name: (group?.name ?? '').trim() }))
       .filter((group) => group.name.length > 0);
+  }
+
+  private normalizeLanguage(value: unknown): LanguagePreference {
+    return isLanguagePreference(value) ? value : 'vscode';
   }
 
   private validateGroups(value: unknown, key: string): GroupPayload[] {

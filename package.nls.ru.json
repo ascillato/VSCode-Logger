@@ -1,0 +1,5 @@
+{
+  "embeddedLogger.commands.openLocalLogFile.title": "Открыть локальный файл журнала",
+  "embeddedLogger.commands.editDevicesConfig.title": "Изменить конфигурацию устройств",
+  "embeddedLogger.commands.pingAllDevices.title": "Проверить настроенные устройства"
+}

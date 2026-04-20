@@ -3,7 +3,7 @@
   "displayName": "Embedded Device Logger",
   "description": "Stream and filter embedded Linux device logs over SSH inside VS Code.",
   "icon": "media/icon.png",
-  "version": "1.9.8",
+  "version": "1.9.9",
   "publisher": "Scallant",
   "author": "A. Scillato",
   "engines": {
@@ -43,6 +43,48 @@
     "configuration": {
       "title": "Embedded Device Logger",
       "properties": {
+        "embeddedLogger.language": {
+          "type": "string",
+          "scope": "resource",
+          "default": "vscode",
+          "enum": [
+            "vscode",
+            "en",
+            "es",
+            "it",
+            "zh-cn",
+            "zh-tw",
+            "fr",
+            "de",
+            "ja",
+            "ko",
+            "ru",
+            "pt-br",
+            "tr",
+            "pl",
+            "cs",
+            "hu"
+          ],
+          "enumItemLabels": [
+            "VSCode default",
+            "English",
+            "Spanish",
+            "Italian",
+            "Simplified Chinese",
+            "Traditional Chinese",
+            "French",
+            "German",
+            "Japanese",
+            "Korean",
+            "Russian",
+            "Portuguese (Brazil)",
+            "Turkish",
+            "Polish",
+            "Czech",
+            "Hungarian"
+          ],
+          "description": "Language used by the extension UI. VSCode default follows Configure Display Language and falls back to English for unsupported display languages."
+        },
         "embeddedLogger.defaultPort": {
           "type": "number",
           "scope": "resource",
@@ -513,7 +555,7 @@
     "commands": [
       {
         "command": "embeddedLogger.openLocalLogFile",
-        "title": "Open Local Log File",
+        "title": "%embeddedLogger.commands.openLocalLogFile.title%",
         "icon": "$(file-text)"
       },
       {
@@ -522,7 +564,7 @@
       },
       {
         "command": "embeddedLogger.editDevicesConfig",
-        "title": "Edit Devices Configuration",
+        "title": "%embeddedLogger.commands.editDevicesConfig.title%",
         "icon": "$(pencil)"
       },
       {
@@ -544,7 +586,7 @@
       },
       {
         "command": "embeddedLogger.pingAllDevices",
-        "title": "Ping Configured Devices",
+        "title": "%embeddedLogger.commands.pingAllDevices.title%",
         "icon": "$(pulse)"
       }
     ],
