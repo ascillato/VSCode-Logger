@@ -1,0 +1,5 @@
+{
+  "embeddedLogger.commands.openLocalLogFile.title": "打开本地日志文件",
+  "embeddedLogger.commands.editDevicesConfig.title": "编辑设备配置",
+  "embeddedLogger.commands.pingAllDevices.title": "Ping 已配置的设备"
+}

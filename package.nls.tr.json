@@ -1,0 +1,5 @@
+{
+  "embeddedLogger.commands.openLocalLogFile.title": "Yerel günlük dosyasını aç",
+  "embeddedLogger.commands.editDevicesConfig.title": "Cihaz yapılandırmasını düzenle",
+  "embeddedLogger.commands.pingAllDevices.title": "Yapılandırılmış cihazlara ping gönder"
+}

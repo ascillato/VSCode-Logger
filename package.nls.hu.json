@@ -1,0 +1,5 @@
+{
+  "embeddedLogger.commands.openLocalLogFile.title": "Helyi naplófájl megnyitása",
+  "embeddedLogger.commands.editDevicesConfig.title": "Eszközkonfiguráció szerkesztése",
+  "embeddedLogger.commands.pingAllDevices.title": "Konfigurált eszközök pingelése"
+}

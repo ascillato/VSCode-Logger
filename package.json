@@ -555,7 +555,7 @@
     "commands": [
       {
         "command": "embeddedLogger.openLocalLogFile",
-        "title": "Open Local Log File",
+        "title": "%embeddedLogger.commands.openLocalLogFile.title%",
         "icon": "$(file-text)"
       },
       {
@@ -564,7 +564,7 @@
       },
       {
         "command": "embeddedLogger.editDevicesConfig",
-        "title": "Edit Devices Configuration",
+        "title": "%embeddedLogger.commands.editDevicesConfig.title%",
         "icon": "$(pencil)"
       },
       {
@@ -586,7 +586,7 @@
       },
       {
         "command": "embeddedLogger.pingAllDevices",
-        "title": "Ping Configured Devices",
+        "title": "%embeddedLogger.commands.pingAllDevices.title%",
         "icon": "$(pulse)"
       }
     ],

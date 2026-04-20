@@ -1,0 +1,5 @@
+{
+  "embeddedLogger.commands.openLocalLogFile.title": "로컬 로그 파일 열기",
+  "embeddedLogger.commands.editDevicesConfig.title": "장치 구성 편집",
+  "embeddedLogger.commands.pingAllDevices.title": "구성된 장치 Ping"
+}
