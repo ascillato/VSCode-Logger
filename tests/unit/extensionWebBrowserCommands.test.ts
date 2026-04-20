@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('vscode', () => import('../mocks/vscode'));
 
 import type { EmbeddedDevice } from '../../src/deviceTree';
+import { DeviceManagerPanel } from '../../src/deviceManagerPanel';
 import { activate, deactivate } from '../../src/extension';
 import { LogPanel } from '../../src/logPanel';
 import { SftpExplorerPanel } from '../../src/sftpExplorer';
@@ -17,6 +18,7 @@ import {
   resetWorkspaceConfiguration,
   resetWindowResponses,
   setOpenDialogResponse,
+  setQuickPickResponse,
   window,
   workspace,
   Uri,
@@ -255,6 +257,15 @@ describe('web browser commands', () => {
       'SSH command must not contain control characters or new lines.'
     );
 
+    await workspace
+      .getConfiguration('embeddedLogger')
+      .update('devices', [{ ...device, username: ' ' }]);
+    view.__fireMessage({ type: 'openSshTerminal', deviceId: device.id });
+    expect(window.showErrorMessage).toHaveBeenCalledWith(
+      'Device "Device A" is missing a username.'
+    );
+    await workspace.getConfiguration('embeddedLogger').update('devices', [device]);
+
     const runSpy = vi.spyOn(SshCommandRunner.prototype, 'run').mockResolvedValueOnce('');
     view.__fireMessage({
       type: 'runDeviceCommand',
@@ -471,5 +482,69 @@ describe('web browser commands', () => {
       'embeddedLogger.devicePingEnabled',
       false
     );
+  });
+
+  it('covers no-selection command flows and URL parsing fallback errors', async () => {
+    await workspace.getConfiguration('embeddedLogger').update('enableDevicePing', false);
+    await workspace.getConfiguration('embeddedLogger').update('devices', [device]);
+    const context = createExtensionContext();
+    await activate(context);
+
+    const openSftp = getHandler('embeddedLogger.openSftpExplorer');
+    const openWeb = getHandler('embeddedLogger.openWebBrowser');
+    const openEmbedded = getHandler('embeddedLogger.openEmbeddedWebBrowser');
+    const openLocal = getHandler('embeddedLogger.openLocalLogFile');
+
+    setQuickPickResponse({});
+    await openSftp();
+    await openWeb();
+    await openEmbedded();
+    setOpenDialogResponse();
+    await openLocal();
+    expect(window.showQuickPick).toHaveBeenCalledTimes(3);
+
+    const parseSpy = vi.spyOn(Uri, 'parse').mockReturnValueOnce({
+      fsPath: 'ftp://device.local',
+      scheme: 'ftp',
+      toString: () => 'ftp://device.local',
+    });
+    await openWeb({ ...device, webBrowserUrl: 'https://device.local' });
+    expect(window.showErrorMessage).toHaveBeenCalledWith(
+      'Web browser URLs must start with http:// or https://.'
+    );
+
+    parseSpy.mockImplementationOnce(() => {
+      throw new Error('bad URL');
+    });
+    await openEmbedded({ ...device, webBrowserUrl: 'https://device.local' });
+    expect(window.showErrorMessage).toHaveBeenCalledWith('Invalid web URL for Device A: bad URL');
+    parseSpy.mockRestore();
+
+    await workspace.getConfiguration('embeddedLogger').update('devices', []);
+    await openSftp();
+    await openEmbedded();
+    expect(window.showErrorMessage).toHaveBeenCalledWith(
+      'No devices configured. Check embeddedLogger.devices.'
+    );
+  });
+
+  it('uses unknown device manager versions when package metadata is absent or malformed', async () => {
+    const createOrShowSpy = vi
+      .spyOn(DeviceManagerPanel, 'createOrShow')
+      .mockImplementation(() => undefined);
+    const nullPackageContext = createExtensionContext();
+    (nullPackageContext.extension as { packageJSON: unknown }).packageJSON = null;
+    await activate(nullPackageContext);
+    await getHandler('embeddedLogger.editDevicesConfig')();
+    expect(createOrShowSpy).toHaveBeenLastCalledWith(expect.any(Object), 'unknown');
+    deactivate();
+    resetWindowResponses();
+
+    const malformedPackageContext = createExtensionContext();
+    (malformedPackageContext.extension as { packageJSON: unknown }).packageJSON = { version: 123 };
+    await activate(malformedPackageContext);
+    await getHandler('embeddedLogger.editDevicesConfig')();
+    expect(createOrShowSpy).toHaveBeenLastCalledWith(expect.any(Object), 'unknown');
+    createOrShowSpy.mockRestore();
   });
 });

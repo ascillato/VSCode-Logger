@@ -361,4 +361,75 @@ describe('LogSession (unit)', () => {
       expect.objectContaining({ host: 'jump.local' })
     );
   });
+
+  it('covers additional validation, endpoint ordering, and fingerprint prompt branches', async () => {
+    const context = createExtensionContext();
+    const errors: string[] = [];
+    const connectSpy = vi.spyOn(ConnectionManager.prototype, 'connect');
+    const callbacks = {
+      onLine: vi.fn(),
+      onStatus: vi.fn(),
+      onError: (message: string) => errors.push(message),
+      onClose: vi.fn(),
+    };
+
+    workspace.isTrusted = false;
+    await new LogSession(baseDevice, context, callbacks).start();
+    workspace.isTrusted = true;
+
+    await new LogSession({ ...baseDevice, username: ' ' }, context, callbacks).start();
+    await new LogSession({ ...baseDevice, port: -1 }, context, callbacks).start();
+    await new LogSession(baseDevice, context, callbacks, {
+      authenticationProvider: {
+        getDeviceAuthentication: vi.fn(async () => ({ password: 'device-secret' })),
+        getBastionConfig: vi.fn(() => ({ host: 'jump.local', username: ' ' })),
+        getBastionAuthentication: vi.fn(async () => ({ password: 'jump-secret' })),
+      } as never,
+    }).start();
+    await new LogSession(baseDevice, context, callbacks, {
+      authenticationProvider: {
+        getDeviceAuthentication: vi.fn(async () => ({ password: 'device-secret' })),
+        getBastionConfig: vi.fn(() => ({ host: 'jump.local', username: 'jump', port: 0 })),
+        getBastionAuthentication: vi.fn(async () => ({ password: 'jump-secret' })),
+      } as never,
+    }).start();
+
+    expect(errors).toEqual(
+      expect.arrayContaining([
+        'Workspace trust is required before connecting to devices.',
+        'Device "Primary Device" is missing a username.',
+        'Device "Primary Device" has an invalid port.',
+        'Device "Primary Device" is missing a bastion username.',
+        'Device "Primary Device" has an invalid bastion port.',
+      ])
+    );
+    expect(connectSpy).not.toHaveBeenCalled();
+
+    const orderedSession = new LogSession(baseDevice, context, callbacks, {
+      preferredEndpointHost: ' primary.example.com ',
+    });
+    expect(
+      (
+        orderedSession as unknown as {
+          getOrderedEndpoints: () => Array<{ host: string }>;
+        }
+      )
+        .getOrderedEndpoints()
+        .map((endpoint) => endpoint.host)
+    ).toEqual(['primary.example.com', 'backup.example.com']);
+
+    const promptSession = new LogSession(baseDevice, context, callbacks);
+    setWarningMessageResponse('Stop connection');
+    await expect(
+      (
+        promptSession as unknown as {
+          promptToUpdateFingerprint: (
+            expected: string,
+            received: string,
+            endpoint: { host: string; label: 'bastion' }
+          ) => Promise<boolean>;
+        }
+      ).promptToUpdateFingerprint('old', 'new', { host: 'jump.local', label: 'bastion' })
+    ).resolves.toBe(false);
+  });
 });
