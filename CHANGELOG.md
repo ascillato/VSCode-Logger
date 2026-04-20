@@ -7,10 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
-## [1.9.9] - UNRELEASED [LANGUAGE-LOCALIZATION]
+## [1.9.9] - 2026-04-20 [LANGUAGE-LOCALIZATION]
 
 ### Added
 - Language selection and localization bundle support for English, Spanish, Italian, Simplified Chinese, Traditional Chinese, French, German, Japanese, Korean, Russian, Portuguese (Brazil), Turkish, Polish, Czech and Hungarian.
+- Added more Unit Tests.
 
 ### Changed
 - None.
