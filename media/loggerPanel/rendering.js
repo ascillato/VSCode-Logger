@@ -4,6 +4,16 @@
  * @copyright Copyright (c) 2025 A. Scillato
  */
 
+const i18n = globalThis.window?.embeddedLoggerI18n || {};
+
+function t(keyPath, values = {}) {
+  const value = keyPath.split('.').reduce((current, key) => current?.[key], i18n);
+  const template = typeof value === 'string' ? value : keyPath;
+  return template.replace(/\{([^}]+)\}/g, (match, key) =>
+    values[key] === undefined ? match : String(values[key])
+  );
+}
+
 /**
  * Updates the accessible label for a toolbar button.
  */
@@ -24,7 +34,10 @@ export function updateToggleLabel(button, active) {
     return;
   }
   const baseLabel = button.dataset.label;
-  const label = `${baseLabel} (${active ? 'on' : 'off'})`;
+  const label = t('logPanel.toggleState', {
+    label: baseLabel,
+    state: active ? t('logPanel.toggleOn') : t('logPanel.toggleOff'),
+  });
   setButtonLabel(button, label);
 }
 

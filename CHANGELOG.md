@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [1.9.9] - UNRELEASED [LANGUAGE-LOCALIZATION]
+
+### Added
+- Language localization for English, Spanish and Italian.
+
+### Changed
+- None.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- None.
+
+### Security
+- None.
+
+----------------------------------------
+
 ## [1.9.8] - 2026-04-19 [PASSWORDS-IMPROVEMENTS]
 
 ### Added

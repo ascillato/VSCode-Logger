@@ -1,4 +1,13 @@
 const vscode = acquireVsCodeApi();
+const i18n = window.embeddedLoggerI18n || {};
+
+function t(keyPath, values = {}) {
+  const value = keyPath.split('.').reduce((current, key) => current?.[key], i18n);
+  const template = typeof value === 'string' ? value : keyPath;
+  return template.replace(/\{([^}]+)\}/g, (match, key) =>
+    values[key] === undefined ? match : String(values[key])
+  );
+}
 
 const state = {
   groups: [],
@@ -10,6 +19,7 @@ const state = {
     defaultEnableSftpExplorer: true,
     defaultEnableWebBrowser: true,
     defaultEnableEmbeddedWebBrowser: true,
+    language: 'vscode',
     enableDevicePing: true,
     devicePingIntervalSeconds: '',
     defaultSshCommands: [],
@@ -21,38 +31,66 @@ const selectedDevices = new Set();
 const selectedGroups = new Set();
 
 const deviceColumns = [
-  { key: '__selected', label: 'Select', type: 'rowSelect' },
+  { key: '__selected', label: t('common.select'), type: 'rowSelect' },
   { key: 'id', label: 'ID', type: 'text' },
-  { key: 'group', label: 'Group', type: 'groupSelect' },
-  { key: 'color', label: 'Color', type: 'color' },
-  { key: 'name', label: 'Name', type: 'text' },
-  { key: 'host', label: 'Host', type: 'text' },
-  { key: 'port', label: 'Port', type: 'number', min: 1 },
-  { key: 'username', label: 'User', type: 'text' },
-  { key: 'logCommand', label: 'Log command', type: 'text' },
-  { key: 'hostFingerprint', label: 'Host fingerprint', type: 'text' },
-  { key: 'secondaryHost', label: 'Secondary host', type: 'text' },
-  { key: 'secondaryHostFingerprint', label: 'Secondary fingerprint', type: 'text' },
-  { key: 'enableSshTerminal', label: 'SSH terminal', type: 'triState' },
-  { key: 'enableSftpExplorer', label: 'SFTP', type: 'triState' },
-  { key: 'sftpPresetsRemote', label: 'SFTP presets (remote)', type: 'textarea' },
-  { key: 'sftpPresetsLocal', label: 'SFTP presets (local)', type: 'textarea' },
-  { key: 'enableWebBrowser', label: 'External Web Browser', type: 'triState' },
-  { key: 'enableEmbeddedWebBrowser', label: 'Embedded Web Browser', type: 'triState' },
-  { key: 'webBrowserUrl', label: 'Web URL', type: 'text' },
-  { key: 'privateKeyPath', label: 'Private key path', type: 'text' },
-  { key: 'privateKeyPassphrase', label: 'Key passphrase (write only)', type: 'text' },
-  { key: 'password', label: 'Password (write only)', type: 'text' },
-  // eslint-disable-next-line spellcheck/spell-checker
-  { key: 'showDefaultSshCommands', label: 'Show default SSH cmnds', type: 'checkbox' },
-  { key: 'sshCommands', label: 'SSH commands', type: 'sshCommands' },
-  { key: 'bastionHost', label: 'Bastion host', type: 'text' },
-  { key: 'bastionPort', label: 'Bastion port', type: 'number', min: 1 },
-  { key: 'bastionUsername', label: 'Bastion user', type: 'text' },
-  { key: 'bastionHostFingerprint', label: 'Bastion fingerprint', type: 'text' },
-  { key: 'bastionPrivateKeyPath', label: 'Bastion key path', type: 'text' },
-  { key: 'bastionPrivateKeyPassphrase', label: 'Bastion key passphrase', type: 'text' },
-  { key: 'bastionPassword', label: 'Bastion password (write only)', type: 'text' },
+  { key: 'group', label: t('deviceManager.columnGroup'), type: 'groupSelect' },
+  { key: 'color', label: t('deviceManager.columnColor'), type: 'color' },
+  { key: 'name', label: t('common.name'), type: 'text' },
+  { key: 'host', label: t('deviceManager.columnHost'), type: 'text' },
+  { key: 'port', label: t('deviceManager.port'), type: 'number', min: 1 },
+  { key: 'username', label: t('deviceManager.columnUser'), type: 'text' },
+  { key: 'logCommand', label: t('deviceManager.logCommand'), type: 'text' },
+  { key: 'hostFingerprint', label: t('deviceManager.columnHostFingerprint'), type: 'text' },
+  { key: 'secondaryHost', label: t('deviceManager.columnSecondaryHost'), type: 'text' },
+  {
+    key: 'secondaryHostFingerprint',
+    label: t('deviceManager.columnSecondaryFingerprint'),
+    type: 'text',
+  },
+  { key: 'enableSshTerminal', label: t('deviceManager.columnSshTerminal'), type: 'triState' },
+  { key: 'enableSftpExplorer', label: t('deviceManager.columnSftp'), type: 'triState' },
+  { key: 'sftpPresetsRemote', label: t('deviceManager.columnSftpPresetsRemote'), type: 'textarea' },
+  { key: 'sftpPresetsLocal', label: t('deviceManager.columnSftpPresetsLocal'), type: 'textarea' },
+  { key: 'enableWebBrowser', label: t('deviceManager.columnExternalWebBrowser'), type: 'triState' },
+  {
+    key: 'enableEmbeddedWebBrowser',
+    label: t('deviceManager.columnEmbeddedWebBrowser'),
+    type: 'triState',
+  },
+  { key: 'webBrowserUrl', label: t('deviceManager.columnWebUrl'), type: 'text' },
+  { key: 'privateKeyPath', label: t('deviceManager.columnPrivateKeyPath'), type: 'text' },
+  {
+    key: 'privateKeyPassphrase',
+    label: t('deviceManager.columnPrivateKeyPassphrase'),
+    type: 'text',
+  },
+  { key: 'password', label: t('deviceManager.columnPasswordWriteOnly'), type: 'text' },
+
+  {
+    key: 'showDefaultSshCommands',
+    label: t('deviceManager.columnShowDefaultSshCommands'),
+    type: 'checkbox',
+  },
+  { key: 'sshCommands', label: t('deviceManager.sshCommands'), type: 'sshCommands' },
+  { key: 'bastionHost', label: t('deviceManager.columnBastionHost'), type: 'text' },
+  { key: 'bastionPort', label: t('deviceManager.columnBastionPort'), type: 'number', min: 1 },
+  { key: 'bastionUsername', label: t('deviceManager.columnBastionUser'), type: 'text' },
+  {
+    key: 'bastionHostFingerprint',
+    label: t('deviceManager.columnBastionFingerprint'),
+    type: 'text',
+  },
+  { key: 'bastionPrivateKeyPath', label: t('deviceManager.columnBastionKeyPath'), type: 'text' },
+  {
+    key: 'bastionPrivateKeyPassphrase',
+    label: t('deviceManager.columnBastionKeyPassphrase'),
+    type: 'text',
+  },
+  {
+    key: 'bastionPassword',
+    label: t('deviceManager.columnBastionPasswordWriteOnly'),
+    type: 'text',
+  },
 ];
 
 let activeColumnResize = null;
@@ -183,7 +221,7 @@ function renderGroups() {
     const input = document.createElement('input');
     input.type = 'text';
     input.value = group.name ?? '';
-    input.placeholder = 'Group name';
+    input.placeholder = t('deviceManager.groupNamePlaceholder');
     input.addEventListener('input', (event) => {
       state.groups[index].name = event.target.value;
       renderDevices();
@@ -202,6 +240,7 @@ function renderDefaults() {
   document.getElementById('defaultPort').value = state.defaults.defaultPort ?? '';
   document.getElementById('defaultLogCommand').value = state.defaults.defaultLogCommand ?? '';
   document.getElementById('maxLinesPerTab').value = state.defaults.maxLinesPerTab ?? '';
+  document.getElementById('extensionLanguage').value = state.defaults.language ?? 'vscode';
   document.getElementById('defaultEnableSshTerminal').checked =
     !!state.defaults.defaultEnableSshTerminal;
   document.getElementById('defaultEnableSftpExplorer').checked =
@@ -398,10 +437,10 @@ function setupScriptEditorModal() {
   header.className = 'modal__header';
 
   scriptEditorTitle = document.createElement('h3');
-  scriptEditorTitle.textContent = 'Edit script';
+  scriptEditorTitle.textContent = t('deviceManager.editScript');
 
   const description = document.createElement('p');
-  description.textContent = 'Write the script that will be copied to /tmp and executed.';
+  description.textContent = t('deviceManager.scriptDescription');
 
   header.appendChild(scriptEditorTitle);
   header.appendChild(description);
@@ -409,19 +448,19 @@ function setupScriptEditorModal() {
   scriptEditorTextarea = document.createElement('textarea');
   scriptEditorTextarea.className = 'modal__textarea';
   scriptEditorTextarea.spellcheck = false;
-  scriptEditorTextarea.setAttribute('aria-label', 'SSH command script editor');
+  scriptEditorTextarea.setAttribute('aria-label', t('deviceManager.sshCommandScriptEditor'));
 
   const actions = document.createElement('div');
   actions.className = 'modal__actions modal__actions--sticky';
 
   scriptEditorSaveButton = document.createElement('button');
   scriptEditorSaveButton.className = 'button button-primary';
-  scriptEditorSaveButton.textContent = 'Save';
+  scriptEditorSaveButton.textContent = t('common.save');
   scriptEditorSaveButton.addEventListener('click', saveScriptEditor);
 
   scriptEditorCancelButton = document.createElement('button');
   scriptEditorCancelButton.className = 'button button-secondary';
-  scriptEditorCancelButton.textContent = 'Cancel';
+  scriptEditorCancelButton.textContent = t('common.cancel');
   scriptEditorCancelButton.addEventListener('click', closeScriptEditor);
 
   actions.appendChild(scriptEditorSaveButton);
@@ -447,7 +486,7 @@ function openScriptEditor(title, initialValue, onSave) {
   }
 
   activeScriptEditor = { onSave };
-  scriptEditorTitle.textContent = title || 'Edit script';
+  scriptEditorTitle.textContent = title || t('deviceManager.editScript');
   scriptEditorTextarea.value = initialValue || '';
   scriptEditorModal.classList.remove('hidden');
   setTimeout(() => {
@@ -481,24 +520,24 @@ function renderSshCommandsEditor(commands, mountPoint, onChange) {
   const thead = document.createElement('thead');
   const headerRow = document.createElement('tr');
   const nameTh = document.createElement('th');
-  nameTh.textContent = 'Name';
-  nameTh.title = 'Command names support emojis from https://emojidb.org/';
+  nameTh.textContent = t('common.name');
+  nameTh.title = t('deviceManager.commandNamesEmojiHelp');
   headerRow.appendChild(nameTh);
 
   const commandTh = document.createElement('th');
-  commandTh.textContent = 'Command';
+  commandTh.textContent = t('common.command');
   headerRow.appendChild(commandTh);
 
   const openPanelTh = document.createElement('th');
-  openPanelTh.textContent = 'Open SSH Panel';
+  openPanelTh.textContent = t('deviceManager.openSshPanel');
   headerRow.appendChild(openPanelTh);
 
   const rerunOnReconnectionTh = document.createElement('th');
-  rerunOnReconnectionTh.textContent = 'Re-run on reconnection';
+  rerunOnReconnectionTh.textContent = t('deviceManager.rerunOnReconnection');
   headerRow.appendChild(rerunOnReconnectionTh);
 
   const copyAndRunScriptTh = document.createElement('th');
-  copyAndRunScriptTh.textContent = 'Copy and Run Script';
+  copyAndRunScriptTh.textContent = t('deviceManager.copyAndRunScript');
   headerRow.appendChild(copyAndRunScriptTh);
 
   const addTh = document.createElement('th');
@@ -506,7 +545,7 @@ function renderSshCommandsEditor(commands, mountPoint, onChange) {
   addButton.type = 'button';
   addButton.className = 'button button-icon';
   addButton.textContent = '+';
-  addButton.title = 'Add command';
+  addButton.title = t('deviceManager.addCommand');
   addButton.addEventListener('click', () => {
     const updated = [
       ...list,
@@ -536,7 +575,7 @@ function renderSshCommandsEditor(commands, mountPoint, onChange) {
 
     const nameInput = document.createElement('input');
     nameInput.type = 'text';
-    nameInput.placeholder = 'Name';
+    nameInput.placeholder = t('common.name');
     nameInput.value = item?.name ?? '';
     nameInput.addEventListener('input', (event) => {
       const updated = [...list];
@@ -549,7 +588,7 @@ function renderSshCommandsEditor(commands, mountPoint, onChange) {
 
     const commandInput = document.createElement('input');
     commandInput.type = 'text';
-    commandInput.placeholder = 'Command';
+    commandInput.placeholder = t('common.command');
     commandInput.value = item?.command ?? '';
     commandInput.addEventListener('input', (event) => {
       const updated = [...list];
@@ -563,8 +602,13 @@ function renderSshCommandsEditor(commands, mountPoint, onChange) {
     const openPanelInput = document.createElement('input');
     openPanelInput.type = 'checkbox';
     openPanelInput.checked = item?.openSshPanel === true;
-    openPanelInput.title = 'Open this command in an SSH panel';
-    openPanelInput.setAttribute('aria-label', `Open ${item?.name || 'command'} in SSH panel`);
+    openPanelInput.title = t('deviceManager.openCommandInSshPanel');
+    openPanelInput.setAttribute(
+      'aria-label',
+      t('deviceManager.openNamedCommandInSshPanel', {
+        name: item?.name || t('common.command'),
+      })
+    );
     openPanelInput.addEventListener('change', (event) => {
       const updated = [...list];
       const openSshPanel = event.target.checked;
@@ -589,10 +633,12 @@ function renderSshCommandsEditor(commands, mountPoint, onChange) {
     rerunOnReconnectionInput.checked =
       item?.openSshPanel === true && item?.rerunOnReconnection === true;
     rerunOnReconnectionInput.disabled = item?.openSshPanel !== true;
-    rerunOnReconnectionInput.title = 'Re-run this command after the SSH panel reconnects';
+    rerunOnReconnectionInput.title = t('deviceManager.rerunCommandAfterReconnect');
     rerunOnReconnectionInput.setAttribute(
       'aria-label',
-      `Re-run ${item?.name || 'command'} on reconnection`
+      t('deviceManager.rerunNamedCommandOnReconnect', {
+        name: item?.name || t('common.command'),
+      })
     );
     rerunOnReconnectionInput.addEventListener('change', (event) => {
       const updated = [...list];
@@ -610,17 +656,19 @@ function renderSshCommandsEditor(commands, mountPoint, onChange) {
     const copyAndRunScriptInput = document.createElement('input');
     copyAndRunScriptInput.type = 'checkbox';
     copyAndRunScriptInput.checked = item?.copyAndRunScript === true;
-    copyAndRunScriptInput.title = 'Copy a script to /tmp and run it after the command';
+    copyAndRunScriptInput.title = t('deviceManager.copyScriptToTmp');
     copyAndRunScriptInput.setAttribute(
       'aria-label',
-      `Copy and run script for ${item?.name || 'command'}`
+      t('deviceManager.copyAndRunScriptFor', {
+        name: item?.name || t('common.command'),
+      })
     );
 
     const editScriptButton = document.createElement('button');
     editScriptButton.type = 'button';
     editScriptButton.className = 'button button-icon';
     editScriptButton.textContent = '✎';
-    editScriptButton.title = 'Edit script';
+    editScriptButton.title = t('deviceManager.editScript');
     editScriptButton.disabled = item?.copyAndRunScript !== true;
     editScriptButton.addEventListener('click', () => {
       if (editScriptButton.disabled) {
@@ -628,7 +676,9 @@ function renderSshCommandsEditor(commands, mountPoint, onChange) {
       }
 
       openScriptEditor(
-        `Edit script for ${list[idx]?.name || 'SSH command'}`,
+        t('deviceManager.editScriptFor', {
+          name: list[idx]?.name || t('deviceManager.sshCommandFallback'),
+        }),
         list[idx]?.script ?? '',
         (value) => {
           const updated = [...list];
@@ -661,7 +711,7 @@ function renderSshCommandsEditor(commands, mountPoint, onChange) {
     const removeButton = document.createElement('button');
     removeButton.type = 'button';
     removeButton.className = 'button button-danger button-icon';
-    removeButton.title = 'Remove command';
+    removeButton.title = t('deviceManager.removeCommand');
     removeButton.textContent = '✕';
     removeButton.addEventListener('click', () => {
       const updated = [...list.slice(0, idx), ...list.slice(idx + 1)];
@@ -804,7 +854,7 @@ function addColumnResizers() {
     th.classList.add('resizable');
     const resizer = document.createElement('span');
     resizer.className = 'col-resizer';
-    resizer.title = 'Drag to resize';
+    resizer.title = t('deviceManager.dragToResize');
     resizer.addEventListener('mousedown', (event) => startColumnResize(event, index));
     th.appendChild(resizer);
   });
@@ -815,8 +865,8 @@ function createInput(col, value, index, key) {
     const input = document.createElement('input');
     input.type = 'checkbox';
     input.checked = selectedDevices.has(state.devices[index]);
-    input.title = 'Select device row';
-    input.setAttribute('aria-label', 'Select device row');
+    input.title = t('deviceManager.selectDeviceRow');
+    input.setAttribute('aria-label', t('deviceManager.selectDeviceRow'));
     input.addEventListener('change', (event) => {
       const device = state.devices[index];
       if (!device) {
@@ -844,9 +894,9 @@ function createInput(col, value, index, key) {
   if (col.type === 'triState') {
     const select = document.createElement('select');
     const options = [
-      { value: 'default', label: 'Default' },
-      { value: 'enabled', label: 'Enabled' },
-      { value: 'disabled', label: 'Disabled' },
+      { value: 'default', label: t('common.default') },
+      { value: 'enabled', label: t('common.enabled') },
+      { value: 'disabled', label: t('common.disabled') },
     ];
     options.forEach((option) => {
       const entry = document.createElement('option');
@@ -864,7 +914,7 @@ function createInput(col, value, index, key) {
     const select = document.createElement('select');
     const noneOption = document.createElement('option');
     noneOption.value = '';
-    noneOption.textContent = 'None';
+    noneOption.textContent = t('common.none');
     select.appendChild(noneOption);
 
     const groupNames = state.groups
@@ -1058,8 +1108,8 @@ function removeSelectedDevices() {
   renderDevices();
   setStatus(
     selected.length === 1
-      ? 'Removed selected device.'
-      : `Removed ${selected.length} selected devices.`,
+      ? t('deviceManager.removedSelectedDevice')
+      : t('deviceManager.removedSelectedDevices', { count: selected.length }),
     'info'
   );
 }
@@ -1069,6 +1119,7 @@ function collectDefaults() {
     defaultPort: document.getElementById('defaultPort').value,
     defaultLogCommand: document.getElementById('defaultLogCommand').value,
     maxLinesPerTab: document.getElementById('maxLinesPerTab').value,
+    language: document.getElementById('extensionLanguage').value,
     defaultEnableSshTerminal: document.getElementById('defaultEnableSshTerminal').checked,
     defaultEnableSftpExplorer: document.getElementById('defaultEnableSftpExplorer').checked,
     defaultEnableWebBrowser: document.getElementById('defaultEnableWebBrowser').checked,
@@ -1083,7 +1134,7 @@ function collectDefaults() {
 }
 
 function save() {
-  setStatus('Saving...', 'info');
+  setStatus(t('deviceManager.saving'), 'info');
   vscode.postMessage({
     type: 'save',
     defaults: collectDefaults(),
@@ -1093,17 +1144,17 @@ function save() {
 }
 
 function editJson() {
-  setStatus('Opening settings.json...', 'info');
+  setStatus(t('deviceManager.openingSettingsJson'), 'info');
   vscode.postMessage({ type: 'editJson' });
 }
 
 function clearStoredPasswords() {
-  setStatus('Removing stored passwords...', 'info');
+  setStatus(t('deviceManager.removingStoredPasswords'), 'info');
   vscode.postMessage({ type: 'clearPasswords' });
 }
 
 function exportSettings() {
-  setStatus('Exporting settings...', 'info');
+  setStatus(t('deviceManager.exportingSettings'), 'info');
   vscode.postMessage({
     type: 'exportSettings',
     defaults: collectDefaults(),
@@ -1113,7 +1164,7 @@ function exportSettings() {
 }
 
 function importSettings() {
-  setStatus('Importing settings...', 'info');
+  setStatus(t('deviceManager.importingSettings'), 'info');
   vscode.postMessage({ type: 'importSettings' });
 }
 
@@ -1128,7 +1179,7 @@ function clearSelectedDeviceStoredPasswords() {
     .filter((deviceId, index, list) => !!deviceId && list.indexOf(deviceId) === index);
 
   if (!ids.length) {
-    setStatus('Set at least one selected device ID before resetting stored password.', 'error');
+    setStatus(t('deviceManager.setSelectedDeviceIdBeforeReset'), 'error');
     return;
   }
 
@@ -1137,11 +1188,11 @@ function clearSelectedDeviceStoredPasswords() {
   });
 
   if (ids.length === 1) {
-    setStatus(`Removing stored password for ${ids[0]}...`, 'info');
+    setStatus(t('deviceManager.removingStoredPasswordForDevice', { id: ids[0] }), 'info');
     return;
   }
 
-  setStatus(`Removing stored passwords for ${ids.length} selected devices...`, 'info');
+  setStatus(t('deviceManager.removingStoredPasswordsForDevices', { count: ids.length }), 'info');
 }
 
 function setupHelpModal() {
@@ -1155,10 +1206,10 @@ function setupHelpModal() {
   header.className = 'modal__header';
 
   const title = document.createElement('h3');
-  title.textContent = 'Configuration example';
+  title.textContent = t('deviceManager.configurationExample');
 
   const description = document.createElement('p');
-  description.textContent = 'Copy and paste these defaults into your settings.json.';
+  description.textContent = t('deviceManager.configurationExampleDescription');
 
   header.appendChild(title);
   header.appendChild(description);
@@ -1171,12 +1222,12 @@ function setupHelpModal() {
 
   helpCopyButton = document.createElement('button');
   helpCopyButton.className = 'button';
-  helpCopyButton.textContent = 'Copy';
+  helpCopyButton.textContent = t('common.copy');
   helpCopyButton.addEventListener('click', copyHelpJson);
 
   helpCloseButton = document.createElement('button');
   helpCloseButton.className = 'button button-secondary';
-  helpCloseButton.textContent = 'Close';
+  helpCloseButton.textContent = t('common.close');
   helpCloseButton.addEventListener('click', closeHelp);
 
   actions.appendChild(helpCopyButton);
@@ -1213,9 +1264,9 @@ function closeHelp() {
 async function copyHelpJson() {
   try {
     await navigator.clipboard.writeText(helpContent.textContent || '');
-    setStatus('Copied configuration example.', 'success');
+    setStatus(t('deviceManager.copiedConfigurationExample'), 'success');
   } catch (error) {
-    setStatus('Failed to copy configuration example.', 'error');
+    setStatus(t('deviceManager.failedToCopyConfigurationExample'), 'error');
     console.error(error);
   }
 }
@@ -1260,6 +1311,7 @@ function buildHelpJson() {
     'embeddedLogger.defaultEnableSftpExplorer': !!defaults.defaultEnableSftpExplorer,
     'embeddedLogger.defaultEnableWebBrowser': !!defaults.defaultEnableWebBrowser,
     'embeddedLogger.defaultEnableEmbeddedWebBrowser': !!defaults.defaultEnableEmbeddedWebBrowser,
+    'embeddedLogger.language': defaults.language ?? 'vscode',
     'embeddedLogger.enableDevicePing': !!defaults.enableDevicePing,
     'embeddedLogger.devicePingIntervalSeconds':
       defaults.devicePingIntervalSeconds !== '' && defaults.devicePingIntervalSeconds !== undefined
@@ -1301,9 +1353,9 @@ function setStatus(message, variant = '') {
 
 function handleSaveResult(message) {
   if (message.success) {
-    setStatus(message.message || 'Saved settings.', 'success');
+    setStatus(message.message || t('deviceManager.savedSettings'), 'success');
   } else {
-    setStatus(message.message || 'Failed to save settings.', 'error');
+    setStatus(message.message || t('deviceManager.failedToSaveSettings'), 'error');
   }
 }
 
@@ -1314,14 +1366,11 @@ function handleOperationResult(message) {
 function handleImportResult(message) {
   if (message.success && message.defaults && message.devices) {
     handleInit(message);
-    setStatus(
-      message.message || 'Imported settings. Review them and click Save changes to apply them.',
-      'success'
-    );
+    setStatus(message.message || t('deviceManager.importedSettingsApply'), 'success');
     return;
   }
 
-  setStatus(message.message || 'Failed to import settings.', 'error');
+  setStatus(message.message || t('deviceManager.failedToImportSettings'), 'error');
 }
 
 function handleMessage(event) {

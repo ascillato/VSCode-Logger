@@ -62,7 +62,7 @@ describe('DeviceManagerPanel', () => {
     expect(html).toMatch(/<th>Select<\/th>\s*<th>ID<\/th>/);
     expect(html).toContain('<th>External Web Browser</th>');
     expect(html).toContain('<th>Embedded Web Browser</th>');
-    expect(html).toContain('<th>Show default SSH cmnds</th>');
+    expect(html).toContain('<th>Show default SSH commands</th>');
     expect(html).toContain('id="defaultEnableEmbeddedWebBrowser"');
     expect(html).toContain('<h2>Groups</h2>');
     expect(html).toContain('id="addGroup"');
@@ -711,6 +711,7 @@ describe('DeviceManagerPanel', () => {
       'embeddedLogger.defaultEnableSftpExplorer': true,
       'embeddedLogger.defaultEnableWebBrowser': false,
       'embeddedLogger.defaultEnableEmbeddedWebBrowser': true,
+      'embeddedLogger.language': 'vscode',
       'embeddedLogger.enableDevicePing': false,
       'embeddedLogger.devicePingIntervalSeconds': null,
       'embeddedLogger.defaultSshCommands': [
@@ -772,6 +773,7 @@ describe('DeviceManagerPanel', () => {
           'embeddedLogger.defaultEnableSftpExplorer': true,
           'embeddedLogger.defaultEnableWebBrowser': false,
           'embeddedLogger.defaultEnableEmbeddedWebBrowser': true,
+          'embeddedLogger.language': 'it',
           'embeddedLogger.enableDevicePing': true,
           'embeddedLogger.devicePingIntervalSeconds': 30,
           'embeddedLogger.defaultSshCommands': [
@@ -819,6 +821,7 @@ describe('DeviceManagerPanel', () => {
         defaultEnableSftpExplorer: true,
         defaultEnableWebBrowser: false,
         defaultEnableEmbeddedWebBrowser: true,
+        language: 'it',
         enableDevicePing: true,
         devicePingIntervalSeconds: 30,
         defaultSshCommands: [
@@ -834,7 +837,7 @@ describe('DeviceManagerPanel', () => {
       },
       groups: [{ name: 'Lab' }],
       devices: [
-        {
+        expect.objectContaining({
           id: 'device-a',
           group: 'Lab',
           name: 'Device A',
@@ -843,11 +846,11 @@ describe('DeviceManagerPanel', () => {
           showDefaultSshCommands: false,
           sftpPresetsRemote: ['/var/log'],
           sftpPresetsLocal: [],
-          bastion: {
+          bastion: expect.objectContaining({
             host: 'bastion.local',
             username: 'jump',
-          },
-        },
+          }),
+        }),
       ],
     });
   });

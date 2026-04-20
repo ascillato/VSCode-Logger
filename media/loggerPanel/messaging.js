@@ -4,6 +4,13 @@
  * @copyright Copyright (c) 2025 A. Scillato
  */
 
+const i18n = globalThis.window?.embeddedLoggerI18n || {};
+
+function t(keyPath) {
+  const value = keyPath.split('.').reduce((current, key) => current?.[key], i18n);
+  return typeof value === 'string' ? value : keyPath;
+}
+
 /**
  * Registers handlers that react to messages from the extension host.
  */
@@ -124,9 +131,9 @@ export function registerMessageHandlers({
       case 'autoSaveStarted':
         handlers.setAutoSaveActive(true);
         if (message.fileName) {
-          handlers.setAutoSaveStatus('Auto-saving to', message.fileName);
+          handlers.setAutoSaveStatus(t('logPanel.autoSavingTo'), message.fileName);
         } else {
-          handlers.setAutoSaveStatus('Auto-save enabled.');
+          handlers.setAutoSaveStatus(t('logPanel.autoSaveEnabled'));
         }
         break;
       case 'autoSaveStopped':
@@ -135,7 +142,7 @@ export function registerMessageHandlers({
         break;
       case 'autoSaveError':
         handlers.setAutoSaveActive(false);
-        handlers.setAutoSaveStatus(message.message || 'Auto-save failed.');
+        handlers.setAutoSaveStatus(message.message || t('logPanel.autoSaveFailed'));
         break;
     }
   });

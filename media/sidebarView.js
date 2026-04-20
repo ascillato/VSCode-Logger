@@ -6,6 +6,15 @@
 
 (function () {
   const vscode = acquireVsCodeApi();
+  const i18n = window.embeddedLoggerI18n || {};
+
+  function t(keyPath, values = {}) {
+    const value = keyPath.split('.').reduce((current, key) => current?.[key], i18n);
+    const template = typeof value === 'string' ? value : keyPath;
+    return template.replace(/\{([^}]+)\}/g, (match, key) =>
+      values[key] === undefined ? match : String(values[key])
+    );
+  }
 
   const state = {
     devices: [],
@@ -67,12 +76,12 @@
     const urlToCopy = device.webBrowserUrl || device.host;
     contextMenuList.innerHTML = '';
     contextMenuList.appendChild(
-      createContextMenuItem('Copy URL', () =>
+      createContextMenuItem(t('sidebar.copyUrl'), () =>
         vscode.postMessage({ type: 'copyDeviceUrl', deviceId: device.id, url: urlToCopy })
       )
     );
     contextMenuList.appendChild(
-      createContextMenuItem('Copy Name', () =>
+      createContextMenuItem(t('sidebar.copyName'), () =>
         vscode.postMessage({ type: 'copyDeviceName', deviceId: device.id, name: device.name })
       )
     );
@@ -121,10 +130,11 @@
 
   function getPingStatusTitle(device) {
     if (device.pingStatus === 'pending') {
-      return 'Ping in progress';
+      return t('sidebar.pingInProgress');
     }
 
-    const baseTitle = device.pingStatus === 'ok' ? 'Ping reachable' : 'Ping unreachable';
+    const baseTitle =
+      device.pingStatus === 'ok' ? t('sidebar.pingReachable') : t('sidebar.pingUnreachable');
     if (device.pingShowDetailedTooltip === true && typeof device.pingCompletedAt === 'number') {
       return `${baseTitle}\n${formatPingCompletedAt(device.pingCompletedAt)}`;
     }
@@ -205,8 +215,8 @@
     const openLogsButton = document.createElement('button');
     openLogsButton.className = 'command-button';
     openLogsButton.appendChild(createIconSpan('📄'));
-    openLogsButton.appendChild(document.createTextNode('Open Logs'));
-    openLogsButton.title = `Open logs for ${device.name}`;
+    openLogsButton.appendChild(document.createTextNode(t('sidebar.openLogs')));
+    openLogsButton.title = t('sidebar.openLogsFor', { name: device.name });
     openLogsButton.addEventListener('click', (event) => {
       event.stopPropagation();
       vscode.postMessage({ type: 'openDevice', deviceId: device.id });
@@ -217,8 +227,8 @@
       const terminalButton = document.createElement('button');
       terminalButton.className = 'command-button';
       terminalButton.appendChild(createIconSpan('🖥️'));
-      terminalButton.appendChild(document.createTextNode('Open SSH Terminal'));
-      terminalButton.title = `Open an SSH terminal session for ${device.name}`;
+      terminalButton.appendChild(document.createTextNode(t('sidebar.openSshTerminal')));
+      terminalButton.title = t('sidebar.openSshTerminalFor', { name: device.name });
       terminalButton.addEventListener('click', (event) => {
         event.stopPropagation();
         vscode.postMessage({
@@ -233,8 +243,8 @@
       const sftpButton = document.createElement('button');
       sftpButton.className = 'command-button';
       sftpButton.appendChild(createIconSpan('📁'));
-      sftpButton.appendChild(document.createTextNode('Open SFTP Explorer'));
-      sftpButton.title = `Browse and transfer files for ${device.name}`;
+      sftpButton.appendChild(document.createTextNode(t('sidebar.openSftpExplorer')));
+      sftpButton.title = t('sidebar.browseAndTransferFilesFor', { name: device.name });
       sftpButton.addEventListener('click', (event) => {
         event.stopPropagation();
         vscode.postMessage({
@@ -249,8 +259,8 @@
       const webButton = document.createElement('button');
       webButton.className = 'command-button';
       webButton.appendChild(createIconSpan('🌐'));
-      webButton.appendChild(document.createTextNode('Open External Web Browser'));
-      webButton.title = `Open the configured web URL for ${device.name} in an external browser`;
+      webButton.appendChild(document.createTextNode(t('sidebar.openExternalWebBrowser')));
+      webButton.title = t('sidebar.openExternalWebBrowserFor', { name: device.name });
       webButton.addEventListener('click', (event) => {
         event.stopPropagation();
         vscode.postMessage({
@@ -265,8 +275,8 @@
       const embeddedWebButton = document.createElement('button');
       embeddedWebButton.className = 'command-button';
       embeddedWebButton.appendChild(createIconSpan('🌐'));
-      embeddedWebButton.appendChild(document.createTextNode('Open Embedded Web Browser'));
-      embeddedWebButton.title = `Open the configured web URL for ${device.name} in VS Code`;
+      embeddedWebButton.appendChild(document.createTextNode(t('sidebar.openEmbeddedWebBrowser')));
+      embeddedWebButton.title = t('sidebar.openEmbeddedWebBrowserFor', { name: device.name });
       embeddedWebButton.addEventListener('click', (event) => {
         event.stopPropagation();
         vscode.postMessage({
@@ -282,8 +292,7 @@
       commandButton.className = 'command-button';
       commandButton.textContent = cmd.name;
       commandButton.title =
-        cmd.command ||
-        (cmd.copyAndRunScript ? 'Copy script to /tmp, chmod 777, and run it' : cmd.name);
+        cmd.command || (cmd.copyAndRunScript ? t('sidebar.copyScriptCommandTitle') : cmd.name);
       commandButton.addEventListener('click', (event) => {
         event.stopPropagation();
         vscode.postMessage({
@@ -345,7 +354,7 @@
     deviceList.innerHTML = '';
     if (!state.devices.length && !state.groups.length) {
       const empty = document.createElement('div');
-      empty.textContent = 'No devices configured. Update "embeddedLogger.devices" in settings.';
+      empty.textContent = t('sidebar.noDevicesConfigured');
       deviceList.appendChild(empty);
       return;
     }

@@ -8,6 +8,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import type { EmbeddedDevice, EmbeddedDeviceGroup } from './deviceTree';
 import type { DevicePingState, DevicePingStatus } from './devicePing';
+import { escapeHtml, formatLocalizedString, getLocalizedStrings } from './localization';
 
 interface SidebarMessage {
   type: 'openDevice';
@@ -167,10 +168,10 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
           this.onOpenEmbeddedWebBrowser(message.deviceId);
           break;
         case 'copyDeviceName':
-          void this.copyToClipboard(message.name, 'Device name');
+          void this.copyToClipboard(message.name, getLocalizedStrings().sidebar.deviceNameLabel);
           break;
         case 'copyDeviceUrl':
-          void this.copyToClipboard(message.url, 'Device URL');
+          void this.copyToClipboard(message.url, getLocalizedStrings().sidebar.deviceUrlLabel);
           break;
       }
     });
@@ -243,7 +244,9 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
    */
   private async copyToClipboard(value: string, label: string): Promise<void> {
     await vscode.env.clipboard.writeText(value);
-    await vscode.window.showInformationMessage(`${label} copied to clipboard.`);
+    await vscode.window.showInformationMessage(
+      formatLocalizedString(getLocalizedStrings().sidebar.copiedToClipboard, { label })
+    );
   }
 
   /**
@@ -262,19 +265,22 @@ export class SidebarViewProvider implements vscode.WebviewViewProvider {
     const scriptUriString = scriptUri.toString(true);
     const styleUriString = styleUri.toString(true);
     const nonce = getNonce();
+    const strings = getLocalizedStrings();
+    const e = escapeHtml;
 
     return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${e(strings.htmlLang)}">
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="${styleUriString}" rel="stylesheet" />
-    <title>Embedded Logger Devices</title>
+    <title>${e(strings.sidebar.title)}</title>
 </head>
 <body>
     <div class="device-list" id="deviceList"></div>
     <div id="sidebarStatus" class="sidebar-status"></div>
+    <script nonce="${nonce}">window.embeddedLoggerI18n = ${JSON.stringify(strings)};</script>
     <script nonce="${nonce}" src="${scriptUriString}"></script>
 </body>
 </html>`;

@@ -28,6 +28,7 @@ import {
   type DevicePingState,
   type DevicePingStatus,
 } from './devicePing';
+import { localize } from './localization';
 
 // Map of deviceId to existing log panels so multiple clicks reuse tabs.
 const panelMap: Map<string, LogPanel> = new Map();
@@ -62,13 +63,13 @@ function validateSshDevice(device: EmbeddedDevice): string | undefined {
   const host = device.host?.trim();
   const username = device.username?.trim();
   if (!host) {
-    return `Device "${device.name}" is missing a host.`;
+    return localize('extension.missingHost', { name: device.name });
   }
   if (!username) {
-    return `Device "${device.name}" is missing a username.`;
+    return localize('extension.missingUsername', { name: device.name });
   }
   if (device.port !== undefined && (!Number.isInteger(device.port) || device.port <= 0)) {
-    return `Device "${device.name}" has an invalid port.`;
+    return localize('extension.invalidPort', { name: device.name });
   }
   return undefined;
 }
@@ -180,9 +181,7 @@ async function migrateLegacyPasswords(
     return;
   }
 
-  const warningMessage =
-    'Credentials were migrated to Secret Storage, but the "password" or "privateKeyPassphrase" fields could not be removed. ' +
-    'Please delete them from embeddedLogger.devices in your settings.';
+  const warningMessage = localize('extension.credentialsMigrationWarning');
 
   const workspaceFolders = vscode.workspace.workspaceFolders ?? [];
   const config = vscode.workspace.getConfiguration('embeddedLogger');
@@ -339,9 +338,7 @@ async function migrateLegacySftpPresets(context: vscode.ExtensionContext): Promi
       console.error('Failed to migrate SFTP presets into embeddedLogger.devices.', err);
       if (!warningShown) {
         warningShown = true;
-        vscode.window.showWarningMessage(
-          'Failed to migrate SFTP presets into embeddedLogger.devices. Existing presets remain in extension storage.'
-        );
+        vscode.window.showWarningMessage(localize('extension.sftpPresetsMigrationFailed'));
       }
     }
   }
@@ -471,7 +468,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
   const resolveDeviceWebUri = (device: EmbeddedDevice): vscode.Uri | undefined => {
     const target = device.webBrowserUrl?.trim() || device.host?.trim();
     if (!target) {
-      vscode.window.showErrorMessage('No host found for the selected device.');
+      vscode.window.showErrorMessage(localize('extension.noHostFound'));
       return undefined;
     }
 
@@ -479,27 +476,27 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
     try {
       const uri = vscode.Uri.parse(normalizedUrl, true);
       if (uri.scheme !== 'http' && uri.scheme !== 'https') {
-        vscode.window.showErrorMessage('Web browser URLs must start with http:// or https://.');
+        vscode.window.showErrorMessage(localize('extension.webUrlMustStart'));
         return undefined;
       }
       return uri;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      vscode.window.showErrorMessage(`Invalid web URL for ${device.name}: ${message}`);
+      vscode.window.showErrorMessage(
+        localize('extension.invalidWebUrl', { name: device.name, message })
+      );
       return undefined;
     }
   };
 
   const openWebBrowser = async (device: EmbeddedDevice | undefined): Promise<void> => {
     if (!device) {
-      vscode.window.showErrorMessage('Device not found. Check embeddedLogger.devices.');
+      vscode.window.showErrorMessage(localize('extension.deviceNotFound'));
       return;
     }
 
     if (!vscode.workspace.isTrusted) {
-      vscode.window.showErrorMessage(
-        'Workspace trust is required before opening device resources.'
-      );
+      vscode.window.showErrorMessage(localize('extension.workspaceTrustDeviceResources'));
       return;
     }
 
@@ -512,20 +509,20 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
       await vscode.env.openExternal(uri);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      vscode.window.showErrorMessage(`Failed to open ${uri.toString(true)}: ${message}`);
+      vscode.window.showErrorMessage(
+        localize('extension.failedToOpenUri', { uri: uri.toString(true), message })
+      );
     }
   };
 
   const openEmbeddedWebBrowser = async (device: EmbeddedDevice | undefined): Promise<void> => {
     if (!device) {
-      vscode.window.showErrorMessage('Device not found. Check embeddedLogger.devices.');
+      vscode.window.showErrorMessage(localize('extension.deviceNotFound'));
       return;
     }
 
     if (!vscode.workspace.isTrusted) {
-      vscode.window.showErrorMessage(
-        'Workspace trust is required before opening device resources.'
-      );
+      vscode.window.showErrorMessage(localize('extension.workspaceTrustDeviceResources'));
       return;
     }
 
@@ -543,14 +540,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
           : undefined;
 
       if (!commandId) {
-        vscode.window.showErrorMessage('VS Code embedded browser support is unavailable.');
+        vscode.window.showErrorMessage(localize('extension.embeddedBrowserUnavailable'));
         return;
       }
 
       await vscode.commands.executeCommand(commandId, uri.toString(true));
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      vscode.window.showErrorMessage(`Failed to open ${uri.toString(true)}: ${message}`);
+      vscode.window.showErrorMessage(
+        localize('extension.failedToOpenUri', { uri: uri.toString(true), message })
+      );
     }
   };
 
@@ -558,12 +557,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
     device: EmbeddedDevice | undefined
   ): Promise<SftpExplorerPanel | undefined> => {
     if (!device) {
-      vscode.window.showErrorMessage('Device not found. Check embeddedLogger.devices.');
+      vscode.window.showErrorMessage(localize('extension.deviceNotFound'));
       return undefined;
     }
 
     if (!isTestMode && !vscode.workspace.isTrusted) {
-      vscode.window.showErrorMessage('Workspace trust is required before connecting to devices.');
+      vscode.window.showErrorMessage(localize('extension.workspaceTrustConnect'));
       return undefined;
     }
 
@@ -601,12 +600,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
     rerunInitialCommandOnReconnect = false
   ): void => {
     if (!device) {
-      vscode.window.showErrorMessage('Device not found. Check embeddedLogger.devices.');
+      vscode.window.showErrorMessage(localize('extension.deviceNotFound'));
       return;
     }
 
     if (!isTestMode && !vscode.workspace.isTrusted) {
-      vscode.window.showErrorMessage('Workspace trust is required before connecting to devices.');
+      vscode.window.showErrorMessage(localize('extension.workspaceTrustConnect'));
       return;
     }
 
@@ -618,9 +617,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
 
     const normalizedInitialCommand = commandDefinition?.command?.trim();
     if (normalizedInitialCommand && /\r|\n/.test(normalizedInitialCommand)) {
-      vscode.window.showErrorMessage(
-        'SSH command must not contain control characters or new lines.'
-      );
+      vscode.window.showErrorMessage(localize('extension.sshCommandNoControlCharacters'));
       return;
     }
 
@@ -648,7 +645,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
       if (device) {
         void vscode.commands.executeCommand('embeddedLogger.openDevice', device);
       } else {
-        vscode.window.showErrorMessage('Device not found. Check embeddedLogger.devices.');
+        vscode.window.showErrorMessage(localize('extension.deviceNotFound'));
       }
     },
     (
@@ -662,7 +659,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
     ) => {
       const device = findDevice(deviceId);
       if (!device) {
-        vscode.window.showErrorMessage('Device not found. Check embeddedLogger.devices.');
+        vscode.window.showErrorMessage(localize('extension.deviceNotFound'));
         return;
       }
 
@@ -688,14 +685,22 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
         try {
           await vscode.window.withProgress(
             {
-              title: `Running "${commandName}" on ${device.name}`,
+              title: localize('extension.runningCommandOnDevice', {
+                command: commandName,
+                device: device.name,
+              }),
               location: vscode.ProgressLocation.Notification,
             },
             async () => {
               const runner = new SshCommandRunner(device, context);
               const output = await runner.run(commandDefinition);
               const trimmed = output.trim();
-              const message = trimmed || `Command "${commandName}" finished on ${device.name}.`;
+              const message =
+                trimmed ||
+                localize('extension.commandFinishedOnDevice', {
+                  command: commandName,
+                  device: device.name,
+                });
               vscode.window.showInformationMessage(message);
             }
           );
@@ -763,13 +768,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
 
         const devices = getDevices();
         if (!devices.length) {
-          vscode.window.showErrorMessage('No devices configured. Check embeddedLogger.devices.');
+          vscode.window.showErrorMessage(localize('extension.noDevicesConfigured'));
           return;
         }
 
         const selection = await vscode.window.showQuickPick(
           devices.map((item) => ({ label: item.name, description: item.host, device: item })),
-          { placeHolder: 'Select a device to open the SFTP explorer' }
+          { placeHolder: localize('extension.selectDeviceForSftp') }
         );
 
         if (selection?.device) {
@@ -790,13 +795,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
 
         const devices = getDevices();
         if (!devices.length) {
-          vscode.window.showErrorMessage('No devices configured. Check embeddedLogger.devices.');
+          vscode.window.showErrorMessage(localize('extension.noDevicesConfigured'));
           return;
         }
 
         const selection = await vscode.window.showQuickPick(
           devices.map((item) => ({ label: item.name, description: item.host, device: item })),
-          { placeHolder: 'Select a device to open in the external web browser' }
+          { placeHolder: localize('extension.selectDeviceForExternalBrowser') }
         );
 
         if (selection?.device) {
@@ -817,13 +822,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
 
         const devices = getDevices();
         if (!devices.length) {
-          vscode.window.showErrorMessage('No devices configured. Check embeddedLogger.devices.');
+          vscode.window.showErrorMessage(localize('extension.noDevicesConfigured'));
           return;
         }
 
         const selection = await vscode.window.showQuickPick(
           devices.map((item) => ({ label: item.name, description: item.host, device: item })),
-          { placeHolder: 'Select a device to open in the embedded web browser' }
+          { placeHolder: localize('extension.selectDeviceForEmbeddedBrowser') }
         );
 
         if (selection?.device) {
@@ -843,7 +848,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
           const targetDeviceConfig = findDevice(targetDeviceId);
           const deviceLabel = targetDeviceConfig?.name ?? targetDeviceId;
           vscode.window.showInformationMessage(
-            `Stored passwords and passphrases have been removed for ${deviceLabel}.`
+            localize('extension.storedPasswordsRemovedFor', { device: deviceLabel })
           );
           return;
         }
@@ -851,7 +856,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
         const devices = getDevices();
 
         if (!devices || devices.length === 0) {
-          vscode.window.showInformationMessage('No devices configured to clear passwords for.');
+          vscode.window.showInformationMessage(localize('extension.noDevicesToClearPasswords'));
           return;
         }
 
@@ -859,9 +864,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
           await clearStoredCredentialsForDevice(device.id);
         }
 
-        vscode.window.showInformationMessage(
-          'Stored passwords and passphrases have been removed for configured devices.'
-        );
+        vscode.window.showInformationMessage(localize('extension.storedPasswordsRemoved'));
       }
     )
   );
@@ -873,7 +876,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
         canSelectFolders: false,
         canSelectMany: false,
         filters: { Logs: ['log', 'txt'], All: ['*'] },
-        openLabel: 'Open log file',
+        openLabel: localize('extension.openLogFile'),
       });
 
       if (!selection || selection.length === 0) {
@@ -886,7 +889,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
         content = await vscode.workspace.fs.readFile(uri);
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
-        vscode.window.showErrorMessage(`Failed to read log file: ${message}`);
+        vscode.window.showErrorMessage(localize('extension.failedToReadLogFile', { message }));
         return;
       }
 
@@ -901,7 +904,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
         return;
       }
 
-      const panelName = `${path.basename(uri.fsPath)} (Local)`;
+      const panelName = `${path.basename(uri.fsPath)} (${localize('extension.localPanelSuffix')})`;
       const panel = new LogPanel(
         context,
         { type: 'local', id: panelId, name: panelName, lines, filePath: uri.fsPath },
@@ -931,7 +934,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
       'embeddedLogger.openDevice',
       async (device: EmbeddedDevice): Promise<void> => {
         if (!device) {
-          vscode.window.showErrorMessage('No device information supplied.');
+          vscode.window.showErrorMessage(localize('extension.noDeviceInfo'));
           return;
         }
 
