@@ -266,6 +266,44 @@ describe('DeviceManagerPanel', () => {
       message:
         'Saved settings. Reload the window or extension host, then save again to persist newly added default settings.',
     });
+    expect(commands.executeCommand).not.toHaveBeenCalledWith('workbench.action.reloadWindow');
+  });
+
+  it('reloads the window after saving a changed language setting', async () => {
+    const panel = createPanel();
+
+    panel.__fireMessage({
+      type: 'save',
+      defaults: {
+        defaultPort: 22,
+        defaultLogCommand: 'tail -F /var/log/syslog',
+        defaultEnableSshTerminal: true,
+        defaultEnableSftpExplorer: true,
+        defaultEnableWebBrowser: false,
+        defaultEnableEmbeddedWebBrowser: false,
+        language: 'de',
+        defaultSshCommands: [],
+        maxLinesPerTab: 100000,
+      },
+      groups: [],
+      devices: [
+        {
+          id: 'device-a',
+          name: 'Device A',
+          host: '10.0.0.1',
+          username: 'root',
+        },
+      ],
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(panel.webview.postMessage).toHaveBeenCalledWith({
+      type: 'saveResult',
+      success: true,
+      message: 'Saved settings.',
+    });
+    expect(commands.executeCommand).toHaveBeenCalledWith('workbench.action.reloadWindow');
   });
 
   it('stores SFTP presets directly on device configuration entries', async () => {

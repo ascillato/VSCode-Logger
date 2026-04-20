@@ -481,6 +481,8 @@ export class DeviceManagerPanel {
       const normalizedGroups = this.normalizeGroups(groups);
       const normalizedDevices = devices.map((device) => this.normalizeDevice(device));
       let saveMessage = getLocalizedStrings().deviceManager.savedSettings;
+      const previousLanguage = getLanguagePreference(config);
+      let shouldReloadAfterSave = false;
 
       const updates: Array<{
         run: () => Thenable<void>;
@@ -527,7 +529,10 @@ export class DeviceManagerPanel {
           tolerateUnregistered: 'embeddedLogger.defaultEnableEmbeddedWebBrowser',
         },
         {
-          run: () => config.update('language', normalizedDefaults.language, target),
+          run: async (): Promise<void> => {
+            await config.update('language', normalizedDefaults.language, target);
+            shouldReloadAfterSave = previousLanguage !== normalizedDefaults.language;
+          },
           tolerateUnregistered: 'embeddedLogger.language',
         },
         {
@@ -577,6 +582,12 @@ export class DeviceManagerPanel {
         success: true,
         message: saveMessage,
       });
+
+      if (shouldReloadAfterSave) {
+        void vscode.commands
+          .executeCommand('workbench.action.reloadWindow')
+          .then(undefined, () => undefined);
+      }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
       this.panel.webview.postMessage({ type: 'saveResult', success: false, message });
