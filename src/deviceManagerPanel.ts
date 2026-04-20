@@ -13,6 +13,8 @@ import {
   formatLocalizedString,
   getLocalizedStrings,
   getLanguagePreference,
+  isLanguagePreference,
+  languagePreferences,
   type LanguagePreference,
 } from './localization';
 
@@ -224,6 +226,11 @@ export class DeviceManagerPanel {
     const languageNames = strings.languageNames;
     const pageTitle = formatLocalizedString(dm.title, { version: this.extensionVersion });
     const e = escapeHtml;
+    const languageOptions = languagePreferences
+      .map((language) => {
+        return `<option value="${e(language)}">${e(languageNames[language])}</option>`;
+      })
+      .join('');
 
     return `<!DOCTYPE html>
 <html lang="${e(strings.htmlLang)}">
@@ -324,10 +331,7 @@ export class DeviceManagerPanel {
           <label class="field">
             <span>${e(dm.language)}</span>
             <select id="extensionLanguage">
-              <option value="vscode">${e(languageNames.vscode)}</option>
-              <option value="en">${e(languageNames.en)}</option>
-              <option value="es">${e(languageNames.es)}</option>
-              <option value="it">${e(languageNames.it)}</option>
+              ${languageOptions}
             </select>
           </label>
         </div>
@@ -1179,9 +1183,7 @@ export class DeviceManagerPanel {
   }
 
   private normalizeLanguage(value: unknown): LanguagePreference {
-    return value === 'en' || value === 'es' || value === 'it' || value === 'vscode'
-      ? value
-      : 'vscode';
+    return isLanguagePreference(value) ? value : 'vscode';
   }
 
   private validateGroups(value: unknown, key: string): GroupPayload[] {

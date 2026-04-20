@@ -100,8 +100,8 @@ This project was designed around the following principles:
     commands, bastion settings, and SFTP presets before saving.
 -   **Centralized localization resources**: `src/localization/`
     resolves the extension language from `embeddedLogger.language` and
-    VS Code's display language, then provides English, Spanish, and
-    Italian strings to extension-host and Webview code.
+    VS Code's display language, then provides supported language bundles
+    to extension-host and Webview code.
 -   **Good organization and naming conventions**: The current module
     layout makes it easy to extend a specific area without loading
     unrelated concerns into `extension.ts`.
@@ -132,8 +132,8 @@ This project was designed around the following principles:
     theme variables and preserve a native-feeling workflow inside the
     editor.
 -   **Language-aware UI**: The Device Manager, Devices view, device
-    tree, log panel, and related host notifications use shared English,
-    Spanish, or Italian localization bundles.
+    tree, log panel, and related host notifications use shared
+    localization bundles.
 
 ------------------------------------------------------------------------
 
@@ -195,7 +195,7 @@ the Webviews, and key configuration and security considerations.
 ### Activation and configuration
 - **Activation trigger**: The extension activates when VS Code loads the workspace or when a contributed view or command is invoked.
 - **Configuration resolution**: Devices come from `embeddedLogger.devices`, groups come from `embeddedLogger.groups`, and device defaults are enriched from `embeddedLogger.language`, `embeddedLogger.defaultPort`, `embeddedLogger.defaultLogCommand`, `embeddedLogger.defaultEnableSshTerminal`, `embeddedLogger.defaultEnableSftpExplorer`, `embeddedLogger.defaultEnableWebBrowser`, `embeddedLogger.defaultEnableEmbeddedWebBrowser`, `embeddedLogger.defaultSshCommands`, `embeddedLogger.maxLinesPerTab`, `embeddedLogger.enableDevicePing`, and `embeddedLogger.devicePingIntervalSeconds`.
-- **Language resolution**: `embeddedLogger.language` defaults to `vscode`, which follows `vscode.env.language`. English, Spanish, and Italian are supported explicitly; other VS Code display languages fall back to English.
+- **Language resolution**: `embeddedLogger.language` defaults to `vscode`, which follows `vscode.env.language`. English, Spanish, Italian, Simplified Chinese, Traditional Chinese, French, German, Japanese, Korean, Russian, Portuguese (Brazil), Turkish, Polish, Czech, and Hungarian are supported explicitly; other VS Code display languages fall back to English.
 - **Ping behavior**: Leaving `embeddedLogger.devicePingIntervalSeconds` empty disables background ping scheduling so checks run from **Ping Configured Devices** only. When pinging is enabled and the interval is empty or greater than `3600`, startup, manual, and timer-triggered ping results expose `HH:MM:SS` in the hover text for the green/red status dot.
 - **Per-device overrides**: Device fields such as `showDefaultSshCommands`, `enableSshTerminal`, `enableSftpExplorer`, browser flags, SFTP presets, secondary hosts, colors, and bastion settings override or extend those defaults.
 - **Settings migration**: During activation, plaintext passwords and passphrases in settings are migrated into VS Code Secret Storage, and workspace-state SFTP presets are migrated into `embeddedLogger.devices` when possible. Legacy Secret Storage credential keys are upgraded lazily when the matching device or bastion credential is requested.
@@ -203,7 +203,7 @@ the Webviews, and key configuration and security considerations.
 
 ### Major components
 - **Configuration helpers (`src/configuration.ts`)**: Centralize reading extension settings, applying defaults, resolving groups, sanitizing SFTP presets, merging shared SSH commands, and surfacing the max-lines limit.
-- **Localization helpers (`src/localization/`)**: Define English, Spanish, and Italian bundles, resolve the active language from the extension setting or VS Code display language, and expose formatting helpers for extension-host and Webview strings.
+- **Localization helpers (`src/localization/`)**: Define supported language bundles, resolve the active language from the extension setting or VS Code display language, and expose formatting helpers for extension-host and Webview strings.
 - **Device tree (`src/deviceTree.ts`)**: Supplies the Activity Bar tree view, including collapsible groups and per-device color icons.
 - **Sidebar view (`src/sidebarView.ts` + `media/sidebarView.*`)**: Renders the devices Webview with grouped cards, ping status indicators, and quick actions for logs, SSH commands, SSH terminal, SFTP explorer, and browser actions.
 - **Device Manager (`src/deviceManagerPanel.ts` + `media/deviceManager.*`)**: Provides a table-style configuration editor for defaults, groups, devices, import/export, JSON editing, and password cleanup.
@@ -416,7 +416,7 @@ For the current architecture, these are the safest extension points:
 - add new Devices view actions in `src/sidebarView.ts` and `media/sidebarView.js`
 - add new log-panel backend behavior in `src/logPanel/logPanel.ts`
 - add new log-panel UI behavior in `media/loggerPanel.*`
-- add new user-visible strings in `src/localization/en.ts`, `src/localization/es.ts`, and `src/localization/it.ts`
+- add new user-visible strings in `src/localization/en.ts` and the matching supported language bundle files
 - add new SSH connection behavior inside `src/logSession/`
 - extend SFTP behavior in `src/sftpExplorer.ts`
 - update shared SFTP `find`/`grep` command rules in `src/sftpSearch.ts`

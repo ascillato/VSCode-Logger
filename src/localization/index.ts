@@ -1,22 +1,68 @@
+/* eslint-disable spellcheck/spell-checker */
 import * as vscode from 'vscode';
+import { cs } from './cs';
+import { de } from './de';
 import { en } from './en';
 import { es } from './es';
+import { fr } from './fr';
+import { hu } from './hu';
 import { it } from './it';
+import { ja } from './ja';
+import { ko } from './ko';
+import { pl } from './pl';
+import { ptBr } from './pt-br';
+import { ru } from './ru';
+import { tr } from './tr';
+import { zhCn } from './zh-cn';
+import { zhTw } from './zh-tw';
 
-export type LanguagePreference = 'vscode' | 'en' | 'es' | 'it';
-export type SupportedLanguage = Exclude<LanguagePreference, 'vscode'>;
+export const supportedLanguages = [
+  'en',
+  'es',
+  'it',
+  'zh-cn',
+  'zh-tw',
+  'fr',
+  'de',
+  'ja',
+  'ko',
+  'ru',
+  'pt-br',
+  'tr',
+  'pl',
+  'cs',
+  'hu',
+] as const;
+export const languagePreferences = ['vscode', ...supportedLanguages] as const;
+
+export type SupportedLanguage = (typeof supportedLanguages)[number];
+export type LanguagePreference = (typeof languagePreferences)[number];
 export type LocalizedStrings = typeof en;
 
 const bundles: Record<SupportedLanguage, LocalizedStrings> = {
   en,
   es,
   it,
+  'zh-cn': zhCn,
+  'zh-tw': zhTw,
+  fr,
+  de,
+  ja,
+  ko,
+  ru,
+  'pt-br': ptBr,
+  tr,
+  pl,
+  cs,
+  hu,
 };
 
+export function isLanguagePreference(value: unknown): value is LanguagePreference {
+  return typeof value === 'string' && (languagePreferences as readonly string[]).includes(value);
+}
+
 function normalizePreference(value: unknown): LanguagePreference {
-  return value === 'vscode' || value === 'en' || value === 'es' || value === 'it'
-    ? value
-    : 'vscode';
+  return isLanguagePreference(value) ? value : 'vscode';
 }
 
 function normalizeSupportedLanguage(value: unknown): SupportedLanguage {
@@ -24,8 +70,21 @@ function normalizeSupportedLanguage(value: unknown): SupportedLanguage {
     return 'en';
   }
 
-  const language = value.toLowerCase().split(/[-_]/)[0];
-  return language === 'es' || language === 'it' ? language : 'en';
+  const normalized = value.toLowerCase().replace(/_/g, '-');
+  if (normalized.startsWith('zh-cn') || normalized.startsWith(['zh', 'hans'].join('-'))) {
+    return 'zh-cn';
+  }
+  if (normalized.startsWith('zh-tw') || normalized.startsWith(['zh', 'hant'].join('-'))) {
+    return 'zh-tw';
+  }
+  if (normalized.startsWith('pt-br')) {
+    return 'pt-br';
+  }
+
+  const language = normalized.split('-')[0];
+  return (supportedLanguages as readonly string[]).includes(language)
+    ? (language as SupportedLanguage)
+    : 'en';
 }
 
 export function getLanguagePreference(

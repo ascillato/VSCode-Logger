@@ -33,7 +33,7 @@ If you like the extension, please [rate it](https://marketplace.visualstudio.com
 - **Interactive SSH terminals** opened directly inside VS Code.
 - **Dual-pane SFTP explorer** with transfers, presets, quick search, rename, duplicate, delete, and permissions editing.
 - **External and embedded web browser actions** for device URLs.
-- **Localized UI** for English, Spanish, and Italian. By default it follows VS Code's **Configure Display Language** setting and falls back to English for unsupported languages.
+- **Language selection and localization bundles** for English, Spanish, Italian, Simplified Chinese, Traditional Chinese, French, German, Japanese, Korean, Russian, Portuguese (Brazil), Turkish, Polish, Czech, and Hungarian. By default it follows VS Code's **Configure Display Language** setting and falls back to English for unsupported languages or missing localized strings.
 - **Host-key verification** with optional pinned fingerprints, automatic fingerprint capture, secondary host fallback, and optional bastion/jump-host tunnelling.
 - Authenticate with SSH passwords or private keys.
 - SSH passwords and private key passphrases are **stored securely** with VS Code Secret Storage.
@@ -80,7 +80,7 @@ The Device Manager is the fastest way to work with the current schema because it
   - `embeddedLogger.devicePingIntervalSeconds`
   - `embeddedLogger.defaultSshCommands`
   - `embeddedLogger.maxLinesPerTab`
-- **Extension language** controls `embeddedLogger.language`. **VSCode default** follows VS Code's **Configure Display Language** setting. **English**, **Spanish**, and **Italian** force a specific extension UI language. Other VS Code display languages currently fall back to English.
+- **Extension language** controls `embeddedLogger.language`. **VSCode default** follows VS Code's **Configure Display Language** setting. Supported explicit choices are English, Spanish, Italian, Simplified Chinese, Traditional Chinese, French, German, Japanese, Korean, Russian, Portuguese (Brazil), Turkish, Polish, Czech, and Hungarian. Other VS Code display languages and missing localized strings currently fall back to English.
 - Leave **Ping interval (seconds)** empty to disable background ping scheduling and use only the top-level **Ping Configured Devices** action.
 - When pinging is enabled and the interval is empty or greater than `3600`, the green/red ping indicator tooltip shows the last result time as `HH:MM:SS` for startup, toolbar-triggered, and timer-triggered pings.
 - The **Groups** table edits `embeddedLogger.groups`, which controls the ordered collapsible sections shown in the Devices view.

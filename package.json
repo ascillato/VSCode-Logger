@@ -51,15 +51,39 @@
             "vscode",
             "en",
             "es",
-            "it"
+            "it",
+            "zh-cn",
+            "zh-tw",
+            "fr",
+            "de",
+            "ja",
+            "ko",
+            "ru",
+            "pt-br",
+            "tr",
+            "pl",
+            "cs",
+            "hu"
           ],
           "enumItemLabels": [
             "VSCode default",
             "English",
             "Spanish",
-            "Italian"
+            "Italian",
+            "Simplified Chinese",
+            "Traditional Chinese",
+            "French",
+            "German",
+            "Japanese",
+            "Korean",
+            "Russian",
+            "Portuguese (Brazil)",
+            "Turkish",
+            "Polish",
+            "Czech",
+            "Hungarian"
           ],
-          "description": "Language used by the extension UI. VSCode default follows Configure Display Language and currently supports English, Spanish, and Italian."
+          "description": "Language used by the extension UI. VSCode default follows Configure Display Language and falls back to English for unsupported display languages."
         },
         "embeddedLogger.defaultPort": {
           "type": "number",

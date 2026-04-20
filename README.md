@@ -28,7 +28,7 @@ If you like the extension, please [rate it](https://marketplace.visualstudio.com
 - Browse files with the built-in **SFTP explorer**, including quick search, `find`/`grep` result views, and keyboard shortcuts.
 - Assign **per-device colors** to make tabs and device lists easier to scan.
 - Organize devices with **collapsible groups** in the Embedded Devices view.
-- Localize the extension UI in **English**, **Spanish**, or **Italian**, following VS Code's display language by default.
+- Choose the extension UI language from **English**, **Spanish**, **Italian**, **Simplified Chinese**, **Traditional Chinese**, **French**, **German**, **Japanese**, **Korean**, **Russian**, **Portuguese (Brazil)**, **Turkish**, **Polish**, **Czech**, or **Hungarian**, following VS Code's display language by default and falling back to English for missing strings.
 - **Secure by default**: passwords and key passphrases live in VS Code Secret Storage.
 - **Privacy focused**. **No telemetry**. Everything **runs locally**.
 
