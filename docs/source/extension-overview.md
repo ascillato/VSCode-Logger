@@ -3,9 +3,9 @@
 VSCode‑Logger is a Visual Studio Code extension designed to stream logs
 from embedded Linux devices over SSH, providing filtering, highlighting,
 bookmarking, and search. Alongside log viewing, it provides device grouping, a
-Device Manager settings UI, one-off SSH commands, interactive SSH
-terminals, a dual-pane SFTP explorer, and optional external or embedded
-browser actions for device URLs.
+localized Device Manager settings UI, one-off SSH commands, interactive
+SSH terminals, a dual-pane SFTP explorer, and optional external or
+embedded browser actions for device URLs.
 
 This codebase overview is organized in terms of architecture,
 maintainability, security, performance, and UI implementation and security. It
@@ -43,8 +43,8 @@ This project was designed around the following principles:
     settings, SSH commands, log-panel messages, and SFTP operations.
 -   **Centralized configuration resolution**: Defaults for ports, log
     commands, SSH terminals, SFTP explorer, browser actions, shared SSH
-    commands, groups, and max log lines are normalized in one place
-    before downstream components consume them.
+    commands, groups, extension language, and max log lines are
+    normalized in one place before downstream components consume them.
 -   **Clear trust and validation gates**: Log streaming, one-off SSH
     commands, SSH terminals, SFTP access, and browser actions all refuse
     to run in untrusted workspaces and validate key device inputs before
@@ -98,6 +98,10 @@ This project was designed around the following principles:
 -   **Schema-aware configuration editing**: The Device Manager validates
     imported JSON and normalizes devices, groups, defaults, SSH
     commands, bastion settings, and SFTP presets before saving.
+-   **Centralized localization resources**: `src/localization/`
+    resolves the extension language from `embeddedLogger.language` and
+    VS Code's display language, then provides English, Spanish, and
+    Italian strings to extension-host and Webview code.
 -   **Good organization and naming conventions**: The current module
     layout makes it easy to extend a specific area without loading
     unrelated concerns into `extension.ts`.
@@ -127,6 +131,9 @@ This project was designed around the following principles:
 -   **Responsive layout and theme integration**: The Webviews use VS Code
     theme variables and preserve a native-feeling workflow inside the
     editor.
+-   **Language-aware UI**: The Device Manager, Devices view, device
+    tree, log panel, and related host notifications use shared English,
+    Spanish, or Italian localization bundles.
 
 ------------------------------------------------------------------------
 
@@ -187,7 +194,8 @@ the Webviews, and key configuration and security considerations.
 
 ### Activation and configuration
 - **Activation trigger**: The extension activates when VS Code loads the workspace or when a contributed view or command is invoked.
-- **Configuration resolution**: Devices come from `embeddedLogger.devices`, groups come from `embeddedLogger.groups`, and device defaults are enriched from `embeddedLogger.defaultPort`, `embeddedLogger.defaultLogCommand`, `embeddedLogger.defaultEnableSshTerminal`, `embeddedLogger.defaultEnableSftpExplorer`, `embeddedLogger.defaultEnableWebBrowser`, `embeddedLogger.defaultEnableEmbeddedWebBrowser`, `embeddedLogger.defaultSshCommands`, `embeddedLogger.maxLinesPerTab`, `embeddedLogger.enableDevicePing`, and `embeddedLogger.devicePingIntervalSeconds`.
+- **Configuration resolution**: Devices come from `embeddedLogger.devices`, groups come from `embeddedLogger.groups`, and device defaults are enriched from `embeddedLogger.language`, `embeddedLogger.defaultPort`, `embeddedLogger.defaultLogCommand`, `embeddedLogger.defaultEnableSshTerminal`, `embeddedLogger.defaultEnableSftpExplorer`, `embeddedLogger.defaultEnableWebBrowser`, `embeddedLogger.defaultEnableEmbeddedWebBrowser`, `embeddedLogger.defaultSshCommands`, `embeddedLogger.maxLinesPerTab`, `embeddedLogger.enableDevicePing`, and `embeddedLogger.devicePingIntervalSeconds`.
+- **Language resolution**: `embeddedLogger.language` defaults to `vscode`, which follows `vscode.env.language`. English, Spanish, and Italian are supported explicitly; other VS Code display languages fall back to English.
 - **Ping behavior**: Leaving `embeddedLogger.devicePingIntervalSeconds` empty disables background ping scheduling so checks run from **Ping Configured Devices** only. When pinging is enabled and the interval is empty or greater than `3600`, startup, manual, and timer-triggered ping results expose `HH:MM:SS` in the hover text for the green/red status dot.
 - **Per-device overrides**: Device fields such as `showDefaultSshCommands`, `enableSshTerminal`, `enableSftpExplorer`, browser flags, SFTP presets, secondary hosts, colors, and bastion settings override or extend those defaults.
 - **Settings migration**: During activation, plaintext passwords and passphrases in settings are migrated into VS Code Secret Storage, and workspace-state SFTP presets are migrated into `embeddedLogger.devices` when possible. Legacy Secret Storage credential keys are upgraded lazily when the matching device or bastion credential is requested.
@@ -195,6 +203,7 @@ the Webviews, and key configuration and security considerations.
 
 ### Major components
 - **Configuration helpers (`src/configuration.ts`)**: Centralize reading extension settings, applying defaults, resolving groups, sanitizing SFTP presets, merging shared SSH commands, and surfacing the max-lines limit.
+- **Localization helpers (`src/localization/`)**: Define English, Spanish, and Italian bundles, resolve the active language from the extension setting or VS Code display language, and expose formatting helpers for extension-host and Webview strings.
 - **Device tree (`src/deviceTree.ts`)**: Supplies the Activity Bar tree view, including collapsible groups and per-device color icons.
 - **Sidebar view (`src/sidebarView.ts` + `media/sidebarView.*`)**: Renders the devices Webview with grouped cards, ping status indicators, and quick actions for logs, SSH commands, SSH terminal, SFTP explorer, and browser actions.
 - **Device Manager (`src/deviceManagerPanel.ts` + `media/deviceManager.*`)**: Provides a table-style configuration editor for defaults, groups, devices, import/export, JSON editing, and password cleanup.
@@ -204,7 +213,7 @@ the Webviews, and key configuration and security considerations.
 - **SSH helpers (`src/sshCommandRunner.ts`, `src/sshTerminal.ts`)**: Execute one-off SSH commands from the devices view or spawn an interactive SSH terminal using the same validation and authentication pipeline as log streaming.
 - **SFTP explorer (`src/sftpExplorer.ts` + `media/sftpExplorer.*`)**: Hosts the dual-pane file explorer, transfers, permissions editing, quick search, `find`/`grep` dialogs, search-result snapshots, path presets, and integrated terminal or run actions while reusing device authentication and bastion support.
 - **SFTP search compiler (`src/sftpSearch.ts`)**: Centralizes validation and shell-safe command compilation for the SFTP explorer's `find` and optional `grep` filters so the preview shown in the Webview matches what the extension host executes.
-- **Webview clients (`media/loggerPanel/`, `media/loggerPanel.css`)**: The `loggerPanel.js` entrypoint composes `state.js`, `rendering.js`, and `messaging.js` to parse severity, apply filters and highlights, manage bookmarks and presets, enforce the max-lines cap, and render the terminal-like UI for both remote and local logs.
+- **Webview clients (`media/loggerPanel/`, `media/loggerPanel.css`)**: The `loggerPanel.js` entrypoint composes `state.js`, `rendering.js`, and `messaging.js` to parse severity, apply filters and highlights, manage bookmarks and presets, enforce the max-lines cap, consume injected localized strings, and render the terminal-like UI for both remote and local logs.
 
 ### Data and control flow
 
@@ -252,7 +261,7 @@ Each class has a narrowly scoped role to keep concerns separated:
 - **`sshCommandRunner`** executes sanitized one-off commands with the same credential and endpoint model used elsewhere.
 - **`sshTerminal`** provides an interactive pseudoterminal session with the same authentication and host-key guarantees.
 - **`sftpExplorer`** provides a dual-pane file workflow built on the same device identity, secret handling, bastion support, and host-side `find`/`grep` execution for search results with relative paths and metadata.
-- **Webview clients (`loggerPanel.js`, `sidebarView.js`, `deviceManager.js`, `sftpExplorer.js`)** manage UI state and issue explicit `postMessage` requests back to the extension host.
+- **Webview clients (`loggerPanel.js`, `sidebarView.js`, `deviceManager.js`, `sftpExplorer.js`)** manage UI state, consume injected localization data, and issue explicit `postMessage` requests back to the extension host.
 
 #### Data flow: device configuration to Webview rendering
 
@@ -407,6 +416,7 @@ For the current architecture, these are the safest extension points:
 - add new Devices view actions in `src/sidebarView.ts` and `media/sidebarView.js`
 - add new log-panel backend behavior in `src/logPanel/logPanel.ts`
 - add new log-panel UI behavior in `media/loggerPanel.*`
+- add new user-visible strings in `src/localization/en.ts`, `src/localization/es.ts`, and `src/localization/it.ts`
 - add new SSH connection behavior inside `src/logSession/`
 - extend SFTP behavior in `src/sftpExplorer.ts`
 - update shared SFTP `find`/`grep` command rules in `src/sftpSearch.ts`
