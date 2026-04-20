@@ -447,4 +447,73 @@ describe('ConnectionManager', () => {
       ).normalizeError(undefined, 'fallback').message
     ).toBe('fallback');
   });
+
+  it('covers bastion fallback helpers and optional bastion verifier branches', async () => {
+    const stream = new MockSshChannel();
+    const bastionClient = createMockClient();
+    const tunneledClient = createMockClient();
+    vi.spyOn(tunneledClient, 'exec').mockImplementation((_command, callback) => {
+      callback(undefined, stream as never);
+      return tunneledClient;
+    });
+    const callbacks = {
+      onStatus: vi.fn(),
+      onError: vi.fn(),
+      onClose: vi.fn(),
+    };
+    const hostVerifier = {
+      getExpectedFingerprint: vi.fn(() => undefined),
+      reset: vi.fn(),
+      verify: vi.fn(() => true),
+      getLastSeen: vi.fn(() => undefined),
+      getFailure: vi.fn(() => undefined),
+    };
+    const manager = new ConnectionManager(
+      callbacks,
+      { persistIfMissing: vi.fn(async () => undefined) } as never,
+      hostVerifier as never,
+      {
+        createClient: () => tunneledClient as never,
+        createForwardingClient: () => bastionClient as never,
+      }
+    );
+
+    await expect(
+      (
+        manager as unknown as {
+          connectThroughBastion: (request: {
+            endpoint: HostEndpoint;
+            authentication: AuthenticationResult;
+            logCommand: string;
+            device: EmbeddedDevice;
+          }) => Promise<unknown>;
+        }
+      ).connectThroughBastion({
+        endpoint,
+        authentication,
+        logCommand: 'journalctl -f',
+        device: baseDevice,
+      })
+    ).resolves.toEqual({ client: tunneledClient, stream });
+
+    await expect(
+      manager.connect({
+        endpoint,
+        authentication,
+        logCommand: 'journalctl -f',
+        device: baseDevice,
+        bastion: { host: 'jump.local', username: 'jump' },
+        bastionAuthentication: { password: 'jump-secret' },
+      })
+    ).resolves.toEqual({ client: tunneledClient, stream, bastionClient });
+
+    expect(bastionClient.lastConnectConfig?.hostVerifier?.(Buffer.from('key'))).toBe(true);
+    expect(
+      (
+        manager as unknown as {
+          normalizeError: (err: unknown, fallbackMessage: string) => Error;
+        }
+      ).normalizeError('', 'fallback').message
+    ).toBe('fallback');
+  });
 });

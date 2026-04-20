@@ -1,5 +1,6 @@
 import type { Stats } from 'fs';
 import * as fs from 'fs/promises';
+import { createHash } from 'crypto';
 import * as os from 'os';
 import * as path from 'path';
 import pathPosix from 'path/posix';
@@ -25,6 +26,102 @@ import {
   Uri,
   ExtensionMode,
 } from '../mocks/vscode';
+
+type SftpExplorerInternals = {
+  sftp?: MemorySftp;
+  remoteHome?: string;
+  hostKeyFailure?: { expected: string; received: string };
+  bastionHostKeyFailure?: { expected: string; received: string };
+  normalizePath(location: 'remote' | 'local', dirPath: string): string;
+  isRoot(location: 'remote' | 'local', dirPath: string): boolean;
+  getParentDir(location: 'remote' | 'local', dirPath: string): string;
+  formatPermissions(mode?: number): string;
+  isExecutable(mode?: number): boolean;
+  quoteRemotePath(value: string): string;
+  validateEntryName(name: string): string;
+  sanitizeName(value?: string): string | undefined;
+  parseGetentName(output: string): string | undefined;
+  mergeMode(existingMode: number | undefined, requestedMode: number): number;
+  getBastionConfig(): EmbeddedDevice['bastion'];
+  getBastionDevice(bastion: NonNullable<EmbeddedDevice['bastion']>): EmbeddedDevice;
+  parseFingerprint(value: string): { display: string; hex: string };
+  getExpectedFingerprint(endpoint: {
+    host: string;
+    label: string;
+    fingerprint?: string;
+  }): { display: string; hex: string } | undefined;
+  computeHostKeyFingerprint(key: string | Buffer): { display: string; hex: string };
+  verifyHostKey(key: string | Buffer, expected?: { display: string; hex: string }): boolean;
+  verifyBastionHostKey(key: string | Buffer, expected?: { display: string; hex: string }): boolean;
+  updateConnectionStatus(
+    state: 'connected' | 'disconnected' | 'reconnecting',
+    countdownSeconds?: number,
+    overrideMessage?: string
+  ): void;
+  getErrorMessage(err: unknown): string;
+  toError(err: unknown, fallbackMessage: string): Error;
+  escapeHtml(value: string): string;
+  validateDeviceConfiguration(): string | undefined;
+  listLocal(
+    dirPath: string
+  ): Promise<Array<{ name: string; type: string; isExecutable?: boolean }>>;
+  buildSnapshot(
+    location: 'remote' | 'local',
+    dirPath: string,
+    context?: 'left' | 'right'
+  ): Promise<{ path: string; parentPath: string; isRoot: boolean; entries: unknown[] }>;
+  createDirectory(
+    location: 'remote' | 'local',
+    directoryPath: string,
+    name: string
+  ): Promise<string>;
+  createFile(location: 'remote' | 'local', directoryPath: string, name: string): Promise<string>;
+  renameEntry(location: 'remote' | 'local', targetPath: string, newName: string): Promise<string>;
+  duplicateEntry(location: 'remote' | 'local', targetPath: string): Promise<string>;
+  copyEntry(
+    from: { location: 'remote' | 'local'; path: string },
+    toDirectory: { location: 'remote' | 'local'; path: string }
+  ): Promise<string>;
+  copyEntries(
+    items: { location: 'remote' | 'local'; path: string }[],
+    toDirectory: { location: 'remote' | 'local'; path: string }
+  ): Promise<string>;
+  deleteEntry(location: 'remote' | 'local', targetPath: string): Promise<string>;
+  deleteEntries(location: 'remote' | 'local', paths: string[]): Promise<string>;
+  openTerminal(location: 'remote' | 'local', directoryPath: string): Promise<void>;
+  viewContent(location: 'remote' | 'local', targetPath: string): Promise<void>;
+  applyPermissions(
+    location: 'remote' | 'local',
+    targetPath: string,
+    mode: number,
+    owner?: number,
+    group?: number
+  ): Promise<string>;
+  applyPermissionsBatch(
+    location: 'remote' | 'local',
+    paths: string[],
+    mode: number,
+    owner?: number,
+    group?: number
+  ): Promise<string>;
+  getRemoteHome(): Promise<string>;
+  pathExists(location: 'remote' | 'local', targetPath: string): Promise<boolean>;
+  assertDirectory(location: 'remote' | 'local', dirPath: string): Promise<void>;
+  ensureDirectoryExists(location: 'remote' | 'local', dirPath: string): Promise<void>;
+  getPermissionsInfo(
+    location: 'remote' | 'local',
+    targetPath: string
+  ): Promise<{
+    path: string;
+    type: string;
+    ownerName?: string;
+    groupName?: string;
+  }>;
+  runEntry(location: 'remote' | 'local', targetPath: string): Promise<void>;
+};
+
+const getInternals = (panel: SftpExplorerPanel): SftpExplorerInternals =>
+  panel as unknown as SftpExplorerInternals;
 
 const baseDevice: EmbeddedDevice = {
   id: 'device-1',
@@ -2550,5 +2647,738 @@ describe('SftpExplorerPanel', () => {
       panel.dispose();
       await fs.rm(tempDir, { recursive: true, force: true });
     }
+  });
+
+  it('covers path, permission, fingerprint, status, and error helper branches', () => {
+    const panel = createExplorer({
+      bastion: {
+        host: ' jump.local ',
+        username: ' jump ',
+        port: undefined,
+        hostFingerprint: ' SHA256:abc ',
+        privateKeyPath: ' ~/.ssh/id_ed25519 ',
+      },
+    });
+    const internals = getInternals(panel);
+    const postMessage = getCreatedWebviews()[0].webview.postMessage as unknown as vi.Mock;
+
+    expect(internals.normalizePath('remote', '')).toBe('/');
+    expect(internals.normalizePath('remote', 'var/../log')).toBe('/log');
+    expect(internals.normalizePath('local', '')).toBe(path.resolve(os.homedir()));
+    expect(internals.isRoot('remote', '/')).toBe(true);
+    expect(internals.isRoot('remote', '/tmp')).toBe(false);
+    expect(internals.isRoot('local', path.parse(process.cwd()).root)).toBe(true);
+    expect(internals.getParentDir('remote', '/')).toBe('/');
+    expect(internals.getParentDir('remote', '/var/log')).toBe('/var');
+    expect(internals.getParentDir('local', path.join(process.cwd(), 'file.txt'))).toBe(
+      process.cwd()
+    );
+
+    expect(internals.formatPermissions()).toBe('---------');
+    expect(internals.formatPermissions(0)).toBe('---------');
+    expect(internals.formatPermissions(0o755)).toBe('rwxr-xr-x');
+    expect(internals.isExecutable()).toBe(false);
+    expect(internals.isExecutable(0o644)).toBe(false);
+    expect(internals.isExecutable(0o111)).toBe(true);
+    expect(internals.quoteRemotePath("a'b")).toBe("'a'\\''b'");
+
+    expect(internals.validateEntryName(' name.txt ')).toBe('name.txt');
+    expect(() => internals.validateEntryName('   ')).toThrow('A name is required.');
+    expect(() => internals.validateEntryName('a/b')).toThrow(
+      'Names must not include path separators.'
+    );
+    expect(internals.sanitizeName()).toBeUndefined();
+    expect(internals.sanitizeName(' bad name ')).toBeUndefined();
+    expect(internals.sanitizeName('valid.name-1_')).toBe('valid.name-1_');
+    expect(internals.parseGetentName('')).toBeUndefined();
+    expect(internals.parseGetentName('root:x:0:0:root:/root:/bin/sh')).toBe('root');
+    expect(internals.mergeMode(undefined, 0o755)).toBe(0o755);
+    expect(internals.mergeMode(0o100000, 0o644)).toBe(0o100644);
+
+    expect(internals.getBastionConfig()).toEqual(
+      expect.objectContaining({
+        host: 'jump.local',
+        username: 'jump',
+        port: 22,
+        hostFingerprint: 'SHA256:abc',
+        privateKeyPath: '~/.ssh/id_ed25519',
+      })
+    );
+    expect(
+      getInternals(createExplorer({ bastion: { host: ' ', username: 'jump' } })).getBastionConfig()
+    ).toBeUndefined();
+    expect(internals.getBastionDevice({ host: 'jump.local', username: 'jump' })).toEqual(
+      expect.objectContaining({ id: 'device-1-bastion', name: 'SFTP Device bastion' })
+    );
+
+    const base64 = Buffer.from('abc').toString('base64');
+    expect(internals.parseFingerprint(`SHA256:${base64}`)).toEqual({
+      display: `SHA256:${base64}`,
+      hex: '616263',
+    });
+    const hex = 'a'.repeat(64);
+    const colonHex = hex.match(/../g)?.join(':') ?? hex;
+    expect(internals.parseFingerprint(colonHex)).toEqual({ display: colonHex, hex });
+    expect(() => internals.parseFingerprint('  ')).toThrow('missing an SSH host key fingerprint');
+    expect(() => internals.parseFingerprint('not-a-fingerprint')).toThrow(
+      'has an invalid host fingerprint'
+    );
+    expect(
+      internals.getExpectedFingerprint({ host: 'device.local', label: 'primary' })
+    ).toBeUndefined();
+    expect(
+      internals.getExpectedFingerprint({
+        host: 'device.local',
+        label: 'primary',
+        fingerprint: colonHex,
+      })
+    ).toEqual({ display: colonHex, hex });
+
+    const actual = internals.computeHostKeyFingerprint(Buffer.from('mock-host-key'));
+    expect(internals.computeHostKeyFingerprint(hex)).toEqual({
+      display: `SHA256:${Buffer.from(hex, 'hex').toString('base64')}`,
+      hex,
+    });
+    expect(internals.verifyHostKey(Buffer.from('mock-host-key'))).toBe(true);
+    expect(internals.verifyHostKey(Buffer.from('mock-host-key'), actual)).toBe(true);
+    expect(internals.verifyHostKey(Buffer.from('other-key'), actual)).toBe(false);
+    expect(internals.hostKeyFailure).toEqual({
+      expected: actual.display,
+      received: `SHA256:${createHash('sha256').update(Buffer.from('other-key')).digest('base64')}`,
+    });
+    expect(internals.verifyBastionHostKey(Buffer.from('mock-host-key'))).toBe(true);
+    expect(internals.verifyBastionHostKey(Buffer.from('other-key'), actual)).toBe(false);
+    expect(internals.bastionHostKeyFailure?.expected).toBe(actual.display);
+
+    postMessage.mockClear();
+    internals.updateConnectionStatus('connected');
+    internals.updateConnectionStatus('reconnecting');
+    internals.updateConnectionStatus('disconnected', 3);
+    internals.updateConnectionStatus('disconnected', undefined, 'Offline');
+    expect(postMessage).toHaveBeenCalledWith({
+      type: 'connectionStatus',
+      state: 'connected',
+      countdownSeconds: undefined,
+      message: 'Connected',
+    });
+    expect(postMessage).toHaveBeenCalledWith({
+      type: 'connectionStatus',
+      state: 'reconnecting',
+      countdownSeconds: undefined,
+      message: 'Reconnecting…',
+    });
+    expect(postMessage).toHaveBeenCalledWith({
+      type: 'connectionStatus',
+      state: 'disconnected',
+      countdownSeconds: 3,
+      message: 'Disconnected. Reconnecting in 3s…',
+    });
+    expect(postMessage).toHaveBeenCalledWith({
+      type: 'connectionStatus',
+      state: 'disconnected',
+      countdownSeconds: undefined,
+      message: 'Offline',
+    });
+
+    expect(internals.escapeHtml('&<>"x')).toBe('&amp;&lt;&gt;&quot;x');
+    expect(internals.getErrorMessage(new Error('boom'))).toBe('boom');
+    expect(internals.getErrorMessage('plain')).toBe('plain');
+    expect(internals.toError(new Error('existing'), 'fallback').message).toBe('existing');
+    expect(internals.toError('', 'fallback').message).toBe('fallback');
+
+    panel.dispose();
+  });
+
+  it('covers local filesystem mutations, snapshots, terminals, and content viewing', async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'vscode-logger-sftp-local-'));
+    const panel = createExplorer();
+    const internals = getInternals(panel);
+
+    try {
+      await fs.mkdir(path.join(root, 'folder'));
+      await fs.writeFile(path.join(root, 'folder', 'nested.txt'), 'nested', 'utf8');
+      await fs.writeFile(path.join(root, 'script.sh'), '#!/bin/sh\n', 'utf8');
+      await fs.chmod(path.join(root, 'script.sh'), 0o755);
+
+      const listed = await internals.listLocal(root);
+      expect(listed[0]).toEqual(expect.objectContaining({ name: 'folder', type: 'directory' }));
+      expect(listed).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: 'script.sh', type: 'file', isExecutable: true }),
+        ])
+      );
+
+      const snapshot = await internals.buildSnapshot('local', root);
+      expect(snapshot).toEqual(
+        expect.objectContaining({
+          path: root,
+          parentPath: path.dirname(root),
+          isRoot: false,
+        })
+      );
+
+      await internals.createDirectory('local', root, ' new-folder ');
+      await internals.createFile('local', root, 'new.txt');
+      await expect(internals.createFile('local', root, 'new.txt')).rejects.toThrow(
+        'An entry with that name already exists.'
+      );
+      await internals.renameEntry('local', path.join(root, 'new.txt'), 'renamed.txt');
+      await internals.duplicateEntry('local', path.join(root, 'renamed.txt'));
+      await internals.duplicateEntry('local', path.join(root, 'folder'));
+      await internals.copyEntry(
+        { location: 'local', path: path.join(root, 'renamed.txt') },
+        { location: 'local', path: path.join(root, 'new-folder') }
+      );
+      await expect(
+        internals.copyEntry(
+          { location: 'local', path: path.join(root, 'folder') },
+          { location: 'local', path: root }
+        )
+      ).rejects.toThrow('An entry with the same name already exists in the destination.');
+      await expect(
+        internals.copyEntry(
+          { location: 'local', path: path.join(root, 'renamed.txt') },
+          { location: 'local', path: path.join(root, 'renamed.txt') }
+        )
+      ).rejects.toThrow('Destination path must be a directory.');
+      await expect(internals.copyEntries([], { location: 'local', path: root })).resolves.toBe(
+        root
+      );
+      await expect(internals.deleteEntries('local', [])).resolves.toBe(os.homedir());
+
+      await internals.openTerminal('local', root);
+      expect(window.createTerminal).toHaveBeenCalledWith(
+        expect.objectContaining({ name: `Local: ${path.basename(root)}`, cwd: root })
+      );
+      await expect(internals.openTerminal('local', path.join(root, 'script.sh'))).rejects.toThrow(
+        'Target path is not a directory'
+      );
+
+      await internals.viewContent('local', path.join(root, 'script.sh'));
+      expect(window.showTextDocument).toHaveBeenCalled();
+      await expect(internals.viewContent('local', root)).rejects.toThrow(
+        'Only files can be opened for viewing.'
+      );
+
+      await internals.applyPermissions('local', path.join(root, 'script.sh'), 0o644);
+      await expect(internals.applyPermissionsBatch('local', [], 0o600)).resolves.toBe(os.homedir());
+      await internals.deleteEntry('local', path.join(root, 'renamed.txt'));
+      await internals.deleteEntry('local', path.join(root, 'new-folder'));
+    } finally {
+      panel.dispose();
+      await fs.rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('covers remote SFTP mutations and remote validation branches with a memory backend', async () => {
+    const panel = createExplorer();
+    const internals = getInternals(panel);
+    const sftp = new MemorySftp();
+    internals.sftp = sftp;
+
+    await expect(internals.getRemoteHome()).resolves.toBe('/');
+    await expect(internals.getRemoteHome()).resolves.toBe('/');
+    expect(await internals.pathExists('remote', '/script.sh')).toBe(true);
+    expect(await internals.pathExists('remote', '/missing.sh')).toBe(false);
+
+    const snapshot = await internals.buildSnapshot('remote', '/alpha', 'right');
+    expect(snapshot.entries).toEqual([
+      expect.objectContaining({ name: 'child.txt', type: 'file' }),
+    ]);
+
+    await expect(internals.assertDirectory('remote', '/script.sh')).rejects.toThrow(
+      'Destination path must be a directory.'
+    );
+    await expect(internals.ensureDirectoryExists('remote', '/missing')).rejects.toThrow(
+      'Remote path not found: /missing'
+    );
+    await expect(internals.runEntry('local', '/tmp/script.sh')).rejects.toThrow(
+      'Running files is only supported for remote entries.'
+    );
+    await expect(internals.runEntry('remote', '/alpha')).rejects.toThrow('Cannot run a directory.');
+    await expect(internals.runEntry('remote', '/alpha/child.txt')).rejects.toThrow(
+      'The selected file is not executable.'
+    );
+
+    await internals.createDirectory('remote', '/', 'beta');
+    await internals.createFile('remote', '/beta', 'empty.txt');
+    await expect(internals.createDirectory('remote', '/', 'beta')).rejects.toThrow(
+      'An entry with that name already exists.'
+    );
+    await internals.renameEntry('remote', '/beta/empty.txt', 'renamed.txt');
+    await internals.duplicateEntry('remote', '/beta/renamed.txt');
+    await internals.duplicateEntry('remote', '/alpha');
+    await internals.copyEntry(
+      { location: 'remote', path: '/script.sh' },
+      { location: 'remote', path: '/beta' }
+    );
+    await expect(
+      internals.copyEntry({ location: 'remote', path: '/alpha' }, { location: 'remote', path: '/' })
+    ).rejects.toThrow('An entry with the same name already exists in the destination.');
+    await expect(internals.copyEntries([], { location: 'remote', path: '/' })).resolves.toBe('/');
+    await expect(internals.deleteEntries('remote', [])).resolves.toBe('/');
+
+    const permissions = await internals.getPermissionsInfo('remote', '/script.sh');
+    expect(permissions).toEqual(
+      expect.objectContaining({ path: '/script.sh', type: 'file', ownerName: undefined })
+    );
+    await internals.applyPermissions('remote', '/script.sh', 0o700, 2000, 2001);
+    expect(sftp.nodes.get('/script.sh')).toEqual(
+      expect.objectContaining({ mode: 0o700, uid: 2000, gid: 2001 })
+    );
+    await expect(internals.applyPermissionsBatch('remote', [], 0o600)).resolves.toBe('/');
+    await internals.deleteEntry('remote', '/beta/script.sh');
+    await internals.deleteEntry('remote', '/beta');
+
+    panel.dispose();
+  });
+
+  it('covers test-mode fallback helpers and search entry metadata branches', async () => {
+    const productionPanel = createProductionExplorer();
+    productionPanel.enqueueTestInput('ignored');
+    expect(
+      (productionPanel as unknown as { testInputQueue: string[] }).testInputQueue
+    ).toHaveLength(0);
+    productionPanel.dispose();
+
+    const panel = createExplorer();
+    const explorer = panel as unknown as {
+      normalizeTestPath: (value: string) => string;
+      buildTestSnapshot: (
+        location: 'remote' | 'local',
+        dirPath: string,
+        context?: 'left' | 'right'
+      ) => { path: string; parentPath: string; isRoot: boolean; entries: unknown[] };
+      getNextTestInput: () => string;
+      buildTestSearchSnapshot: (
+        location: 'remote' | 'local',
+        search: { basePath: string; command: string; options: Partial<unknown> }
+      ) => { parentPath: string; entries: unknown[] };
+      collectTestSearchEntries: (
+        basePath: string,
+        options?: { includeSubdirectories?: boolean; content?: string }
+      ) => unknown[];
+      buildSearchEntries: (
+        location: 'remote' | 'local',
+        basePath: string,
+        output: string
+      ) => Promise<Array<{ name: string; modified?: number; relativePath?: string }>>;
+      getEntryStats: ReturnType<typeof vi.fn>;
+      isPaneRequestId: (requestId: string) => boolean;
+      toPaneRequestId: (requestId: string) => string;
+      getSearchLocationForRequestId: (requestId: string) => 'remote' | 'local';
+      sortEntries: (
+        entries: Array<{ name: string; type: 'file' | 'directory'; size: number }>
+      ) => Array<{ name: string; type: 'file' | 'directory' }>;
+    };
+
+    expect(explorer.normalizeTestPath('relative/path')).toBe('/relative/path');
+    expect(explorer.normalizeTestPath('')).toBe('/');
+    expect(explorer.buildTestSnapshot('remote', '/missing', 'right')).toEqual(
+      expect.objectContaining({ path: '/missing', parentPath: '/', isRoot: false, entries: [] })
+    );
+    expect(explorer.getNextTestInput()).toBe('test-value');
+    expect(
+      explorer.buildTestSearchSnapshot('local', {
+        basePath: '/alpha',
+        command: '',
+        options: { includeSubdirectories: false },
+      }).parentPath
+    ).toBe('/');
+    expect(explorer.collectTestSearchEntries('/alpha', { includeSubdirectories: false })).toEqual([
+      expect.objectContaining({ relativePath: 'alpha-child.txt' }),
+    ]);
+    expect(explorer.collectTestSearchEntries('/', { content: undefined })).toEqual(
+      expect.arrayContaining([expect.objectContaining({ name: 'alpha-file.txt' })])
+    );
+
+    explorer.getEntryStats = vi.fn(async (_location: 'remote' | 'local', targetPath: string) => {
+      const name = pathPosix.basename(targetPath);
+      return {
+        isFile: () => !name.startsWith('dir'),
+        isDirectory: () => name.startsWith('dir'),
+        size: 1,
+        mode: 0o755,
+        mtime: name === 'date.txt' ? new Date(1000) : name === 'seconds.txt' ? 2 : undefined,
+        mtimeMs: name === 'ms.txt' ? 3000 : undefined,
+      };
+    });
+
+    const entries = await explorer.buildSearchEntries(
+      'remote',
+      '/base',
+      './date.txt\nms.txt\nseconds.txt\nplain.txt\ndir-entry\n\n'
+    );
+    expect(entries.map((entry) => [entry.name, entry.modified])).toEqual([
+      ['date.txt', 1000],
+      ['ms.txt', 3000],
+      ['plain.txt', undefined],
+      ['seconds.txt', 2000],
+    ]);
+
+    expect(explorer.isPaneRequestId('custom')).toBe(false);
+    expect(explorer.toPaneRequestId('local')).toBe('local');
+    expect(explorer.toPaneRequestId('rightRemote')).toBe('rightRemote');
+    expect(explorer.toPaneRequestId('custom')).toBe('remote');
+    expect(explorer.getSearchLocationForRequestId('rightRemote')).toBe('remote');
+    expect(
+      explorer.sortEntries([
+        { name: 'z.txt', type: 'file', size: 1 },
+        { name: 'a', type: 'directory', size: 0 },
+      ])
+    ).toEqual([expect.objectContaining({ name: 'a' }), expect.objectContaining({ name: 'z.txt' })]);
+
+    panel.dispose();
+  });
+
+  it('covers transfer branch combinations and overwrite decisions with stubbed operations', async () => {
+    const panel = createExplorer();
+    const explorer = panel as unknown as {
+      copyEntry: SftpExplorerInternals['copyEntry'];
+      getEntryStats: ReturnType<typeof vi.fn>;
+      assertDirectory: ReturnType<typeof vi.fn>;
+      pathExists: ReturnType<typeof vi.fn>;
+      confirmOverwrite: ReturnType<typeof vi.fn>;
+      copyRemoteDirectory: ReturnType<typeof vi.fn>;
+      copyRemoteFile: ReturnType<typeof vi.fn>;
+      downloadDirectory: ReturnType<typeof vi.fn>;
+      downloadFile: ReturnType<typeof vi.fn>;
+      uploadDirectory: ReturnType<typeof vi.fn>;
+      uploadFile: ReturnType<typeof vi.fn>;
+      copyLocalDirectory: ReturnType<typeof vi.fn>;
+      applyMode: ReturnType<typeof vi.fn>;
+    };
+    const statFor = (targetPath: string) => ({
+      isDirectory: () => targetPath.includes('dir'),
+      isFile: () => !targetPath.includes('dir'),
+      size: 1,
+      mode: 0o755,
+      mtimeMs: 1,
+    });
+
+    explorer.getEntryStats = vi.fn(async (_location: 'remote' | 'local', targetPath: string) =>
+      statFor(targetPath)
+    );
+    explorer.assertDirectory = vi.fn(async () => undefined);
+    explorer.pathExists = vi.fn(async () => false);
+    explorer.confirmOverwrite = vi.fn(async () => true);
+    explorer.copyRemoteDirectory = vi.fn(async () => undefined);
+    explorer.copyRemoteFile = vi.fn(async () => undefined);
+    explorer.downloadDirectory = vi.fn(async () => undefined);
+    explorer.downloadFile = vi.fn(async () => undefined);
+    explorer.uploadDirectory = vi.fn(async () => undefined);
+    explorer.uploadFile = vi.fn(async () => undefined);
+    explorer.copyLocalDirectory = vi.fn(async () => undefined);
+    explorer.applyMode = vi.fn(async () => undefined);
+
+    await explorer.copyEntry(
+      { location: 'remote', path: '/source-dir' },
+      { location: 'remote', path: '/dest' }
+    );
+    await explorer.copyEntry(
+      { location: 'remote', path: '/source.txt' },
+      { location: 'remote', path: '/dest' }
+    );
+    await explorer.copyEntry(
+      { location: 'remote', path: '/source-dir' },
+      { location: 'local', path: '/tmp' }
+    );
+    await explorer.copyEntry(
+      { location: 'remote', path: '/source.txt' },
+      { location: 'local', path: '/tmp' }
+    );
+    await explorer.copyEntry(
+      { location: 'local', path: '/tmp/source-dir' },
+      { location: 'remote', path: '/dest' }
+    );
+    await explorer.copyEntry(
+      { location: 'local', path: '/tmp/source.txt' },
+      { location: 'remote', path: '/dest' }
+    );
+    await explorer.copyEntry(
+      { location: 'local', path: '/tmp/source-dir' },
+      { location: 'local', path: '/tmp/dest' }
+    );
+
+    expect(explorer.copyRemoteDirectory).toHaveBeenCalled();
+    expect(explorer.copyRemoteFile).toHaveBeenCalled();
+    expect(explorer.downloadDirectory).toHaveBeenCalled();
+    expect(explorer.downloadFile).toHaveBeenCalled();
+    expect(explorer.uploadDirectory).toHaveBeenCalled();
+    expect(explorer.uploadFile).toHaveBeenCalled();
+    expect(explorer.copyLocalDirectory).toHaveBeenCalled();
+
+    explorer.pathExists = vi.fn(async () => true);
+    explorer.getEntryStats = vi.fn(async (_location: 'remote' | 'local', targetPath: string) => ({
+      ...statFor(targetPath),
+      isDirectory: () => false,
+      isFile: () => true,
+    }));
+    explorer.confirmOverwrite = vi.fn(async () => false);
+    await expect(
+      explorer.copyEntry(
+        { location: 'remote', path: '/source.txt' },
+        { location: 'remote', path: '/dest' }
+      )
+    ).resolves.toBe('/dest');
+    expect(explorer.confirmOverwrite).toHaveBeenCalled();
+
+    panel.dispose();
+  });
+
+  it('covers authentication, private-key, and connection validation helper branches', async () => {
+    const keyFile = path.join(await fs.mkdtemp(path.join(os.tmpdir(), 'sftp-key-')), 'id.key');
+    const emptyKeyFile = `${keyFile}.empty`;
+    await fs.writeFile(keyFile, 'PRIVATE KEY', 'utf8');
+    await fs.writeFile(emptyKeyFile, '', 'utf8');
+    process.env.VSCODE_LOGGER_TEST_KEY = keyFile;
+
+    const panel = createExplorer({
+      privateKeyPath: '${env:VSCODE_LOGGER_TEST_KEY}',
+      bastion: {
+        host: 'jump.local',
+        username: 'jump',
+        privateKeyPath: keyFile,
+      },
+    });
+    const explorer = panel as unknown as {
+      passwordManager: {
+        getPassword: ReturnType<typeof vi.fn>;
+        getPassphrase: ReturnType<typeof vi.fn>;
+      };
+      getAuthentication: () => Promise<{
+        privateKey?: Buffer;
+        password?: string;
+        passphrase?: string;
+      }>;
+      getBastionAuthentication: (
+        bastion: NonNullable<EmbeddedDevice['bastion']>
+      ) => Promise<{ privateKey?: Buffer; password?: string; passphrase?: string }>;
+      loadPrivateKey: (filePath: string) => Promise<Buffer>;
+      expandPath: (value: string) => string;
+      validateDeviceConfiguration: () => string | undefined;
+    };
+
+    explorer.passwordManager = {
+      getPassword: vi.fn(async () => ''),
+      getPassphrase: vi.fn(async () => ''),
+    };
+    await expect(explorer.getAuthentication()).resolves.toEqual({
+      privateKey: Buffer.from('PRIVATE KEY'),
+      passphrase: undefined,
+    });
+    await expect(
+      explorer.getBastionAuthentication({
+        host: 'jump.local',
+        username: 'jump',
+        privateKeyPath: keyFile,
+      })
+    ).resolves.toEqual({ privateKey: Buffer.from('PRIVATE KEY'), passphrase: undefined });
+    await expect(explorer.loadPrivateKey(emptyKeyFile)).rejects.toThrow(
+      'The private key file is empty.'
+    );
+    expect(explorer.expandPath('~/demo')).toBe(path.resolve(os.homedir(), 'demo'));
+
+    const passwordPanel = createExplorer({ privateKeyPath: undefined });
+    const passwordExplorer = passwordPanel as unknown as typeof explorer;
+    passwordExplorer.passwordManager = {
+      getPassword: vi.fn(async () => ''),
+      getPassphrase: vi.fn(async () => undefined),
+    };
+    await expect(passwordExplorer.getAuthentication()).rejects.toThrow(
+      'Password or private key is required to connect to the device.'
+    );
+    await expect(
+      passwordExplorer.getBastionAuthentication({ host: 'jump.local', username: 'jump' })
+    ).rejects.toThrow('Password or private key is required to connect to the bastion host.');
+
+    expect(getInternals(createExplorer({ username: ' ' })).validateDeviceConfiguration()).toBe(
+      'Device "SFTP Device" is missing a username.'
+    );
+    expect(getInternals(createExplorer({ port: 0 })).validateDeviceConfiguration()).toBe(
+      'Device "SFTP Device" has an invalid port.'
+    );
+    expect(
+      getInternals(
+        createExplorer({ bastion: { host: 'jump.local', username: 'jump', port: 0 } })
+      ).validateDeviceConfiguration()
+    ).toBe('Device "SFTP Device" has an invalid bastion port.');
+
+    panel.dispose();
+    passwordPanel.dispose();
+    await fs.rm(path.dirname(keyFile), { recursive: true, force: true });
+  });
+
+  it('covers preset deletion and search refresh routing helper branches', async () => {
+    const configuredDevice: EmbeddedDevice = { ...baseDevice };
+    await workspace.getConfiguration('embeddedLogger').update('devices', [configuredDevice]);
+    const panel = new SftpExplorerPanel(createExtensionContext(), configuredDevice);
+    const explorer = panel as unknown as {
+      saveSftpPresets: (location: 'remote' | 'local', presets: string[]) => Promise<void>;
+      buildSearchSnapshot: (
+        location: 'remote' | 'local',
+        search: { basePath: string; command: string; options: Partial<unknown> },
+        context?: 'left' | 'right'
+      ) => Promise<unknown>;
+      refreshAfterMutation: (
+        location: 'remote' | 'local',
+        refreshDir: string,
+        requestId: string
+      ) => Promise<void>;
+      refreshRemoteViewsAfterReconnect: () => Promise<void>;
+      activeSearches: Map<string, { basePath: string; command: string; options: Partial<unknown> }>;
+      ensureDirectoryExists: ReturnType<typeof vi.fn>;
+      execRemoteCommand: ReturnType<typeof vi.fn>;
+      execLocalCommand: ReturnType<typeof vi.fn>;
+      buildSearchEntries: ReturnType<typeof vi.fn>;
+      searchAndPost: ReturnType<typeof vi.fn>;
+      listAndPost: ReturnType<typeof vi.fn>;
+      remotePaths: { left?: string; right?: string };
+      remoteHome?: string;
+    };
+
+    await explorer.saveSftpPresets('local', [' /tmp/downloads ']);
+    expect(configuredDevice.sftpPresetsLocal).toEqual(['/tmp/downloads']);
+    await explorer.saveSftpPresets('local', []);
+    expect(configuredDevice.sftpPresetsLocal).toBeUndefined();
+
+    await workspace.getConfiguration('embeddedLogger').update('devices', []);
+    await expect(explorer.saveSftpPresets('remote', ['/var/log'])).rejects.toThrow(
+      'Cannot save SFTP presets because device "SFTP Device" is no longer configured.'
+    );
+
+    explorer.ensureDirectoryExists = vi.fn(async () => undefined);
+    explorer.execRemoteCommand = vi.fn(async () => 'remote.txt\n');
+    explorer.execLocalCommand = vi.fn(async () => 'local.txt\n');
+    explorer.buildSearchEntries = vi.fn(async () => [{ name: 'result.txt' }]);
+
+    await explorer.buildSearchSnapshot(
+      'remote',
+      { basePath: '/var', command: '', options: { includeSubdirectories: true } },
+      'right'
+    );
+    await explorer.buildSearchSnapshot('local', {
+      basePath: os.tmpdir(),
+      command: '',
+      options: { includeSubdirectories: true },
+    });
+    expect(explorer.execRemoteCommand).toHaveBeenCalled();
+    expect(explorer.execLocalCommand).toHaveBeenCalled();
+
+    explorer.searchAndPost = vi.fn(async () => undefined);
+    explorer.listAndPost = vi.fn(async () => undefined);
+    explorer.activeSearches.set('remote', {
+      basePath: '/search',
+      command: 'find .',
+      options: { includeSubdirectories: true },
+    });
+    await explorer.refreshAfterMutation('remote', '/ignored', 'remote');
+    expect(explorer.searchAndPost).toHaveBeenCalledWith(
+      'remote',
+      '/search',
+      { includeSubdirectories: true },
+      'remote'
+    );
+
+    explorer.activeSearches.clear();
+    await explorer.refreshAfterMutation('remote', '/right', 'rightRemote');
+    expect(explorer.listAndPost).toHaveBeenCalledWith('remote', '/right', 'rightRemote', 'right');
+
+    explorer.remoteHome = '/home/root';
+    explorer.remotePaths = { left: '/left', right: '/right' };
+    await explorer.refreshRemoteViewsAfterReconnect();
+    expect(explorer.listAndPost).toHaveBeenCalledWith('remote', '/left', 'remote', 'left');
+    expect(explorer.listAndPost).toHaveBeenCalledWith('remote', '/right', 'rightRemote', 'right');
+
+    explorer.activeSearches.set('remote', {
+      basePath: '/left-search',
+      command: 'find .',
+      options: {},
+    });
+    explorer.activeSearches.set('rightRemote', {
+      basePath: '/right-search',
+      command: 'find .',
+      options: {},
+    });
+    await explorer.refreshRemoteViewsAfterReconnect();
+    expect(explorer.searchAndPost).toHaveBeenCalledWith('remote', '/left-search', {}, 'remote');
+    expect(explorer.searchAndPost).toHaveBeenCalledWith(
+      'remote',
+      '/right-search',
+      {},
+      'rightRemote'
+    );
+
+    panel.dispose();
+  });
+
+  it('covers remote listing and remote delete error branches', async () => {
+    const panel = createExplorer();
+    const explorer = getInternals(panel);
+
+    explorer.sftp = {
+      readdir: (_dirPath: string, callback: (err: Error | undefined, items?: unknown[]) => void) =>
+        callback(new Error('readdir failed')),
+    } as unknown as MemorySftp;
+    await expect(
+      (explorer as unknown as { listRemote: (dirPath: string) => Promise<unknown[]> }).listRemote(
+        '/'
+      )
+    ).rejects.toThrow('readdir failed');
+
+    explorer.sftp = {
+      readdir: (_dirPath: string, callback: (err: Error | undefined, items?: unknown[]) => void) =>
+        callback(undefined, undefined),
+    } as unknown as MemorySftp;
+    await expect(
+      (explorer as unknown as { listRemote: (dirPath: string) => Promise<unknown[]> }).listRemote(
+        '/'
+      )
+    ).resolves.toEqual([]);
+
+    explorer.sftp = {
+      readdir: (_dirPath: string, callback: (err: Error | undefined, items?: unknown[]) => void) =>
+        callback(undefined, [
+          {
+            filename: 'date.txt',
+            attrs: {
+              mode: 0o644,
+              size: 1,
+              mtime: new Date(1000),
+              isDirectory: () => false,
+            },
+          },
+          {
+            filename: 'no-time.txt',
+            attrs: {
+              mode: 0o644,
+              size: 1,
+              mtime: undefined,
+              isDirectory: () => false,
+            },
+          },
+        ]),
+    } as unknown as MemorySftp;
+    await expect(
+      (explorer as unknown as { listRemote: (dirPath: string) => Promise<unknown[]> }).listRemote(
+        '/'
+      )
+    ).resolves.toEqual([
+      expect.objectContaining({ name: 'date.txt', modified: 1000 }),
+      expect.objectContaining({ name: 'no-time.txt', modified: undefined }),
+    ]);
+
+    const removeMethod = 'un' + 'link';
+    explorer.sftp = {
+      stat: (
+        _targetPath: string,
+        callback: (err: Error | undefined, stats?: { isDirectory: () => boolean }) => void
+      ) => callback(undefined, { isDirectory: () => false }),
+      [removeMethod]: (_targetPath: string, callback: (err?: Error) => void) =>
+        callback(new Error('remove failed')),
+    } as unknown as MemorySftp;
+    await expect(explorer.deleteEntry('remote', '/file.txt')).rejects.toThrow('remove failed');
+
+    panel.dispose();
   });
 });

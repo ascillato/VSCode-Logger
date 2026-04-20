@@ -463,4 +463,45 @@ describe('LogPanel (unit)', () => {
 
     panel.dispose();
   });
+
+  it('covers local-only session guard, disconnect no-op, and auto-save fallback messages', async () => {
+    const context = createExtensionContext();
+    const panel = new LogPanel(
+      context,
+      {
+        type: 'local',
+        id: 'local-guards',
+        name: 'Local Guards',
+        lines: [],
+        filePath: '/tmp/g.log',
+      },
+      () => undefined
+    );
+    const webviewPanel = getCreatedWebviews()[0];
+    const postMessage = webviewPanel.webview.postMessage as unknown as vi.Mock;
+    const internals = panel as unknown as {
+      createSession: () => unknown;
+      disconnect: () => void;
+      writeAutoSaveLine: (line: string) => void;
+    };
+
+    expect(() => internals.createSession()).toThrow(
+      'Cannot create a log session without a device.'
+    );
+    internals.disconnect();
+
+    const writeSpy = vi
+      .spyOn(AutoSaveManager.prototype, 'writeLine')
+      .mockImplementationOnce((_line, onError, onStop) => {
+        onError('');
+        onStop();
+      });
+
+    internals.writeAutoSaveLine('line');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(postMessage).toHaveBeenCalledWith({ type: 'autoSaveError', message: '' });
+    writeSpy.mockRestore();
+    panel.dispose();
+  });
 });

@@ -100,7 +100,7 @@ Current coverage settings:
 - exclude tests, generated output, docs, dependency directories, declaration files, and type-only modules
 - generate `text`, `json-summary`, and `lcov` reports
 
-Coverage is tracked for statements, branches, functions, and lines. The current quality target is to keep overall branch coverage above 80% while continuing to investigate individual runtime files with weak branch coverage. Type-only files such as `.d.ts` files and `src/**/types.ts` are excluded because they do not emit executable runtime code and cannot be meaningfully covered by tests.
+Coverage is tracked for statements, branches, functions, and lines. The current quality target is to keep overall branch coverage above 80% and keep branch coverage for high-risk runtime files above 80% when they contain meaningful control flow. This includes activation and command routing, the SFTP explorer, log panels, connection management, and log session orchestration. Type-only files such as `.d.ts` files and `src/**/types.ts` are excluded because they do not emit executable runtime code and cannot be meaningfully covered by tests.
 
 Running `npm run test:coverage` produces artifacts under `coverage/`, including:
 
@@ -117,7 +117,7 @@ python3 docs/source/coverage_report.py || python docs/source/coverage_report.py
 
 Note that the E2E suite is not part of the Vitest coverage report. Coverage currently reflects the TypeScript test files matched by Vitest under `tests/**/*.test.ts`, which means unit and integration tests contribute to coverage and the JavaScript E2E specs do not.
 
-When improving branch coverage, start with the text report from `npm run test:coverage` and then inspect `coverage/lcov.info` for exact uncovered branch locations. Prefer tests that exercise real public behavior first, and use private-helper seams only when the branch is an internal guard or error path that is impractical to reach through the Webview or SSH lifecycle.
+When improving branch coverage, start with the text report from `npm run test:coverage` and then inspect `coverage/lcov.info` for exact uncovered branch locations. Prefer tests that exercise real public behavior first, and use private-helper seams only when the branch is an internal guard or error path that is impractical to reach through the Webview or SSH lifecycle. For large orchestration files, keep coverage-focused tests scoped to observable behavior or narrow internal guards such as validation failures, cancellation flows, reconnect routing, host-key handling, and filesystem error paths.
 
 ## Build and runtime notes
 
