@@ -655,7 +655,7 @@
     "globals": "^17.5.0",
     "mocha": "^11.7.5",
     "prettier": "^3.8.2",
-    "typedoc": "^0.28.18",
+    "typedoc": "^0.28.19",
     "typescript": "^6.0.3",
     "vitest": "^4.1.4"
   },
