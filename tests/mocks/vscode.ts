@@ -64,7 +64,7 @@ const createMockWebview = (): MockWebview => {
   const listeners: Array<(message: unknown) => void> = [];
   const webview: MockWebview = {
     html: '',
-    options: {} as vscode.WebviewOptions & vscode.WebviewPanelOptions,
+    options: {},
     postMessage: vi.fn(async () => true),
     asWebviewUri: (uri: vscode.Uri) => uri,
     onDidReceiveMessage: (listener: (message: unknown) => void) => {
@@ -333,7 +333,7 @@ export const EventEmitter = class MockEventEmitter<T> implements vscode.EventEmi
 
 export const ThemeColor = class MockThemeColor implements vscode.ThemeColor {
   constructor(public readonly id: string) {}
-} as unknown as typeof vscode.ThemeColor;
+};
 
 export const ThemeIcon = class MockThemeIcon implements vscode.ThemeIcon {
   constructor(
@@ -399,7 +399,7 @@ export const createExtensionContext = (): vscode.ExtensionContext => {
   return {
     extensionPath: '/workspace',
     extensionUri: Uri.file('/workspace') as unknown as vscode.Uri,
-    extensionMode: ExtensionMode.Test as unknown as vscode.ExtensionMode,
+    extensionMode: ExtensionMode.Test,
     subscriptions: [],
     secrets: createSecretStorage(),
     globalState: {
@@ -491,7 +491,7 @@ export const resetWindowResponses = (): void => {
 export const fireDidChangeConfiguration = (section: string): void => {
   const event = {
     affectsConfiguration: (candidate: string) => candidate === section,
-  } as vscode.ConfigurationChangeEvent;
+  };
   configurationChangeListeners.forEach((listener) => listener(event));
 };
 

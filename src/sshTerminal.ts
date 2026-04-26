@@ -317,7 +317,7 @@ export class SshTerminalSession implements vscode.Pseudoterminal {
       name: `${this.device.name} bastion`,
       host: bastion.host,
       username: bastion.username,
-    } as EmbeddedDevice;
+    };
   }
 
   private connect(

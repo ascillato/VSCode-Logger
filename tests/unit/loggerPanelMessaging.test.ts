@@ -13,7 +13,7 @@ describe('logger panel messaging', () => {
           messageHandler = handler;
         }
       }),
-    } as unknown as Window;
+    };
   });
 
   afterEach(() => {

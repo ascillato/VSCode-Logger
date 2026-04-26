@@ -738,7 +738,7 @@ describe('SshTerminalSession', () => {
     );
     const shellClient = sshMockState.clients[1];
     shellClient.shell.mockImplementationOnce((_options, callback) => {
-      callback(new Error('shell denied'), undefined as never);
+      callback(new Error('shell denied'), undefined);
       return shellClient;
     });
 
@@ -774,7 +774,7 @@ describe('SshTerminalSession', () => {
     const bastionClient = sshMockState.clients[0];
     bastionClient.forwardOut.mockImplementationOnce(
       (_srcIp, _srcPort, _dstIp, _dstPort, callback) => {
-        callback(new Error('forward denied'), undefined as never);
+        callback(new Error('forward denied'), undefined);
         return bastionClient;
       }
     );

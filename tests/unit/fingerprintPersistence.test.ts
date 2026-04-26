@@ -118,7 +118,7 @@ describe('FingerprintPersistence', () => {
       key: 'devices',
       defaultValue: [{ ...baseDevice }],
       globalValue: [{ ...baseDevice }],
-    } as never);
+    });
     const updateSpy = vi.spyOn(config, 'update');
     const device = { ...baseDevice };
     const persistence = new FingerprintPersistence(
@@ -142,7 +142,7 @@ describe('FingerprintPersistence', () => {
       key: 'devices',
       defaultValue: [{ ...baseDevice }],
       workspaceFolderValue: [{ ...baseDevice }],
-    } as never);
+    });
     await persistence.updateDeviceHostFingerprint('SHA256:primary-folder', {
       host: 'device.local',
       label: 'primary',
