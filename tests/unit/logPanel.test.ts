@@ -385,7 +385,7 @@ describe('LogPanel (unit)', () => {
     vi.spyOn(panel as never, 'createSession').mockReturnValueOnce({
       start: vi.fn(() => Promise.reject(new Error('plain reconnect failure'))),
       dispose: vi.fn(),
-    } as never);
+    });
     webviewPanel.__fireMessage({ type: 'requestReconnect' });
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(postMessage).toHaveBeenCalledWith({

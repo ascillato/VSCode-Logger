@@ -111,7 +111,7 @@ export class FingerprintPersistence {
             ? { ...bastionConfig, hostFingerprint: fingerprint }
             : device.bastion
           : device.bastion,
-    } as EmbeddedDevice;
+    };
   }
 
   /**

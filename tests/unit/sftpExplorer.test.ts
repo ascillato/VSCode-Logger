@@ -2299,7 +2299,7 @@ describe('SftpExplorerPanel', () => {
         isDirectory: () => false,
         size: 1,
         mode: 0o644,
-      } as never);
+      });
       await expect(
         explorer.applyPermissions('local', noOwnerStatsFile, 0o600, 1001)
       ).rejects.toThrow(

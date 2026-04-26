@@ -2870,7 +2870,7 @@ export class SftpExplorerPanel {
       name: `${this.device.name} bastion`,
       host: bastion.host,
       username: bastion.username,
-    } as EmbeddedDevice;
+    };
   }
 
   private async loadPrivateKey(filePath: string): Promise<Buffer> {
