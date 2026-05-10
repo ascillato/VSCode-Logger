@@ -643,7 +643,7 @@
     "@types/vscode": "^1.118.0",
     "@typescript-eslint/eslint-plugin": "^8.59.1",
     "@typescript-eslint/parser": "^8.59.1",
-    "@vitest/coverage-v8": "^4.1.4",
+    "@vitest/coverage-v8": "^4.1.5",
     "@vscode/test-electron": "^2.4.1",
     "cloc": "^2.6.0-cloc",
     "cspell": "^10.0.0",
