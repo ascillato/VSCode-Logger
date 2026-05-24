@@ -641,7 +641,7 @@
     "@types/mocha": "^10.0.10",
     "@types/node": "^25.9.1",
     "@types/vscode": "^1.118.0",
-    "@typescript-eslint/eslint-plugin": "^8.59.3",
+    "@typescript-eslint/eslint-plugin": "^8.59.4",
     "@typescript-eslint/parser": "^8.59.4",
     "@vitest/coverage-v8": "^4.1.6",
     "@vscode/test-electron": "^2.4.1",
