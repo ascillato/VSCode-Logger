@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - On VSCode Extensions Refresh command, also close stale panels from this extension.
+- OpenSpec framework files for testing this new development framework.
 
 ### Changed
 - Updated dependencies to latest.
