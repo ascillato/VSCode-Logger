@@ -280,6 +280,7 @@ type ClientWithSftp = Client & {
 };
 
 type PaneRequestId = 'remote' | 'local' | 'rightRemote';
+type RemoteTerminalOpener = (directory: string) => vscode.Terminal;
 
 /**
  * Error describing a host key fingerprint mismatch.
@@ -341,7 +342,8 @@ export class SftpExplorerPanel {
    */
   constructor(
     private readonly context: vscode.ExtensionContext,
-    private readonly device: EmbeddedDevice
+    private readonly device: EmbeddedDevice,
+    private readonly openRemoteTerminal?: RemoteTerminalOpener
   ) {
     this.passwordManager = new PasswordManager(context);
     this.localHome = os.homedir();
@@ -1497,10 +1499,13 @@ export class SftpExplorerPanel {
     );
 
     if (location === 'remote') {
-      const terminal = vscode.window.createTerminal({
-        name: `${this.device.name} SSH`,
-        pty: new SshTerminalSession(this.device, this.context, normalizedDir),
-      });
+      const terminal =
+        this.openRemoteTerminal?.(normalizedDir) ??
+        vscode.window.createTerminal({
+          name: `${this.device.name} SSH`,
+          pty: new SshTerminalSession(this.device, this.context, normalizedDir),
+          isTransient: true,
+        });
       terminal.show(true);
       return;
     }
