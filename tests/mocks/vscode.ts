@@ -59,7 +59,6 @@ const createdWebviews: MockWebviewPanel[] = [];
 const configurationChangeListeners: Array<(event: vscode.ConfigurationChangeEvent) => void> = [];
 const saveTextDocumentListeners: Array<(doc: vscode.TextDocument) => void> = [];
 const closeTextDocumentListeners: Array<(doc: vscode.TextDocument) => void> = [];
-const closeTerminalListeners: Array<(terminal: vscode.Terminal) => void> = [];
 
 const createMockWebview = (): MockWebview => {
   const listeners: Array<(message: unknown) => void> = [];
@@ -246,34 +245,7 @@ export const window: typeof vscode.window = {
   ),
   registerWebviewViewProvider: vi.fn(() => ({ dispose: () => undefined })),
   showTextDocument: vi.fn(() => Promise.resolve(undefined)),
-  createTerminal: vi.fn((options?: vscode.TerminalOptions | vscode.ExtensionTerminalOptions) => {
-    const name =
-      typeof options === 'object' &&
-      options &&
-      'name' in options &&
-      typeof options.name === 'string'
-        ? options.name
-        : '';
-    const terminal = {
-      name,
-      show: vi.fn(),
-      dispose: vi.fn(() => {
-        closeTerminalListeners.forEach((listener) => listener(terminal as vscode.Terminal));
-      }),
-    };
-    return terminal;
-  }),
-  onDidCloseTerminal: vi.fn((listener: (terminal: vscode.Terminal) => void) => {
-    closeTerminalListeners.push(listener);
-    return {
-      dispose: () => {
-        const index = closeTerminalListeners.indexOf(listener);
-        if (index >= 0) {
-          closeTerminalListeners.splice(index, 1);
-        }
-      },
-    };
-  }),
+  createTerminal: vi.fn(() => ({ show: vi.fn(), dispose: vi.fn() })),
   withProgress: vi.fn((_options: unknown, task: () => unknown) => Promise.resolve(task())),
 } as unknown as typeof vscode.window;
 
@@ -495,7 +467,6 @@ export const resetWindowResponses = (): void => {
   clipboardText = '';
   createdWebviews.length = 0;
   configurationChangeListeners.length = 0;
-  closeTerminalListeners.length = 0;
   (window.showInputBox as ReturnType<typeof vi.fn>).mockClear();
   (window.showWarningMessage as ReturnType<typeof vi.fn>).mockClear();
   (window.showInformationMessage as ReturnType<typeof vi.fn>).mockClear?.();
@@ -507,7 +478,6 @@ export const resetWindowResponses = (): void => {
   (window.createWebviewPanel as ReturnType<typeof vi.fn>).mockClear?.();
   (window.registerWebviewViewProvider as ReturnType<typeof vi.fn>).mockClear?.();
   (window.createTerminal as ReturnType<typeof vi.fn>).mockClear?.();
-  (window.onDidCloseTerminal as ReturnType<typeof vi.fn>).mockClear?.();
   (window.withProgress as ReturnType<typeof vi.fn>).mockClear?.();
   (workspace.onDidChangeConfiguration as ReturnType<typeof vi.fn>).mockClear?.();
   (workspace.onDidSaveTextDocument as ReturnType<typeof vi.fn>).mockClear?.();

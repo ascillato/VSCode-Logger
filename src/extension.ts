@@ -33,7 +33,6 @@ import { localize } from './localization';
 // Map of deviceId to existing log panels so multiple clicks reuse tabs.
 const panelMap: Map<string, LogPanel> = new Map();
 const sftpPanels: Set<SftpExplorerPanel> = new Set();
-const managedSshTerminals: Set<vscode.Terminal> = new Set();
 let activePanel: LogPanel | undefined;
 let sidebarProvider: SidebarViewProvider | undefined;
 const pingStatusByDeviceId: Map<string, DevicePingState> = new Map();
@@ -43,35 +42,6 @@ let isPingInProgress = false;
 export interface ExtensionTestApi {
   openSftpExplorerForTest(device: EmbeddedDevice): Promise<SftpExplorerPanel | undefined>;
   getSftpPanels(): SftpExplorerPanel[];
-}
-
-function disposeManagedSessions(): void {
-  for (const panel of Array.from(panelMap.values())) {
-    panel.dispose();
-  }
-  panelMap.clear();
-  activePanel = undefined;
-
-  for (const explorer of Array.from(sftpPanels.values())) {
-    explorer.dispose();
-  }
-  sftpPanels.clear();
-
-  for (const terminal of Array.from(managedSshTerminals.values())) {
-    terminal.dispose();
-  }
-  managedSshTerminals.clear();
-}
-
-function createManagedSshTerminal(
-  options: vscode.TerminalOptions | vscode.ExtensionTerminalOptions
-): vscode.Terminal {
-  const terminal = vscode.window.createTerminal({
-    ...options,
-    isTransient: true,
-  });
-  managedSshTerminals.add(terminal);
-  return terminal;
 }
 
 function getExtensionVersion(packageJson: unknown): string {
@@ -396,11 +366,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
     getEmbeddedLoggerConfiguration().devicePingIntervalSeconds;
   const findDevice = (deviceId: string): EmbeddedDevice | undefined =>
     getDevices().find((item) => item.id === deviceId);
-  context.subscriptions.push(
-    vscode.window.onDidCloseTerminal((terminal) => {
-      managedSshTerminals.delete(terminal);
-    })
-  );
   const prunePingStatuses = (): void => {
     const activeDeviceIds = new Set(getDevices().map((device) => device.id));
     for (const knownId of pingStatusByDeviceId.keys()) {
@@ -609,12 +574,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
 
     let panel: SftpExplorerPanel | undefined;
     try {
-      panel = new SftpExplorerPanel(context, device, (workingDirectory) =>
-        createManagedSshTerminal({
-          name: `${device.name} SSH`,
-          pty: new SshTerminalSession(device, context, workingDirectory),
-        })
-      );
+      panel = new SftpExplorerPanel(context, device);
       const createdPanel = panel;
       sftpPanels.add(createdPanel);
       createdPanel.onDidDispose(() => sftpPanels.delete(createdPanel));
@@ -662,7 +622,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
     }
 
     const terminalName = commandName ? `${device.name} SSH: ${commandName}` : `${device.name} SSH`;
-    const terminal = createManagedSshTerminal({
+    const terminal = vscode.window.createTerminal({
       name: terminalName,
       pty: new SshTerminalSession(
         device,
@@ -783,18 +743,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
   });
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('embeddedLogger.reloadWindow', async () => {
-      disposeManagedSessions();
-      await vscode.commands.executeCommand('workbench.action.reloadWindow');
-    })
-  );
-
-  context.subscriptions.push(
     vscode.commands.registerCommand('embeddedLogger.editDevicesConfig', () => {
       DeviceManagerPanel.createOrShow(
         context.extensionUri,
-        getExtensionVersion(context.extension.packageJSON as unknown),
-        () => vscode.commands.executeCommand('embeddedLogger.reloadWindow')
+        getExtensionVersion(context.extension.packageJSON as unknown)
       );
     })
   );
@@ -1037,5 +989,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
  * Disposes all active log panels when the extension deactivates.
  */
 export function deactivate(): void {
-  disposeManagedSessions();
+  for (const panel of panelMap.values()) {
+    panel.dispose();
+  }
+  panelMap.clear();
+
+  for (const explorer of sftpPanels.values()) {
+    explorer.dispose();
+  }
+  sftpPanels.clear();
 }

@@ -303,8 +303,7 @@ describe('DeviceManagerPanel', () => {
       success: true,
       message: 'Saved settings.',
     });
-    expect(commands.executeCommand).toHaveBeenCalledWith('embeddedLogger.reloadWindow');
-    expect(commands.executeCommand).not.toHaveBeenCalledWith('workbench.action.reloadWindow');
+    expect(commands.executeCommand).toHaveBeenCalledWith('workbench.action.reloadWindow');
   });
 
   it('stores SFTP presets directly on device configuration entries', async () => {

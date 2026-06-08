@@ -229,11 +229,7 @@ describe('web browser commands', () => {
 
     view.__fireMessage({ type: 'openSshTerminal', deviceId: device.id });
     expect(window.createTerminal).toHaveBeenCalledWith(
-      expect.objectContaining({
-        name: 'Device A SSH',
-        pty: expect.any(Object),
-        isTransient: true,
-      })
+      expect.objectContaining({ name: 'Device A SSH', pty: expect.any(Object) })
     );
 
     view.__fireMessage({
@@ -247,11 +243,7 @@ describe('web browser commands', () => {
       script: '#!/bin/sh\necho ok\n',
     });
     expect(window.createTerminal).toHaveBeenCalledWith(
-      expect.objectContaining({
-        name: 'Device A SSH: Inspect',
-        pty: expect.any(Object),
-        isTransient: true,
-      })
+      expect.objectContaining({ name: 'Device A SSH: Inspect', pty: expect.any(Object) })
     );
 
     view.__fireMessage({
@@ -492,90 +484,6 @@ describe('web browser commands', () => {
     );
   });
 
-  it('cleans up managed sessions before reloading the window', async () => {
-    await workspace.getConfiguration('embeddedLogger').update('enableDevicePing', false);
-    await workspace.getConfiguration('embeddedLogger').update('devices', [device]);
-    const context = createExtensionContext();
-    const logStartSpy = vi.spyOn(LogPanel.prototype, 'start').mockResolvedValue(undefined);
-    const sftpStartSpy = vi
-      .spyOn(SftpExplorerPanel.prototype, 'start')
-      .mockResolvedValue(undefined);
-    const logDisposeSpy = vi.spyOn(LogPanel.prototype, 'dispose');
-    const sftpDisposeSpy = vi.spyOn(SftpExplorerPanel.prototype, 'dispose');
-
-    const api = (await activate(context)) as NonNullable<Awaited<ReturnType<typeof activate>>>;
-    const provider = getRegisteredSidebarProvider();
-    const view = createWebviewView();
-    provider.resolveWebviewView(view);
-
-    await getHandler('embeddedLogger.openDevice')(device);
-    await getHandler('embeddedLogger.openSftpExplorer')(device);
-    const sftpExplorer = api.getSftpPanels()[0] as unknown as {
-      openTerminal: (location: 'remote' | 'local', directoryPath: string) => Promise<void>;
-    };
-
-    (window.createTerminal as ReturnType<typeof vi.fn>).mockClear();
-    (commands.executeCommand as ReturnType<typeof vi.fn>).mockClear();
-
-    view.__fireMessage({ type: 'openSshTerminal', deviceId: device.id });
-    await sftpExplorer.openTerminal('remote', '/var/log');
-
-    expect(window.createTerminal).toHaveBeenNthCalledWith(
-      1,
-      expect.objectContaining({
-        name: 'Device A SSH',
-        pty: expect.any(Object),
-        isTransient: true,
-      })
-    );
-    expect(window.createTerminal).toHaveBeenNthCalledWith(
-      2,
-      expect.objectContaining({
-        name: 'Device A SSH',
-        pty: expect.any(Object),
-        isTransient: true,
-      })
-    );
-
-    const createdTerminals = (window.createTerminal as ReturnType<typeof vi.fn>).mock.results.map(
-      (result) => result.value as { dispose: ReturnType<typeof vi.fn> }
-    );
-
-    await getHandler('embeddedLogger.reloadWindow')();
-
-    expect(logDisposeSpy).toHaveBeenCalled();
-    expect(sftpDisposeSpy).toHaveBeenCalled();
-    expect(createdTerminals[0]?.dispose).toHaveBeenCalled();
-    expect(createdTerminals[1]?.dispose).toHaveBeenCalled();
-    expect(commands.executeCommand).toHaveBeenCalledWith('workbench.action.reloadWindow');
-
-    logStartSpy.mockRestore();
-    sftpStartSpy.mockRestore();
-    logDisposeSpy.mockRestore();
-    sftpDisposeSpy.mockRestore();
-  });
-
-  it('disposes managed SSH terminals during deactivate', async () => {
-    await workspace.getConfiguration('embeddedLogger').update('enableDevicePing', false);
-    await workspace.getConfiguration('embeddedLogger').update('devices', [device]);
-    const context = createExtensionContext();
-    await activate(context);
-    const provider = getRegisteredSidebarProvider();
-    const view = createWebviewView();
-    provider.resolveWebviewView(view);
-
-    (window.createTerminal as ReturnType<typeof vi.fn>).mockClear();
-
-    view.__fireMessage({ type: 'openSshTerminal', deviceId: device.id });
-    const terminal = (window.createTerminal as ReturnType<typeof vi.fn>).mock.results[0]?.value as
-      | { dispose: ReturnType<typeof vi.fn> }
-      | undefined;
-
-    deactivate();
-
-    expect(terminal?.dispose).toHaveBeenCalled();
-  });
-
   it('covers no-selection command flows and URL parsing fallback errors', async () => {
     await workspace.getConfiguration('embeddedLogger').update('enableDevicePing', false);
     await workspace.getConfiguration('embeddedLogger').update('devices', [device]);
@@ -628,11 +536,7 @@ describe('web browser commands', () => {
     (nullPackageContext.extension as { packageJSON: unknown }).packageJSON = null;
     await activate(nullPackageContext);
     await getHandler('embeddedLogger.editDevicesConfig')();
-    expect(createOrShowSpy).toHaveBeenLastCalledWith(
-      expect.any(Object),
-      'unknown',
-      expect.any(Function)
-    );
+    expect(createOrShowSpy).toHaveBeenLastCalledWith(expect.any(Object), 'unknown');
     deactivate();
     resetWindowResponses();
 
@@ -640,11 +544,7 @@ describe('web browser commands', () => {
     (malformedPackageContext.extension as { packageJSON: unknown }).packageJSON = { version: 123 };
     await activate(malformedPackageContext);
     await getHandler('embeddedLogger.editDevicesConfig')();
-    expect(createOrShowSpy).toHaveBeenLastCalledWith(
-      expect.any(Object),
-      'unknown',
-      expect.any(Function)
-    );
+    expect(createOrShowSpy).toHaveBeenLastCalledWith(expect.any(Object), 'unknown');
     createOrShowSpy.mockRestore();
   });
 });

@@ -135,9 +135,7 @@ export class DeviceManagerPanel {
   private constructor(
     private readonly extensionUri: vscode.Uri,
     private readonly extensionVersion: string,
-    panel: vscode.WebviewPanel,
-    private readonly reloadWindow: () => Thenable<unknown> = () =>
-      vscode.commands.executeCommand('embeddedLogger.reloadWindow')
+    panel: vscode.WebviewPanel
   ) {
     this.panel = panel;
     this.panel.iconPath = vscode.Uri.joinPath(extensionUri, 'resources', 'terminal.svg');
@@ -180,11 +178,7 @@ export class DeviceManagerPanel {
     this.panel.webview.html = this.buildHtml(this.panel.webview);
   }
 
-  static createOrShow(
-    extensionUri: vscode.Uri,
-    extensionVersion = 'unknown',
-    reloadWindow?: () => Thenable<unknown>
-  ): void {
+  static createOrShow(extensionUri: vscode.Uri, extensionVersion = 'unknown'): void {
     const column = vscode.window.activeTextEditor?.viewColumn;
 
     if (DeviceManagerPanel.currentPanel) {
@@ -206,12 +200,7 @@ export class DeviceManagerPanel {
       }
     );
 
-    DeviceManagerPanel.currentPanel = new DeviceManagerPanel(
-      extensionUri,
-      extensionVersion,
-      panel,
-      reloadWindow
-    );
+    DeviceManagerPanel.currentPanel = new DeviceManagerPanel(extensionUri, extensionVersion, panel);
   }
 
   dispose(): void {
@@ -595,7 +584,9 @@ export class DeviceManagerPanel {
       });
 
       if (shouldReloadAfterSave) {
-        void this.reloadWindow().then(undefined, () => undefined);
+        void vscode.commands
+          .executeCommand('workbench.action.reloadWindow')
+          .then(undefined, () => undefined);
       }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
