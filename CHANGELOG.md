@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [1.9.13] - 2026-05-24 [DEP-UPDT-6]
+
+### Added
+- On VSCode Extensions Refresh command, also close stale panels from this extension.
+
+### Changed
+- Updated dependencies to latest.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- None.
+
+### Security
+- None.
+
+----------------------------------------
+
 ## [1.9.12] - 2026-05-24 [DEP-UPDT-5]
 
 ### Added
