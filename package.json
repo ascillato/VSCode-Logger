@@ -3,7 +3,7 @@
   "displayName": "Embedded Device Logger",
   "description": "Stream and filter embedded Linux device logs over SSH inside VS Code.",
   "icon": "media/icon.png",
-  "version": "1.9.13",
+  "version": "1.9.14",
   "publisher": "Scallant",
   "author": "A. Scillato",
   "engines": {
@@ -619,7 +619,7 @@
     "bundle": "node ./scripts/esbuild.mjs",
     "bundle:watch": "node ./scripts/esbuild.mjs --watch",
     "compile": "npm run typecheck && npm run bundle",
-    "package:vsix": "npm exec --yes --loglevel=error --package @vscode/vsce@3.9.1 -- vsce package",
+    "package:vsix": "npm exec --yes --loglevel=error --package @vscode/vsce@3.9.2 -- vsce package",
     "watch": "npm run bundle:watch",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -661,6 +661,12 @@
   },
   "dependencies": {
     "ssh2": "^1.14.0"
+  },
+  "allowScripts": {
+    "cpu-features@0.0.10": true,
+    "esbuild@0.28.0": true,
+    "fsevents@2.3.3": true,
+    "ssh2@1.17.0": true
   },
   "overrides": {
     "diff": "^8.0.3",
