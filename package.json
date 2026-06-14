@@ -3,7 +3,7 @@
   "displayName": "Embedded Device Logger",
   "description": "Stream and filter embedded Linux device logs over SSH inside VS Code.",
   "icon": "media/icon.png",
-  "version": "1.9.15",
+  "version": "1.9.16",
   "publisher": "Scallant",
   "author": "A. Scillato",
   "engines": {
@@ -664,7 +664,7 @@
   },
   "allowScripts": {
     "cpu-features@0.0.10": true,
-    "esbuild@0.28.0": true,
+    "esbuild@0.28.1": true,
     "fsevents@2.3.3": true,
     "ssh2@1.17.0": true
   },

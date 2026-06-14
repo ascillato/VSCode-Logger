@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [1.9.16] - 2026-05-24 [DEP-UPDT-8]
+
+### Added
+- None.
+
+### Changed
+- Updated dependencies to latest.
+- Upgrade Sphinx for docs generation
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- None.
+
+### Security
+- Updated dependencies to latest to fix deps vulnerabilities.
+
+----------------------------------------
+
 ## [1.9.15] - 2026-06-07 [DEP-UPDT-7]
 
 ### Added
