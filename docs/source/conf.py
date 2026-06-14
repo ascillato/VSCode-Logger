@@ -485,13 +485,14 @@ default_dark_mode = True
 mermaid_js_priority = 900
 mermaid_init_js_priority = 900
 mermaid_version = "11.12.1"
-mermaid_include_elk = "0.2.0"
+mermaid_include_elk = True
+mermaid_elk_version = "0.2.0"
 _mermaid_js_url = (
     f"https://cdn.jsdelivr.net/npm/mermaid@{mermaid_version}/dist/mermaid.esm.min.mjs"
 )
 _mermaid_elk_js_url = (
     "https://cdn.jsdelivr.net/npm/"
-    f"@mermaid-js/layout-elk@{mermaid_include_elk}/dist/mermaid-layout-elk.esm.min.mjs"
+    f"@mermaid-js/layout-elk@{mermaid_elk_version}/dist/mermaid-layout-elk.esm.min.mjs"
 )
 _mermaid_default_page_theme = "dark" if default_dark_mode else "light"
 mermaid_init_js = f"""

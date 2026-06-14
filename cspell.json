@@ -9,6 +9,7 @@
     ".vscode",
     ".github",
     "coverage",
+    "docs/source/_generated",
     "**/*.png",
     "**/*.jpg",
     "**/*.svg"

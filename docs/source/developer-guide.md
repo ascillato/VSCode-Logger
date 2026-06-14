@@ -57,9 +57,8 @@ make check
 
 ## Documentation
 
-Install Python requirements and build the docs:
+Ensure Node.js and npm are available. For Python, either install Python 3.12 or newer, or install `uv`, then build the docs:
 ```bash
-pip install -r docs/requirements.txt
 make docs
 ```
 The generated HTML lives at `docs/build/html/index.html`.

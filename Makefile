@@ -100,7 +100,38 @@ docs: ## Build documentation (TypeDoc + Sphinx HTML)
 	printf "$(YELLOW)\n\nStart building docs at %s\n\n$(RESET)\n" "$$ts"
 
 	@ts=""; \
-	if npm install && npm run lint:docs && sphinx-build -b html docs/source docs/build/html; then \
+	py=""; \
+	sphinx_cmd=""; \
+	if [ -n "$$VIRTUAL_ENV" ] && [ -x "$$VIRTUAL_ENV/bin/python" ]; then \
+		py="$$VIRTUAL_ENV/bin/python"; \
+	elif command -v python3.12 >/dev/null 2>&1; then \
+		py="$$(command -v python3.12)"; \
+	elif command -v uv >/dev/null 2>&1; then \
+		sphinx_cmd="uv run --python 3.12 --with-requirements docs/requirements.txt python -m sphinx"; \
+	else \
+		ts="$$(date +"%Y-%m-%dT%H:%M:%S%z")"; \
+		printf "$(RED)\n\nError building docs: Python 3.12+ is required. Install python3.12 or uv. %s\n\n$(RESET)\n" "$$ts"; \
+		exit 1; \
+	fi; \
+	if [ -n "$$py" ] && ! "$$py" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 12) else 1)'; then \
+		if command -v uv >/dev/null 2>&1; then \
+			py=""; \
+			sphinx_cmd="uv run --python 3.12 --with-requirements docs/requirements.txt python -m sphinx"; \
+		else \
+			ts="$$(date +"%Y-%m-%dT%H:%M:%S%z")"; \
+			printf "$(RED)\n\nError building docs: Sphinx 9.1.0 requires Python 3.12+. Using %s (%s). %s\n\n$(RESET)\n" "$$py" "$$($$py --version 2>&1)" "$$ts"; \
+			exit 1; \
+		fi; \
+	fi; \
+	if [ -n "$$py" ]; then \
+		sphinx_cmd="$$py -m sphinx"; \
+	fi; \
+	if [ -n "$$py" ] && ! "$$py" -m pip install -r docs/requirements.txt; then \
+		ts="$$(date +"%Y-%m-%dT%H:%M:%S%z")"; \
+		printf "$(RED)\n\nError building docs: failed to install Python doc dependencies with %s. %s\n\n$(RESET)\n" "$$py" "$$ts"; \
+		exit 1; \
+	fi; \
+	if npm install && npm run lint:docs && eval "$$sphinx_cmd -b html docs/source docs/build/html"; then \
 		ts="$$(date +"%Y-%m-%dT%H:%M:%S%z")"; \
 		printf "$(BLUE)\n\nDocs Build finished at %s\n\n$(RESET)\n" "$$ts"; \
 	else \
