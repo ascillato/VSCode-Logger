@@ -55,6 +55,7 @@ export const hu: typeof en = {
     enableExternalWebBrowser: 'Külső böngésző engedélyezése',
     enableEmbeddedWebBrowser: 'Beágyazott böngésző engedélyezése',
     enableDevicePing: 'A készülék pingelésének engedélyezése',
+    showBastionOptions: 'Bastion beallitasok megjelenitese',
     language: 'Bővítmény nyelve',
     port: 'Kikötő',
     logCommand: 'Naplózási parancs',

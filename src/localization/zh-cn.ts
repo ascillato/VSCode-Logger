@@ -53,6 +53,7 @@ export const zhCn: typeof en = {
     enableExternalWebBrowser: '启用外部网页浏览器',
     enableEmbeddedWebBrowser: '启用嵌入式网页浏览器',
     enableDevicePing: '启用设备键',
+    showBastionOptions: '显示堡垒机选项',
     language: '扩展语言',
     port: '端口',
     logCommand: '日志命令',

@@ -10,6 +10,7 @@ function t(keyPath, values = {}) {
 }
 
 const state = {
+  showBastionOptions: false,
   groups: [],
   devices: [],
   defaults: {
@@ -71,24 +72,48 @@ const deviceColumns = [
     type: 'checkbox',
   },
   { key: 'sshCommands', label: t('deviceManager.sshCommands'), type: 'sshCommands' },
-  { key: 'bastionHost', label: t('deviceManager.columnBastionHost'), type: 'text' },
-  { key: 'bastionPort', label: t('deviceManager.columnBastionPort'), type: 'number', min: 1 },
-  { key: 'bastionUsername', label: t('deviceManager.columnBastionUser'), type: 'text' },
+  {
+    key: 'bastionHost',
+    label: t('deviceManager.columnBastionHost'),
+    type: 'text',
+    isBastion: true,
+  },
+  {
+    key: 'bastionPort',
+    label: t('deviceManager.columnBastionPort'),
+    type: 'number',
+    min: 1,
+    isBastion: true,
+  },
+  {
+    key: 'bastionUsername',
+    label: t('deviceManager.columnBastionUser'),
+    type: 'text',
+    isBastion: true,
+  },
   {
     key: 'bastionHostFingerprint',
     label: t('deviceManager.columnBastionFingerprint'),
     type: 'text',
+    isBastion: true,
   },
-  { key: 'bastionPrivateKeyPath', label: t('deviceManager.columnBastionKeyPath'), type: 'text' },
+  {
+    key: 'bastionPrivateKeyPath',
+    label: t('deviceManager.columnBastionKeyPath'),
+    type: 'text',
+    isBastion: true,
+  },
   {
     key: 'bastionPrivateKeyPassphrase',
     label: t('deviceManager.columnBastionKeyPassphrase'),
     type: 'text',
+    isBastion: true,
   },
   {
     key: 'bastionPassword',
     label: t('deviceManager.columnBastionPasswordWriteOnly'),
     type: 'text',
+    isBastion: true,
   },
 ];
 
@@ -328,6 +353,7 @@ function renderDefaults() {
   document.getElementById('defaultEnableEmbeddedWebBrowser').checked =
     !!state.defaults.defaultEnableEmbeddedWebBrowser;
   document.getElementById('enableDevicePing').checked = !!state.defaults.enableDevicePing;
+  document.getElementById('showBastionOptions').checked = !!state.showBastionOptions;
   document.getElementById('devicePingIntervalSeconds').value =
     state.defaults.devicePingIntervalSeconds ?? '';
   renderSshCommandsEditor(
@@ -352,13 +378,16 @@ function sanitizeOptionalPositiveIntegerInput(value) {
 }
 
 function renderDevices() {
+  renderDeviceHeaders();
+  setupTableColumns();
+
   const tbody = document.getElementById('devicesBody');
   tbody.innerHTML = '';
 
   state.devices.forEach((device, index) => {
     const row = document.createElement('tr');
     row.className = selectedDevices.has(device) ? 'device-row-selected' : '';
-    deviceColumns.forEach((col) => {
+    getVisibleDeviceColumns().forEach((col) => {
       const cell = document.createElement('td');
       const input = createInput(col, device[col.key], index, col.key);
       cell.appendChild(input);
@@ -369,6 +398,24 @@ function renderDevices() {
 
   addColumnResizers();
   updateSelectedDeviceActions();
+}
+
+function getVisibleDeviceColumns() {
+  return state.showBastionOptions ? deviceColumns : deviceColumns.filter((col) => !col.isBastion);
+}
+
+function renderDeviceHeaders() {
+  const headerRow = document.getElementById('devicesHeader');
+  if (!headerRow) {
+    return;
+  }
+
+  headerRow.innerHTML = '';
+  getVisibleDeviceColumns().forEach((col) => {
+    const header = document.createElement('th');
+    header.textContent = col.label;
+    headerRow.appendChild(header);
+  });
 }
 
 function getSelectedDevices() {
@@ -862,7 +909,7 @@ function setupTableColumns() {
   }
 
   colgroup.innerHTML = '';
-  deviceColumns.forEach((col) => {
+  getVisibleDeviceColumns().forEach((col) => {
     const colElement = document.createElement('col');
     const widthValue = getInitialWidthValue(col);
     const minWidthValue =
@@ -1494,6 +1541,10 @@ function init() {
   document.getElementById('exportSettings').addEventListener('click', exportSettings);
   document.getElementById('clearPasswords').addEventListener('click', clearStoredPasswords);
   document.getElementById('saveChanges').addEventListener('click', save);
+  document.getElementById('showBastionOptions').addEventListener('change', (event) => {
+    state.showBastionOptions = event.target.checked;
+    renderDevices();
+  });
   document.getElementById('devicePingIntervalSeconds').addEventListener('input', (event) => {
     const sanitized = sanitizeOptionalPositiveIntegerInput(event.target.value);
     if (event.target.value !== sanitized) {

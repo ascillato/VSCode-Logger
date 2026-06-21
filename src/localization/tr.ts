@@ -55,6 +55,7 @@ export const tr: typeof en = {
     enableExternalWebBrowser: 'Enable dış web tarayıcı',
     enableEmbeddedWebBrowser: 'Enable gömülü web tarayıcı',
     enableDevicePing: 'Enable cihaz ping',
+    showBastionOptions: 'Bastion seceneklerini goster',
     language: 'Eklenti dili',
     port: 'Port',
     logCommand: 'Log komut',

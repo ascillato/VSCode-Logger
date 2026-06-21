@@ -304,6 +304,10 @@ export class DeviceManagerPanel {
             <input type="checkbox" id="enableDevicePing" />
             <span>${e(dm.enableDevicePing)}</span>
           </label>
+          <label class="field checkbox">
+            <input type="checkbox" id="showBastionOptions" />
+            <span>${e(dm.showBastionOptions)}</span>
+          </label>
         </div>
         <div class="divider" aria-hidden="true"></div>
         <div class="grid grid-3">
@@ -414,38 +418,7 @@ export class DeviceManagerPanel {
           <table id="devicesTable">
             <colgroup id="devicesColGroup"></colgroup>
             <thead>
-              <tr>
-                <th>${e(common.select)}</th>
-                <th>${e(dm.columnGroup)}</th>
-                <th>${e(dm.columnColor)}</th>
-                <th>${e(common.name)}</th>
-                <th>${e(dm.columnHost)}</th>
-                <th>${e(dm.port)}</th>
-                <th>${e(dm.columnUser)}</th>
-                <th>${e(dm.logCommand)}</th>
-                <th>${e(dm.columnHostFingerprint)}</th>
-                <th>${e(dm.columnSecondaryHost)}</th>
-                <th>${e(dm.columnSecondaryFingerprint)}</th>
-                <th>${e(dm.columnSshTerminal)}</th>
-                <th>${e(dm.columnSftp)}</th>
-                <th>${e(dm.columnSftpPresetsRemote)}</th>
-                <th>${e(dm.columnSftpPresetsLocal)}</th>
-                <th>${e(dm.columnExternalWebBrowser)}</th>
-                <th>${e(dm.columnEmbeddedWebBrowser)}</th>
-                <th>${e(dm.columnWebUrl)}</th>
-                <th>${e(dm.columnPrivateKeyPath)}</th>
-                <th>${e(dm.columnPrivateKeyPassphrase)}</th>
-                <th>${e(dm.columnPasswordWriteOnly)}</th>
-                <th>${e(dm.columnShowDefaultSshCommands)}</th>
-                <th>${e(dm.sshCommands)}</th>
-                <th>${e(dm.columnBastionHost)}</th>
-                <th>${e(dm.columnBastionPort)}</th>
-                <th>${e(dm.columnBastionUser)}</th>
-                <th>${e(dm.columnBastionFingerprint)}</th>
-                <th>${e(dm.columnBastionKeyPath)}</th>
-                <th>${e(dm.columnBastionKeyPassphrase)}</th>
-                <th>${e(dm.columnBastionPasswordWriteOnly)}</th>
-              </tr>
+              <tr id="devicesHeader"></tr>
             </thead>
             <tbody id="devicesBody"></tbody>
           </table>
