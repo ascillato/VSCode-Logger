@@ -7,6 +7,7 @@
 
 import * as vscode from 'vscode';
 import type { BastionConfig, EmbeddedDevice } from '../deviceTree';
+import { ensureUniqueDeviceIds } from '../deviceIdentity';
 import type { HostEndpoint } from '../hostEndpoints';
 
 /**
@@ -46,7 +47,7 @@ export class FingerprintPersistence {
       inspected?.globalValue ??
       inspected?.defaultValue ??
       config.get<EmbeddedDevice[]>('devices', []);
-    const devices = Array.isArray(baseDevices) ? [...baseDevices] : [];
+    const devices = Array.isArray(baseDevices) ? ensureUniqueDeviceIds(baseDevices) : [];
     const bastionConfig = this.bastionConfigProvider();
 
     let found = false;

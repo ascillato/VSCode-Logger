@@ -7,6 +7,7 @@
 import * as vscode from 'vscode';
 import type { EmbeddedDevice, SshCommandDefinition } from './deviceTree';
 import { sanitizeSftpPresets } from './configuration';
+import { ensureUniqueDeviceIds } from './deviceIdentity';
 import { normalizeStoredCommand, normalizeStoredScript } from './sshCommandExecution';
 import {
   escapeHtml,
@@ -68,7 +69,7 @@ interface DefaultsPayload {
 type TriStateSelection = 'default' | 'enabled' | 'disabled';
 
 interface DevicePayload {
-  id: string;
+  id?: string;
   group?: string;
   color?: string;
   name: string;
@@ -415,7 +416,6 @@ export class DeviceManagerPanel {
             <thead>
               <tr>
                 <th>${e(common.select)}</th>
-                <th>${e(dm.columnId)}</th>
                 <th>${e(dm.columnGroup)}</th>
                 <th>${e(dm.columnColor)}</th>
                 <th>${e(common.name)}</th>
@@ -460,7 +460,7 @@ export class DeviceManagerPanel {
 
   private postInitialState(): void {
     const config = vscode.workspace.getConfiguration('embeddedLogger');
-    const devices = config.get<EmbeddedDevice[]>('devices', []);
+    const devices = ensureUniqueDeviceIds(config.get<EmbeddedDevice[]>('devices', []));
     const groups = this.getGroupsFromConfiguration(config);
     const defaults = this.getDefaultsFromConfiguration(config);
     this.panel.webview.postMessage({
@@ -479,7 +479,9 @@ export class DeviceManagerPanel {
 
       const normalizedDefaults = this.normalizeDefaults(defaults);
       const normalizedGroups = this.normalizeGroups(groups);
-      const normalizedDevices = devices.map((device) => this.normalizeDevice(device));
+      const normalizedDevices = ensureUniqueDeviceIds(
+        devices.map((device) => this.normalizeDevice(device))
+      );
       let saveMessage = getLocalizedStrings().deviceManager.savedSettings;
       const previousLanguage = getLanguagePreference(config);
       let shouldReloadAfterSave = false;
@@ -837,7 +839,9 @@ export class DeviceManagerPanel {
   ): ExportedSettingsPayload {
     const normalizedDefaults = this.normalizeDefaults(defaults);
     const normalizedGroups = this.normalizeGroups(groups);
-    const normalizedDevices = devices.map((device) => this.normalizeDevice(device));
+    const normalizedDevices = ensureUniqueDeviceIds(
+      devices.map((device) => this.normalizeDevice(device))
+    );
 
     return {
       'embeddedLogger.defaultPort': normalizedDefaults.defaultPort,
@@ -912,7 +916,9 @@ export class DeviceManagerPanel {
         data['embeddedLogger.groups'] === undefined
           ? []
           : this.validateGroups(data['embeddedLogger.groups'], 'embeddedLogger.groups'),
-      devices: rawDevices.map((device, index) => this.validateImportedDevice(device, index)),
+      devices: ensureUniqueDeviceIds(
+        rawDevices.map((device, index) => this.validateImportedDevice(device, index))
+      ),
     };
   }
 
@@ -1000,7 +1006,7 @@ export class DeviceManagerPanel {
     );
 
     const normalized: EmbeddedDevice = {
-      id: this.readRequiredPropertyString(device, 'id', keyPrefix),
+      id: this.readOptionalString(device.id, `${keyPrefix}.id`) ?? '',
       group: this.readOptionalString(device.group, `${keyPrefix}.group`),
       color: this.readOptionalString(device.color, `${keyPrefix}.color`),
       name: this.readRequiredPropertyString(device, 'name', keyPrefix),

@@ -59,7 +59,8 @@ describe('DeviceManagerPanel', () => {
     expect(html).toMatch(/id="moveSelectedDown"[\s\S]*?disabled/);
     expect(html).toMatch(/id="clearSelectedPasswords"[\s\S]*?disabled/);
     expect(html).toMatch(/id="removeSelectedDevices"[\s\S]*?disabled/);
-    expect(html).toMatch(/<th>Select<\/th>\s*<th>ID<\/th>/);
+    expect(html).toMatch(/<th>Select<\/th>\s*<th>Group<\/th>/);
+    expect(html).not.toContain('<th>ID</th>');
     expect(html).toContain('<th>External Web Browser</th>');
     expect(html).toContain('<th>Embedded Web Browser</th>');
     expect(html).toContain('<th>Show default SSH commands</th>');
@@ -159,6 +160,58 @@ describe('DeviceManagerPanel', () => {
       success: true,
       message: 'Saved settings.',
     });
+  });
+
+  it('generates missing device ids and repairs duplicate ids on save', async () => {
+    const panel = createPanel();
+    const config = workspace.getConfiguration('embeddedLogger');
+    const updateSpy = vi.spyOn(config, 'update');
+
+    panel.__fireMessage({
+      type: 'save',
+      defaults: {
+        defaultPort: 22,
+        defaultLogCommand: 'tail -F /var/log/syslog',
+        defaultEnableSshTerminal: true,
+        defaultEnableSftpExplorer: true,
+        defaultEnableWebBrowser: false,
+        defaultEnableEmbeddedWebBrowser: false,
+        defaultSshCommands: [],
+        maxLinesPerTab: 100000,
+      },
+      devices: [
+        {
+          name: 'New Device',
+          host: '10.0.0.1',
+          username: 'root',
+        },
+        {
+          id: 'legacy-device',
+          name: 'Legacy Device',
+          host: '10.0.0.2',
+          username: 'root',
+        },
+        {
+          id: 'legacy-device',
+          name: 'Legacy Device Copy',
+          host: '10.0.0.3',
+          username: 'root',
+        },
+      ],
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const devicesCall = updateSpy.mock.calls.find((call) => call[0] === 'devices');
+    expect(devicesCall).toBeDefined();
+    if (!devicesCall) {
+      throw new Error('Missing devices update call.');
+    }
+    expect((devicesCall[1] as Array<{ id: string }>).map((device) => device.id)).toEqual([
+      'new-device',
+      'legacy-device',
+      'legacy-device-2',
+    ]);
   });
 
   it('keeps saving when the embedded browser default is unavailable and asks for a reload', async () => {
@@ -534,6 +587,25 @@ describe('DeviceManagerPanel', () => {
           expect.not.objectContaining({
             showDefaultSshCommands: expect.anything(),
           }),
+        ],
+      })
+    );
+
+    expect(
+      manager.validateImportedSettings({
+        ...validImport,
+        'embeddedLogger.devices': [
+          { name: 'Imported Device', host: '10.0.0.10', username: 'root' },
+          { id: 'device-a', name: 'Device A', host: '10.0.0.11', username: 'root' },
+          { id: 'device-a', name: 'Device A Copy', host: '10.0.0.12', username: 'root' },
+        ],
+      })
+    ).toEqual(
+      expect.objectContaining({
+        devices: [
+          expect.objectContaining({ id: 'imported-device' }),
+          expect.objectContaining({ id: 'device-a' }),
+          expect.objectContaining({ id: 'device-a-2' }),
         ],
       })
     );

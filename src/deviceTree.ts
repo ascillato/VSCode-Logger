@@ -7,6 +7,7 @@
 
 import * as vscode from 'vscode';
 import { getDeviceColorIcon } from './deviceColor';
+import { ensureUniqueDeviceIds } from './deviceIdentity';
 import { getEmbeddedLoggerGroups } from './configuration';
 import { formatLocalizedString, getLocalizedStrings } from './localization';
 
@@ -106,7 +107,7 @@ export class DeviceTreeDataProvider implements vscode.TreeDataProvider<DeviceTre
    */
   getChildren(element?: DeviceTreeItem): Thenable<DeviceTreeItem[]> {
     const config = vscode.workspace.getConfiguration('embeddedLogger');
-    const devices = config.get<EmbeddedDevice[]>('devices', []);
+    const devices = ensureUniqueDeviceIds(config.get<EmbeddedDevice[]>('devices', []));
     const groups = getEmbeddedLoggerGroups(config);
 
     if (element instanceof GroupItem) {

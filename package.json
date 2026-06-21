@@ -187,7 +187,7 @@
           "type": "array",
           "scope": "resource",
           "description": "List of embedded devices to stream logs from.",
-          "markdownDescription": "List of embedded devices to stream logs from.\n\nManage devices with the **Embedded Logger: Edit Devices Configuration** Device Manager (table UI with add/remove rows and all fields). You can also choose **Edit in settings.json** for direct JSON editing.\n\nWhen `copyAndRunScript` is enabled for an SSH command, the optional `script` is copied to `/tmp`, made executable with `chmod 777`, and run after the optional `command`.\n\nExample:\n```json\n[\n  {\n    \"id\": \"rpi4\",\n    \"group\": \"Lab\",\n    \"color\": \"#4fc3f7\",\n    \"name\": \"Raspberry Pi 4\",\n    \"host\": \"192.168.1.50\",\n    \"hostFingerprint\": \"SHA256:your-base64-fingerprint\",\n    \"secondaryHost\": \"192.168.1.51\",\n    \"secondaryHostFingerprint\": \"SHA256:secondary-base64-fingerprint\",\n    \"port\": 22,\n    \"username\": \"pi\",\n    \"password\": \"\",\n    \"privateKeyPath\": \"/home/user/.ssh/id_ed25519\",\n    \"privateKeyPassphrase\": \"${env:KEY_PASSPHRASE}\",\n    \"logCommand\": \"journalctl -f -u app.service\",\n    \"enableSshTerminal\": true,\n    \"enableSftpExplorer\": true,\n    \"enableWebBrowser\": false,\n    \"enableEmbeddedWebBrowser\": false,\n    \"webBrowserUrl\": \"http://192.168.1.50\",\n    \"showDefaultSshCommands\": true,\n    \"sshCommands\": [\n      {\n        \"name\": \"🔁 Reboot\",\n        \"command\": \"reboot\",\n        \"openSshPanel\": false,\n        \"rerunOnReconnection\": false\n      },\n      {\n        \"name\": \"⚙️ Restart Service\",\n        \"command\": \"systemctl restart my-service\",\n        \"openSshPanel\": false,\n        \"rerunOnReconnection\": false\n      },\n      {\n        \"name\": \"📈 Processes\",\n        \"command\": \"top\",\n        \"openSshPanel\": true,\n        \"rerunOnReconnection\": true\n      },\n      {\n        \"name\": \"🚀 Deploy helper\",\n        \"command\": \"echo Preparing deployment\",\n        \"copyAndRunScript\": true,\n        \"script\": \"#!/bin/sh\\nprintf \\\"Deploying on %s\\\\n\\\" \\\"$(hostname)\\\"\\n\"\n      }\n    ],\n    \"bastion\": {\n      \"host\": \"bastion.example.com\",\n      \"hostFingerprint\": \"SHA256:bastion-fingerprint\",\n      \"port\": 22,\n      \"username\": \"jump-user\",\n      \"password\": \"\",\n      \"privateKeyPath\": \"${env:HOME}/.ssh/id_ed25519\",\n      \"privateKeyPassphrase\": \"\"\n    }\n  }\n]\n```",
+          "markdownDescription": "List of embedded devices to stream logs from.\n\nManage devices with the **Embedded Logger: Edit Devices Configuration** Device Manager (table UI with add/remove rows and all user-editable fields). The internal `id` is generated automatically and kept unique when devices are added, saved, exported, or imported. You can also choose **Edit in settings.json** for direct JSON editing.\n\nWhen `copyAndRunScript` is enabled for an SSH command, the optional `script` is copied to `/tmp`, made executable with `chmod 777`, and run after the optional `command`.\n\nExample:\n```json\n[\n  {\n    \"group\": \"Lab\",\n    \"color\": \"#4fc3f7\",\n    \"name\": \"Raspberry Pi 4\",\n    \"host\": \"192.168.1.50\",\n    \"hostFingerprint\": \"SHA256:your-base64-fingerprint\",\n    \"secondaryHost\": \"192.168.1.51\",\n    \"secondaryHostFingerprint\": \"SHA256:secondary-base64-fingerprint\",\n    \"port\": 22,\n    \"username\": \"pi\",\n    \"password\": \"\",\n    \"privateKeyPath\": \"/home/user/.ssh/id_ed25519\",\n    \"privateKeyPassphrase\": \"${env:KEY_PASSPHRASE}\",\n    \"logCommand\": \"journalctl -f -u app.service\",\n    \"enableSshTerminal\": true,\n    \"enableSftpExplorer\": true,\n    \"enableWebBrowser\": false,\n    \"enableEmbeddedWebBrowser\": false,\n    \"webBrowserUrl\": \"http://192.168.1.50\",\n    \"showDefaultSshCommands\": true,\n    \"sshCommands\": [\n      {\n        \"name\": \"🔁 Reboot\",\n        \"command\": \"reboot\",\n        \"openSshPanel\": false,\n        \"rerunOnReconnection\": false\n      },\n      {\n        \"name\": \"⚙️ Restart Service\",\n        \"command\": \"systemctl restart my-service\",\n        \"openSshPanel\": false,\n        \"rerunOnReconnection\": false\n      },\n      {\n        \"name\": \"📈 Processes\",\n        \"command\": \"top\",\n        \"openSshPanel\": true,\n        \"rerunOnReconnection\": true\n      },\n      {\n        \"name\": \"🚀 Deploy helper\",\n        \"command\": \"echo Preparing deployment\",\n        \"copyAndRunScript\": true,\n        \"script\": \"#!/bin/sh\\nprintf \\\"Deploying on %s\\\\n\\\" \\\"$(hostname)\\\"\\n\"\n      }\n    ],\n    \"bastion\": {\n      \"host\": \"bastion.example.com\",\n      \"hostFingerprint\": \"SHA256:bastion-fingerprint\",\n      \"port\": 22,\n      \"username\": \"jump-user\",\n      \"password\": \"\",\n      \"privateKeyPath\": \"${env:HOME}/.ssh/id_ed25519\",\n      \"privateKeyPassphrase\": \"\"\n    }\n  }\n]\n```",
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -195,12 +195,11 @@
               {
                 "label": "New embedded device",
                 "body": {
-                  "id": "${1:device-id}",
-                  "group": "${2:Lab}",
+                  "group": "${1:Lab}",
                   "color": "#4fc3f7",
-                  "name": "${3:Device name}",
-                  "host": "${4:192.168.1.10}",
-                  "hostFingerprint": "SHA256:${5:device-fingerprint}",
+                  "name": "${2:Device name}",
+                  "host": "${3:192.168.1.10}",
+                  "hostFingerprint": "SHA256:${4:device-fingerprint}",
                   "secondaryHost": "${5:}",
                   "secondaryHostFingerprint": "SHA256:${6:secondary-fingerprint}",
                   "port": 22,
@@ -248,7 +247,7 @@
             "properties": {
               "id": {
                 "type": "string",
-                "description": "Unique identifier for the device."
+                "description": "Internal unique identifier for the device. The Device Manager generates this automatically; existing values are preserved when unique."
               },
               "group": {
                 "type": "string",
@@ -440,7 +439,6 @@
               }
             },
             "required": [
-              "id",
               "name",
               "host",
               "username"
@@ -448,7 +446,6 @@
           },
           "default": [
             {
-              "id": "deviceA",
               "color": "#4fc3f7",
               "name": "Device A",
               "host": "192.168.1.10",

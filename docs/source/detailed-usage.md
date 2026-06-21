@@ -66,7 +66,7 @@ You can manage configuration in two ways:
 
 ### Device Manager
 
-The Device Manager is the fastest way to work with the current schema because it exposes all supported fields in one place.
+The Device Manager is the fastest way to work with the current schema because it exposes all user-editable fields in one place.
 
 - The **Defaults** section edits:
   - `embeddedLogger.language`
@@ -84,7 +84,7 @@ The Device Manager is the fastest way to work with the current schema because it
 - Leave **Ping interval (seconds)** empty to disable background ping scheduling and use only the top-level **Ping Configured Devices** action.
 - When pinging is enabled and the interval is empty or greater than `3600`, the green/red ping indicator tooltip shows the last result time as `HH:MM:SS` for startup, toolbar-triggered, and timer-triggered pings.
 - The **Groups** table edits `embeddedLogger.groups`, which controls the ordered collapsible sections shown in the Devices view.
-- The **Devices** table edits `embeddedLogger.devices`, including device colors, host fingerprints, secondary hosts, whether shared SSH commands should be shown, device-specific SSH commands, SFTP presets, and bastion settings.
+- The **Devices** table edits `embeddedLogger.devices`, including device colors, host fingerprints, secondary hosts, whether shared SSH commands should be shown, device-specific SSH commands, SFTP presets, and bastion settings. Device IDs are internal and are generated automatically when rows are added, saved, exported, or imported.
 - Per-device feature toggles in the table are **tri-state**:
   - `Default` inherits the corresponding global default.
   - `Enabled` forces the button on for that device.
@@ -142,7 +142,6 @@ If you prefer raw JSON, add entries like the following to your VS Code settings:
   ],
   "embeddedLogger.devices": [
     {
-      "id": "deviceA",
       "group": "Lab",
       "color": "#4fc3f7",
       "name": "Device A",
@@ -191,13 +190,13 @@ If you prefer raw JSON, add entries like the following to your VS Code settings:
 
 Every device must provide:
 
-- `id`
 - `name`
 - `host`
 - `username`
 
 Common optional fields include:
 
+- `id` as an internal stable identifier. The Device Manager generates it automatically and preserves existing unique IDs from older exports. If you edit raw JSON, you may omit it and the extension will generate one.
 - `group` to place the device in a configured group.
 - `color` to tint the device indicator and log tab icon.
 - `port` to override `embeddedLogger.defaultPort`.
