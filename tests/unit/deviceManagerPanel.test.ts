@@ -59,11 +59,10 @@ describe('DeviceManagerPanel', () => {
     expect(html).toMatch(/id="moveSelectedDown"[\s\S]*?disabled/);
     expect(html).toMatch(/id="clearSelectedPasswords"[\s\S]*?disabled/);
     expect(html).toMatch(/id="removeSelectedDevices"[\s\S]*?disabled/);
-    expect(html).toMatch(/<th>Select<\/th>\s*<th>Group<\/th>/);
+    expect(html).toContain('id="showBastionOptions"');
+    expect(html).toContain('<span>Show Bastion options</span>');
+    expect(html).toContain('<tr id="devicesHeader"></tr>');
     expect(html).not.toContain('<th>ID</th>');
-    expect(html).toContain('<th>External Web Browser</th>');
-    expect(html).toContain('<th>Embedded Web Browser</th>');
-    expect(html).toContain('<th>Show default SSH commands</th>');
     expect(html).toContain('id="defaultEnableEmbeddedWebBrowser"');
     expect(html).toContain('<h2>Groups</h2>');
     expect(html).toContain('id="addGroup"');

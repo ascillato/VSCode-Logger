@@ -54,6 +54,7 @@ export const ko: typeof en = {
     enableExternalWebBrowser: '외부 웹 브라우저 사용',
     enableEmbeddedWebBrowser: 'Enable Embedded 웹 브라우저',
     enableDevicePing: 'Enable 장치 ping',
+    showBastionOptions: 'Bastion 옵션 표시',
     language: '확장 언어',
     port: '항구',
     logCommand: '로그 명령',

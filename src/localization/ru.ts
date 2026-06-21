@@ -54,6 +54,7 @@ export const ru: typeof en = {
     enableExternalWebBrowser: 'Включить внешний веб-браузер',
     enableEmbeddedWebBrowser: 'Включить встроенный веб-браузер',
     enableDevicePing: 'Включить устройство ping',
+    showBastionOptions: 'Показать параметры bastion',
     language: 'Язык расширения',
     port: 'Порт',
     logCommand: 'Лог команды',

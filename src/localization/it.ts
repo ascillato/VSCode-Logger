@@ -55,6 +55,7 @@ export const it: typeof en = {
     enableExternalWebBrowser: 'Abilita browser web esterno',
     enableEmbeddedWebBrowser: 'Abilita browser web embedded',
     enableDevicePing: 'Abilita ping dispositivi',
+    showBastionOptions: 'Mostra opzioni bastion',
     language: 'Lingua estensione',
     port: 'Porta',
     logCommand: 'Comando log',

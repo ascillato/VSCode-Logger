@@ -52,6 +52,7 @@ export const en = {
     enableExternalWebBrowser: 'Enable external web browser',
     enableEmbeddedWebBrowser: 'Enable embedded web browser',
     enableDevicePing: 'Enable device ping',
+    showBastionOptions: 'Show Bastion options',
     language: 'Extension language',
     port: 'Port',
     logCommand: 'Log command',
