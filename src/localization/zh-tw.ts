@@ -53,6 +53,7 @@ export const zhTw: typeof en = {
     enableExternalWebBrowser: '開啟外部網頁瀏覽器',
     enableEmbeddedWebBrowser: '開啟嵌入的網頁瀏覽器',
     enableDevicePing: '啟用裝置 ping',
+    showBastionOptions: '顯示堡壘機選項',
     language: '擴充功能語言',
     port: '端口',
     logCommand: '日志命令',

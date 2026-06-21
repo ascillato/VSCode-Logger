@@ -55,6 +55,7 @@ export const cs: typeof en = {
     enableExternalWebBrowser: 'Povolit externí webový prohlížeč',
     enableEmbeddedWebBrowser: 'Povolit vložený webový prohlížeč',
     enableDevicePing: 'Povolit ping zařízení',
+    showBastionOptions: 'Zobrazit moznosti bastionu',
     language: 'Jazyk rozšíření',
     port: 'Přístav',
     logCommand: 'Příkaz záznamu',

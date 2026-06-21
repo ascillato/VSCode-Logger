@@ -55,6 +55,7 @@ export const de: typeof en = {
     enableExternalWebBrowser: 'Externer Webbrowser aktivieren',
     enableEmbeddedWebBrowser: 'Ein eingebetteter Webbrowser aktivieren',
     enableDevicePing: 'Gerätepistole aktivieren',
+    showBastionOptions: 'Bastion-Optionen anzeigen',
     language: 'Erweiterungssprache',
     port: 'Hafen',
     logCommand: 'Log-Befehl',

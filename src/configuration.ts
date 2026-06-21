@@ -6,6 +6,7 @@
 
 import * as vscode from 'vscode';
 import type { EmbeddedDevice, EmbeddedDeviceGroup, SshCommandDefinition } from './deviceTree';
+import { ensureUniqueDeviceIds } from './deviceIdentity';
 import { normalizeStoredCommand, normalizeStoredScript } from './sshCommandExecution';
 
 const sftpPresetLimit = 10;
@@ -103,7 +104,7 @@ function getConfiguredDeviceScopes(): EmbeddedLoggerDeviceConfigurationScope[] {
       scopes.push({
         config,
         target: vscode.ConfigurationTarget.WorkspaceFolder,
-        devices: inspection.workspaceFolderValue,
+        devices: ensureUniqueDeviceIds(inspection.workspaceFolderValue),
       });
     }
   }
@@ -115,7 +116,7 @@ function getConfiguredDeviceScopes(): EmbeddedLoggerDeviceConfigurationScope[] {
     scopes.push({
       config,
       target: vscode.ConfigurationTarget.Workspace,
-      devices: inspection.workspaceValue,
+      devices: ensureUniqueDeviceIds(inspection.workspaceValue),
     });
   }
 
@@ -123,7 +124,7 @@ function getConfiguredDeviceScopes(): EmbeddedLoggerDeviceConfigurationScope[] {
     scopes.push({
       config,
       target: vscode.ConfigurationTarget.Global,
-      devices: inspection.globalValue,
+      devices: ensureUniqueDeviceIds(inspection.globalValue),
     });
   }
 
@@ -282,7 +283,7 @@ export function getEmbeddedLoggerConfiguration(): {
 } {
   const config = vscode.workspace.getConfiguration('embeddedLogger');
   const defaults = getLoggerDefaults(config);
-  const devices = config.get<EmbeddedDevice[]>('devices', []);
+  const devices = ensureUniqueDeviceIds(config.get<EmbeddedDevice[]>('devices', []));
   const resolvedDevices = devices.map((device) => applyDeviceDefaults(device, defaults));
   const maxLinesPerTab = Math.max(1, config.get<number>('maxLinesPerTab', 100000) || 100000);
   const enableDevicePing = config.get<boolean>('enableDevicePing', true) ?? true;

@@ -61,6 +61,36 @@ describe('configuration', () => {
     ]);
   });
 
+  it('generates missing device ids and repairs duplicate ids while resolving configuration', async () => {
+    await workspace.getConfiguration('embeddedLogger').update('devices', [
+      {
+        name: 'New Device',
+        host: '10.0.0.1',
+        username: 'root',
+      },
+      {
+        id: 'legacy-device',
+        name: 'Legacy Device',
+        host: '10.0.0.2',
+        username: 'root',
+      },
+      {
+        id: 'legacy-device',
+        name: 'Legacy Device Copy',
+        host: '10.0.0.3',
+        username: 'root',
+      },
+    ]);
+
+    const config = getEmbeddedLoggerConfiguration();
+
+    expect(config.devices.map((device) => device.id)).toEqual([
+      'new-device',
+      'legacy-device',
+      'legacy-device-2',
+    ]);
+  });
+
   it('prepends shared SSH commands before per-device commands by default', async () => {
     const devices: EmbeddedDevice[] = [
       {
@@ -380,7 +410,7 @@ describe('configuration', () => {
 
     expect(updated).toEqual(expect.objectContaining({ name: 'Updated Device A' }));
     expect(workspace.getConfiguration('embeddedLogger').get('devices', [])).toEqual([
-      expect.objectContaining({ id: ' device-a ', name: 'Updated Device A' }),
+      expect.objectContaining({ id: 'device-a', name: 'Updated Device A' }),
       expect.objectContaining({ id: 'device-b', name: 'Device B' }),
     ]);
   });

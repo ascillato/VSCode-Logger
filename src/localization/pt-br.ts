@@ -55,6 +55,7 @@ export const ptBr: typeof en = {
     enableExternalWebBrowser: 'Activar navegador web externo',
     enableEmbeddedWebBrowser: 'Activar o navegador incorporado',
     enableDevicePing: 'Activar o ping do dispositivo',
+    showBastionOptions: 'Mostrar opcoes de bastion',
     language: 'Idioma da extensão',
     port: 'Porto',
     logCommand: 'Comando de registro',

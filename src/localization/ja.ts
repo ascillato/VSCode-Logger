@@ -54,6 +54,7 @@ export const ja: typeof en = {
     enableExternalWebBrowser: '外部Webブラウザを有効にする',
     enableEmbeddedWebBrowser: '埋め込まれたWebブラウザを有効にする',
     enableDevicePing: 'デバイスのpingを有効にする',
+    showBastionOptions: 'Bastion オプションを表示',
     language: '拡張機能の言語',
     port: 'ポートレート',
     logCommand: 'ログコマンド',
