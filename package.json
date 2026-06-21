@@ -7,7 +7,7 @@
   "publisher": "Scallant",
   "author": "A. Scillato",
   "engines": {
-    "vscode": "^1.125.0"
+    "vscode": "^1.124.0"
   },
   "repository": {
     "type": "git",
@@ -637,10 +637,10 @@
     "@eslint/js": "^10.0.1",
     "@types/mocha": "^10.0.10",
     "@types/node": "^26.0.0",
-    "@types/vscode": "^1.125.0",
+    "@types/vscode": "^1.124.0",
     "@typescript-eslint/eslint-plugin": "^8.60.1",
     "@typescript-eslint/parser": "^8.61.1",
-    "@vitest/coverage-v8": "^4.1.8",
+    "@vitest/coverage-v8": "^4.1.9",
     "@vscode/test-electron": "^3.0.0",
     "cloc": "^2.6.0-cloc",
     "cspell": "^10.0.1",
