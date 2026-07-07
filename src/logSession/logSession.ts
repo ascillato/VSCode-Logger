@@ -52,8 +52,7 @@ export class LogSession {
   private readonly bastionVerifier?: HostKeyVerifier;
   private readonly connectionManager: ConnectionManager;
   private connection:
-    | { client: Client; bastionClient?: Client; stream?: ClientChannel }
-    | undefined;
+    { client: Client; bastionClient?: Client; stream?: ClientChannel } | undefined;
   private readonly buffer: { value: string } = { value: '' };
   private readonly attachedStreams = new WeakSet<ClientChannel>();
   private disposed = false;
