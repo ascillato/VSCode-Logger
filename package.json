@@ -652,7 +652,7 @@
     "globals": "^17.7.0",
     "mocha": "^11.7.6",
     "prettier": "^3.9.4",
-    "typedoc": "^0.28.19",
+    "typedoc": "^0.28.20",
     "typescript": "^6.0.3",
     "vitest": "^4.1.9"
   },
