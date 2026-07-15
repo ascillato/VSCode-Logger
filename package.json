@@ -651,7 +651,7 @@
     "eslint-plugin-spellcheck": "^0.0.20",
     "globals": "^17.7.0",
     "mocha": "^11.7.6",
-    "prettier": "^3.9.4",
+    "prettier": "^3.9.5",
     "typedoc": "^0.28.20",
     "typescript": "^7.0.2",
     "vitest": "^4.1.9"
