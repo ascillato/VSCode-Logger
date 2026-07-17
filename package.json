@@ -654,7 +654,7 @@
     "prettier": "^3.9.5",
     "typedoc": "^0.28.20",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.9"
+    "vitest": "^4.1.10"
   },
   "dependencies": {
     "ssh2": "^1.14.0"
