@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import * as vscode from 'vscode';
 
 vi.mock('vscode', () => import('../mocks/vscode'));
 
@@ -1017,6 +1018,65 @@ describe('DeviceManagerPanel', () => {
         }),
       ],
     });
+  });
+
+  it('saves imported settings to the user configuration when workspace settings exist', async () => {
+    const importPath = '/tmp/imported-user-settings.json';
+    const config = workspace.getConfiguration('embeddedLogger');
+    await config.update('devices', [
+      { id: 'workspace-device', name: 'Workspace', host: '10.0.0.2', username: 'root' },
+    ]);
+    const updateSpy = vi.spyOn(config, 'update');
+    const panel = createPanel();
+    setOpenDialogResponse(importPath);
+
+    await workspace.fs.writeFile(
+      Uri.file(importPath) as never,
+      Buffer.from(
+        JSON.stringify({
+          'embeddedLogger.defaultPort': 2222,
+          'embeddedLogger.defaultLogCommand': 'journalctl -f',
+          'embeddedLogger.defaultEnableSshTerminal': true,
+          'embeddedLogger.defaultEnableSftpExplorer': true,
+          'embeddedLogger.defaultEnableWebBrowser': false,
+          'embeddedLogger.defaultEnableEmbeddedWebBrowser': true,
+          'embeddedLogger.enableDevicePing': true,
+          'embeddedLogger.devicePingIntervalSeconds': 30,
+          'embeddedLogger.defaultSshCommands': [],
+          'embeddedLogger.maxLinesPerTab': 9000,
+          'embeddedLogger.devices': [],
+        }),
+        'utf8'
+      )
+    );
+
+    panel.__fireMessage({ type: 'importSettings' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    updateSpy.mockClear();
+
+    panel.__fireMessage({
+      type: 'save',
+      defaults: {
+        defaultPort: 2222,
+        defaultLogCommand: 'journalctl -f',
+        defaultEnableSshTerminal: true,
+        defaultEnableSftpExplorer: true,
+        defaultEnableWebBrowser: false,
+        defaultEnableEmbeddedWebBrowser: true,
+        enableDevicePing: true,
+        devicePingIntervalSeconds: 30,
+        defaultSshCommands: [],
+        maxLinesPerTab: 9000,
+      },
+      groups: [],
+      devices: [],
+    });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(updateSpy).toHaveBeenCalled();
+    expect(
+      updateSpy.mock.calls.every((call) => call[2] === vscode.ConfigurationTarget.Global)
+    ).toBe(true);
   });
 
   it('rejects imported files that omit required device keys', async () => {

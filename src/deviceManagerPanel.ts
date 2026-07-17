@@ -132,6 +132,8 @@ export class DeviceManagerPanel {
   private readonly panel: vscode.WebviewPanel;
   private readonly disposables: vscode.Disposable[] = [];
   private readonly sftpPresetLimit = 10;
+  /** Imported settings must be written to the user's global configuration, never a workspace. */
+  private importedSettingsAwaitingSave = false;
 
   private constructor(
     private readonly extensionUri: vscode.Uri,
@@ -448,7 +450,12 @@ export class DeviceManagerPanel {
     devices: DevicePayload[]
   ): Promise<void> {
     try {
-      const { config, target } = this.getUpdateConfiguration();
+      const { config, target } = this.importedSettingsAwaitingSave
+        ? {
+            config: vscode.workspace.getConfiguration('embeddedLogger'),
+            target: vscode.ConfigurationTarget.Global,
+          }
+        : this.getUpdateConfiguration();
 
       const normalizedDefaults = this.normalizeDefaults(defaults);
       const normalizedGroups = this.normalizeGroups(groups);
@@ -557,6 +564,7 @@ export class DeviceManagerPanel {
         success: true,
         message: saveMessage,
       });
+      this.importedSettingsAwaitingSave = false;
 
       if (shouldReloadAfterSave) {
         void vscode.commands
@@ -642,6 +650,7 @@ export class DeviceManagerPanel {
       const content = await vscode.workspace.fs.readFile(importUri);
       const parsed = JSON.parse(Buffer.from(content).toString('utf8')) as unknown;
       const imported = this.validateImportedSettings(parsed);
+      this.importedSettingsAwaitingSave = true;
 
       this.panel.webview.postMessage({
         type: 'importResult',

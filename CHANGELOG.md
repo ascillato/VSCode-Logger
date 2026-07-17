@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [1.9.19] - 2026-07-17 [CONFIG_IMPROVEMENTS_2]
+
+### Added
+- None.
+
+### Changed
+- None.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- Fix issue when saving imported config. Issue occurs when VSCode is using a workspace configuration instead of local config and importing a config file, the config was being saved in workspace instead of user's local config.
+
+### Security
+- None.
+
+----------------------------------------
+
 ## [1.9.18] - 2026-06-21 [CONFIG_IMPROVEMENTS]
 
 ### Added
