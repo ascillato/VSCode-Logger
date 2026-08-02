@@ -599,15 +599,16 @@ describe('SshTerminalSession', () => {
       userRequestedClose?: boolean;
     };
     session.onDidClose(closes);
-    session.connect = vi
+    const connect = vi
       .fn()
       .mockRejectedValueOnce(new Error('primary down'))
       .mockResolvedValueOnce(undefined);
+    session.connect = connect;
 
     session.setDimensions({ columns: 90, rows: 30 });
     await session.start();
 
-    expect(session.connect).toHaveBeenNthCalledWith(
+    expect(connect).toHaveBeenNthCalledWith(
       1,
       { host: 'device.local', fingerprint: undefined, label: 'primary' },
       { password: 'mock-password' },
@@ -615,7 +616,7 @@ describe('SshTerminalSession', () => {
       undefined,
       undefined
     );
-    expect(session.connect).toHaveBeenNthCalledWith(
+    expect(connect).toHaveBeenNthCalledWith(
       2,
       { host: 'backup.local', fingerprint: undefined, label: 'secondary' },
       { password: 'mock-password' },
