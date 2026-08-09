@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [1.9.21] - 2026-08-08 [DEP-UPDT-10]
+
+### Added
+- None.
+
+### Changed
+- Updated dependencies to latest.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- None.
+
+### Security
+- Updated dependencies to latest to fix deps vulnerabilities.
+
+----------------------------------------
+
 ## [1.9.20] - 2026-08-01 [DEP-UPDT-9]
 
 ### Added
