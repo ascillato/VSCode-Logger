@@ -4,7 +4,7 @@ permissions:
   contents: write
 
 env:
-  NODE_VERSION: '25.2.1'
+  NODE_VERSION: '26.9.0'
 
 on:
   push:
@@ -112,7 +112,7 @@ jobs:
         run: npm ci
 
       - name: Install vsce
-        run: npm install -g @vscode/vsce@3.9.1
+        run: npm install -g @vscode/vsce@4.0.0
 
       - name: Build VSIX
         run: |

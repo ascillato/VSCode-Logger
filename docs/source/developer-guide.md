@@ -11,7 +11,7 @@ Embedded Device Logger welcomes contributions from the community. Please review 
 
 ## Build and run from source
 
-Use Node.js `25.2.1` or greater.
+Use Node.js `26.9.0` or greater. The repository's `.nvmrc` pins this version for nvm users.
 
 1. Clone the repository.
 2. Install dependencies and compile:
@@ -32,7 +32,7 @@ Use Node.js `25.2.1` or greater.
   make install
   ```
 
-The repository uses a pinned `@vscode/vsce` version through `npm exec`, so packaging does not depend on any globally installed `vsce` executable.
+The repository uses `@vscode/vsce` `4.0.0` through `npm exec`, so packaging does not depend on any globally installed `vsce` executable.
 
 ## Cleaning and rebuilding
 

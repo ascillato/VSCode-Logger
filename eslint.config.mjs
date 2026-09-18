@@ -235,7 +235,7 @@ export default defineConfig([
   // Tests (relaxed rules)
   // -------------------------
   {
-    files: ["tests/**/*.{ts,tsx}", "test/**/*.{ts,tsx}", "vitest.config.ts"],
+    files: ["tests/**/*.{ts,tsx}", "test/**/*.{ts,tsx}", "vitest.config.mts"],
     rules: {
       "@typescript-eslint/no-unsafe-call": "off",
       "@typescript-eslint/no-unsafe-member-access": "off",

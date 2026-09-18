@@ -6,7 +6,7 @@ This repository uses three automated test layers:
 - Integration tests for extension-host workflows that cross module boundaries
 - End-to-end tests that launch a real VS Code extension host through `@vscode/test-electron`
 
-The current test commands are defined in `package.json`, the Vitest configuration lives in `vitest.config.ts`, and the VS Code test launcher lives under `tests/e2e`.
+The current test commands are defined in `package.json`, the Vitest configuration lives in `vitest.config.mts`, and the VS Code test launcher lives under `tests/e2e`.
 
 ## Current test layout
 
@@ -92,7 +92,7 @@ npm run lint:docs
 
 ## Coverage behavior
 
-Coverage is collected by Vitest with the V8 provider using the configuration in [vitest.config.ts](../../vitest.config.ts).
+Coverage is collected by Vitest with the V8 provider using the configuration in [vitest.config.mts](../../vitest.config.mts).
 
 Current coverage settings:
 
