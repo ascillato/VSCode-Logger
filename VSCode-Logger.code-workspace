@@ -105,7 +105,7 @@
         "command": "bash",
         "args": [
           "-lc",
-          "export NVM_DIR=\"${NVM_DIR:-$HOME/.nvm}\"; . \"$NVM_DIR/nvm.sh\"; nvm use 25; make check",
+          "export NVM_DIR=\"${NVM_DIR:-$HOME/.nvm}\"; . \"$NVM_DIR/nvm.sh\"; nvm use; make check",
         ],
         "options": {
           "cwd": "${workspaceFolder}",
@@ -126,7 +126,7 @@
         "command": "bash",
         "args": [
           "-lc",
-          "export NVM_DIR=\"${NVM_DIR:-$HOME/.nvm}\"; . \"$NVM_DIR/nvm.sh\"; nvm use 25; make package",
+          "export NVM_DIR=\"${NVM_DIR:-$HOME/.nvm}\"; . \"$NVM_DIR/nvm.sh\"; nvm use; make package",
         ],
         "options": {
           "cwd": "${workspaceFolder}",
@@ -147,7 +147,7 @@
         "command": "bash",
         "args": [
           "-lc",
-          "export NVM_DIR=\"${NVM_DIR:-$HOME/.nvm}\"; . \"$NVM_DIR/nvm.sh\"; nvm use 25; make all",
+          "export NVM_DIR=\"${NVM_DIR:-$HOME/.nvm}\"; . \"$NVM_DIR/nvm.sh\"; nvm use; make all",
         ],
         "options": {
           "cwd": "${workspaceFolder}",
@@ -168,7 +168,7 @@
         "command": "bash",
         "args": [
           "-lc",
-          "export NVM_DIR=\"${NVM_DIR:-$HOME/.nvm}\"; . \"$NVM_DIR/nvm.sh\"; nvm use 25; make package-clean",
+          "export NVM_DIR=\"${NVM_DIR:-$HOME/.nvm}\"; . \"$NVM_DIR/nvm.sh\"; nvm use; make package-clean",
         ],
         "options": {
           "cwd": "${workspaceFolder}",
@@ -189,7 +189,7 @@
         "command": "bash",
         "args": [
           "-lc",
-          "export NVM_DIR=\"${NVM_DIR:-$HOME/.nvm}\"; . \"$NVM_DIR/nvm.sh\"; nvm use 25; make docs",
+          "export NVM_DIR=\"${NVM_DIR:-$HOME/.nvm}\"; . \"$NVM_DIR/nvm.sh\"; nvm use; make docs",
         ],
         "options": {
           "cwd": "${workspaceFolder}",
@@ -210,7 +210,7 @@
         "command": "bash",
         "args": [
           "-lc",
-          "export NVM_DIR=\"${NVM_DIR:-$HOME/.nvm}\"; . \"$NVM_DIR/nvm.sh\"; nvm use 25; make tests-clean",
+          "export NVM_DIR=\"${NVM_DIR:-$HOME/.nvm}\"; . \"$NVM_DIR/nvm.sh\"; nvm use; make tests-clean",
         ],
         "options": {
           "cwd": "${workspaceFolder}",
@@ -231,7 +231,7 @@
         "command": "bash",
         "args": [
           "-lc",
-          "export NVM_DIR=\"${NVM_DIR:-$HOME/.nvm}\"; . \"$NVM_DIR/nvm.sh\"; nvm use 25; make docs-clean",
+          "export NVM_DIR=\"${NVM_DIR:-$HOME/.nvm}\"; . \"$NVM_DIR/nvm.sh\"; nvm use; make docs-clean",
         ],
         "options": {
           "cwd": "${workspaceFolder}",
@@ -252,7 +252,7 @@
         "command": "bash",
         "args": [
           "-lc",
-          "export NVM_DIR=\"${NVM_DIR:-$HOME/.nvm}\"; . \"$NVM_DIR/nvm.sh\"; nvm use 25; make linter-fix",
+          "export NVM_DIR=\"${NVM_DIR:-$HOME/.nvm}\"; . \"$NVM_DIR/nvm.sh\"; nvm use; make linter-fix",
         ],
         "options": {
           "cwd": "${workspaceFolder}",
@@ -273,7 +273,7 @@
         "command": "bash",
         "args": [
           "-lc",
-          "export NVM_DIR=\"${NVM_DIR:-$HOME/.nvm}\"; . \"$NVM_DIR/nvm.sh\"; nvm use 25; make test",
+          "export NVM_DIR=\"${NVM_DIR:-$HOME/.nvm}\"; . \"$NVM_DIR/nvm.sh\"; nvm use; make test",
         ],
         "options": {
           "cwd": "${workspaceFolder}",

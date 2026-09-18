@@ -7,6 +7,7 @@
   "publisher": "Scallant",
   "author": "A. Scillato",
   "engines": {
+    "node": ">=26.9.0",
     "vscode": "^1.124.0"
   },
   "repository": {
@@ -625,9 +626,9 @@
     "format:check": "prettier --check .",
     "docs:typedoc": "typedoc --options typedoc.json",
     "test": "npm run test:coverage && npm run coverage:report && npm run test:e2e",
-    "test:unit": "vitest run --config vitest.config.ts tests/unit",
-    "test:integration": "vitest run --config vitest.config.ts tests/integration",
-    "test:coverage": "vitest run --config vitest.config.ts --coverage",
+    "test:unit": "vitest run --config vitest.config.mts tests/unit",
+    "test:integration": "vitest run --config vitest.config.mts tests/integration",
+    "test:coverage": "vitest run --config vitest.config.mts --coverage",
     "coverage:report": "python3 docs/source/coverage_report.py || python docs/source/coverage_report.py",
     "test:e2e": "npm run compile && node ./tests/e2e/runTest.js"
   },
@@ -654,16 +655,11 @@
     "prettier": "^3.9.6",
     "typedoc": "^0.28.20",
     "typescript": "^6.0.3",
+    "vite": "^8.0.0",
     "vitest": "^5.0.1"
   },
   "dependencies": {
     "ssh2": "^1.14.0"
-  },
-  "allowScripts": {
-    "cpu-features@0.0.10": true,
-    "fsevents@2.3.3": true,
-    "ssh2@1.17.0": true,
-    "esbuild@0.28.2": true
   },
   "overrides": {
     "diff": "^8.0.3",

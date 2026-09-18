@@ -4,7 +4,7 @@ permissions:
   contents: write
 
 env:
-  NODE_VERSION: '25.2.1'
+  NODE_VERSION: '26.9.0'
 
 on:
   push:
