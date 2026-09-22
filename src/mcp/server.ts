@@ -30,7 +30,7 @@ export class LocalMcpServer {
     const s = http.createServer((q, r) => void this.handle(q, r));
     s.on('connection', (x) => x.unref());
     await new Promise<void>((ok, no) => {
-      const fail = (e: Error) => no(e);
+      const fail = (e: Error): void => no(e);
       s.once('error', fail);
       s.listen(port, '127.0.0.1', () => {
         s.off('error', fail);
@@ -66,7 +66,9 @@ export class LocalMcpServer {
           enableJsonResponse: true,
         });
       this.transports.add(t);
-      t.onclose = () => this.transports.delete(t);
+      t.onclose = (): void => {
+        this.transports.delete(t);
+      };
       const p = new McpServer(
         { name: 'embedded-device-logger', version: '1.0.0' },
         { capabilities: { tools: {} } }

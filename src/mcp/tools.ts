@@ -1,6 +1,7 @@
 import { createHash } from 'crypto';
 import { z } from 'zod/v4';
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { McpServer, RegisteredTool } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { EmbeddedDevice, SshCommandDefinition } from '../deviceTree';
 import type { LogEntry, LogService } from '../services/logService';
 import type { DiagnosticService, DiagnosticKind } from '../services/diagnosticService';
@@ -38,12 +39,12 @@ function filter(
   );
 }
 export function registerMcpTools(server: McpServer, d: McpToolDependencies): void {
-  const find = (id: string) => {
+  const find = (id: string): EmbeddedDevice => {
     const x = d.getDevices().find((v) => v.id === id);
     if (!x) throw new Error(`Unknown device ID '${id}'.`);
     return x;
   };
-  const call = async (name: string, fn: () => unknown) => {
+  const call = async (name: string, fn: () => unknown): Promise<CallToolResult> => {
     d.log(`Tool invoked: ${name}`);
     try {
       const value = await fn();
@@ -189,7 +190,7 @@ export function registerMcpTools(server: McpServer, d: McpToolDependencies): voi
     name: string,
     kind: DiagnosticKind,
     schema: Record<string, z.ZodType> = { deviceId }
-  ) =>
+  ): RegisteredTool =>
     server.registerTool(
       name,
       { description: `Run fixed read-only ${name}.`, inputSchema: schema, annotations: ro },
