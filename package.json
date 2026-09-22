@@ -3,7 +3,7 @@
   "displayName": "Embedded Device Logger",
   "description": "Stream and filter embedded Linux device logs over SSH inside VS Code.",
   "icon": "media/icon.png",
-  "version": "1.9.23",
+  "version": "1.10.0",
   "publisher": "Scallant",
   "author": "A. Scillato",
   "engines": {
@@ -157,11 +157,26 @@
               "script": {
                 "type": "string",
                 "description": "Optional script content to copy to /tmp and run when copyAndRunScript is enabled."
+              },
+              "allowMcp": {
+                "type": "boolean",
+                "default": false,
+                "description": "Explicitly allow MCP agents to invoke this command."
+              },
+              "mcpConfirmation": {
+                "type": "string",
+                "enum": [
+                  "always",
+                  "never"
+                ],
+                "default": "always",
+                "description": "Whether MCP invocation requires VS Code confirmation."
               }
             },
             "required": [
               "name"
-            ]
+            ],
+            "additionalProperties": false
           },
           "default": []
         },
@@ -431,11 +446,26 @@
                     "script": {
                       "type": "string",
                       "description": "Optional script content to copy to /tmp and run when copyAndRunScript is enabled."
+                    },
+                    "allowMcp": {
+                      "type": "boolean",
+                      "default": false,
+                      "description": "Explicitly allow MCP agents to invoke this command."
+                    },
+                    "mcpConfirmation": {
+                      "type": "string",
+                      "enum": [
+                        "always",
+                        "never"
+                      ],
+                      "default": "always",
+                      "description": "Whether MCP invocation requires VS Code confirmation."
                     }
                   },
                   "required": [
                     "name"
-                  ]
+                  ],
+                  "additionalProperties": false
                 }
               }
             },
@@ -518,6 +548,32 @@
           "default": null,
           "minimum": 1,
           "description": "Optional ping interval in seconds. Leave empty to ping only when the Ping button is pressed."
+        },
+        "embeddedLogger.mcp.enabled": {
+          "type": "boolean",
+          "scope": "resource",
+          "default": false,
+          "markdownDescription": "Enable the localhost-only MCP server for AI agents. Device passwords, private keys, and Secret Storage values are never shared."
+        },
+        "embeddedLogger.mcp.port": {
+          "type": "number",
+          "scope": "resource",
+          "default": 39070,
+          "minimum": 1024,
+          "maximum": 65535,
+          "description": "Localhost port for the Embedded Logger MCP Streamable HTTP endpoint."
+        },
+        "embeddedLogger.mcp.redactSensitiveData": {
+          "type": "boolean",
+          "scope": "resource",
+          "default": true,
+          "description": "Redact common credentials and tokens from MCP output."
+        },
+        "embeddedLogger.mcp.allowCustomCommands": {
+          "type": "boolean",
+          "scope": "resource",
+          "default": false,
+          "description": "Allow MCP to invoke only custom commands that also have allowMcp enabled."
         }
       }
     },
@@ -548,7 +604,12 @@
       "onCommand:embeddedLogger.openSftpExplorer",
       "onCommand:embeddedLogger.openWebBrowser",
       "onCommand:embeddedLogger.openEmbeddedWebBrowser",
-      "onCommand:embeddedLogger.pingAllDevices"
+      "onCommand:embeddedLogger.pingAllDevices",
+      "onCommand:embeddedLogger.mcp.enable",
+      "onCommand:embeddedLogger.mcp.disable",
+      "onCommand:embeddedLogger.mcp.status",
+      "onCommand:embeddedLogger.mcp.showConfiguration",
+      "onCommand:embeddedLogger.mcp.showLogs"
     ],
     "commands": [
       {
@@ -589,6 +650,31 @@
         "title": "%embeddedLogger.commands.pingAllDevices.title%",
         "shortTitle": "%embeddedLogger.commands.pingAllDevices.title%",
         "icon": "$(pulse)"
+      },
+      {
+        "command": "embeddedLogger.mcp.enable",
+        "title": "Embedded Logger: Enable MCP Server",
+        "icon": "$(debug-start)"
+      },
+      {
+        "command": "embeddedLogger.mcp.disable",
+        "title": "Embedded Logger: Disable MCP Server",
+        "icon": "$(debug-stop)"
+      },
+      {
+        "command": "embeddedLogger.mcp.status",
+        "title": "Embedded Logger: Show MCP Status",
+        "icon": "$(info)"
+      },
+      {
+        "command": "embeddedLogger.mcp.showConfiguration",
+        "title": "Embedded Logger: Show MCP Connection Configuration",
+        "icon": "$(json)"
+      },
+      {
+        "command": "embeddedLogger.mcp.showLogs",
+        "title": "Show MCP Task Logs",
+        "icon": "$(list-selection)"
       }
     ],
     "menus": {
@@ -607,6 +693,11 @@
           "command": "embeddedLogger.editDevicesConfig",
           "when": "view == embeddedLogger.devicesView",
           "group": "navigation@2"
+        },
+        {
+          "command": "embeddedLogger.mcp.showLogs",
+          "when": "view == embeddedLogger.devicesView && embeddedLogger.mcpRunning",
+          "group": "navigation@0.5"
         }
       ]
     }
@@ -659,7 +750,9 @@
     "vitest": "^5.0.1"
   },
   "dependencies": {
-    "ssh2": "^1.14.0"
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "ssh2": "^1.14.0",
+    "zod": "^4.6.5"
   },
   "overrides": {
     "diff": "^8.0.3",

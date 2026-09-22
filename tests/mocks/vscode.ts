@@ -197,6 +197,16 @@ export const workspace: typeof vscode.workspace = {
 } as unknown as typeof vscode.workspace;
 
 export const window: typeof vscode.window = {
+  createOutputChannel: vi.fn(() => ({
+    info: vi.fn(),
+    appendLine: vi.fn(),
+    show: vi.fn(),
+    hide: vi.fn(),
+    clear: vi.fn(),
+    replace: vi.fn(),
+    dispose: vi.fn(),
+    name: 'Embedded Logger MCP',
+  })),
   showInputBox: vi.fn(() => Promise.resolve(inputBoxResponse)),
   showWarningMessage: vi.fn(
     (_message: string, _options: vscode.MessageOptions, ...items: string[]) =>

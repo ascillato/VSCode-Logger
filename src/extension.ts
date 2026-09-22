@@ -29,6 +29,11 @@ import {
   type DevicePingStatus,
 } from './devicePing';
 import { localize } from './localization';
+import { sharedLogService } from './services/logService';
+import { DiagnosticService } from './services/diagnosticService';
+import { McpSanitizer } from './mcp/sanitizer';
+import { McpAudit } from './mcp/audit';
+import { LocalMcpServer } from './mcp/server';
 
 // Map of deviceId to existing log panels so multiple clicks reuse tabs.
 const panelMap: Map<string, LogPanel> = new Map();
@@ -38,6 +43,7 @@ let sidebarProvider: SidebarViewProvider | undefined;
 const pingStatusByDeviceId: Map<string, DevicePingState> = new Map();
 let pingIntervalHandle: NodeJS.Timeout | undefined;
 let isPingInProgress = false;
+let mcpServer: LocalMcpServer | undefined;
 
 export interface ExtensionTestApi {
   openSftpExplorerForTest(device: EmbeddedDevice): Promise<SftpExplorerPanel | undefined>;
@@ -366,6 +372,59 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
     getEmbeddedLoggerConfiguration().devicePingIntervalSeconds;
   const findDevice = (deviceId: string): EmbeddedDevice | undefined =>
     getDevices().find((item) => item.id === deviceId);
+  const mcpOutput = vscode.window.createOutputChannel('Embedded Logger MCP', { log: true });
+  context.subscriptions.push(mcpOutput);
+  const mcpLog = (message: string): void => mcpOutput.info(message);
+  const runBoundedCommand = async (
+    device: EmbeddedDevice,
+    command: SshCommandDefinition,
+    timeoutMs = 30_000
+  ): Promise<string> => {
+    const execution = new SshCommandRunner(device, context).run(command);
+    const timeout = new Promise<never>((_, reject) => {
+      const handle = setTimeout(() => reject(new Error('Device operation timed out.')), timeoutMs);
+      handle.unref();
+      void execution.finally(() => clearTimeout(handle));
+    });
+    return Promise.race([execution, timeout]);
+  };
+  const createMcpServer = (): LocalMcpServer => {
+    const config = vscode.workspace.getConfiguration('embeddedLogger.mcp');
+    const sanitizer = new McpSanitizer(config.get<boolean>('redactSensitiveData', true));
+    return new LocalMcpServer({
+      getDevices,
+      logs: sharedLogService,
+      diagnostics: new DiagnosticService((device, command, timeout) =>
+        runBoundedCommand(device, { name: 'MCP read-only diagnostic', command }, timeout)
+      ),
+      runCommand: (device, command) => runBoundedCommand(device, command),
+      allowCustomCommands: () =>
+        vscode.workspace
+          .getConfiguration('embeddedLogger.mcp')
+          .get<boolean>('allowCustomCommands', false),
+      confirm: async (device, command) =>
+        (await vscode.window.showWarningMessage(
+          `MCP requests “${command.name}” on “${device.name}”. Run it?`,
+          { modal: true },
+          'Run'
+        )) === 'Run',
+      sanitizer,
+      audit: new McpAudit((line) => mcpLog(`Audit: ${line}`)),
+      log: mcpLog,
+    });
+  };
+  const startMcp = async (): Promise<void> => {
+    mcpServer ??= createMcpServer();
+    const port = vscode.workspace.getConfiguration('embeddedLogger.mcp').get<number>('port', 39070);
+    const status = await mcpServer.start(port);
+    await vscode.commands.executeCommand('setContext', 'embeddedLogger.mcpRunning', true);
+    vscode.window.showInformationMessage(`Embedded Logger MCP is running at ${status.endpoint}.`);
+  };
+  const stopMcp = async (): Promise<void> => {
+    await mcpServer?.stop();
+    mcpServer = undefined;
+    await vscode.commands.executeCommand('setContext', 'embeddedLogger.mcpRunning', false);
+  };
   const prunePingStatuses = (): void => {
     const activeDeviceIds = new Set(getDevices().map((device) => device.id));
     for (const knownId of pingStatusByDeviceId.keys()) {
@@ -758,6 +817,51 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
   );
 
   context.subscriptions.push(
+    vscode.commands.registerCommand('embeddedLogger.mcp.enable', async () => {
+      await vscode.workspace
+        .getConfiguration('embeddedLogger.mcp')
+        .update('enabled', true, vscode.ConfigurationTarget.Global);
+      await startMcp();
+    }),
+    vscode.commands.registerCommand('embeddedLogger.mcp.disable', async () => {
+      await vscode.workspace
+        .getConfiguration('embeddedLogger.mcp')
+        .update('enabled', false, vscode.ConfigurationTarget.Global);
+      await stopMcp();
+    }),
+    vscode.commands.registerCommand('embeddedLogger.mcp.status', () => {
+      const s = mcpServer?.status();
+      vscode.window.showInformationMessage(
+        s?.running
+          ? `Embedded Logger MCP is running at ${s.endpoint}.`
+          : 'Embedded Logger MCP is stopped.'
+      );
+    }),
+    vscode.commands.registerCommand('embeddedLogger.mcp.showConfiguration', async () => {
+      const port = vscode.workspace
+          .getConfiguration('embeddedLogger.mcp')
+          .get<number>('port', 39070),
+        value = JSON.stringify(
+          { servers: { embeddedLogger: { type: 'http', url: `http://127.0.0.1:${port}/mcp` } } },
+          null,
+          2
+        );
+      await vscode.env.clipboard.writeText(value);
+      const document = await vscode.workspace.openTextDocument({
+        language: 'json',
+        content: value,
+      });
+      await vscode.window.showTextDocument(document, { preview: true });
+    }),
+    vscode.commands.registerCommand('embeddedLogger.mcp.showLogs', () => mcpOutput.show())
+  );
+  context.subscriptions.push({
+    dispose: () => {
+      void stopMcp();
+    },
+  });
+
+  context.subscriptions.push(
     vscode.commands.registerCommand(
       'embeddedLogger.openSftpExplorer',
       async (device?: EmbeddedDevice) => {
@@ -971,11 +1075,27 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
       if (e.affectsConfiguration('embeddedLogger')) {
         void updateDevicePingContext();
         refreshSidebarDevices();
+        if (e.affectsConfiguration('embeddedLogger.mcp'))
+          void stopMcp().then(async () => {
+            if (
+              vscode.workspace.getConfiguration('embeddedLogger.mcp').get<boolean>('enabled', false)
+            )
+              await startMcp();
+          });
       }
     })
   );
 
   await updateDevicePingContext();
+  if (vscode.workspace.getConfiguration('embeddedLogger.mcp').get<boolean>('enabled', false)) {
+    try {
+      await startMcp();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      mcpLog(`Server failed to start: ${message}`);
+      vscode.window.showErrorMessage(`Unable to start Embedded Logger MCP: ${message}`);
+    }
+  }
 
   if (isTestMode) {
     return {
@@ -989,6 +1109,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
  * Disposes all active log panels when the extension deactivates.
  */
 export function deactivate(): void {
+  void mcpServer?.stop();
+  mcpServer = undefined;
   for (const panel of panelMap.values()) {
     panel.dispose();
   }

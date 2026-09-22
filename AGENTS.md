@@ -108,3 +108,7 @@ The log session and log panel are intentionally modular: keep SSH orchestration 
 ## Conclusion
 
 This document equips AI agents with the knowledge needed to navigate, maintain and extend the **VSCode‑Logger** extension. Always align changes with the existing design, respect user configurations and security practices, and accompany code changes with clear documentation. By adhering to these guidelines, agents will produce high‑quality contributions that improve the extension without disrupting the experience for existing users.
+
+## MCP integration
+
+MCP code belongs in `src/mcp/`; shared live-log and diagnostic services belong in `src/services/`. Preserve the localhost-only, no-credentials, no-arbitrary-shell boundary. Sanitize and bound every response. Custom actions must reuse `SshCommandDefinition`, require global `embeddedLogger.mcp.allowCustomCommands` plus `allowMcp`, respect `mcpConfirmation`, and audit metadata only.
