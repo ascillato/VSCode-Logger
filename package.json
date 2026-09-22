@@ -673,7 +673,7 @@
       },
       {
         "command": "embeddedLogger.mcp.showLogs",
-        "title": "Embedded Logger: Show MCP Task Logs",
+        "title": "Show MCP Task Logs",
         "icon": "$(list-selection)"
       }
     ],
