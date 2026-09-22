@@ -130,7 +130,19 @@ const spellcheckSkipWords = [
   "rwxr",
   "printf",
   "uptime",
-  "31mexit"
+  "31mexit",
+  "mcp",
+  "Mcp",
+  "systemd",
+  "uname",
+  "pid",
+  "pcpu",
+  "pmem",
+  "proc",
+  "meminfo",
+  "lntu",
+  "idempotently",
+  "loopback"
 ];
 
 export default defineConfig([
