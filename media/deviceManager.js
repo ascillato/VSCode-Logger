@@ -22,6 +22,7 @@ const state = {
     defaultEnableEmbeddedWebBrowser: true,
     language: 'vscode',
     enableDevicePing: true,
+    mcpEnabled: false,
     devicePingIntervalSeconds: '',
     defaultSshCommands: [],
     maxLinesPerTab: 100000,
@@ -158,6 +159,8 @@ function toViewSshCommand(command) {
     rerunOnReconnection: command?.openSshPanel === true && command?.rerunOnReconnection === true,
     copyAndRunScript: command?.copyAndRunScript === true,
     script: command?.script ?? '',
+    allowMcp: command?.allowMcp === true,
+    mcpConfirmation: command?.mcpConfirmation === 'never' ? 'never' : 'always',
   };
 }
 
@@ -353,6 +356,7 @@ function renderDefaults() {
   document.getElementById('defaultEnableEmbeddedWebBrowser').checked =
     !!state.defaults.defaultEnableEmbeddedWebBrowser;
   document.getElementById('enableDevicePing').checked = !!state.defaults.enableDevicePing;
+  document.getElementById('mcpEnabled').checked = !!state.defaults.mcpEnabled;
   document.getElementById('showBastionOptions').checked = !!state.showBastionOptions;
   document.getElementById('devicePingIntervalSeconds').value =
     state.defaults.devicePingIntervalSeconds ?? '';
@@ -665,6 +669,11 @@ function renderSshCommandsEditor(commands, mountPoint, onChange) {
   copyAndRunScriptTh.textContent = t('deviceManager.copyAndRunScript');
   headerRow.appendChild(copyAndRunScriptTh);
 
+  const allowMcpTh = document.createElement('th');
+  allowMcpTh.textContent = 'Allow MCP';
+  allowMcpTh.title = 'Permit AI agents to invoke this exact configured command';
+  headerRow.appendChild(allowMcpTh);
+
   const addTh = document.createElement('th');
   const addButton = document.createElement('button');
   addButton.type = 'button';
@@ -833,6 +842,19 @@ function renderSshCommandsEditor(commands, mountPoint, onChange) {
     copyAndRunScriptCell.appendChild(copyAndRunScriptInput);
     copyAndRunScriptCell.appendChild(editScriptButton);
 
+    const allowMcpInput = document.createElement('input');
+    allowMcpInput.type = 'checkbox';
+    allowMcpInput.checked = item?.allowMcp === true;
+    allowMcpInput.title = 'Allow MCP (interactive confirmation is required by default)';
+    allowMcpInput.addEventListener('change', (event) => {
+      const updated = [...list];
+      updated[idx] = { ...updated[idx], allowMcp: event.target.checked === true };
+      list = updated;
+      onChange(updated, { rebuild: false });
+    });
+    const allowMcpCell = document.createElement('td');
+    allowMcpCell.appendChild(allowMcpInput);
+
     const removeButton = document.createElement('button');
     removeButton.type = 'button';
     removeButton.className = 'button button-danger button-icon';
@@ -852,6 +874,7 @@ function renderSshCommandsEditor(commands, mountPoint, onChange) {
     row.appendChild(openPanelCell);
     row.appendChild(rerunOnReconnectionCell);
     row.appendChild(copyAndRunScriptCell);
+    row.appendChild(allowMcpCell);
     row.appendChild(removeCell);
     tbody.appendChild(row);
   });
@@ -1254,6 +1277,7 @@ function collectDefaults() {
     defaultEnableEmbeddedWebBrowser: document.getElementById('defaultEnableEmbeddedWebBrowser')
       .checked,
     enableDevicePing: document.getElementById('enableDevicePing').checked,
+    mcpEnabled: document.getElementById('mcpEnabled').checked,
     devicePingIntervalSeconds: sanitizeOptionalPositiveIntegerInput(
       document.getElementById('devicePingIntervalSeconds').value
     ),

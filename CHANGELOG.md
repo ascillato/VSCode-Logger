@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [1.10.0] - 2026-09-22
+
+### Added
+- Added a localhost-only Model Context Protocol server with bounded log inspection, safe device diagnostics, explicitly authorized custom commands, centralized redaction, lifecycle commands, and metadata-only action auditing.
+- Added per-command MCP authorization and confirmation settings to the Device Manager.
+
+### Security
+- MCP clients cannot access SSH credentials, Secret Storage, arbitrary hosts, or arbitrary shell commands. Sensitive output is redacted by default and all operations are validated and bounded.
+
+----------------------------------------
+
 ## [1.9.23] - 2026-09-18 [DEP-UPDT-12]
 
 ### Added

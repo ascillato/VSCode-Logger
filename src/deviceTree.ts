@@ -21,6 +21,8 @@ export interface SshCommandDefinition {
   rerunOnReconnection?: boolean;
   copyAndRunScript?: boolean;
   script?: string;
+  allowMcp?: boolean;
+  mcpConfirmation?: 'never' | 'always';
 }
 
 export interface EmbeddedDevice {

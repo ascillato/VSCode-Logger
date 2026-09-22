@@ -18,6 +18,7 @@ import { WorkspaceStateStore } from './stateStore';
 import type { FilterPreset, LogPanelTarget } from './types';
 import { getDeviceColorIcon } from '../deviceColor';
 import { formatLocalizedString, getLocalizedStrings } from '../localization';
+import { sharedLogService } from '../services/logService';
 
 /**
  * Lifecycle manager for a single log panel instance.
@@ -216,9 +217,18 @@ export class LogPanel {
       {
         onLine: (line: string): void => this.handleIncomingLine(line),
         onError: (message: string): void => {
+          sharedLogService.setState(this.device!.id, { state: 'error', lastError: message });
           void this.panel.webview.postMessage({ type: 'error', message });
         },
         onStatus: (message: string): void => {
+          const normalized = message.toLowerCase();
+          sharedLogService.setState(this.device!.id, {
+            state: normalized.includes('reconnect')
+              ? 'reconnecting'
+              : normalized.includes('connect')
+                ? 'connecting'
+                : sharedLogService.getState(this.device!.id).state,
+          });
           void this.panel.webview.postMessage({ type: 'status', message });
         },
         onClose: (): void => this.handleSessionClose(),
@@ -226,6 +236,7 @@ export class LogPanel {
           void this.handleHostKeyMismatch(details);
         },
         onConnectedEndpoint: (endpoint): void => {
+          sharedLogService.setState(this.device!.id, { state: 'connected' });
           this.preferredReconnectHost = endpoint.host;
         },
       },
@@ -391,6 +402,7 @@ export class LogPanel {
 
   private handleIncomingLine(line: string): void {
     const sanitizedLine = this.sanitizeLogLine(line);
+    if (this.device) sharedLogService.append(this.device.id, sanitizedLine);
     this.writeAutoSaveLine(line);
     this.panel.webview.postMessage({ type: 'logLine', line: sanitizedLine });
   }
@@ -409,8 +421,10 @@ export class LogPanel {
   }
 
   private handleSessionClose(): void {
+    if (this.device) sharedLogService.setState(this.device.id, { state: 'disconnected' });
     const closedAt = Date.now();
     this.session = undefined;
+    if (this.device) sharedLogService.setState(this.device.id, { state: 'disconnected' });
     this.appendSessionClosedMarker(closedAt);
     this.panel.webview.postMessage({
       type: 'sessionClosed',

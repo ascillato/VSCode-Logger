@@ -87,6 +87,10 @@ function normalizeSshCommands(value: unknown): SshCommandDefinition[] {
         command.openSshPanel === true && command.rerunOnReconnection === true ? true : undefined,
       copyAndRunScript: copyAndRunScript && script ? true : undefined,
       script,
+      ...(command.allowMcp === true ? { allowMcp: true } : {}),
+      ...(command.mcpConfirmation === 'never' || command.mcpConfirmation === 'always'
+        ? { mcpConfirmation: command.mcpConfirmation }
+        : {}),
     });
   }
 

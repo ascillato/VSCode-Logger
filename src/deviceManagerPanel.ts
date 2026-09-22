@@ -61,6 +61,7 @@ interface DefaultsPayload {
   defaultEnableEmbeddedWebBrowser: boolean;
   language?: LanguagePreference;
   enableDevicePing?: boolean;
+  mcpEnabled?: boolean;
   devicePingIntervalSeconds?: number | string | null;
   defaultSshCommands: SshCommandDefinition[];
   maxLinesPerTab: number;
@@ -306,6 +307,10 @@ export class DeviceManagerPanel {
             <input type="checkbox" id="enableDevicePing" />
             <span>${e(dm.enableDevicePing)}</span>
           </label>
+          <label class="field checkbox" title="Local AI agents can inspect bounded logs and diagnostics; passwords are never shared.">
+            <input type="checkbox" id="mcpEnabled" />
+            <span>Enable MCP for AI agents (passwords are never shared)</span>
+          </label>
           <label class="field checkbox">
             <input type="checkbox" id="showBastionOptions" />
             <span>${e(dm.showBastionOptions)}</span>
@@ -520,6 +525,7 @@ export class DeviceManagerPanel {
         {
           run: () => config.update('enableDevicePing', normalizedDefaults.enableDevicePing, target),
         },
+        { run: () => config.update('mcp.enabled', normalizedDefaults.mcpEnabled, target) },
         {
           run: () =>
             config.update(
@@ -746,6 +752,7 @@ export class DeviceManagerPanel {
     defaultEnableEmbeddedWebBrowser: boolean;
     language: LanguagePreference;
     enableDevicePing: boolean;
+    mcpEnabled: boolean;
     devicePingIntervalSeconds?: number;
     defaultSshCommands: SshCommandDefinition[];
     maxLinesPerTab: number;
@@ -759,6 +766,7 @@ export class DeviceManagerPanel {
     const defaultEnableEmbeddedWebBrowser = Boolean(defaults.defaultEnableEmbeddedWebBrowser);
     const language = this.normalizeLanguage(defaults.language);
     const enableDevicePing = Boolean(defaults.enableDevicePing);
+    const mcpEnabled = Boolean(defaults.mcpEnabled);
     const devicePingIntervalSeconds = this.toOptionalPositiveInteger(
       defaults.devicePingIntervalSeconds
     );
@@ -773,6 +781,7 @@ export class DeviceManagerPanel {
       defaultEnableEmbeddedWebBrowser,
       language,
       enableDevicePing,
+      mcpEnabled,
       devicePingIntervalSeconds,
       defaultSshCommands,
       maxLinesPerTab,
@@ -791,6 +800,7 @@ export class DeviceManagerPanel {
         config.get<boolean>('defaultEnableEmbeddedWebBrowser', true) ?? true,
       language: getLanguagePreference(config),
       enableDevicePing: config.get<boolean>('enableDevicePing', true) ?? true,
+      mcpEnabled: config.get<boolean>('mcp.enabled', false) ?? false,
       devicePingIntervalSeconds:
         config.get<number | null>('devicePingIntervalSeconds', null) ?? undefined,
       defaultSshCommands: config.get<SshCommandDefinition[]>('defaultSshCommands', []) ?? [],
@@ -1163,6 +1173,13 @@ export class DeviceManagerPanel {
       if (script?.trim()) {
         normalized.script = script.replace(/\r\n/g, '\n');
       }
+      if (this.readOptionalBoolean(command.allowMcp, `${key}[${index}].allowMcp`))
+        normalized.allowMcp = true;
+      if (command.mcpConfirmation !== undefined) {
+        if (command.mcpConfirmation !== 'always' && command.mcpConfirmation !== 'never')
+          throw new Error(`${key}[${index}].mcpConfirmation must be "always" or "never".`);
+        normalized.mcpConfirmation = command.mcpConfirmation;
+      }
 
       return normalized;
     });
@@ -1357,6 +1374,10 @@ export class DeviceManagerPanel {
             item.openSshPanel === true && item.rerunOnReconnection === true ? true : undefined,
           copyAndRunScript: item.copyAndRunScript === true && script ? true : undefined,
           script,
+          ...(item.allowMcp === true ? { allowMcp: true } : {}),
+          ...(item.mcpConfirmation === 'never' || item.mcpConfirmation === 'always'
+            ? { mcpConfirmation: item.mcpConfirmation }
+            : {}),
         };
       })
       .filter(

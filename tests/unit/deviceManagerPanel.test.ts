@@ -999,6 +999,7 @@ describe('DeviceManagerPanel', () => {
           },
         ],
         maxLinesPerTab: 9000,
+        mcpEnabled: false,
       },
       groups: [{ name: 'Lab' }],
       devices: [

@@ -108,3 +108,7 @@ The log session and log panel are intentionally modular: keep SSH orchestration 
 ## Conclusion
 
 This document should equip any contributor with the knowledge needed to navigate, maintain and extend the **VSCode‑Logger** extension. Always align changes with the existing design, respect user configurations and security practices, and accompany code changes with clear documentation. By adhering to these guidelines, any contributor should produce high‑quality contributions that improve the extension without disrupting the experience for existing users.
+
+## MCP contributions
+
+Keep protocol code in `src/mcp/` and shared application services in `src/services/`. MCP must never accept hosts, credentials, arbitrary shell text, arguments, environments, or working directories. New diagnostics require fixed read-only commands, strict validation, bounds, centralized sanitization, and injection tests. Custom actions must reuse configured SSH commands and require global plus per-command authorization and confirmation policy.

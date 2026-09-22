@@ -81,3 +81,36 @@ More about this story at [Medium Article](https://medium.com/@ascillato/debuggin
 ## For developers
 
 Want to build from source or contribute? `npm run compile` now type-checks the extension and bundles the extension host into `out/extension.js`, while `npm run watch` keeps that bundled output up to date during development. See the [Developer Setup and Workflow](https://ascillato.github.io/VSCode-Logger/developer-guide.html) for packaging, local installs, and contribution guidelines. The project is open to pull requests. Please, check the [CONTRIBUTING guide](https://ascillato.github.io/VSCode-Logger/code-development.html) and the [Code Architecture Overview](https://ascillato.github.io/VSCode-Logger/extension-overview.html) before submitting.
+
+## AI / MCP integration
+
+Embedded Device Logger includes a disabled-by-default local MCP server for coding and debugging agents. It uses MCP Streamable HTTP at `http://127.0.0.1:39070/mcp` because an external client can attach to the running extension, which owns device authentication. The port is configurable, but the server always binds to `127.0.0.1`; there is no LAN bind setting.
+
+> **MCP clients do not receive device SSH credentials. Device authentication remains managed by Embedded Device Logger and its existing secure credential storage.**
+>
+> **MCP does not provide arbitrary remote shell access. Device-changing operations are limited to existing custom commands explicitly authorized by the user for MCP access.**
+
+### Configuration and connection
+
+Use **Embedded Logger: Enable MCP Server**, **Disable MCP Server**, **Show MCP Status**, **Show MCP Connection Configuration**, and **Show MCP Task Logs**. The configuration command displays and copies this client configuration:
+
+```json
+{"servers":{"embeddedLogger":{"type":"http","url":"http://127.0.0.1:39070/mcp"}}}
+```
+
+| Setting | Secure default | Meaning |
+| --- | --- | --- |
+| `embeddedLogger.mcp.enabled` | `false` | Enable the local endpoint. |
+| `embeddedLogger.mcp.port` | `39070` | Loopback port. |
+| `embeddedLogger.mcp.redactSensitiveData` | `true` | Redact common credentials, tokens, authorization headers, and URL secrets. |
+| `embeddedLogger.mcp.allowCustomCommands` | `false` | Globally permit individually authorized commands. |
+
+### Capabilities and security
+
+Log/data tools are `list_devices`, `get_device_status`, `get_recent_logs`, `search_logs`, `get_logs_around`, and `list_log_sources`. They read immutable, bounded snapshots without modifying UI filters. Diagnostic tools are `get_system_info`, `get_service_status`, `get_service_logs`, `get_processes`, `get_disk_usage`, `get_memory_info`, `get_network_info`, and `get_device_uptime`. They use predetermined, read-only Linux commands through the extension's existing SSH/authentication infrastructure; validated parameters cannot supply shell syntax. Devices must already have an active connected log panel.
+
+Authorized-action tools are `list_custom_commands` and `run_custom_command`. Enable `embeddedLogger.mcp.allowCustomCommands` and the command's **Allow MCP** checkbox. Existing commands default to denied. `mcpConfirmation` defaults to `always`, causing a modal VS Code confirmation; dismissal denies execution. The agent receives an opaque command ID and name, never its shell text, and cannot provide arguments, environment, working directory, hosts, or credentials.
+
+All MCP output and safe errors pass through centralized redaction and size limits; original UI/saved logs are unchanged. Requests, logs, searches, journal lines, diagnostic execution time, and outputs are bounded. Secret Storage is not reachable. Device metadata omits hosts, usernames, key paths, fingerprints, passwords, passphrases, and bastions. Custom actions write metadata-only audit events (timestamp, device, command, success, duration) to the MCP Output Channel without stdout/stderr or secrets. The listener and sockets are unreferenced so MCP cannot keep VS Code alive.
+
+Current limitations: live MCP history starts when a remote log panel collects lines; imported offline files remain UI-only. Diagnostics require common Linux utilities such as systemd/journalctl, `ip`, `ss`, and `/proc`. Diagnostic execution reuses the existing bounded SSH command runner rather than exposing the underlying connection or credentials.
