@@ -735,7 +735,7 @@
     "@vitest/coverage-v8": "^5.0.1",
     "@vscode/test-electron": "^3.1.0",
     "cloc": "^2.6.0-cloc",
-    "cspell": "^10.3.2",
+    "cspell": "^10.3.3",
     "esbuild": "^0.28.2",
     "eslint": "^10.9.1",
     "eslint-config-prettier": "^10.1.8",
