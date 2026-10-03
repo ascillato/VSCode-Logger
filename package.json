@@ -746,7 +746,7 @@
     "prettier": "^3.9.9",
     "typedoc": "^0.28.20",
     "typescript": "^6.0.3",
-    "vite": "^8.0.0",
+    "vite": "^8.3.1",
     "vitest": "^5.0.1"
   },
   "dependencies": {
