@@ -80,7 +80,7 @@ More about this story at [Medium Article](https://medium.com/@ascillato/debuggin
 
 ## For developers
 
-Want to build from source or contribute? `npm run compile` now type-checks the extension and bundles the extension host into `out/extension.js`, while `npm run watch` keeps that bundled output up to date during development. See the [Developer Setup and Workflow](https://ascillato.github.io/VSCode-Logger/developer-guide.html) for packaging, local installs, and contribution guidelines. The project is open to pull requests. Please, check the [CONTRIBUTING guide](https://ascillato.github.io/VSCode-Logger/code-development.html) and the [Code Architecture Overview](https://ascillato.github.io/VSCode-Logger/extension-overview.html) before submitting.
+Want to build from source or contribute? `npm run compile` type-checks the extension and creates a readable bundle at `out/extension.js`, while `npm run watch` keeps that output up to date during development. Packaging automatically runs `npm run compile:production` to minify the bundle; source maps and documentation screenshots are excluded from the VSIX to reduce download size. See the [Developer Setup and Workflow](https://ascillato.github.io/VSCode-Logger/developer-guide.html) for packaging, local installs, and contribution guidelines. The project is open to pull requests. Please, check the [CONTRIBUTING guide](https://ascillato.github.io/VSCode-Logger/code-development.html) and the [Code Architecture Overview](https://ascillato.github.io/VSCode-Logger/extension-overview.html) before submitting.
 
 ## AI / MCP integration
 

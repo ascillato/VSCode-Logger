@@ -21,6 +21,8 @@ Use Node.js `26.9.0` or greater. The repository's `.nvmrc` pins this version for
    ```
 3. Launch the Extension Development Host with `F5` in VS Code and open the **Embedded Logger** view.
 
+`npm run compile` and `npm run watch` produce a readable bundle with source maps for debugging. Run `npm run compile:production` to type-check and build the minified bundle used for releases. Both build modes emit UTF-8 JavaScript.
+
 ## Packaging and installation
 
 - Generate a VSIX:
@@ -32,7 +34,9 @@ Use Node.js `26.9.0` or greater. The repository's `.nvmrc` pins this version for
   make install
   ```
 
-The repository uses `@vscode/vsce` `4.0.0` through `npm exec`, so packaging does not depend on any globally installed `vsce` executable.
+The repository uses `@vscode/vsce` `4.0.0` through `npm exec`, so packaging does not depend on any globally installed `vsce` executable. Packaging and publishing automatically run `npm run compile:production` through the `vscode:prepublish` hook. Production minification preserves function and class names used by runtime dependencies.
+
+Source maps are generated locally for debugging, but `.vscodeignore` excludes them and `docs/images/**` from the VSIX to reduce download size. README screenshots use GitHub URLs, so they remain available on the Marketplace.
 
 ## Cleaning and rebuilding
 

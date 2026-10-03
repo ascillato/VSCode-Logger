@@ -3,7 +3,7 @@
   "displayName": "Embedded Device Logger",
   "description": "Stream and filter embedded Linux device logs over SSH inside VS Code.",
   "icon": "media/icon.png",
-  "version": "1.10.0",
+  "version": "1.10.1",
   "publisher": "Scallant",
   "author": "A. Scillato",
   "engines": {
@@ -703,11 +703,12 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
+    "vscode:prepublish": "npm run compile:production",
     "typecheck": "tsc --noEmit -p ./",
     "bundle": "node ./scripts/esbuild.mjs",
     "bundle:watch": "node ./scripts/esbuild.mjs --watch",
     "compile": "npm run typecheck && npm run bundle",
+    "compile:production": "npm run typecheck && npm run bundle -- --production",
     "package:vsix": "npm exec --yes --loglevel=error --package @vscode/vsce@4.0.0 -- vsce package",
     "watch": "npm run bundle:watch",
     "lint": "eslint .",
@@ -732,7 +733,7 @@
     "@types/vscode": "^1.124.0",
     "@typescript-eslint/eslint-plugin": "^8.71.0",
     "@typescript-eslint/parser": "^8.69.0",
-    "@vitest/coverage-v8": "^5.0.2",
+    "@vitest/coverage-v8": "5.0.2",
     "@vscode/test-electron": "^3.1.0",
     "cloc": "^2.6.0-cloc",
     "cspell": "^10.3.6",
@@ -747,7 +748,7 @@
     "typedoc": "^0.28.20",
     "typescript": "^6.0.3",
     "vite": "^8.3.1",
-    "vitest": "^5.0.1"
+    "vitest": "5.0.2"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",

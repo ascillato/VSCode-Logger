@@ -8,6 +8,8 @@ This repository uses three automated test layers:
 
 The current test commands are defined in `package.json`, the Vitest configuration lives in `vitest.config.mts`, and the VS Code test launcher lives under `tests/e2e`.
 
+Keep `vitest` and `@vitest/coverage-v8` pinned to the same exact version in `package.json` and update them together with the lockfile. Mixed versions are unsupported. Dependabot groups these updates into one pull request.
+
 ## Current test layout
 
 ### Unit tests

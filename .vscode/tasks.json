@@ -3,9 +3,13 @@
 	"tasks": [
         {
             "type": "npm",
-            "script": "vscode:prepublish",
+            "script": "compile",
             "problemMatcher": [],
-            "label": "npm: vscode:prepublish",
+            "label": "npm: compile",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
             "detail": "npm run compile"
         }
     ]

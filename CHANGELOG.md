@@ -7,12 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
-## [1.10.1] - 2026-10-03 [DEP-UPDT-13]
+## [1.10.1] - 2026-10-03 [OPTIMIZATION]
 
 ### Added
 - None.
 
 ### Changed
+- Minified production bundles with UTF-8 output while preserving function and class names for runtime compatibility; development builds remain readable.
+- Excluded documentation screenshots from the VSIX to reduce download size; README images remain hosted on GitHub.
 - Updated dependencies to latest.
 
 ### Deprecated
@@ -22,14 +24,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - None.
 
 ### Fixed
-- None.
+- Aligned Vitest and its V8 coverage provider to remove the mixed-version warning during tests, with exact version pins and grouped dependency updates.
 
 ### Security
 - Updated dependencies to latest to fix deps vulnerabilities.
 
 ----------------------------------------
 
-## [1.10.0] - 2026-09-22
+## [1.10.0] - 2026-09-22 [MCP]
 
 ### Added
 - Added a localhost-only Model Context Protocol server with bounded log inspection, safe device diagnostics, explicitly authorized custom commands, centralized redaction, lifecycle commands, and metadata-only action auditing.

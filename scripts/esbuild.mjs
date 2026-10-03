@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const isWatch = process.argv.includes('--watch');
+const isProduction = process.argv.includes('--production');
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const outDir = path.join(rootDir, 'out');
 const outfile = path.join(outDir, 'extension.js');
@@ -12,11 +13,15 @@ const buildOptions = {
   entryPoints: [path.join(rootDir, 'src', 'extension.ts')],
   outfile,
   bundle: true,
+  charset: 'utf8',
   // eslint-disable-next-line spellcheck/spell-checker
   external: ['vscode', 'cpu-features', '*.node'],
   format: 'cjs',
+  // Preserve names used by dependency runtime checks and error reporting.
+  keepNames: isProduction,
   legalComments: 'none',
   logLevel: 'info',
+  minify: isProduction,
   platform: 'node',
   sourcemap: true,
   sourcesContent: false,

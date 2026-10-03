@@ -21,6 +21,7 @@ typedoc.json
 cspell.json
 docs/build/**
 docs/html/**
+docs/images/**
 docs/xml/**
 docs/requirements.txt
 docs/source/**
