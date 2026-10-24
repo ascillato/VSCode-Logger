@@ -758,6 +758,6 @@
   "overrides": {
     "diff": "^8.0.3",
     "markdown-it": ">=14.3.1",
-    "serialize-javascript": "^7.0.5"
+    "serialize-javascript": "^7.1.4"
   }
 }
