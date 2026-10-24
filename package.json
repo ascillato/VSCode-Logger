@@ -753,7 +753,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",
     "ssh2": "^1.14.0",
-    "zod": "^4.6.5"
+    "zod": "^4.6.7"
   },
   "overrides": {
     "diff": "^8.0.3",
