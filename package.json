@@ -3,7 +3,7 @@
   "displayName": "Embedded Device Logger",
   "description": "Stream and filter embedded Linux device logs over SSH inside VS Code.",
   "icon": "media/icon.png",
-  "version": "1.10.1",
+  "version": "1.10.2",
   "publisher": "Scallant",
   "author": "A. Scillato",
   "engines": {
@@ -709,7 +709,7 @@
     "bundle:watch": "node ./scripts/esbuild.mjs --watch",
     "compile": "npm run typecheck && npm run bundle",
     "compile:production": "npm run typecheck && npm run bundle -- --production",
-    "package:vsix": "npm exec --yes --loglevel=error --package @vscode/vsce@4.0.0 -- vsce package",
+    "package:vsix": "npm exec --yes --loglevel=error --package @vscode/vsce@4.1.0 -- vsce package",
     "watch": "npm run bundle:watch",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -729,7 +729,7 @@
     "@eslint/eslintrc": "^3.3.7",
     "@eslint/js": "^10.0.1",
     "@types/mocha": "^10.0.10",
-    "@types/node": "^26.6.5",
+    "@types/node": "^26.6.6",
     "@types/vscode": "^1.124.0",
     "@typescript-eslint/eslint-plugin": "^8.72.1",
     "@typescript-eslint/parser": "^8.72.1",
@@ -738,11 +738,11 @@
     "cloc": "^2.11.0",
     "cspell": "^10.4.0",
     "esbuild": "^0.28.2",
-    "eslint": "^10.13.0",
+    "eslint": "^10.14.0",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.6",
+    "eslint-plugin-prettier": "^5.5.7",
     "eslint-plugin-spellcheck": "^0.0.20",
-    "globals": "^17.13.0",
+    "globals": "^17.14.0",
     "mocha": "^12.0.3",
     "prettier": "^3.9.10",
     "typedoc": "^0.28.20",
@@ -751,13 +751,15 @@
     "vitest": "5.0.5"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.32.1",
-    "ssh2": "^1.14.0",
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "ssh2": "^1.17.0",
     "zod": "^4.6.7"
   },
   "overrides": {
     "diff": "^8.0.3",
+    "glob": "^14.0.3",
     "markdown-it": ">=14.3.1",
+    "minimatch": ">=11.0.1",
     "serialize-javascript": "^7.1.4"
   }
 }

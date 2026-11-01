@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
+## [1.10.2] - 2026-11-01 [DEP-UPDT-13]
+
+### Added
+- None.
+
+### Changed
+- Updated dependencies to the latest compatible releases, retaining TypeScript 6 for lint and documentation tool compatibility.
+- Updated the VSCE packaging tool to 4.1.0 for local builds and the release workflow.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
+### Fixed
+- Load the ESLint compatibility helper through its CommonJS entry point to support the updated dependency.
+
+### Security
+- Require minimatch 11.0.1 or later throughout the dependency tree to address the glob pattern denial-of-service vulnerability.
+- Override glob to 14.0.3 to fix continued file-system traversal after cancellation in the Mocha dependency chain.
+
+----------------------------------------
+
 ## [1.10.1] - 2026-10-03 [OPTIMIZATION]
 
 ### Added

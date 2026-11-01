@@ -5,10 +5,13 @@ import prettier from "eslint-plugin-prettier";
 import spellcheck from "eslint-plugin-spellcheck";
 import globals from "globals";
 import { fixupPluginRules } from "@eslint/compat";
+import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import js from "@eslint/js";
-import { FlatCompat } from "@eslint/eslintrc";
+
+// The CommonJS entry point supports the named exports in minimatch 11.
+const { FlatCompat } = createRequire(import.meta.url)("@eslint/eslintrc");
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

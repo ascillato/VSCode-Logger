@@ -34,7 +34,7 @@ Use Node.js `26.9.0` or greater. The repository's `.nvmrc` pins this version for
   make install
   ```
 
-The repository uses `@vscode/vsce` `4.0.0` through `npm exec`, so packaging does not depend on any globally installed `vsce` executable. Packaging and publishing automatically run `npm run compile:production` through the `vscode:prepublish` hook. Production minification preserves function and class names used by runtime dependencies.
+The repository uses `@vscode/vsce` `4.1.0` through `npm exec`, so packaging does not depend on any globally installed `vsce` executable. Packaging and publishing automatically run `npm run compile:production` through the `vscode:prepublish` hook. Production minification preserves function and class names used by runtime dependencies.
 
 Source maps are generated locally for debugging, but `.vscodeignore` excludes them and `docs/images/**` from the VSIX to reduce download size. README screenshots use GitHub URLs, so they remain available on the Marketplace.
 
