@@ -3,7 +3,7 @@
   "displayName": "Embedded Device Logger",
   "description": "Stream and filter embedded Linux device logs over SSH inside VS Code.",
   "icon": "media/icon.png",
-  "version": "1.10.2",
+  "version": "1.10.3",
   "publisher": "Scallant",
   "author": "A. Scillato",
   "engines": {
@@ -716,7 +716,7 @@
     "lint:docs": "cspell --config ./cspell.json --no-progress \"*.md\" \"docs/**/*.{md,txt}\"",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "docs:typedoc": "typedoc --options typedoc.json",
+    "docs:typedoc": "node --import ./scripts/typedoc-compat.mjs ./node_modules/typedoc/bin/typedoc --options typedoc.json",
     "test": "npm run test:coverage && npm run coverage:report && npm run test:e2e",
     "test:unit": "vitest run --config vitest.config.mts tests/unit",
     "test:integration": "vitest run --config vitest.config.mts tests/integration",
@@ -745,7 +745,7 @@
     "globals": "^17.14.0",
     "mocha": "^12.0.3",
     "prettier": "^3.9.10",
-    "typedoc": "^0.28.20",
+    "typedoc": "0.28.20",
     "typescript": "^6.0.3",
     "vite": "^8.3.5",
     "vitest": "5.0.5"

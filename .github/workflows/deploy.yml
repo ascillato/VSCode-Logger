@@ -185,6 +185,7 @@ jobs:
 
       - name: Build docs via Makefile
         run: |
+          python -m unittest discover -s tests/docs -v
           make docs
 
       # Deploy condition: push to main OR workflow_dispatch, but NEVER pull_request

@@ -52,7 +52,7 @@ The log session and log panel are intentionally modular: keep SSH orchestration 
    * Tests: `npm run test:unit`, `npm run test:integration`, `npm run test:e2e` (or `npm test` to run all)
    * Lint: `npm run lint`
    * Docs: `npm run lint:docs`
-7. **Documentation**: run TypeDoc (`npm run docs:typedoc`) from the repository root. The generated HTML lives at `docs/typedoc/index.html`. The docs build also runs `cloc` plus the complexity report generator when available (use `CLOC_SKIP=1` or `COMPLEXITY_SKIP=1` to skip). Keep `README.md`, `CONTRIBUTING.md` and this file `AGENTS.md` up to date when introducing new behaviour.
+7. **Documentation**: run TypeDoc (`npm run docs:typedoc`) from the repository root. The generated HTML lives at `docs/typedoc/index.html`. Sphinx uses the same npm command and fails if TypeDoc fails or produces no API index; failed runs cannot reuse stale output. Use `TYPEDOC_SKIP=1` only to intentionally skip generation (existing API output is reused if present). TypeDoc is pinned while `scripts/typedoc-compat.mjs` adapts its directory traversal for the minimatch security override; review this compatibility fix when upgrading TypeDoc. Run `python3 -m unittest discover -s tests/docs -v` to check documentation failure handling. The docs build also runs `cloc` plus the complexity report generator when available (use `CLOC_SKIP=1` or `COMPLEXITY_SKIP=1` to skip). Keep `README.md`, `CONTRIBUTING.md` and this file `AGENTS.md` up to date when introducing new behaviour.
 
 ## Contribution guidelines for AI agents
 

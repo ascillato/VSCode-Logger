@@ -8,6 +8,7 @@ import warnings
 from typing import List, Optional
 from datetime import datetime
 from pathlib import Path
+from sphinx.errors import ConfigError
 from sphinx.highlighting import lexers
 from pygments.lexers.special import TextLexer
 
@@ -88,44 +89,51 @@ _typedoc_config = PROJECT_ROOT / "typedoc.json"
 
 
 def _typedoc_command() -> Optional[List[str]]:
-    """Return the TypeDoc command to run, or None if not available."""
+    """Use the same compatibility setup as the standalone API build."""
 
-    local_typedoc = PROJECT_ROOT / "node_modules" / ".bin" / "typedoc"
-    if local_typedoc.exists():
-        return [str(local_typedoc)]
-    if shutil.which("typedoc"):
-        return ["typedoc"]
-    if shutil.which("npx"):
-        return ["npx", "typedoc"]
+    npm = shutil.which("npm")
+    if npm:
+        return [npm, "run", "docs:typedoc", "--"]
     return None
 
 
 def _generate_typedoc() -> bool:
-    """Generate TypeDoc output when possible."""
+    """Generate the API reference, failing the docs build if generation fails."""
 
     if os.environ.get("TYPEDOC_SKIP"):
-        return False
-    if not _typedoc_config.exists():
-        return False
+        return _typedoc_index.is_file()
+    if not _typedoc_config.is_file():
+        raise ConfigError(f"TypeDoc configuration was not found: {_typedoc_config}")
 
     command = _typedoc_command()
     if not command:
-        return False
+        raise ConfigError(
+            "TypeDoc is unavailable. Install Node.js dependencies with npm ci "
+            "before building the documentation."
+        )
 
-    _typedoc_output.mkdir(parents=True, exist_ok=True)
     try:
+        _typedoc_output.mkdir(parents=True, exist_ok=True)
         subprocess.run(
             command + ["--options", str(_typedoc_config)],
             cwd=PROJECT_ROOT,
-            check=False,
+            check=True,
         )
-    except OSError:
-        return False
-    return _typedoc_index.exists()
+    except subprocess.CalledProcessError as error:
+        raise ConfigError(
+            f"TypeDoc failed with exit code {error.returncode}. "
+            "Run npm run docs:typedoc to diagnose the API documentation build."
+        ) from error
+    except OSError as error:
+        raise ConfigError(f"Unable to run TypeDoc: {error}") from error
+    if not _typedoc_index.is_file():
+        raise ConfigError(
+            f"TypeDoc completed without generating the API reference: {_typedoc_index}"
+        )
+    return True
 
 
-_generate_typedoc()
-have_typedoc = _typedoc_index.exists()
+have_typedoc = _generate_typedoc()
 _typedoc_output.mkdir(parents=True, exist_ok=True)
 
 # Map Mermaid fenced blocks to a no-op lexer to silence warnings about the
