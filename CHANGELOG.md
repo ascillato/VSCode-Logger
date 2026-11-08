@@ -7,11 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
-## [1.10.3] - 2026-11-01 [DOCS-FIX]
+## [1.10.3] - 2026-11-08 [DOCS-FIX-AND-MORE-COVERAGE]
+
+### Added
+- Increased code test coverage.
+
+### Changed
+- None.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
 
 ### Fixed
 - Restore API documentation generation with a scoped TypeDoc compatibility fix while retaining the minimatch security override.
 - Fail documentation builds when TypeDoc fails or produces no API index, including when stale output exists after a failed run.
+
+### Security
+- None.
 
 ----------------------------------------
 

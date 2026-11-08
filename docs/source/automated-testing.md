@@ -18,6 +18,7 @@ Unit tests live in `tests/unit` and currently cover:
 
 - configuration normalization and inherited defaults
 - device manager behavior
+- device identity normalization, duplicate handling, and legacy state migration
 - device ping helpers
 - device tree rendering and refresh behavior
 - extension command handlers for passwords, SFTP preset migration, SFTP explorer launch, SSH terminal and command routing, web browser actions, local log files, and remote log panel reuse
@@ -25,6 +26,9 @@ Unit tests live in `tests/unit` and currently cover:
 - log panel host behavior, auto-save lifecycle, and Webview message parsing
 - log session orchestration, connection management, fingerprint persistence, SSH authentication resolution, and host key verification
 - logger panel and sidebar Webview messaging, refresh payloads, clipboard actions, and command routing
+- MCP command registration, server lifecycle, request validation and size limits, output redaction, audit retention, and extension configuration changes
+- MCP tool behavior through the SDK's in-memory transport, including log queries, diagnostic validation, custom-command authorization, confirmation, and error handling
+- bounded live-log storage and fixed diagnostic command execution
 - password storage and migration
 - SFTP explorer panel state, seeded test-mode flows, production Webview message routing, local and remote filesystem operations, search snapshots, preset persistence, authentication helpers, and reconnect behavior
 - SFTP search command compilation and validation

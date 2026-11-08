@@ -1303,6 +1303,42 @@ describe('SftpExplorerPanel', () => {
     }
   });
 
+  it.each([
+    [new Error('Upload denied'), 'Upload denied'],
+    [new Error(''), 'Unable to save file back to remote.'],
+  ])('reports remote file save failures: %s', async (failure, message) => {
+    const panel = createProductionExplorer();
+    const postMessage = getCreatedWebviews()[0].webview.postMessage;
+    const explorer = panel as unknown as {
+      viewedTempFiles: Map<string, { remotePath: string }>;
+      uploadFile(localPath: string, remotePath: string): Promise<void>;
+      handleTempFileSave(doc: { uri: { fsPath: string } }): Promise<void>;
+    };
+    const localPath = path.join(os.tmpdir(), 'sftp-save-failure-test.txt');
+    const upload = vi.spyOn(explorer, 'uploadFile').mockRejectedValue(failure);
+
+    try {
+      // Unrelated editor documents must never be uploaded.
+      await explorer.handleTempFileSave({ uri: Uri.file(localPath) });
+      expect(upload).not.toHaveBeenCalled();
+
+      explorer.viewedTempFiles.set(localPath, { remotePath: '/var/log/app.log' });
+      await explorer.handleTempFileSave({ uri: Uri.file(localPath) });
+
+      expect(upload).toHaveBeenCalledWith(localPath, '/var/log/app.log');
+      expect(postMessage).toHaveBeenCalledWith({ type: 'error', message });
+      expect(window.showErrorMessage).toHaveBeenCalledWith(message);
+      expect(postMessage).not.toHaveBeenCalledWith({
+        type: 'status',
+        message: 'Saved to remote: app.log',
+      });
+      expect(explorer.viewedTempFiles.get(localPath)).toEqual({ remotePath: '/var/log/app.log' });
+    } finally {
+      explorer.viewedTempFiles.clear();
+      panel.dispose();
+    }
+  });
+
   it('opens local and remote terminals and rejects local file targets', async () => {
     const panel = createExplorer();
     const explorer = panel as unknown as {

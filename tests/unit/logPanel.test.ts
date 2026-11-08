@@ -32,11 +32,13 @@ vi.mock('../../src/logSession', () => {
 import type { EmbeddedDevice } from '../../src/deviceTree';
 import { LogPanel } from '../../src/logPanel';
 import { AutoSaveManager } from '../../src/logPanel/autoSaveManager';
+import { sharedLogService } from '../../src/services/logService';
 import {
   createExtensionContext,
   getCreatedWebviews,
   resetCreatedWebviews,
   resetWindowResponses,
+  resetWorkspaceState,
   Uri,
   window,
   workspace,
@@ -54,6 +56,7 @@ const device: EmbeddedDevice = {
 beforeEach(() => {
   resetWindowResponses();
   resetCreatedWebviews();
+  resetWorkspaceState();
   logSessionInstances.length = 0;
 });
 
@@ -62,6 +65,111 @@ afterEach(() => {
 });
 
 describe('LogPanel (unit)', () => {
+  it('waits for readiness before starting a remote session and ignores duplicate ready messages', async () => {
+    const panel = new LogPanel(
+      createExtensionContext(),
+      { type: 'remote', device },
+      () => undefined
+    );
+    const webviewPanel = getCreatedWebviews()[0];
+    const session = logSessionInstances[0];
+    const startPromise = panel.start();
+
+    expect(session.start).not.toHaveBeenCalled();
+    webviewPanel.__fireMessage({ type: 'ready' });
+    await startPromise;
+    webviewPanel.__fireMessage({ type: 'ready' });
+    await Promise.resolve();
+
+    expect(session.start).toHaveBeenCalledTimes(1);
+    expect(webviewPanel.webview.postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'initData', deviceId: device.id, isLive: true })
+    );
+    panel.dispose();
+  });
+
+  it('keeps shared log state in sync with session callbacks', () => {
+    const trackedDevice = { ...device, id: 'callback-device' };
+    const panel = new LogPanel(
+      createExtensionContext(),
+      { type: 'remote', device: trackedDevice },
+      () => undefined
+    );
+    const webviewPanel = getCreatedWebviews()[0];
+    const callbacks = logSessionInstances[0].callbacks as {
+      onLine: (line: string) => void;
+      onStatus: (message: string) => void;
+      onError: (message: string) => void;
+      onConnectedEndpoint: (endpoint: { host: string; label: string }) => void;
+      onClose: () => void;
+    };
+
+    callbacks.onStatus('Connecting...');
+    expect(sharedLogService.getState(trackedDevice.id)).toEqual({ state: 'connecting' });
+    callbacks.onStatus('Reconnecting...');
+    expect(sharedLogService.getState(trackedDevice.id)).toEqual({ state: 'reconnecting' });
+    callbacks.onConnectedEndpoint({ host: device.host, label: 'primary' });
+    callbacks.onStatus('Streaming logs');
+    expect(sharedLogService.getState(trackedDevice.id)).toEqual({ state: 'connected' });
+
+    callbacks.onLine('WARNING \u001b[31mred\u001b[0m\u0000');
+    expect(sharedLogService.snapshot(trackedDevice.id)).toEqual([
+      expect.objectContaining({ message: 'WARNING red�', level: 'warn', source: 'live' }),
+    ]);
+    expect(webviewPanel.webview.postMessage).toHaveBeenCalledWith({
+      type: 'logLine',
+      line: 'WARNING red�',
+    });
+
+    callbacks.onError('connection lost');
+    expect(sharedLogService.getState(trackedDevice.id)).toEqual({
+      state: 'error',
+      lastError: 'connection lost',
+    });
+    callbacks.onClose();
+    expect(sharedLogService.getState(trackedDevice.id)).toEqual({ state: 'disconnected' });
+    panel.dispose();
+  });
+
+  it('ignores invalid messages and blank preset names without changing saved presets', async () => {
+    const context = createExtensionContext();
+    const presetsKey = `embeddedLogger.presets.${device.id}`;
+    const presets = [{ name: 'Errors', minLevel: 'error', textFilter: 'panic' }];
+    await context.workspaceState.update(presetsKey, presets);
+    const panel = new LogPanel(context, { type: 'remote', device }, () => undefined);
+    const webviewPanel = getCreatedWebviews()[0];
+
+    webviewPanel.__fireMessage(null);
+    webviewPanel.__fireMessage({ type: 'unsupported' });
+    webviewPanel.__fireMessage({
+      type: 'requestSavePreset',
+      name: '   ',
+      minLevel: 'error',
+      textFilter: '',
+    });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(context.workspaceState.get(presetsKey)).toEqual(presets);
+    expect(webviewPanel.webview.postMessage).not.toHaveBeenCalled();
+    expect(window.showInformationMessage).not.toHaveBeenCalled();
+    panel.dispose();
+  });
+
+  it('disposes its session and notifies its owner when the user closes the webview', () => {
+    const onDispose = vi.fn();
+    const panel = new LogPanel(createExtensionContext(), { type: 'remote', device }, onDispose);
+    const webviewPanel = getCreatedWebviews()[0];
+    const session = logSessionInstances[0];
+
+    webviewPanel.dispose();
+    panel.dispose();
+    webviewPanel.__fireMessage({ type: 'requestReconnect' });
+
+    expect(onDispose).toHaveBeenCalledTimes(1);
+    expect(session.dispose).toHaveBeenCalledTimes(1);
+    expect(logSessionInstances).toHaveLength(1);
+  });
+
   it('reports auto-save errors to the webview when start fails', async () => {
     const context = createExtensionContext();
     setSaveDialogResponse('/tmp/output.log');
