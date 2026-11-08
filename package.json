@@ -733,7 +733,7 @@
     "@types/vscode": "^1.124.0",
     "@typescript-eslint/eslint-plugin": "^8.72.1",
     "@typescript-eslint/parser": "^8.72.1",
-    "@vitest/coverage-v8": "5.0.5",
+    "@vitest/coverage-v8": "5.1.0",
     "@vscode/test-electron": "^3.1.0",
     "cloc": "^2.11.0",
     "cspell": "^10.4.0",
@@ -748,7 +748,7 @@
     "typedoc": "0.28.20",
     "typescript": "^6.0.3",
     "vite": "^8.3.5",
-    "vitest": "5.0.5"
+    "vitest": "5.1.0"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.2",
