@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ----------------------------------------
 
-## [1.10.3] - 2026-11-08 [DOCS-FIX-AND-MORE-COVERAGE]
+## [1.10.3] - UNRELEASED [DOCS-FIX-AND-MORE-COVERAGE]
 
 ### Added
 - Increased code test coverage.
