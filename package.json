@@ -730,7 +730,7 @@
     "@eslint/js": "^10.0.1",
     "@types/mocha": "^10.0.10",
     "@types/node": "^26.6.6",
-    "@types/vscode": "^1.124.0",
+    "@types/vscode": "^1.145.0",
     "@typescript-eslint/eslint-plugin": "^8.72.1",
     "@typescript-eslint/parser": "^8.72.1",
     "@vitest/coverage-v8": "5.1.0",
