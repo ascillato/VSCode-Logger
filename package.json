@@ -732,7 +732,7 @@
     "@types/node": "^26.6.6",
     "@types/vscode": "^1.146.0",
     "@typescript-eslint/eslint-plugin": "^8.73.0",
-    "@typescript-eslint/parser": "^8.73.0",
+    "@typescript-eslint/parser": "^8.74.0",
     "@vitest/coverage-v8": "5.1.0",
     "@vscode/test-electron": "^3.1.0",
     "cloc": "^2.11.0",
